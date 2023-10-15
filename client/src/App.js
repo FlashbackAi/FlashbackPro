@@ -16,17 +16,19 @@ function App() {
 
     const formData = new FormData();
     formData.append("image", image);
-    console.log("upload method called");
 
     try {
       const response = await axios.post("http://localhost:5000/upload", formData);
-      alert("Image uploaded successfully!");
 
-      // Display the uploaded image
-      const imageUrl = response.data.imageUrl;
-      const imgElement = document.createElement("img");
-      imgElement.src = imageUrl;
-      document.body.appendChild(imgElement);
+      alert("Image uploaded successfully! at "+response.data.imageUrl );
+
+      // // Display the uploaded image
+      // var imageUrl = "../"+response.data.imageUrl;
+      // //imageUrl=imageUrl.substring(2);
+      // const imgElement = document.createElement("img");
+      // imgElement.src = imageUrl;
+      // console.log(imgElement);
+      // document.body.appendChild(imgElement);
     } catch (error) {
       console.error("Error uploading image: ", error);
     }
