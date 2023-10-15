@@ -4,7 +4,7 @@
 
 •	Install required packages
 
-    npm install express mongoose multer
+    npm install 
 
 •	In the root directory
 
