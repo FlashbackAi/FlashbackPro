@@ -1,46 +1,39 @@
-// server/server.js
-const express = require("express");
-const multer = require("multer");
-const app = express();
-
-
+const express = require('express');
+const AWS = require('aws-sdk');
+const multer = require('multer');
+const multerS3 = require('multer-s3');
 const cors = require('cors');
-const corsOptions ={
-    origin:'http://localhost:3000', 
-    credentials:true,            //access-control-allow-credentials:true
-    optionSuccessStatus:200
-}
-app.use(cors(corsOptions));
 
-// Multer configuration for image upload
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "../uploads/"); // Images will be saved in the 'uploads' directory
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname);
-  },
-});
-const upload = multer({ storage: storage });
+const app = express();
+const port = 5000; // Different port to avoid conflicts with React's default port
 
-// API route to handle image upload
-app.post("/upload", upload.single("image"), (req, res) => {
+app.use(cors()); // Allow cross-origin requests
 
-  
-  const { file } = req;
-
-  if (!file) {
-    return res.status(400).send("No image provided");
-  }
- console.log(file.path);
-  res.status(201).json({ imageUrl: file.path });
+// Set up AWS S3
+const s3 = new AWS.S3({
+    accessKeyId: 'acessKey',
+    secretAccessKey: 'secretKey',
+    region: 'region' // Update with your AWS region
 });
 
-// Serve uploaded images
-app.use("/upload", express.static("uploads"));
+const upload = multer({
+    storage: multerS3({
+        s3: s3,
+        bucket: 'flashback-v1-user-uploaded-media',
+        //acl: 'public-read',
+        metadata: (req, file, cb) => {
+            cb(null, { fieldName: file.fieldname });
+        },
+        key: (req, file, cb) => {
+            cb(null, Date.now().toString() + '-' + file.originalname)
+        }
+    })
+});
 
-// Start the server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+app.post('/upload', upload.array('images', 10), (req, res) => {
+    res.send('Uploaded successfully!');
+});
+
+app.listen(port, () => {
+    console.log(`Server started on http://localhost:${port}`);
 });

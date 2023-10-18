@@ -1,47 +1,39 @@
-// client/src/App.js
-import React, { useState } from "react";
-import axios from "axios";
-//const cors = require('cors');
+import React, { useState } from 'react';
+import './App.css';
 
 function App() {
-  const [image, setImage] = useState(null);
+    const [selectedFiles, setSelectedFiles] = useState([]);
 
-  const handleFileChange = (e) => {
-    console.log(e);
-    setImage(e.target.files[0]);
-  };
+    const handleFileChange = (e) => {
+        setSelectedFiles([...e.target.files]);
+    };
 
-  const handleUpload = async () => {
-    if (!image) return;
+    const handleSubmit = async () => {
+        const formData = new FormData();
 
-    const formData = new FormData();
-    formData.append("image", image);
+        selectedFiles.forEach(file => {
+            formData.append('images', file);
+        });
 
-    try {
-      const response = await axios.post("http://localhost:5000/upload", formData);
+        try {
+            await fetch("http://localhost:5000/upload", {
+                method: "POST",
+                body: formData
+            });
+            alert('Uploaded successfully!');
+        } catch (error) {
+            alert('Error uploading files.');
+        }
+    };
 
-      alert("Image uploaded successfully! at "+response.data.imageUrl );
-
-      // // Display the uploaded image
-      // var imageUrl = "../"+response.data.imageUrl;
-      // //imageUrl=imageUrl.substring(2);
-      // const imgElement = document.createElement("img");
-      // imgElement.src = imageUrl;
-      // console.log(imgElement);
-      // document.body.appendChild(imgElement);
-    } catch (error) {
-      console.error("Error uploading image: ", error);
-    }
-  };
-
-  return (
-    <div>
-      <h1>Image Upload App</h1>
-      <input type="file" onChange={handleFileChange} />
-      <button onClick={handleUpload}>Upload</button>
-    </div>
-  );
+    return (
+        <div className="App">
+            <h1>Upload Images</h1>
+            <input type="file" multiple onChange={handleFileChange} />
+            <button onClick={handleSubmit}>Upload</button>
+        </div>
+    );
 }
 
-
 export default App;
+
