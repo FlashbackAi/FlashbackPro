@@ -1,39 +1,29 @@
-import React, { useState } from 'react';
-import './App.css';
+import "./App.css";
+import { BrowserRouter as Router, Route, Switch, Link } from "react-router-dom";
+import Home from "./pages/Home";
+import CreateFlashBack from "./pages/CreateFlashBack";
+import Registration from "./pages/Registration";
+import Login from "./pages/Login";
 
 function App() {
-    const [selectedFiles, setSelectedFiles] = useState([]);
-
-    const handleFileChange = (e) => {
-        setSelectedFiles([...e.target.files]);
-    };
-
-    const handleSubmit = async () => {
-        const formData = new FormData();
-
-        selectedFiles.forEach(file => {
-            formData.append('images', file);
-        });
-
-        try {
-            await fetch("http://localhost:5000/upload", {
-                method: "POST",
-                body: formData
-            });
-            alert('Uploaded successfully!');
-        } catch (error) {
-            alert('Error uploading files.');
-        }
-    };
-
-    return (
-        <div className="App">
-            <h1>Upload Images</h1>
-            <input type="file" multiple onChange={handleFileChange} />
-            <button onClick={handleSubmit}>Upload</button>
+  return (
+    <div className="App">
+      <Router>
+        <div className="navbar">
+          <Link to="/"> Home Page</Link>
+          <Link to="/createFlashBack"> Create FlashBack</Link>
+          <Link to="/login"> Login</Link>
+          <Link to="/registration"> Registration</Link>
         </div>
-    );
+        <Switch>
+          <Route path="/" exact component={Home} />
+          <Route path="/createFlashBack" exact component={CreateFlashBack} />
+          <Route path="/registration" exact component={Registration} />
+          <Route path="/login" exact component={Login} />
+        </Switch>
+      </Router>
+    </div>
+  );
 }
 
 export default App;
-
