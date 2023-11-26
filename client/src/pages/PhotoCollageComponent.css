@@ -1,0 +1,13 @@
+/* PhotoCollageComponent.css */
+.collage {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-gap: 10px;
+  }
+  
+  .collage-item img {
+    width: 100%;
+    display: block;
+    border-radius: 8px;
+  }
+  

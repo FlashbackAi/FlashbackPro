@@ -1,10 +1,17 @@
 import React, { useState } from 'react';
 import axios from "axios";
+//import { PhotoCollage } from 'react-photo-collage';
+import PhotoCollageComponent from './PhotoCollageComponent';
 
+// const collageLayout = {
+//     sizes: [{ cols: 2, rows: 2 }],
+//   }; 
 function CreateFlashBack() {
     const [selectedFiles, setSelectedFiles] = useState([]);
   const [folderName, setFolderName] = useState('');
   const [message, setMessage] = useState('');
+  const [images, setImages] = useState([]);
+  
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
@@ -39,6 +46,17 @@ function CreateFlashBack() {
     }
   };
 
+  const createFlashBack = async() =>{
+    try {
+      const response = await  axios.get('http://localhost:3001/images/${folderName}');
+        const imageUrls = response.data.map(url => ({ src: url }));
+        setImages(imageUrls);
+      }
+    catch(error ) {
+        console.error('Error fetching images:', error);
+      };
+  };
+
   return (
     <div>
       <h1>Upload Images to S3</h1>
@@ -46,6 +64,12 @@ function CreateFlashBack() {
       {/* <input type="file" multiple onChange={handleFileChange} /> */}
       <input type="file" name="images" multiple accept="image/*" onChange={handleFileChange} />
       <button onClick={handleUpload}>Upload</button>
+     
+      <button onClick={createFlashBack}>CreateFlashBack</button>
+      <div className="App">
+      {images.length > 0 && <PhotoCollageComponent images={images} />}
+      </div>
+
       <p>{message}</p>
     </div>
   );

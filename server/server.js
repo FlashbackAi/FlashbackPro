@@ -3,6 +3,9 @@ const AWS = require('aws-sdk');
 const multer = require('multer');
 const multerS3 = require('multer-s3');
 const cors = require('cors');
+const { CognitoUserPool, CognitoUserAttribute } = require('amazon-cognito-identity-js');
+
+const AmazonCognitoIdentity = require('amazon-cognito-identity-js');
 
 const app = express();
 const port = 5000; // Different port to avoid conflicts with React's default port
@@ -15,6 +18,95 @@ const s3 = new AWS.S3({
     accessKeyId: 'AKIA3OGMYJDXPNSDBKNH', 
     secretAccessKey: '1MZSemBvuhVCJ11PSKatdvWi6s115qRKVzaLqqiI', 
     region: 'ap-south-1' // Update with your AWS region 
+});
+
+const poolData = {
+    UserPoolId: 'us-east-1_eGPq34r2U',
+    ClientId: '15eliulqhfmq81025q36e6ot9f'
+};
+app.post('/signup', function(req, res) {
+  var userPool = new CognitoUserPool(poolData);
+
+  var attributeList = [];
+  attributeList.push(new CognitoUserAttribute({Name:"email",Value:req.body.email}));
+
+  userPool.signUp(req.body.username, req.body.password, attributeList, null, function(err, result){
+      if (err) {
+          res.status(400).send(err.message);
+          return;
+      }
+      const data={
+        status:'Success',
+        message:'User registered successfully'
+      }
+      res.send(data);
+  });
+});
+
+
+
+const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
+
+app.post('/login', function(req, res) {
+  
+  const  username = req.body.username;
+  const password = req.body.password;
+
+  const authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails({
+      Username: username,
+      Password: password
+  });
+  console.log(authenticationDetails);
+  const userData = {
+      Username: username,
+      Pool: userPool
+  };
+  const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+
+  cognitoUser.authenticateUser(authenticationDetails, {
+      onSuccess: (result) => {
+          const accessToken = result.getAccessToken().getJwtToken();
+          // You can also get idToken and refreshToken here
+          const data={
+            status:'Success',
+            message:'User LoggedIn successfully',
+            accessToken:accessToken
+          }
+          res.send(data);
+      },
+      onFailure: (err) => {
+        console.log(err.message);
+          res.status(400).send(err.message);
+      },
+      mfaSetup: (challengeName, challengeParameters) => {
+        // MFA setup logic here
+        // You might want to send a response to the user indicating that MFA setup is required
+        console.log("user logged in")
+    },
+  });
+});
+
+app.post('/confirmUser', function(req, res) {
+  
+  const  username = req.body.username;
+  const confirmationCode = req.body.verificationCode;
+  const userData = {
+      Username: username,
+      Pool: userPool
+  };
+  const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+  cognitoUser.confirmRegistration(confirmationCode, true, function(err, result) {
+    if (err) {
+        res.status(400).send(err.message);
+        return;
+    }
+    const data={
+      status:'Success',
+      message:'User confirmed successfully',
+      data:result
+    }
+    res.send(data);
+});
 });
 
 app.post('/createFolder', (req, res) => {
@@ -119,10 +211,25 @@ app.post('/upload/:folderName', upload.array('images', 10), (req, res) => {
       res.status(500).json({ message: 'Error uploading files to S3.' });
     });
 })
+app.get('/images:folderName', async (req, res) => {
+  try {
+    const s3Response = await s3.listObjectsV2({
+      Bucket: 'YOUR_BUCKET_NAME',
+    }).promise();
 
-// app.post('/createFolder', (req, res) => {
-//     res.send('Uploaded successfully!');
-// });
+    const imageUrls = s3Response.Contents.map((obj) => {
+      return s3.getSignedUrl('getObject', {
+        Bucket: 'YOUR_BUCKET_NAME',
+        Key: obj.Key,
+        Expires: 60 * 5, // URL expires in 5 minutes
+      });
+    });
+
+    res.send(imageUrls);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
 
 app.listen(port, () => {
     console.log(`Server started on http://localhost:${port}`);
