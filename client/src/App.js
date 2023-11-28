@@ -4,8 +4,18 @@ import Home from "./pages/Home";
 import CreateFlashBack from "./pages/CreateFlashBack";
 import Registration from "./pages/Registration";
 import Login from "./pages/Login";
+import LoadingSpinner from "./pages/LoadingSpinner";
+import { useEffect, useState } from "react";
 
 function App() {
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        setTimeout(() => {
+            setIsLoading(false);
+        }, 1000);
+    }, []);
+
   return (
     <div className="App">
        {/* <Router>
@@ -29,12 +39,20 @@ function App() {
                 <Link to="/login"> Login</Link>
                 <Link to="/registration"> Registration</Link>
             </div>
+            {isLoading ? (
+                 // Display Loading spinner while waiting
+                <LoadingSpinner />
+            ) : (
+                // Display your routes when loading is done
             <Routes>
                 <Route path="/registration" element={<Registration />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/" element={<Home />} />
                 <Route path="/createFlashBack" element={<CreateFlashBack />} />
             </Routes>
+               
+            )}
+            
         </Router>
     </div>
   );
