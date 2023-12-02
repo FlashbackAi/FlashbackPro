@@ -11,6 +11,7 @@ function CreateFlashBack() {
   const [folderName, setFolderName] = useState('');
   const [message, setMessage] = useState('');
   const [images, setImages] = useState([]);
+  const [uploadedImages, setUploadedImages] = useState([]);
   
 
   const handleFileChange = (e) => {
@@ -46,11 +47,16 @@ function CreateFlashBack() {
     }
   };
 
-  const createFlashBack = async() =>{
+  const fetchImages = async() =>{
+    console.log("images are being fetched from " +folderName)
     try {
-      const response = await  axios.get('http://localhost:3001/images/${folderName}');
-        const imageUrls = response.data.map(url => ({ src: url }));
-        setImages(imageUrls);
+      const fetchedImages = async () => {
+        const response = await fetch(`http://localhost:5000/images/${folderName}`);
+        console.log(response);
+        const imageUrls = await response.json();
+        setUploadedImages(imageUrls);
+      };
+      fetchedImages();
       }
     catch(error ) {
         console.error('Error fetching images:', error);
@@ -64,10 +70,14 @@ function CreateFlashBack() {
       {/* <input type="file" multiple onChange={handleFileChange} /> */}
       <input type="file" name="images" multiple accept="image/*" onChange={handleFileChange} />
       <button onClick={handleUpload}>Upload</button>
-     
-      <button onClick={createFlashBack}>CreateFlashBack</button>
       <div className="App">
       {images.length > 0 && <PhotoCollageComponent images={images} />}
+      </div>
+      <button onClick={fetchImages}>Check Images</button>
+      <div className="imageGalleryContainer">
+        {uploadedImages.map((imageUrl, index) => (
+          <img key={index} src={imageUrl} alt={`img-${index}`} />
+        ))}
       </div>
 
       <p>{message}</p>
