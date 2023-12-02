@@ -356,3 +356,24 @@ button {
   line-height: 1.2;
 
 }
+/*styling for Images to be displayed*/
+.imageGalleryContainer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px; /* Adjust the space between images */
+  padding: 20px;
+}
+
+.imageGalleryContainer img {
+  width: 100%; /* Adjust this as needed */
+  height: auto;
+  max-width: 300px; /* Adjust maximum width as needed */
+  border-radius: 8px; /* Optional, for rounded corners */
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Optional, for a slight shadow */
+}
+@media (max-width: 600px) {
+  .imageGalleryContainer img {
+    max-width: 100%; /* Larger images on smaller screens */
+  }
+}

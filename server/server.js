@@ -15,14 +15,15 @@ app.use(express.json());
 
 // Set up AWS S3
 const s3 = new AWS.S3({ 
-    accessKeyId: 'AKIA3OGMYJDXPNSDBKNH', 
-    secretAccessKey: '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', 
+    accessKeyId: 'AKIA3F6QTNFWD5WYPIET', 
+    secretAccessKey: '03c4tmEvBt2kWOBCh8H868bmVEtGrb5Glv+Usfff', 
     region: 'ap-south-1' // Update with your AWS region 
 });
+const bucketName = 'flashbackuseruploads';
 
 const poolData = {
-    UserPoolId: 'us-east-1_eGPq34r2U',
-    ClientId: '15eliulqhfmq81025q36e6ot9f'
+    UserPoolId: 'ap-south-1_rTy0HL6Gk',
+    ClientId: '6goctqurrumilpurvtnh6s4fl1'
 };
 app.post('/signup', function(req, res) {
   var userPool = new CognitoUserPool(poolData);
@@ -114,7 +115,7 @@ app.post('/confirmUser', function(req, res) {
 });
 
 app.post('/createFolder', (req, res) => {
-    const bucketName = 'flashback-v1-user-uploaded-media';
+    
     const folderName = req.body.folderName;
   
     const params = {
@@ -133,53 +134,6 @@ app.post('/createFolder', (req, res) => {
     });
   });
 
-// const upload = multer({
-//     storage: multerS3({
-//         s3: s3,
-//         bucket: 'flashback-v1-user-uploaded-media',
-//         //acl: 'public-read',
-
-//         metadata: (req, file, cb) => {
-//             cb(null, { fieldName: file.fieldname });
-//         },
-//         key: (req, file, cb) => {
-//             cb(null,folderName+Date.now().toString() + '-' + file.originalname)
-//         }
-//     })
-// });
-
-// app.post('/upload',upload.array('images', 10), (req, res) => {
-//   console.log(req.body.folderName);
-//     res.send('Uploaded successfully!');
-// });
-
-// const storage = multer.memoryStorage();
-// const upload = multer({ storage: storage });
-
-// app.post('/upload/:folderName', upload.array('images',10), async (req, res) => {
-//   try {
-//     const folder = req.params.folder;
-//     const file = req.file;
-
-//     if (!file) {
-//       return res.status(400).send('No file uploaded.');
-//     }
-
-//     const params = {
-//       Bucket:'flashback-v1-user-uploaded-media',
-//       Key: `${folderName}/${file.originalname}`,
-//       Body: file.buffer,
-//       ContentType: file.mimetype,
-//       //ACL: 'public-read' // or another ACL as per your requirements
-//     };
-
-//     const data = await s3.upload(params).promise();
-//     res.send(`File uploaded successfully. ${data.Location}`);
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).send('An error occurred');
-//   }
-// });
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
@@ -190,7 +144,7 @@ app.post('/upload/:folderName', upload.array('images', 10), (req, res) => {
   const { folderName } = req.params;
   const files = req.files;
 
-  console.log(req.files);
+  //console.log(req.files);
   if (!files || files.length === 0) {
 
     return res.status(400).json({ message: 'No files uploaded' });
@@ -198,9 +152,10 @@ app.post('/upload/:folderName', upload.array('images', 10), (req, res) => {
 
   const uploadPromises = files.map((file) => {
     const params = {
-      Bucket: 'flashback-v1-user-uploaded-media',
+      Bucket: bucketName,
       Key: `${folderName}/${file.originalname}`,
       Body: file.buffer,
+      //ACL: 'public-read',
     };
 
     return s3.upload(params).promise();
@@ -215,25 +170,53 @@ app.post('/upload/:folderName', upload.array('images', 10), (req, res) => {
       res.status(500).json({ message: 'Error uploading files to S3.' });
     });
 })
-app.get('/images:folderName', async (req, res) => {
-  try {
-    const s3Response = await s3.listObjectsV2({
-      Bucket: 'YOUR_BUCKET_NAME',
-    }).promise();
+app.get('/images/:folderName', async (req, res) => {
 
-    const imageUrls = s3Response.Contents.map((obj) => {
-      return s3.getSignedUrl('getObject', {
-        Bucket: 'YOUR_BUCKET_NAME',
-        Key: obj.Key,
-        Expires: 60 * 5, // URL expires in 5 minutes
+    try {
+      const  folderName  = req.params.folderName;
+      console.log(folderName);
+      const params = {
+      Bucket: bucketName,
+      Prefix: folderName,
+        // You can add a Prefix if you want to list images from a specific folder
+      };
+    
+      const s3Response = await s3.listObjectsV2(params).promise();
+      // const s3Response = await s3.listObjectsV2({
+      //   Bucket: '${folderName}',
+      // }).promise()
+      console.log(s3Response);
+      const images = s3Response.Contents.map((item) => {
+        return `https://${params.Bucket}.s3.amazonaws.com/${item.Key}`;
       });
-    });
-
-    res.send(imageUrls);
-  } catch (error) {
-    res.status(500).send(error);
-  }
+      console.log(images);
+      res.json(images);
+    } catch (err) {
+      console.log("Error in S3 get", err);
+      res.status(500).send('Error getting images from S3');
+    }
 });
+
+function getPresignedUrl(bucketName, objectKey, expiryDuration) {
+  const s3 = new AWS.S3();
+  const params = {
+    Bucket: bucketName,
+    Key: objectKey,
+    Expires: expiryDuration // in seconds
+  };
+
+  return new Promise((resolve, reject) => {
+    s3.getSignedUrl('getObject', params, (err, url) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(url);
+      }
+    });
+  });
+}
+
+
 
 app.listen(port, () => {
     console.log(`Server started on http://localhost:${port}`);
