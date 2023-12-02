@@ -21,16 +21,16 @@ function Login() {
         alert(response.data.error);
         setMessage(response.data.error)
       } else {
-        console.log(response.data.result)
-        localStorage.setItem("accessToken", response.data.result.getAccessToken().getJwtToken());
-        setMessage(username+" "+response.data.message)
-        console.log(response.data.accessToken)
-        // setAuthState({
-        //   username: response.data.username,
-        //   id: response.data.id,
-        //   status: true,
-        // });
-        //history.push("/");
+        // console.log(response.data.result)
+        // localStorage.setItem("accessToken", response.data.result.getAccessToken().getJwtToken());
+        // setMessage(username+" "+response.data.message)
+        // console.log(response.data.accessToken)
+        // // setAuthState({
+        // //   username: response.data.username,
+        // //   id: response.data.id,
+        // //   status: true,
+        // // });
+        // //history.push("/");
         navigate("/createFlashBack")
       }
     }).catch(error => {
