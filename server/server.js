@@ -32,7 +32,7 @@ app.post('/signup', function(req, res) {
 
   userPool.signUp(req.body.username, req.body.password, attributeList, null, function(err, result){
       if (err) {
-          res.status(400).send(err.message);
+          res.status(500).send(err.message);
           return;
       }
       const data={
@@ -56,7 +56,6 @@ app.post('/login', function(req, res) {
       Username: username,
       Password: password
   });
-  console.log(authenticationDetails);
   const userData = {
       Username: username,
       Pool: userPool
@@ -65,18 +64,22 @@ app.post('/login', function(req, res) {
 
   cognitoUser.authenticateUser(authenticationDetails, {
       onSuccess: (result) => {
+        console.log(res)
           const accessToken = result.getAccessToken().getJwtToken();
+         
           // You can also get idToken and refreshToken here
           const data={
             status:'Success',
             message:'User LoggedIn successfully',
-            accessToken:accessToken
+            accessToken:accessToken,
+            username:result.ge
+
           }
           res.send(data);
       },
       onFailure: (err) => {
         console.log(err.message);
-          res.status(400).send(err.message);
+          res.status(500).send(err.message);
       },
       mfaSetup: (challengeName, challengeParameters) => {
         // MFA setup logic here
@@ -97,15 +100,16 @@ app.post('/confirmUser', function(req, res) {
   const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
   cognitoUser.confirmRegistration(confirmationCode, true, function(err, result) {
     if (err) {
-        res.status(400).send(err.message);
-        return;
+        res.status(500).send(err.message);
     }
+    else{
     const data={
       status:'Success',
       message:'User confirmed successfully',
       data:result
     }
     res.send(data);
+  }
 });
 });
 

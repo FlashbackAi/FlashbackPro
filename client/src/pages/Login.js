@@ -1,23 +1,28 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext,createContext} from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../helpers/AuthContext";
+
 
 function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState('');
   const { setAuthState } = useContext(AuthContext);
+  const [user, setUser] = useState(null);
 
-  let history = useNavigate();
-
+  const navigate = useNavigate();
   const login = () => {
     axios.post("http://localhost:5000/login", { username: username, password: password }).then((response) => {
+
+    console.log(response)
       if (response.data.error) {
+        console.log(response)
         alert(response.data.error);
-        setMessage(response.data.message)
+        setMessage(response.data.error)
       } else {
-        localStorage.setItem("accessToken", response.data.accessToken);
+        console.log(response.data.result)
+        localStorage.setItem("accessToken", response.data.result.getAccessToken().getJwtToken());
         setMessage(username+" "+response.data.message)
         console.log(response.data.accessToken)
         // setAuthState({
@@ -26,9 +31,18 @@ function Login() {
         //   status: true,
         // });
         //history.push("/");
+        navigate("/createFlashBack")
       }
-    });
+    }).catch(error => {
+      console.error(error);
+      setMessage(error.response.data);
+  });
   };
+
+  const Register=()=>{
+    navigate("/registration")
+
+  }
   return (
     <div className="loginContainer">
       <label>Username:</label>
@@ -47,6 +61,7 @@ function Login() {
       />
 
       <button onClick={login}> Login </button>
+      <button onClick={Register}>New User?</button>
 
       <p>{message}</p>
     </div>

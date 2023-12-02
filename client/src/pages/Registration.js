@@ -84,14 +84,15 @@ function Registration() {
             password: data.get('password'),
             email: data.get('email')
         }).then(response => {
-            setMessage(response.data.message)
+            //setMessage(response.data.message)
             console.log(response.data.status)
             if(response.data.status === "Success")
             {
                 setIsRegistered(true);
                 setUsername(username);
                 console.log(isRegistered);
-                //navigate(Login)
+                setMessage("please enter the verification code sent to the registered mail id")
+                
             }
         })
         .catch(error => {
@@ -112,7 +113,7 @@ function Registration() {
             if(response.data.status === "Success")
             {
                 setMessage('new user has confirmed');
-                //navigate(Login)
+                navigate("/")
             }
         })
         .catch(error => {
@@ -127,7 +128,6 @@ function Registration() {
             <input name="password" required type="password" placeholder="Password" />
             <input name="email" required type="email" placeholder="Email" />
             <button type="submit">Sign Up</button>
-            <p>{message}</p>
             {
                 isRegistered &&(
                 <div name="verifyCode" className="verifyCode">       
@@ -139,6 +139,7 @@ function Registration() {
                     <button type="button" onClick={handleVerification}>Verify the Code</button>
                 </div>
             )}
+            <p>{message}</p>
             
         </form>
     );
