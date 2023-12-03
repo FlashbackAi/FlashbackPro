@@ -44,27 +44,43 @@ function Login() {
 
   }
   return (
-    <div className="loginContainer">
-      <label>Username:</label>
+      <body className="loginBody">
+      <div className="loginLeft">
+        <p className="loginLogo">Flashback<p className="logoCaption">Create & share memories</p></p>
+
+
+    <div className="login-form-container">
+
+
+        <div className="login-form">
       <input
-        type="text"
+          type="text" id="email" name="email" placeholder="Email or phone number" required
         onChange={(event) => {
           setUsername(event.target.value);
         }}
       />
-      <label>Password:</label>
+
       <input
-        type="password"
+        type="password" id="password" name="password" placeholder="Password" required
         onChange={(event) => {
           setPassword(event.target.value);
         }}
       />
 
-      <button onClick={login}> Login </button>
-      <button onClick={Register}>New User?</button>
+      <button type="submit" onClick={login}> Login </button>
+          <div className="loginForgotPassword">
+            <a href="#" >Forgot password?</a>
+          </div>
+      <button type="button" onClick={Register}>Create new account</button>
 
       <p>{message}</p>
+
+        </div>
     </div>
+      </div>
+      </body>
+
+
   );
 }
 
