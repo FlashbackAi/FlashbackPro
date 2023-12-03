@@ -1,4 +1,5 @@
 const express = require('express');
+const winston = require('winston');
 const AWS = require('aws-sdk');
 const multer = require('multer');
 const multerS3 = require('multer-s3');
@@ -12,6 +13,15 @@ const port = 5000; // Different port to avoid conflicts with React's default por
 
 app.use(cors()); // Allow cross-origin requests
 app.use(express.json());
+
+// Configuring winston application logger
+
+const logger = winston.createLogger({
+  transports: [
+    new winston.transports.Console(),
+    new winston.transports.File({ filename: 'logs/application.log' })
+   ]
+ });
 
 // Set up AWS S3
 const s3 = new AWS.S3({ 
@@ -218,6 +228,6 @@ function getPresignedUrl(bucketName, objectKey, expiryDuration) {
 
 
 
-app.listen(port, () => {
-    console.log(`Server started on http://localhost:${port}`);
+app.listen(5000, '0.0.0.0', () => {
+  console.log(`Server started on http://0.0.0.0:5000`);
 });
