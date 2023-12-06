@@ -9,7 +9,7 @@ const { CognitoUserPool, CognitoUserAttribute } = require('amazon-cognito-identi
 const AmazonCognitoIdentity = require('amazon-cognito-identity-js');
 
 const app = express();
-const port = 5000; // Different port to avoid conflicts with React's default port
+const PORT = process.env.PORT || 5000; // Different port to avoid conflicts with React's default port
 
 app.use(cors()); // Allow cross-origin requests
 app.use(express.json());
@@ -228,6 +228,6 @@ function getPresignedUrl(bucketName, objectKey, expiryDuration) {
 
 
 
-app.listen(5000, '0.0.0.0', () => {
-  console.log(`Server started on http://0.0.0.0:5000`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server started on http://0.0.0.0:${PORT}`);
 });
