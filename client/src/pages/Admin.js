@@ -46,6 +46,20 @@ function App() {
     }
 };
 
+const downloadFolder = async () =>{
+  const folderName = selectedValue
+  console.log(folderName)
+  if(folderName){
+      try {
+          const response = await axios.get(`http://localhost:5000/downloadFolder/${folderName}`);
+          console.log(response);
+      }
+      catch(error ) {
+          console.error('Error fetching images:', error);
+      };
+  }
+};
+
   return (
     <div>
       <h1>Album Folders</h1>
@@ -55,12 +69,13 @@ function App() {
           <option value={folder}>{folder}</option>
         ))}
       </select>
+      <button onClick={downloadFolder}>Download Folder</button>
       <div className="imageGalleryContainer">
         {uploadedImages.map((imageUrl, index) => (
           <img key={index} src={imageUrl} alt={`img-${index}`} />
         ))}
       </div>
-      <button onClick={downloadFolder}>Download Folder</button>
+     
     </div>
   );
 }
