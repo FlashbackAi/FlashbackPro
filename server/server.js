@@ -275,5 +275,5 @@ function downloadDirectory(folderName) {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT ,() => {
-  console.log(`Server started on http://0.0.0.0:5000`);
+  console.log(`Server started on http://localhost:${PORT}`);
 });
