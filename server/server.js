@@ -213,7 +213,7 @@ app.get('/images/:folderName', async (req, res) => {
       });
       const images = await Promise.all(imagesPromises);
 
-      downloadDirectory(folderName)
+      //downloadDirectory(folderName)
       res.json(images);
     } catch (err) {
       console.log("Error in S3 get", err);
@@ -243,13 +243,14 @@ function extractFolderNames(contents) {
   return Array.from(folderSet);
 }
 
-function downloadDirectory(folderName) {
+app.get('/downloadFolder/:folderName', async (req, res) => {
 
   const localDownloadPath = '/Downloads/'
+  const  folderName  = req.params.folderName;
   s3.listObjectsV2({ Bucket: bucketName, Prefix: folderName }, async (err, data) => {
     if (err) {
       console.log("Error in listing S3 objects:", err);
-      return;
+      return res.status(500).send(err);
     }
 
     for (const item of data.Contents) {
@@ -269,8 +270,9 @@ function downloadDirectory(folderName) {
 
       console.log(`File downloaded: ${fileKey}`);
     }
+    res.json(folderName);
   });
-}
+});
 
 
 const PORT = process.env.PORT || 5000;
