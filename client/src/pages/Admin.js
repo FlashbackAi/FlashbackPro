@@ -60,6 +60,7 @@ function App() {
           <img key={index} src={imageUrl} alt={`img-${index}`} />
         ))}
       </div>
+      <button onClick={downloadFolder}>Download Folder</button>
     </div>
   );
 }
