@@ -5,6 +5,7 @@ import CreateFlashBack from "./pages/CreateFlashBack";
 import Registration from "./pages/Registration";
 import Login from "./pages/Login";
 import LoadingSpinner from "./pages/LoadingSpinner";
+import Admin from "./pages/Admin";
 import { useEffect, useState } from "react";
 
 function App() {
@@ -44,6 +45,7 @@ function App() {
           <Link to="/createFlashBack"> Create FlashBack</Link>
           <Link to="/login"> Login</Link>
           <Link to="/registration"> Registration</Link>
+          <Link to="/admin"> Admin</Link>
         </div>
         {isLoading ? (
           // Display Loading spinner while waiting
@@ -52,6 +54,7 @@ function App() {
           <Routes>
             <Route path="/registration" element={<Registration />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="/" element={<Login />} />
             <Route path="/createFlashBack" element={<CreateFlashBack />} />
           </Routes>

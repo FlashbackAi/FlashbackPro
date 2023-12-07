@@ -5,14 +5,16 @@
     "axios": "^1.6.2",
     "cors": "^2.8.5",
     "express": "^4.18.2",
+    "jimp": "^0.22.10",
+    "mongoose": "^7.6.2",
     "multer": "^1.4.5-lts.1",
     "multer-s3": "^3.0.1",
     "react-router-dom": "^6.20.0",
     "react-toggle-switch": "^3.0.4",
+    "sharp": "^0.33.0",
     "web-vitals": "^3.5.0",
-    "yarn": "^1.22.21",
-    "jimp": "^0.22.10",
-    "mongoose": "^7.6.2"
+    "winston": "^3.11.0",
+    "yarn": "^1.22.21"
   },
   "devDependencies": {
     "eslint": "^8.54.0",
@@ -28,5 +30,4 @@
   "keywords": [],
   "author": "",
   "license": "ISC"
-
 }
