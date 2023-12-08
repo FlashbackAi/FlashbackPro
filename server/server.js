@@ -1,8 +1,12 @@
 const express = require('express');
+const winston = require('winston');
 const AWS = require('aws-sdk');
 const multer = require('multer');
 const multerS3 = require('multer-s3');
 const cors = require('cors');
+const sharp = require('sharp');
+const path = require('path');
+const fs = require('fs');
 const { CognitoUserPool, CognitoUserAttribute } = require('amazon-cognito-identity-js');
 
 const AmazonCognitoIdentity = require('amazon-cognito-identity-js');
@@ -12,6 +16,15 @@ const port = 5000; // Different port to avoid conflicts with React's default por
 
 app.use(cors()); // Allow cross-origin requests
 app.use(express.json());
+
+// Configuring winston application logger
+
+const logger = winston.createLogger({
+  transports: [
+    new winston.transports.Console(),
+    new winston.transports.File({ filename: 'logs/application.log' })
+   ]
+ });
 
 // Set up AWS S3
 const s3 = new AWS.S3({ 
@@ -178,18 +191,29 @@ app.get('/images/:folderName', async (req, res) => {
       const params = {
       Bucket: bucketName,
       Prefix: folderName,
-        // You can add a Prefix if you want to list images from a specific folder
       };
+
+      
     
       const s3Response = await s3.listObjectsV2(params).promise();
-      // const s3Response = await s3.listObjectsV2({
-      //   Bucket: '${folderName}',
-      // }).promise()
-      console.log(s3Response);
-      const images = s3Response.Contents.map((item) => {
-        return `https://${params.Bucket}.s3.amazonaws.com/${item.Key}`;
+      // const images = s3Response.Contents.map((item) => {
+      //   return `https://${params.Bucket}.s3.amazonaws.com/${item.Key}`;
+      // });
+      const imagesPromises = s3Response.Contents.map(async (file) => {
+        const imageData = await s3.getObject({
+          Bucket: bucketName,
+          Key: file.Key
+        }).promise();
+
+        const compressedImage = await sharp(imageData.Body) // Example: resize to width of 200 pixels
+          .jpeg({ quality: 80 }) // Convert to JPEG with 80% quality
+          .toBuffer();
+  
+        return `data:image/jpeg;base64,${compressedImage.toString('base64')}`;
       });
-      console.log(images);
+      const images = await Promise.all(imagesPromises);
+
+      //downloadDirectory(folderName)
       res.json(images);
     } catch (err) {
       console.log("Error in S3 get", err);
@@ -197,27 +221,61 @@ app.get('/images/:folderName', async (req, res) => {
     }
 });
 
-function getPresignedUrl(bucketName, objectKey, expiryDuration) {
-  const s3 = new AWS.S3();
-  const params = {
-    Bucket: bucketName,
-    Key: objectKey,
-    Expires: expiryDuration // in seconds
-  };
 
-  return new Promise((resolve, reject) => {
-    s3.getSignedUrl('getObject', params, (err, url) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(url);
-      }
-    });
+
+app.get('/folders', (req, res) => {
+  s3.listObjectsV2({ Bucket: bucketName }, (err, data) => {
+    if (err) {
+      return res.status(500).send(err);
+    }
+    // Process data to extract folder names
+    const folders = extractFolderNames(data.Contents);
+    res.json(folders);
   });
+});
+
+function extractFolderNames(contents) {
+  const folderSet = new Set();
+  contents.forEach(item => {
+    const folderName = item.Key.split('/')[0];
+    folderSet.add(folderName);
+  });
+  return Array.from(folderSet);
 }
 
+app.get('/downloadFolder/:folderName', async (req, res) => {
+
+  const localDownloadPath = '/Downloads/'
+  const  folderName  = req.params.folderName;
+  s3.listObjectsV2({ Bucket: bucketName, Prefix: folderName }, async (err, data) => {
+    if (err) {
+      console.log("Error in listing S3 objects:", err);
+      return res.status(500).send(err);
+    }
+
+    for (const item of data.Contents) {
+      const fileKey = item.Key;
+      const localFilePath = path.join(localDownloadPath, fileKey);
+
+      // Create directory if it doesn't exist
+      const dir = path.dirname(localFilePath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+
+      // Download and save file
+      const params = { Bucket: bucketName, Key: fileKey };
+      const fileStream = fs.createWriteStream(localFilePath);
+      s3.getObject(params).createReadStream().pipe(fileStream);
+
+      console.log(`File downloaded: ${fileKey}`);
+    }
+    res.json(folderName);
+  });
+});
 
 
-app.listen(port, () => {
-    console.log(`Server started on http://localhost:${port}`);
+const PORT = process.env.PORT || 5000;
+app.listen(PORT ,() => {
+  console.log(`Server started on http://localhost:${PORT}`);
 });
