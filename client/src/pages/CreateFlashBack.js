@@ -7,7 +7,8 @@ import PhotoCollageComponent from './PhotoCollageComponent';
 //     sizes: [{ cols: 2, rows: 2 }],
 //   }; 
 function CreateFlashBack() {
-    const [selectedFiles, setSelectedFiles] = useState([]);
+  const serverIP = process.env.REACT_APP_SERVER_IP;
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [folderName, setFolderName] = useState('');
   const [message, setMessage] = useState('');
   const [images, setImages] = useState([]);
@@ -39,7 +40,7 @@ function CreateFlashBack() {
       };
 
     try {
-      const response = await axios.post(`http://localhost:5000/upload/${folderName}`, formData,{headers});
+      const response = await axios.post(`${serverIP}/upload/${folderName}`, formData,{headers});
       setMessage(response.data.message);
     } catch (error) {
       console.error(error);
@@ -51,7 +52,7 @@ function CreateFlashBack() {
     console.log("images are being fetched from " +folderName)
     try {
       const fetchedImages = async () => {
-        const response = await fetch(`http://localhost:5000/images/${folderName}`);
+        const response = await fetch(`${serverIP}/images/${folderName}`);
         console.log(response);
         const imageUrls = await response.json();
         setUploadedImages(imageUrls);

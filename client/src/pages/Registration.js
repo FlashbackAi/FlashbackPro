@@ -63,6 +63,8 @@ import Login from "./Login";
 import { useNavigate} from "react-router-dom";
 
 function Registration() {
+
+  const serverIP = process.env.REACT_APP_SERVER_IP;
   const [message, setMessage] = useState('');
   const [isRegistered, setIsRegistered] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
@@ -79,7 +81,7 @@ function Registration() {
         const data = new FormData(event.target);
        
 
-        axios.post('http://localhost:5000/signup', {
+        axios.post(`${serverIP}/signup`, {
             username: data.get('username'),
             password: data.get('password'),
             email: data.get('email')
@@ -104,7 +106,7 @@ function Registration() {
     const handleVerification = () => {
         console.log(username)
         console.log(verificationCode)
-        axios.post('http://localhost:5000/confirmUser', {
+        axios.post(`${serverIP}/confirmUser`, {
             username: username,
             verificationCode: verificationCode
         }).then(response => {

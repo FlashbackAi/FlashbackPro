@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
 function App() {
+  const serverIP = process.env.REACT_APP_SERVER_IP;
   const [folders, setFolders] = useState([]);
   const [selectedValue, setSelectedValue] = useState('');
   //const [folderName, setFolderName] = useState('');
@@ -17,7 +18,7 @@ function App() {
   };
 
   useEffect(() => {
-    axios.get('http://localhost:5000/folders')
+    axios.get(`${serverIP}/folders`)
       .then(response => {
         setFolders(response.data);
       })
@@ -33,7 +34,7 @@ function App() {
     if(folderName){
         try {
         const fetchedImages = async () => {
-            const response = await fetch(`http://localhost:5000/images/${folderName}`);
+            const response = await fetch(`${serverIP}/images/${folderName}`);
             console.log(response);
             const imageUrls = await response.json();
             setUploadedImages(imageUrls);
@@ -51,7 +52,7 @@ const downloadFolder = async () =>{
   console.log(folderName)
   if(folderName){
       try {
-          const response = await axios.get(`http://localhost:5000/downloadFolder/${folderName}`);
+          const response = await axios.get(`${serverIP}/downloadFolder/${folderName}`);
           console.log(response);
       }
       catch(error ) {

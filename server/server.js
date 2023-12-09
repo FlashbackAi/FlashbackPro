@@ -78,7 +78,7 @@ app.post('/login', function(req, res) {
 
   cognitoUser.authenticateUser(authenticationDetails, {
       onSuccess: (result) => {
-        console.log(res)
+        logger.info(res)
           const accessToken = result.getAccessToken().getJwtToken();
          
           // You can also get idToken and refreshToken here
@@ -92,13 +92,13 @@ app.post('/login', function(req, res) {
           res.send(data);
       },
       onFailure: (err) => {
-        console.log(err.message);
+        logger.info(err.message)
           res.status(500).send(err.message);
       },
       mfaSetup: (challengeName, challengeParameters) => {
         // MFA setup logic here
         // You might want to send a response to the user indicating that MFA setup is required
-        console.log("user logged in")
+        logger.info("usr logged in")
     },
   });
 });
@@ -156,8 +156,6 @@ app.use(express.json());
 app.post('/upload/:folderName', upload.array('images', 10), (req, res) => {
   const { folderName } = req.params;
   const files = req.files;
-
-  //console.log(req.files);
   if (!files || files.length === 0) {
 
     return res.status(400).json({ message: 'No files uploaded' });
@@ -170,7 +168,7 @@ app.post('/upload/:folderName', upload.array('images', 10), (req, res) => {
       Body: file.buffer,
       //ACL: 'public-read',
     };
-
+    logger.info("images uploaded succesfully in "+folderName)
     return s3.upload(params).promise();
   });
 
@@ -187,7 +185,7 @@ app.get('/images/:folderName', async (req, res) => {
 
     try {
       const  folderName  = req.params.folderName;
-      console.log(folderName);
+      logger.info("folderName "+folderName)
       const params = {
       Bucket: bucketName,
       Prefix: folderName,
@@ -216,7 +214,7 @@ app.get('/images/:folderName', async (req, res) => {
       //downloadDirectory(folderName)
       res.json(images);
     } catch (err) {
-      console.log("Error in S3 get", err);
+      logger.error("Error in S3 get ",err)
       res.status(500).send('Error getting images from S3');
     }
 });
@@ -249,7 +247,7 @@ app.get('/downloadFolder/:folderName', async (req, res) => {
   const  folderName  = req.params.folderName;
   s3.listObjectsV2({ Bucket: bucketName, Prefix: folderName }, async (err, data) => {
     if (err) {
-      console.log("Error in listing S3 objects:", err);
+      logger.error("Error in listing S3 objects:", err);
       return res.status(500).send(err);
     }
 
@@ -267,8 +265,7 @@ app.get('/downloadFolder/:folderName', async (req, res) => {
       const params = { Bucket: bucketName, Key: fileKey };
       const fileStream = fs.createWriteStream(localFilePath);
       s3.getObject(params).createReadStream().pipe(fileStream);
-
-      console.log(`File downloaded: ${fileKey}`);
+      logger.info(`File downloaded: ${fileKey}`)
     }
     res.json(folderName);
   });
@@ -277,5 +274,5 @@ app.get('/downloadFolder/:folderName', async (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT ,() => {
-  console.log(`Server started on http://localhost:${PORT}`);
+  logger.info(`Server started on http://localhost:${PORT}`);
 });
