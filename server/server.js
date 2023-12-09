@@ -206,7 +206,7 @@ app.get('/images/:folderName', async (req, res) => {
         }).promise();
 
         const compressedImage = await sharp(imageData.Body) // Example: resize to width of 200 pixels
-          .jpeg({ quality: 80 }) // Convert to JPEG with 80% quality
+          .jpeg({ quality: 50 }) // Convert to JPEG with 80% quality
           .toBuffer();
   
         return `data:image/jpeg;base64,${compressedImage.toString('base64')}`;
