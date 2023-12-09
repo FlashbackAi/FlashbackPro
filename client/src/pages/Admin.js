@@ -47,10 +47,11 @@ function App() {
     }
 };
 
-const downloadFolder = async () =>{
+const downloadFolderold = async () =>{
   const folderName = selectedValue
   console.log(folderName)
   if(folderName){
+   // downloadZip(folderName)
       try {
           const response = await axios.get(`${serverIP}/downloadFolder/${folderName}`);
           console.log(response);
@@ -60,6 +61,40 @@ const downloadFolder = async () =>{
       };
   }
 };
+
+const downloadFolder = async () => {
+    // Replace with your server's endpoint URL
+    const folderName = selectedValue
+  console.log(folderName)
+  if(folderName){
+    fetch(`${serverIP}/downloadFolder/${folderName}`, {
+        method: 'GET'
+    })
+    .then(response => {
+        if (response.ok) return response.blob();
+        throw new Error('Network response was not ok.');
+    })
+    .then(blob => {
+        // Create a new URL for the blob object
+        const url = window.URL.createObjectURL(blob);
+
+        // Create a temporary anchor element and trigger the download
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${folderName}.zip`; // Set the file name for the download
+        document.body.appendChild(a);
+        a.click();
+
+        // Clean up by removing the element and revoking the URL
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+    })
+    .catch(error => {
+        console.error('There has been a problem with your fetch operation:', error);
+    });
+  }
+}
+
 
   return (
     <div>

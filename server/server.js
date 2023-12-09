@@ -8,8 +8,10 @@ const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
 const { CognitoUserPool, CognitoUserAttribute } = require('amazon-cognito-identity-js');
+const archiver = require('archiver');
 
 const AmazonCognitoIdentity = require('amazon-cognito-identity-js');
+const { fold } = require('prelude-ls');
 
 const app = express();
 const port = 5000; // Different port to avoid conflicts with React's default port
@@ -241,7 +243,7 @@ function extractFolderNames(contents) {
   return Array.from(folderSet);
 }
 
-app.get('/downloadFolder/:folderName', async (req, res) => {
+app.get('/downloadFolder-old/:folderName', async (req, res) => {
 
   const localDownloadPath = '/Downloads/'
   const  folderName  = req.params.folderName;
@@ -270,6 +272,46 @@ app.get('/downloadFolder/:folderName', async (req, res) => {
     res.json(folderName);
   });
 });
+
+
+app.get('/downloadFolder/:folderName', async (req, res) => {
+
+  const folderName = req.params.folderName;
+
+  
+  logger.info("downloading ZIP folder :"+folderName)
+
+  s3.listObjectsV2({ Bucket: bucketName, Prefix: folderName }, async (err, data) => {
+    if (err) {
+      // Handle error
+      return res.status(500).send(err);
+    }
+
+    const zip = archiver('zip', { zlib: { level: 9 } });
+    zip.on('error', err => {
+      // Handle errors
+      res.status(500).send(err);
+    });
+
+    // Set the archive name
+    res.attachment(`${folderName}.zip`);
+
+    // Pipe archive data to the response
+    zip.pipe(res);
+
+    for (const item of data.Contents) {
+      const fileKey = item.Key;
+      
+      // Stream files directly from S3 to the ZIP file
+      const fileStream = s3.getObject({ Bucket: bucketName, Key: fileKey }).createReadStream();
+      zip.append(fileStream, { name: path.basename(fileKey) });
+    }
+
+    // Finalize the archive
+    zip.finalize();
+  });
+});
+
 
 
 const PORT = process.env.PORT || 5000;
