@@ -1,11 +1,7 @@
 import React, { useState } from 'react';
 import axios from "axios";
-//import { PhotoCollage } from 'react-photo-collage';
 import PhotoCollageComponent from './PhotoCollageComponent';
 
-// const collageLayout = {
-//     sizes: [{ cols: 2, rows: 2 }],
-//   }; 
 function CreateFlashBack() {
   const serverIP = process.env.REACT_APP_SERVER_IP;
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -28,10 +24,6 @@ function CreateFlashBack() {
     const formData = new FormData();
     formData.append('folderName', folderName);
 
-    // for (const file of selectedFiles) {
-    //     console.log(file);
-    //   formData.append('images', file);
-    // }
     selectedFiles.forEach(file => {
         formData.append('images', file);
     });
