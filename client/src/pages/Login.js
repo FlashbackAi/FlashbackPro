@@ -5,6 +5,7 @@ import { AuthContext } from "../helpers/AuthContext";
 
 
 function Login() {
+  const serverIP = process.env.REACT_APP_SERVER_IP;
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState('');
@@ -13,7 +14,7 @@ function Login() {
 
   const navigate = useNavigate();
   const login = () => {
-    axios.post("http://localhost:5000/login", { username: username, password: password }).then((response) => {
+    axios.post(`${serverIP}/login`, { username: username, password: password }).then((response) => {
 
     console.log(response)
       if (response.data.error) {

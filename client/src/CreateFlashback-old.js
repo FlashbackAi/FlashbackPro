@@ -15,7 +15,7 @@ function App() {
         });
 
         try {
-            await fetch("http://localhost:5000/upload", {
+            await fetch("/upload", {
                 method: "POST",
                 body: formData
             });
