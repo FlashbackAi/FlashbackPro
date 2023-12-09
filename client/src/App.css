@@ -419,7 +419,7 @@ button {
 /*Facebook Styled Registration & Login CSS */
 .loginBody{
 font-family: Arial, sans-serif;
-background-color: #f0f2f5;
+/* background-color: #f0f2f5; */
 display: flex;
 align-items: center;
 height: 100vh;
@@ -497,7 +497,7 @@ p {
 }
 .logoCaption{
     font-size: 18px;
-    color: #1c1e21;
+    /* color: #1c1e21; */
     font-family: monospace;
     letter-spacing: 0.05em;
 }

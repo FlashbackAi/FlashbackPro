@@ -20,6 +20,7 @@ function App() {
   const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
+    console.log("Dark mode enabled:",darkMode);
     if (darkMode) {
       document.documentElement.classList.add("dark-mode");
     } else {
