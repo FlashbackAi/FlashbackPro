@@ -9,6 +9,7 @@ function CreateFlashBack() {
   const [message, setMessage] = useState('');
   const [images, setImages] = useState([]);
   const [uploadedImages, setUploadedImages] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   
 
   const handleFileChange = (e) => {
@@ -21,6 +22,7 @@ function CreateFlashBack() {
   };
 
   const handleUpload = async () => {
+    setIsLoading(true);
     const formData = new FormData();
     formData.append('folderName', folderName);
 
@@ -37,6 +39,8 @@ function CreateFlashBack() {
     } catch (error) {
       console.error(error);
       setMessage('Error uploading files.');
+    }finally {
+      setIsLoading(false);
     }
   };
 
@@ -58,6 +62,13 @@ function CreateFlashBack() {
 
   return (
     <div>
+       {isLoading ? (
+       <div> 
+      <h2>uploading Images</h2>
+      <div className='loader' name='loader'></div>
+      </div>) :
+      (
+      <div>
       <h1>Upload Images to S3</h1>
       <input type="text" placeholder="Folder Name" onChange={handleFolderNameChange} />
       {/* <input type="file" multiple onChange={handleFileChange} /> */}
@@ -74,6 +85,8 @@ function CreateFlashBack() {
       </div>
 
       <p>{message}</p>
+      </div>
+      )}
     </div>
   );
 };
