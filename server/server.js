@@ -155,7 +155,7 @@ const upload = multer({ storage: storage });
 
 app.use(express.json());
 
-app.post('/upload/:folderName', upload.array('images', 10), (req, res) => {
+app.post('/upload/:folderName', upload.array('images', 100), (req, res) => {
   const { folderName } = req.params;
   const files = req.files;
   if (!files || files.length === 0) {

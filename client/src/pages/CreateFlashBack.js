@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import axios from "axios";
 import PhotoCollageComponent from './PhotoCollageComponent';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
 
 function CreateFlashBack() {
   const serverIP = process.env.REACT_APP_SERVER_IP;
@@ -36,8 +39,10 @@ function CreateFlashBack() {
     try {
       const response = await axios.post(`${serverIP}/upload/${folderName}`, formData,{headers});
       setMessage(response.data.message);
+      toast.success(message)
     } catch (error) {
       console.error(error);
+      toast.error(error)
       setMessage('Error uploading files.');
     }finally {
       setIsLoading(false);
@@ -54,8 +59,10 @@ function CreateFlashBack() {
         setUploadedImages(imageUrls);
       };
       fetchedImages();
+      toast.success("Images Fetched Successfully")
       }
     catch(error ) {
+        toast.error(error)
         console.error('Error fetching images:', error);
       };
   };
@@ -85,6 +92,7 @@ function CreateFlashBack() {
       </div>
 
       <p>{message}</p>
+      <ToastContainer />
       </div>
       )}
     </div>
