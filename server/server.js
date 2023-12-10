@@ -1,16 +1,15 @@
 const express = require('express');
 const winston = require('winston');
-const AWS = require('aws-sdk');
 const multer = require('multer');
 const multerS3 = require('multer-s3');
 const cors = require('cors');
 const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
+const { AWS, AmazonCognitoIdentity, userPool } = require('./config');
 const { CognitoUserPool, CognitoUserAttribute } = require('amazon-cognito-identity-js');
 const archiver = require('archiver');
 
-const AmazonCognitoIdentity = require('amazon-cognito-identity-js');
 const { fold } = require('prelude-ls');
 
 const app = express();
@@ -36,11 +35,104 @@ const s3 = new AWS.S3({
 });
 const bucketName = 'flashbackuseruploads';
 
+
 const poolData = {
-    UserPoolId: 'ap-south-1_rTy0HL6Gk',
-    ClientId: '6goctqurrumilpurvtnh6s4fl1'
+  UserPoolId: 'ap-south-1_rTy0HL6Gk',
+  ClientId: '6goctqurrumilpurvtnh6s4fl1'
 };
-app.post('/signup', function(req, res) {
+
+
+// setup AWS DynamoDB
+const dynamoDB = new AWS.DynamoDB({ region: 'ap-south-1' });
+const docClient = new AWS.DynamoDB.DocumentClient({ region: 'ap-south-1' });
+
+const userDataTableName = 'user_data';
+const userUploadsTableName = 'user_uploads';
+
+// Function to create DynamoDB Table
+const createTable = async (tableName, KeySchema) => {
+  const params = {
+    TableName: tableName,
+    KeySchema: KeySchema.map(attr => ({ AttributeName: attr, KeyType: 'HASH'})),
+    AttributeDefinitions: KeySchema.map(attr => ({ AttributeName: attr, AttributeType: 'S'})),
+    ProvisionedThroughput: { 
+      ReadCapacityUnits: 5, 
+      WriteCapacityUnits: 5
+    }
+  };    
+
+  // Ensure DynamoDB tables exist
+  // createTables();
+
+  try {
+    await dynamoDB.createTable(params).promise();
+    logger.info(`Table ${tableName} created successfully. `);
+    } catch (err) {
+      if (err.code !== 'ResourceInUseException') {
+        logger.error(`Error creating table ${tableName}: ${err.message}`);
+      } else {
+        logger.info(`Table ${tableName} already exists.`);
+      }
+    }
+  };
+
+  
+const createTables = async () => {
+  try {
+    await createTable(userDataTableName, ['username']);
+    await createTable(userUploadsTableName, ['image_id']);
+  } catch (error){
+    logger.error(`Error creating tables: ${error.message}`);
+  }
+  
+};
+
+// Create DynamoDB tables at the beginning
+createTables();
+
+// // Define getUserIDByUsername function here, which will be used to call the user_id to create a record in the uploads DDB
+const getUserIDByUsername = async (username) => {
+  const params = {
+    TableName: 'user_data',
+    Key: {
+      username: username,
+    },
+  };
+
+  try {
+    const result = await docClient.get(params).promise();
+
+    if (result.Item && result.Item.user_id) {
+      return result.Item.user_id;
+    } else {
+      throw new Error(`User not found for username: ${username}`);
+    }
+  } catch (error) {
+    throw new Error(`Error fetching user_id: ${error.message}`);
+  }
+};
+
+app.post('/signup', async function(req, res) {
+  try {
+    const user_id = `Flash_${req.body.username}_${Math.floor(Math.random() * 1000)}`;
+    const created_date = new Date().toISOString();
+
+    // DynamoDB params for user_data table
+    const userDataParams = {
+      TableName: userDataTableName,
+      Item: {
+        username: req.body.username,
+        user_id: user_id,
+        email: req.body.email,
+        password: req.body.password,
+        // phone_number: req.body.phone_number,
+        created_date: created_date,
+        // referrerId: req.body.referrerId,
+      },
+    };
+    
+    await docClient.put(userDataParams).promise();
+
   var userPool = new CognitoUserPool(poolData);
 
   var attributeList = [];
@@ -57,11 +149,13 @@ app.post('/signup', function(req, res) {
       }
       res.send(data);
   });
+} catch (err) {
+  logger.error(`Error creating user:`, err);
+  res.status(500).send(err.message);
+}
 });
 
-
-
-const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
+// const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
 
 app.post('/login', function(req, res) {
   
@@ -155,7 +249,7 @@ const upload = multer({ storage: storage });
 
 app.use(express.json());
 
-app.post('/upload/:folderName', upload.array('images', 100), (req, res) => {
+app.post('/upload/:folderName', upload.array('images', 100), async (req, res) => {
   const { folderName } = req.params;
   const files = req.files;
   if (!files || files.length === 0) {
@@ -163,26 +257,83 @@ app.post('/upload/:folderName', upload.array('images', 100), (req, res) => {
     return res.status(400).json({ message: 'No files uploaded' });
   }
 
-  const uploadPromises = files.map((file) => {
-    const params = {
-      Bucket: bucketName,
-      Key: `${folderName}/${file.originalname}`,
-      Body: file.buffer,
-      //ACL: 'public-read',
+  try {
+    // Retrieve user_id from the user's signup data
+    const username = req.body.username; // We should contain the username in the request body
+    const user_id = await getUserIDByUsername(username);
+    const upload_date = new Date().toISOString();
+
+    // DynamoDB params for user_uploads
+    const uploadParams = files.map((file) => ({
+      PutRequest: {
+        Item: {
+          image_id: `${folderName}/${file.originalname}`, // Assuming image_id is a combo of folderName & Filename
+          s3_url: file.location,
+          user_id: user_id, // consuming from the retrieved user_id
+          upload_date: upload_date,//Flashback_id: `FlashbackId`, // Replace with the actual Id when implemented
+        },
+      },
+    }));
+
+    // DynamoDB batchWrite params
+    const dynamoParams = {
+      RequestItems: {
+        [userUploadsTableName]: uploadParams,
+      },
     };
-    logger.info("images uploaded succesfully in "+folderName)
-    return s3.upload(params).promise();
+
+    // Write data to DynamoDB and upload files to S3 concurrently
+    const [dynamoResponse, s3UploadResponse] = await Promise.all([
+      docClient.batchWrite(dynamoParams).promise(),
+      Promise.all(files.map((file) => {
+        const params = {
+          Bucket: bucketName,
+          Key: `${folderName}/${file.originalname}`,
+          Body: file.buffer,
+          //ACL: 'public-read',
+      };
+      // Logging the status of each S3 Upload
+      logger.info(`Uploading ${params.Key} to S3...`);
+      return s3.upload(params).promise();
+    })),
+  ]);
+    // Logging status of DynamoDB response
+    logger.info(`DynamoDB response:`, dynamoResponse);
+
+    // Check for unprocessed items in DynamoDB
+    if (dynamoResponse.UnprocessedItems && Object.keys(dynamoResponse.UnprocessedItems).length > 0) {
+      logger.error(`Some items were not processed: ${JSON.stringify(dynamoResponse.UnprocessedItems)}`);
+      res.status(500).json({ message: `Error Processing items in DynamoDB. `});
+    } else {
+      res.status(200).json({ message: `Files Uploaded Successfully.`});
+    }
+    } catch (error) {
+      logger.error(`Error uploading files and updating DynamoDB: ${error.message}`);
+      res.status(500).json({ message: `Error uploading files and updating DynamoDB `}); 
+    }
+
   });
 
-  Promise.all(uploadPromises)
-    .then(() => {
-      res.status(200).json({ message: 'Files uploaded successfully.' });
-    })
-    .catch((err) => {
-      console.error(err);
-      res.status(500).json({ message: 'Error uploading files to S3.' });
-    });
-})
+  // const uploadPromises = files.map((file) => {
+  //   const params = {
+  //     Bucket: bucketName,
+  //     Key: `${folderName}/${file.originalname}`,
+  //     Body: file.buffer,
+  //     //ACL: 'public-read',
+  //   };
+  //   logger.info("images uploaded succesfully in "+folderName)
+  //   return s3.upload(params).promise();
+  // });
+
+  // Promise.all(uploadPromises)
+  //   .then(() => {
+  //     res.status(200).json({ message: 'Files uploaded successfully.' });
+  //   })
+  //   .catch((err) => {
+  //     console.error(err);
+  //     res.status(500).json({ message: 'Error uploading files to S3.' });
+  //   });
+    
 app.get('/images/:folderName', async (req, res) => {
 
     try {
