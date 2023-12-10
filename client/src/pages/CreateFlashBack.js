@@ -38,11 +38,14 @@ function CreateFlashBack() {
 
     try {
       const response = await axios.post(`${serverIP}/upload/${folderName}`, formData,{headers});
-      setMessage(response.data.message);
+      if(response.status !== 200 )
+      {
+        throw new Error(response.data.message)
+      }
       toast.success(message)
     } catch (error) {
       console.error(error);
-      toast.error(error)
+      toast.success(error)
       setMessage('Error uploading files.');
     }finally {
       setIsLoading(false);
@@ -54,18 +57,43 @@ function CreateFlashBack() {
     try {
       const fetchedImages = async () => {
         const response = await fetch(`${serverIP}/images/${folderName}`);
-        console.log(response);
+        if(response.status !== 200)
+        {
+          throw new Error("Error in Uploading Images")
+        }
+        
         const imageUrls = await response.json();
         setUploadedImages(imageUrls);
+        console.log(imageUrls);
+        toast.success("Images Fetched Successfully")
       };
       fetchedImages();
-      toast.success("Images Fetched Successfully")
-      }
-    catch(error ) {
+    }
+    catch(error) {
         toast.error(error)
         console.error('Error fetching images:', error);
       };
   };
+
+  const ProgressiveImage = ({ highResImage, lowResImage }) => {
+    const [loaded, setLoaded] = useState(false);  
+    return (
+      <>
+        <img
+          src={lowResImage}
+          alt="Low resolution preview"
+          style={{ display: loaded ? 'none' : 'block' }}
+        />
+        <img
+          src={highResImage}
+          alt="High resolution"
+          onLoad={() => setLoaded(true)}
+          style={{ display: loaded ? 'block' : 'none' }}
+        />
+      </>
+    );
+  };
+  
 
   return (
     <div>
@@ -86,8 +114,9 @@ function CreateFlashBack() {
       </div>
       <button onClick={fetchImages}>Check Images</button>
       <div className="imageGalleryContainer">
-        {uploadedImages.map((imageUrl, index) => (
-          <img key={index} src={imageUrl} alt={`img-${index}`} />
+        {uploadedImages.map((image, index) => (
+          <img key={index} src={image.lowRes} alt={`img-${index}`} />
+          //<ProgressiveImage key={index} highResImage={image.highRes} lowResImage={image.lowRes} />
         ))}
       </div>
 

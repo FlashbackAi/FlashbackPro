@@ -43,12 +43,24 @@ const poolData = {
 app.post('/signup', function(req, res) {
   var userPool = new CognitoUserPool(poolData);
 
+  const emailAttribute = new CognitoUserAttribute({
+    Name: "email",
+    Value: req.body.email
+});
+
+const phoneNumberAttribute = new CognitoUserAttribute({
+    Name: "phone_number",
+    Value: req.body.phoneNumber // Make sure this follows the E.164 format, e.g., '+12345678900'
+});
+
   var attributeList = [];
-  attributeList.push(new CognitoUserAttribute({Name:"email",Value:req.body.email}));
+  attributeList.push(emailAttribute);
+  attributeList.push(phoneNumberAttribute);
 
   userPool.signUp(req.body.username, req.body.password, attributeList, null, function(err, result){
       if (err) {
           res.status(500).send(err.message);
+          logger.info(err)
           return;
       }
       const data={
@@ -183,42 +195,41 @@ app.post('/upload/:folderName', upload.array('images', 100), (req, res) => {
       res.status(500).json({ message: 'Error uploading files to S3.' });
     });
 })
+
 app.get('/images/:folderName', async (req, res) => {
-
-    try {
-      const  folderName  = req.params.folderName;
-      logger.info("folderName "+folderName)
-      const params = {
-      Bucket: bucketName,
-      Prefix: folderName,
-      };
-
-      
-    
+  try {
+      const folderName = req.params.folderName;
+      const params = { Bucket: bucketName, Prefix: folderName };
       const s3Response = await s3.listObjectsV2(params).promise();
-      // const images = s3Response.Contents.map((item) => {
-      //   return `https://${params.Bucket}.s3.amazonaws.com/${item.Key}`;
-      // });
-      const imagesPromises = s3Response.Contents.map(async (file) => {
-        const imageData = await s3.getObject({
+
+      const imagesPromises = s3Response.Contents.map(file => s3.getObject({
           Bucket: bucketName,
           Key: file.Key
-        }).promise();
+      }).promise().then(imageData => {
+          // Stream processing with Sharp
+          // const highResImageStream = sharp(imageData.Body)
+          //     .jpeg({ progressive: true, quality: 50 })
+          //     .toBuffer();
+          logger.info("images fetched from cloud")
+          const lowResImageStream = sharp(imageData.Body)
+              .resize({ width: 1000 })
+              .jpeg({ progressive: true, quality: 30 })
+              .toBuffer();
+          //const data = `data:image/jpeg;base64,${imageData.toString('base64')}`
+          
 
-        const compressedImage = await sharp(imageData.Body) // Example: resize to width of 200 pixels
-          .jpeg({ quality: 50 }) // Convert to JPEG with 80% quality
-          .toBuffer();
-  
-        return `data:image/jpeg;base64,${compressedImage.toString('base64')}`;
-      });
+          return Promise.all([lowResImageStream]);
+      }).then(([lowRes]) => ({
+         // highRes: `data:image/jpeg;base64,${highRes.toString('base64')}`,
+         lowRes: `data:image/jpeg;base64,${lowRes.toString('base64')}`
+      })));
+
       const images = await Promise.all(imagesPromises);
-
-      //downloadDirectory(folderName)
       res.json(images);
-    } catch (err) {
-      logger.error("Error in S3 get ",err)
+  } catch (err) {
+      console.error("Error in S3 get", err);
       res.status(500).send('Error getting images from S3');
-    }
+  }
 });
 
 

@@ -32,6 +32,7 @@ function Login() {
         // //   status: true,
         // // });
         // //history.push("/");
+        sessionStorage.setItem("accessToken", response.data.accessToken);
         navigate("/createFlashBack")
       }
     }).catch(error => {

@@ -26,7 +26,8 @@ function Registration() {
         axios.post(`${serverIP}/signup`, {
             username: data.get('username'),
             password: data.get('password'),
-            email: data.get('email')
+            email: data.get('email'),
+            phoneNumber: data.get('phoneNumber')
         }).then(response => {
             //setMessage(response.data.message)
             console.log(response.data.status)
@@ -71,6 +72,7 @@ function Registration() {
             <input name="username" required type="text" placeholder="Username" onChange={handleUsernameChange} />
             <input name="password" required type="password" placeholder="Password" />
             <input name="email" required type="email" placeholder="Email" />
+            <input name="phoneNumber" required type="phoneNumber" placeholder="Phone Number"/>
             <button type="submit">Sign Up</button>
             {
                 isRegistered &&(
