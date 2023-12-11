@@ -11,6 +11,10 @@ body {
   padding: 0;
 }
 
+button{
+    cursor: pointer;
+}
+
 .post {
   width: 400px;
   height: 300px;
