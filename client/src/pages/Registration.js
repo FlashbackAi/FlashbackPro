@@ -12,7 +12,10 @@ function Registration() {
   const [verificationCode, setVerificationCode] = useState('');
   const [username, setUsername] = useState('');
 
+    const Login=()=>{
+        navigate("/login")
 
+    }
   //var isRegistered=false;
     const handleUsernameChange = (e) => {
     setUsername(e.target.value);
