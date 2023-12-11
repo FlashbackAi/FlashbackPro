@@ -236,7 +236,7 @@ app.post('/upload/:folderName', upload.array('images', 100), (req, res) => {
 
     return res.status(400).json({ message: 'No files uploaded' });
   }
-
+  uploadLowResoltionImages(folderName,files)
   const uploadPromises = files.map((file) => {
     const params = {
       Bucket: bucketName,
@@ -261,31 +261,26 @@ app.post('/upload/:folderName', upload.array('images', 100), (req, res) => {
 app.get('/images/:folderName', async (req, res) => {
   try {
       const folderName = req.params.folderName;
-      const params = { Bucket: bucketName, Prefix: folderName };
+      const params = { Bucket: bucketName, Prefix: folderName+"/lowRes" };
       const s3Response = await s3.listObjectsV2(params).promise();
 
-      const imagesPromises = s3Response.Contents.map(file => s3.getObject({
-          Bucket: bucketName,
-          Key: file.Key
-      }).promise().then(imageData => {
-          // Stream processing with Sharp
-          // const highResImageStream = sharp(imageData.Body)
-          //     .jpeg({ progressive: true, quality: 50 })
-          //     .toBuffer();
-          logger.info("images fetched from cloud")
-          const lowResImageStream = sharp(imageData.Body)
-              .resize({ width: 1000 })
-              .jpeg({ progressive: true, quality: 30 })
-              .toBuffer();
-          //const data = `data:image/jpeg;base64,${imageData.toString('base64')}`
-          
+      const imagesPromises = s3Response.Contents.map(async file => {
+        try {
+          const imageData = await s3.getObject({
+              Bucket: bucketName,
+              Key: file.Key
+          }).promise();
 
-          return Promise.all([lowResImageStream]);
-      }).then(([lowRes]) => ({
-         // highRes: `data:image/jpeg;base64,${highRes.toString('base64')}`,
-         lowRes: `data:image/jpeg;base64,${lowRes.toString('base64')}`
-      })));
+          logger.info("Image fetched from cloud: " + file.Key);
 
+          // Convert image data to base64
+          const base64Image = `data:image/jpeg;base64,${imageData.Body.toString('base64')}`;
+          return base64Image;
+      } catch (err) {
+          logger.error("Error fetching image: " + file.Key, err);
+          return null; // Or handle the error as per your application's need
+      }
+    });
       const images = await Promise.all(imagesPromises);
       res.json(images);
   } catch (err) {
@@ -384,6 +379,33 @@ app.get('/downloadFolder/:folderName', async (req, res) => {
     zip.finalize();
   });
 });
+
+async function uploadLowResoltionImages(folderName,files)
+{
+  const uploadPromises = files.map(async (file) => {
+    const buffer = await sharp(file.buffer)
+      .resize(800) // Example: resize to a width of 800 pixels
+      .jpeg({ quality: 50 }) // Convert to JPEG with 50% quality
+      .toBuffer();
+    // Upload the processed image to S3
+    const params = {
+      Bucket: bucketName,
+      Key: `${folderName}/lowRes/${file.originalname}`,
+      Body: buffer,
+      ContentType: 'image/jpeg', // Assuming conversion to JPEG
+    };
+    logger.info("Low-resolution image uploaded successfully to " + folderName+"/lowRes");
+    return await s3.upload(params).promise();
+  });
+
+  try {
+    await Promise.all(uploadPromises);
+    logger.info("All low resolution images uploaded successfully");
+  } catch (err) {
+    throw new Error(err);
+  }
+
+}
 
 
 

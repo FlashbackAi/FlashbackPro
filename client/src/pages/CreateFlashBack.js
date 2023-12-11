@@ -124,7 +124,7 @@ function CreateFlashBack() {
       <button onClick={fetchImages}>Check Images</button>
       <div className="imageGalleryContainer">
         {uploadedImages.map((image, index) => (
-          <img key={index} src={image.lowRes} alt={`img-${index}`} />
+          <img key={index} src={image} alt={`img-${index}`} />
           //<ProgressiveImage key={index} highResImage={image.highRes} lowResImage={image.lowRes} />
         ))}
       </div>
