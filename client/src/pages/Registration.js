@@ -30,7 +30,8 @@ function Registration() {
         axios.post(`${serverIP}/signup`, {
             username: data.get('username'),
             password: data.get('password'),
-            email: data.get('email')
+            email: data.get('email'),
+            phoneNumber: data.get('phoneNumber')
         }).then(response => {
             //setMessage(response.data.message)
             console.log(response.data.status)
@@ -78,8 +79,10 @@ function Registration() {
             </div>
             <div className="login-form">
             <input name="email" required type="email" placeholder="Email" />
+            <input name="username" required type="text" placeholder="User Name" onChange={handleUsernameChange} />
+            <input name="phoneNumber" required type="phoneNumber" placeholder="Phone Number" />
             <input name="password" required type="password" placeholder="Password" />
-            <input name="Referral Code" required type="text" placeholder="Referral Code" onChange={handleUsernameChange} />
+            <input name="Referral Code" type="text" placeholder="Referral Code"/>
             <button type="submit">Sign Up</button>
                 <button type="button" onClick={Login}>Already have an account?</button>
             {

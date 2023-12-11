@@ -17,6 +17,7 @@
   
     • cd client
     • npm start
+    
 
 
 NOTE: Dont push nodemodules
