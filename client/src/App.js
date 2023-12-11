@@ -7,6 +7,8 @@ import Login from "./pages/Login";
 import LoadingSpinner from "./pages/LoadingSpinner";
 import Admin from "./pages/Admin";
 import { useEffect, useState } from "react";
+import { jwtDecode } from "jwt-decode";
+import { Navigate } from 'react-router-dom'
 
 function App() {
 
@@ -17,6 +19,22 @@ function App() {
       setIsLoading(false);
     }, 1000);
   }, []);
+
+  
+  const isTokenExpired = (token) => {
+    const decodedToken = jwtDecode(token);
+    const currentDate = new Date();
+
+    // Token expiry is usually given in seconds but JavaScript uses milliseconds
+    return decodedToken.exp * 1000 < currentDate.getTime();
+  };
+
+  const ProtectedRoute = ({ children }) => {
+    const token = sessionStorage.getItem("accessToken");
+    const isAuthenticated = token && !isTokenExpired(token);
+
+    return isAuthenticated ? children : <Navigate to="/login" />;
+  };
 
   const [darkMode, setDarkMode] = useState(false);
 
@@ -66,9 +84,10 @@ function App() {
           <Routes>
             <Route path="/registration" element={<Registration />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/" element={<Login />} />
-            <Route path="/createFlashBack" element={<CreateFlashBack />} />
+            <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+            <Route path="/" element={<ProtectedRoute><CreateFlashBack/></ProtectedRoute>} />
+            <Route path="/home" element={<ProtectedRoute><Home/></ProtectedRoute>}></Route>
+            <Route path="/createFlashBack" element={<ProtectedRoute><CreateFlashBack /></ProtectedRoute>} />
           </Routes>
           )}
         </Router>
