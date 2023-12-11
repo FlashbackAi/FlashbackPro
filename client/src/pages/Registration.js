@@ -1,7 +1,5 @@
-import { CognitoUserPool } from "amazon-cognito-identity-js";
 import axios from 'axios';
 import React, { useState } from 'react';
-import Login from "./Login";
 import { useNavigate} from "react-router-dom";
 
 function Registration() {
@@ -45,8 +43,8 @@ function Registration() {
             }
         })
         .catch(error => {
-            console.error(error.message);
-            setMessage('error in creating new user')
+            console.error(error.response.data);
+            setMessage(error.response.data)
         });
     };
 

@@ -24,7 +24,7 @@ function Login() {
       } else {
         
         sessionStorage.setItem("accessToken", response.data.accessToken);
-        sessionStorage.setItem("userName",response.data.username);
+        sessionStorage.setItem("username",response.data.username);
         navigate("/createFlashBack")
       }
     }).catch(error => {

@@ -79,7 +79,6 @@ const ForgotPassword = () => {
              />
              <button type="submit">Reset Password</button>
          </form>
-         {message && <p>{message}</p>}
      </div>
         )}
      </div>
@@ -87,4 +86,3 @@ const ForgotPassword = () => {
 };
 
 export default ForgotPassword;
-

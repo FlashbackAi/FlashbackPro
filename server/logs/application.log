@@ -1,1 +1,203 @@
 {"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Table userData created successfully. "}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Table userUploads created successfully. "}
+{"level":"info","message":{"email":"flashbackai.inc@gmail.com","password":"Testpwd@01","phoneNumber":"9885665761","username":"Srikanth"}}
+{"code":"InvalidParameterException","level":"info","name":"InvalidParameterException"}
+{"level":"info","message":{"email":"flashbackai.inc@gmail.com","password":"Testpwd@01","phoneNumber":"919885665761","username":"Srikanth"}}
+{"code":"InvalidParameterException","level":"info","name":"InvalidParameterException"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userUploads already exists. Hence, continuing without creating new table"}
+{"level":"info","message":{"email":"srialla1005@gmail.com","password":"Testcase@02","phoneNumber":"9885665761","username":"Srikanth"}}
+{"code":"InvalidParameterException","level":"info","name":"InvalidParameterException"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userUploads already exists. Hence, continuing without creating new table"}
+{"level":"info","message":{"email":"sreekanthalla16@gmail.com","password":"Qwertyi@1","phoneNumber":"+919885665761","username":"Srikanth"}}
+{"level":"info","message":"srikanth"}
+{"Key":{"userId":"srikanth"},"TableName":"userData","level":"info","message":"Fetching user ID with params:"}
+{"level":"error","message":"Error uploading files and updating DynamoDB: Error fetching userId: User not found for username: srikanth"}
+{"level":"info","message":"srikanth"}
+{"Key":{"userId":"srikanth"},"TableName":"userData","level":"info","message":"Fetching user ID with params:"}
+{"level":"error","message":"Error uploading files and updating DynamoDB: Error fetching userId: User not found for username: srikanth"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userUploads already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"srikanth"}
+{"level":"error","message":"Error uploading files and updating DynamoDB: userId is not defined"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userUploads already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"srikanth"}
+{"ExpressionAttributeValues":{":username":"srikanth"},"IndexName":"username-GlobalSecondaryIndex","KeyConditionExpression":"username = :username","ProjectionExpression":"userId","TableName":"userData","level":"info","message":"Fetching user ID with params:"}
+{"level":"error","message":"Error uploading files and updating DynamoDB: Error fetching userId: User not found for username: srikanth"}
+{"level":"info","message":"srikanth"}
+{"ExpressionAttributeValues":{":username":"srikanth"},"IndexName":"username-GlobalSecondaryIndex","KeyConditionExpression":"username = :username","ProjectionExpression":"userId","TableName":"userData","level":"info","message":"Fetching user ID with params:"}
+{"level":"info","message":"UserID fetched successfully:"}
+{"level":"info","message":"images uploaded succesfully in asdas"}
+{"level":"info","message":"Low-resolution image uploaded successfully to asdas/lowRes"}
+{"level":"error","message":"Error uploading files and updating DynamoDB: The provided key element does not match the schema"}
+{"level":"info","message":"All low resolution images uploaded successfully"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userUploads already exists. Hence, continuing without creating new table"}
+{"level":"info","message":{"email":"srialla1005@gmail.com","password":"Testing@01","phoneNumber":"+919999999999","username":"testing"}}
+{"level":"info","message":{"email":"srialla1005@gmail.com","password":"Testing@02","phoneNumber":"+919999999998","username":"testing"}}
+{"code":"UsernameExistsException","level":"info","name":"UsernameExistsException"}
+{"level":"info","message":{"email":"flashbackai.inc@gmail.com","password":"Testing@02","phoneNumber":"+919999999998","username":"testing"}}
+{"code":"UsernameExistsException","level":"info","name":"UsernameExistsException"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userUploads already exists. Hence, continuing without creating new table"}
+{"[__type]":"See error.__type for details.","code":"ValidationException","level":"error","message":"Error creating user: The provided key element does not match the schema","requestId":"B1FEKHGA4H3QEGH8F08GSJJC4VVV4KQNSO5AEMVJF66Q9ASUAAJG","retryDelay":4.5821613962899965,"retryable":false,"stack":"ValidationException: The provided key element does not match the schema\n    at Request.extractError (D:\\Data\\Projects\\FlashbackPro\\server\\node_modules\\aws-sdk\\lib\\protocol\\json.js:80:27)\n    at Request.callListeners (D:\\Data\\Projects\\FlashbackPro\\server\\node_modules\\aws-sdk\\lib\\sequential_executor.js:106:20)\n    at Request.emit (D:\\Data\\Projects\\FlashbackPro\\server\\node_modules\\aws-sdk\\lib\\sequential_executor.js:78:10)\n    at Request.emit (D:\\Data\\Projects\\FlashbackPro\\server\\node_modules\\aws-sdk\\lib\\request.js:686:14)\n    at Request.transition (D:\\Data\\Projects\\FlashbackPro\\server\\node_modules\\aws-sdk\\lib\\request.js:22:10)\n    at AcceptorStateMachine.runTo (D:\\Data\\Projects\\FlashbackPro\\server\\node_modules\\aws-sdk\\lib\\state_machine.js:14:12)\n    at D:\\Data\\Projects\\FlashbackPro\\server\\node_modules\\aws-sdk\\lib\\state_machine.js:26:10\n    at Request.<anonymous> (D:\\Data\\Projects\\FlashbackPro\\server\\node_modules\\aws-sdk\\lib\\request.js:38:9)\n    at Request.<anonymous> (D:\\Data\\Projects\\FlashbackPro\\server\\node_modules\\aws-sdk\\lib\\request.js:688:12)\n    at Request.callListeners (D:\\Data\\Projects\\FlashbackPro\\server\\node_modules\\aws-sdk\\lib\\sequential_executor.js:116:18)","statusCode":400,"time":"2023-12-11T16:19:54.758Z"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"error","message":"Error creating table userData: Invalid KeySchema: The second KeySchemaElement is not a RANGE key type"}
+{"level":"error","message":"Error creating table userUploads: Invalid KeySchema: The second KeySchemaElement is not a RANGE key type"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Table userData created successfully. "}
+{"level":"info","message":"Table userUploads created successfully. "}
+{"level":"info","message":{"email":"sreekanthalla16@gmail.com","password":"Testing@01","phoneNumber":"+919885665761","username":"testing"}}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userUploads already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"testing"}
+{"Key":{"username":"testing"},"TableName":"userData","level":"info","message":"Fetching user ID with params:"}
+{"level":"info","message":"UserID fetched succesfully:"}
+{"level":"info","message":"images uploaded succesfully in Testingsr"}
+{"level":"info","message":"Low-resolution image uploaded successfully to Testingsr/lowRes"}
+{"level":"error","message":"Error uploading files and updating DynamoDB: The provided key element does not match the schema"}
+{"level":"info","message":"All low resolution images uploaded successfully"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userUploads already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"testing"}
+{"Key":{"username":"testing"},"TableName":"userData","level":"info","message":"Fetching user ID with params:"}
+{"level":"info","message":"UserID fetched succesfully:"}
+{"level":"info","message":"images uploaded succesfully in testingonce"}
+{"level":"info","message":"Low-resolution image uploaded successfully to testingonce/lowRes"}
+{"level":"error","message":"Error uploading files and updating DynamoDB: The provided key element does not match the schema"}
+{"level":"info","message":"All low resolution images uploaded successfully"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userUploads already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"testing"}
+{"Key":{"username":"testing"},"ProjectionExpression":"userId","TableName":"userData","level":"info","message":"Fetching user ID with params:"}
+{"level":"info","message":"UserID fetched successfully:"}
+{"level":"info","message":"images uploaded succesfully in testingonce"}
+{"level":"info","message":"Low-resolution image uploaded successfully to testingonce/lowRes"}
+{"level":"error","message":"Error uploading files and updating DynamoDB: The provided key element does not match the schema"}
+{"level":"info","message":"All low resolution images uploaded successfully"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userUploads already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"testing"}
+{"Key":{"username":"testing"},"TableName":"userData","level":"info","message":"Fetching user ID with params:"}
+{"level":"info","message":"UserID fetched successfully:"}
+{"level":"info","message":"images uploaded succesfully in checkagain"}
+{"level":"error","message":"Error uploading files and updating DynamoDB: The provided key element does not match the schema"}
+{"level":"info","message":"Low-resolution image uploaded successfully to checkagain/lowRes"}
+{"level":"info","message":"All low resolution images uploaded successfully"}
+{"level":"info","message":"testing"}
+{"Key":{"username":"testing"},"TableName":"userData","level":"info","message":"Fetching user ID with params:"}
+{"level":"error","message":"Error uploading files and updating DynamoDB: Error fetching userId: User not found for username: testing"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userUploads already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"testing"}
+{"level":"info","message":"Fetching user ID with params: params"}
+{"level":"info","message":"UserID fetched successfully: userId"}
+{"level":"info","message":"images uploaded succesfully in adasdasdsd"}
+{"level":"info","message":"Low-resolution image uploaded successfully to adasdasdsd/lowRes"}
+{"level":"error","message":"Error uploading files and updating DynamoDB: The provided key element does not match the schema"}
+{"level":"info","message":"All low resolution images uploaded successfully"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userUploads already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"testing"}
+{"level":"info","message":"Fetching user ID with params: [object Object]"}
+{"level":"info","message":"UserID fetched successfully: Flash_testing_347"}
+{"level":"info","message":"images uploaded succesfully in asdsad"}
+{"level":"info","message":"Low-resolution image uploaded successfully to asdsad/lowRes"}
+{"level":"error","message":"Error uploading files and updating DynamoDB: The provided key element does not match the schema"}
+{"level":"info","message":"All low resolution images uploaded successfully"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userUploads already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Received upload request for folder Testit from user testing"}
+{"Key":{"username":"testing"},"TableName":"userData","level":"info","message":"Fetching user ID with params:"}
+{"level":"info","message":"UserID fetched successfully: Flash_testing_347"}
+{"level":"info","message":"Retrieved userId: Flash_testing_347"}
+{"0":{"PutRequest":{"Item":{"image_id":"Testit/Screenshot 2023-11-26 121547.png","upload_date":"2023-12-11T17:52:51.197Z","userId":"Flash_testing_347"}}},"1":{"PutRequest":{"Item":{"image_id":"Testit/Screenshot 2023-11-30 151307.png","upload_date":"2023-12-11T17:52:51.197Z","userId":"Flash_testing_347"}}},"level":"info","message":"uploadParams:"}
+{"level":"info","message":"Writing to DynamoDB and uploading to s3 concurrently..."}
+{"level":"info","message":"images uploaded succesfully in Testit"}
+{"level":"info","message":"images uploaded succesfully in Testit"}
+{"level":"error","message":"Error uploading files and updating DynamoDB: The provided key element does not match the schema"}
+{"level":"info","message":"Low-resolution image uploaded successfully to Testit/lowRes"}
+{"level":"info","message":"Low-resolution image uploaded successfully to Testit/lowRes"}
+{"level":"info","message":"All low resolution images uploaded successfully"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userUploads already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Received upload request for folder finaltesta from user testing"}
+{"Key":{"username":"testing"},"TableName":"userData","level":"info","message":"Fetching user ID with params:"}
+{"level":"info","message":"UserID fetched successfully: Flash_testing_347"}
+{"level":"info","message":"Retrieved userId: Flash_testing_347"}
+{"0":{"PutRequest":{"Item":{"imageId":"finaltesta/bench1.png","upload_date":"2023-12-11T17:59:38.112Z","userId":"Flash_testing_347"}}},"level":"info","message":"uploadParams:"}
+{"level":"info","message":"Writing to DynamoDB and uploading to s3 concurrently..."}
+{"level":"info","message":"images uploaded succesfully in finaltesta"}
+{"UnprocessedItems":{},"level":"info","message":"DynamoDB response:"}
+{"level":"info","message":"Files uploaded successfully. "}
+{"level":"info","message":"Low-resolution image uploaded successfully to finaltesta/lowRes"}
+{"level":"info","message":"All low resolution images uploaded successfully"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userUploads already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Received upload request for folder testinglast from user testing"}
+{"Key":{"username":"testing"},"TableName":"userData","level":"info","message":"Fetching user ID with params:"}
+{"level":"info","message":"UserID fetched successfully: Flash_testing_347"}
+{"level":"info","message":"Retrieved userId: Flash_testing_347"}
+{"0":{"PutRequest":{"Item":{"imageId":"testinglast/Screenshot 2023-11-26 121547.png","s3_url":"https://flashbackuseruploads.s3.amazonaws.com/testinglast/Screenshot 2023-11-26 121547.png","upload_date":"2023-12-11T18:18:03.966Z","userId":"Flash_testing_347"}}},"1":{"PutRequest":{"Item":{"imageId":"testinglast/Screenshot 2023-11-26 121619.png","s3_url":"https://flashbackuseruploads.s3.amazonaws.com/testinglast/Screenshot 2023-11-26 121619.png","upload_date":"2023-12-11T18:18:03.966Z","userId":"Flash_testing_347"}}},"level":"info","message":"uploadParams:"}
+{"level":"info","message":"Writing to DynamoDB and uploading to s3 concurrently..."}
+{"level":"info","message":"images uploaded succesfully in testinglast"}
+{"level":"info","message":"images uploaded succesfully in testinglast"}
+{"UnprocessedItems":{},"level":"info","message":"DynamoDB response:"}
+{"level":"info","message":"Files uploaded successfully. "}
+{"level":"info","message":"Low-resolution image uploaded successfully to testinglast/lowRes"}
+{"level":"info","message":"Low-resolution image uploaded successfully to testinglast/lowRes"}
+{"level":"info","message":"All low resolution images uploaded successfully"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userUploads already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Received upload request for folder finaltest from user testing"}
+{"Key":{"username":"testing"},"TableName":"userData","level":"info","message":"Fetching user ID with params:"}
+{"level":"info","message":"UserID fetched successfully: Flash_testing_347"}
+{"level":"info","message":"Retrieved userId: Flash_testing_347"}
+{"0":{"PutRequest":{"Item":{"imageId":"finaltest/bench1.png","s3_url":"https://flashbackuseruploads.s3.amazonaws.com/finaltest/bench1.png","upload_date":"2023-12-11T18:23:18.320Z","userId":"Flash_testing_347"}}},"1":{"PutRequest":{"Item":{"imageId":"finaltest/Screenshot%202023-11-26%20121547.png","s3_url":"https://flashbackuseruploads.s3.amazonaws.com/finaltest/Screenshot%202023-11-26%20121547.png","upload_date":"2023-12-11T18:23:18.320Z","userId":"Flash_testing_347"}}},"level":"info","message":"uploadParams:"}
+{"level":"info","message":"Writing to DynamoDB and uploading to s3 concurrently..."}
+{"level":"info","message":"images uploaded succesfully in finaltest"}
+{"level":"info","message":"images uploaded succesfully in finaltest"}
+{"UnprocessedItems":{},"level":"info","message":"DynamoDB response:"}
+{"level":"info","message":"Files uploaded successfully. "}
+{"level":"info","message":"Low-resolution image uploaded successfully to finaltest/lowRes"}
+{"level":"info","message":"Low-resolution image uploaded successfully to finaltest/lowRes"}
+{"level":"info","message":"All low resolution images uploaded successfully"}
+{"level":"info","message":"Received upload request for folder sriallaTestdynamo from user testing"}
+{"Key":{"username":"testing"},"TableName":"userData","level":"info","message":"Fetching user ID with params:"}
+{"level":"info","message":"UserID fetched successfully: Flash_testing_347"}
+{"level":"info","message":"Retrieved userId: Flash_testing_347"}
+{"0":{"PutRequest":{"Item":{"imageId":"sriallaTestdynamo/Screenshot%202023-11-21%20210558.png","s3_url":"https://flashbackuseruploads.s3.amazonaws.com/sriallaTestdynamo/Screenshot%202023-11-21%20210558.png","upload_date":"2023-12-11T18:26:16.145Z","userId":"Flash_testing_347"}}},"level":"info","message":"uploadParams:"}
+{"level":"info","message":"Writing to DynamoDB and uploading to s3 concurrently..."}
+{"level":"info","message":"images uploaded succesfully in sriallaTestdynamo"}
+{"UnprocessedItems":{},"level":"info","message":"DynamoDB response:"}
+{"level":"info","message":"Files uploaded successfully. "}
+{"level":"info","message":"Low-resolution image uploaded successfully to sriallaTestdynamo/lowRes"}
+{"level":"info","message":"All low resolution images uploaded successfully"}

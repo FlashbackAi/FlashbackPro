@@ -28,7 +28,7 @@ function CreateFlashBack() {
     setIsLoading(true);
     const formData = new FormData();
     formData.append('folderName', folderName);
-    formData.append('userName',sessionStorage.getItem("userName"));
+    formData.append('username',sessionStorage.getItem("username"));
 
     selectedFiles.forEach(file => {
         formData.append('images', file);
