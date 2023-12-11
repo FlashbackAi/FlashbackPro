@@ -62,7 +62,7 @@ const phoneNumberAttribute = new CognitoUserAttribute({
   userPool.signUp(req.body.username, req.body.password, attributeList, null, function(err, result){
       if (err) {
           res.status(500).send(err.message);
-          logger.info(err)
+          logger.info(err.message)
           return;
       }
       const data={

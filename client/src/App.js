@@ -6,6 +6,7 @@ import Registration from "./pages/Registration";
 import Login from "./pages/Login";
 import LoadingSpinner from "./pages/LoadingSpinner";
 import Admin from "./pages/Admin";
+import Profile from "./pages/Profile";
 import ForgotPassword from "./pages/ForgotPassword";
 import { useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
@@ -36,7 +37,7 @@ function App() {
 
     return isAuthenticated ? children : <Navigate to="/login" />;
   };
-
+  
   const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
@@ -64,23 +65,21 @@ function App() {
       </label>
 
 
-
-
-
-
       <Router>
         <div className="navbar">
           {/*<img src={"http://localhost:3000/static/media/logo.cf2c8490777d428b465f.png"}></img>*/}
           {/*<Link to="/"> Home Page</Link>*/}
-          <Link to="/createFlashBack">Profile</Link>
+          <Link to="/createFlashBack">FlashBack</Link>
           {/*<Link to="/login"> Login</Link>*/}
           {/*<Link to="/registration"> Registration</Link>*/}
           <Link to="/admin"> Admin</Link>
-          <Link to="/"> Logout</Link>
+          { <Link to="/profile"> Profile</Link> }
         </div>
         {isLoading ? (
           // Display Loading spinner while waiting
+          <div>
           <LoadingSpinner />
+          </div>
         ) : (
           <Routes>
             <Route path="/registration" element={<Registration />} />
@@ -90,6 +89,7 @@ function App() {
             <Route path="/" element={<ProtectedRoute><CreateFlashBack/></ProtectedRoute>} />
             <Route path="/home" element={<ProtectedRoute><Home/></ProtectedRoute>}></Route>
             <Route path="/createFlashBack" element={<ProtectedRoute><CreateFlashBack /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           </Routes>
           )}
         </Router>
