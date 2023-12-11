@@ -6,6 +6,7 @@ import Registration from "./pages/Registration";
 import Login from "./pages/Login";
 import LoadingSpinner from "./pages/LoadingSpinner";
 import Admin from "./pages/Admin";
+import ForgotPassword from "./pages/ForgotPassword";
 import { useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import { Navigate } from 'react-router-dom'
@@ -84,6 +85,7 @@ function App() {
           <Routes>
             <Route path="/registration" element={<Registration />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/forgotPassword" element={<ForgotPassword />} />
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="/" element={<ProtectedRoute><CreateFlashBack/></ProtectedRoute>} />
             <Route path="/home" element={<ProtectedRoute><Home/></ProtectedRoute>}></Route>

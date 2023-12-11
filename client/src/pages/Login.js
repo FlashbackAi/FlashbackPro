@@ -22,17 +22,9 @@ function Login() {
         alert(response.data.error);
         setMessage(response.data.error)
       } else {
-        // console.log(response.data.result)
-        // localStorage.setItem("accessToken", response.data.result.getAccessToken().getJwtToken());
-        // setMessage(username+" "+response.data.message)
-        // console.log(response.data.accessToken)
-        // // setAuthState({
-        // //   username: response.data.username,
-        // //   id: response.data.id,
-        // //   status: true,
-        // // });
-        // //history.push("/");
+        
         sessionStorage.setItem("accessToken", response.data.accessToken);
+        sessionStorage.setItem("userName",response.data.username);
         navigate("/createFlashBack")
       }
     }).catch(error => {
@@ -71,7 +63,7 @@ function Login() {
 
       <button type="submit" onClick={login}> Login </button>
           <div className="loginForgotPassword">
-            <a href="#" >Forgot password?</a>
+            <a href="/forgotPassword" >Forgot password?</a>
           </div>
       <button type="button" onClick={Register}>Create new account</button>
 

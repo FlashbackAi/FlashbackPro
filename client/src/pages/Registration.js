@@ -62,12 +62,30 @@ function Registration() {
             if(response.data.status === "Success")
             {
                 setMessage('new user has confirmed');
-                navigate("/")
+                navigate("/login")
             }
         })
         .catch(error => {
             console.error(error.message);
             setMessage('error in confirming new user');
+        });
+    };
+
+    const resendVerfication = () => {
+        
+        axios.post(`${serverIP}/resend-verification`, {
+            username: username
+        }).then(response => {
+            console.log(response.data.status)
+            if(response.data.status === "Success")
+            {
+                setMessage('new verification code has been sent');
+                navigate("/login")
+            }
+        })
+        .catch(error => {
+            console.error(error.message);
+            setMessage('error in generating new verification code');
         });
     };
 
@@ -94,6 +112,7 @@ function Registration() {
                         onChange={(e) => setVerificationCode(e.target.value)}
                         />
                     <button type="button" onClick={handleVerification}>Verify the Code</button>
+                    <button type="button" onClick={resendVerfication}>Resend Code</button>
                 </div>
             )}
             <p>{message}</p>

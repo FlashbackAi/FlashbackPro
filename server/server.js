@@ -34,8 +34,10 @@ const s3 = new AWS.S3({
     secretAccessKey: '03c4tmEvBt2kWOBCh8H868bmVEtGrb5Glv+Usfff', 
     region: 'ap-south-1' // Update with your AWS region 
 });
+AWS.config.update({
+  region: 'ap-south-1',
+});
 const bucketName = 'flashbackuseruploads';
-
 const poolData = {
     UserPoolId: 'ap-south-1_rTy0HL6Gk',
     ClientId: '6goctqurrumilpurvtnh6s4fl1'
@@ -72,50 +74,25 @@ const phoneNumberAttribute = new CognitoUserAttribute({
 });
 
 
+const cognitoidentityserviceprovider = new AWS.CognitoIdentityServiceProvider();
 
-const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
-
-app.post('/login', function(req, res) {
-  
-  const  username = req.body.username;
-  const password = req.body.password;
-
-  const authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails({
-      Username: username,
-      Password: password
-  });
-  const userData = {
-      Username: username,
-      Pool: userPool
+app.post('/resend-verification', (req, res) => {  
+  const params = {
+    Username: req.body.username,
+    ClientId: poolData.ClientId
   };
-  const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+ // const params = poolData.add(username)
 
-  cognitoUser.authenticateUser(authenticationDetails, {
-      onSuccess: (result) => {
-        logger.info(res)
-          const accessToken = result.getAccessToken().getJwtToken();
-         
-          // You can also get idToken and refreshToken here
-          const data={
-            status:'Success',
-            message:'User LoggedIn successfully',
-            accessToken:accessToken,
-            username:result.ge
-
-          }
-          res.send(data);
-      },
-      onFailure: (err) => {
-        logger.info(err.message)
-          res.status(500).send(err.message);
-      },
-      mfaSetup: (challengeName, challengeParameters) => {
-        // MFA setup logic here
-        // You might want to send a response to the user indicating that MFA setup is required
-        logger.info("usr logged in")
-    },
+  cognitoidentityserviceprovider.resendConfirmationCode(params, function(err, data) {
+    if (err) {
+      console.error(err);
+      res.status(500).send(err.message);
+    } else {
+      res.send({ message: 'Verification code resent successfully' });
+    }
   });
 });
+
 
 app.post('/confirmUser', function(req, res) {
   
@@ -141,25 +118,108 @@ app.post('/confirmUser', function(req, res) {
 });
 });
 
-app.post('/createFolder', (req, res) => {
-    
-    const folderName = req.body.folderName;
+const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
+
+app.post('/login', function(req, res) {
   
-    const params = {
-      Bucket: bucketName,
-      Key: `${folderName}/`,
-      //ACL: 'public-read', // or whatever ACL you want
-    };
-  
-    s3.putObject(params, (err, data) => {
-      if (err) {
-        console.error("Error creating the folder: ", err);
-        res.status(500).send("Error creating the folder");
-      } else {
-        res.send(`Folder ${folderName} created successfully`);
-      }
-    });
+  const  username = req.body.username;
+  const password = req.body.password;
+
+  const authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails({
+      Username: username,
+      Password: password
   });
+  const userData = {
+      Username: username,
+      Pool: userPool
+  };
+  const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+
+  cognitoUser.authenticateUser(authenticationDetails, {
+      onSuccess: (result) => {
+          const accessToken = result.getAccessToken().getJwtToken();
+          const decodedCAccessToken = result.getIdToken().decodePayload()
+         
+          // You can also get idToken and refreshToken here
+          const data={
+            status:'Success',
+            message:'User LoggedIn successfully',
+            accessToken:accessToken,
+            username:decodedCAccessToken['cognito:username']
+
+          }
+          res.send(data);
+      },
+      onFailure: (err) => {
+        logger.info(err.message)
+          res.status(500).send(err.message);
+      },
+      mfaSetup: (challengeName, challengeParameters) => {
+        // MFA setup logic here
+        // You might want to send a response to the user indicating that MFA setup is required
+        logger.info("usr logged in")
+    },
+  });
+});
+
+app.post('/forgot-password', (req, res) => {
+  const { email } = req.body;
+
+  const params = {
+      ClientId: poolData.ClientId,
+      Username: email,
+  };
+
+  cognitoidentityserviceprovider.forgotPassword(params, (err, data) => {
+      if (err) {
+          console.error(err);
+          res.status(500).json({ message: 'Error initiating password reset' });
+      } else {
+          res.json({ message: 'Password reset initiated, check your email' });
+      }
+  });
+});
+
+app.post('/reset-password', (req, res) => {
+  const { email, code, newPassword } = req.body;
+
+  const params = {
+      ClientId: poolData.ClientId,
+      Username: email,
+      ConfirmationCode: code,
+      Password: newPassword,
+  };
+
+  cognitoidentityserviceprovider.confirmForgotPassword(params, (err, data) => {
+      if (err) {
+          console.error(err);
+          res.status(500).json({ message: 'Error resetting password' });
+      } else {
+          res.json({ message: 'Password reset successfully' });
+      }
+  });
+});
+
+
+// app.post('/createFolder', (req, res) => {
+    
+//     const folderName = req.body.folderName;
+  
+//     const params = {
+//       Bucket: bucketName,
+//       Key: `${folderName}/`,
+//       //ACL: 'public-read', // or whatever ACL you want
+//     };
+  
+//     s3.putObject(params, (err, data) => {
+//       if (err) {
+//         console.error("Error creating the folder: ", err);
+//         res.status(500).send("Error creating the folder");
+//       } else {
+//         res.send(`Folder ${folderName} created successfully`);
+//       }
+//     });
+//   });
 
 
 const storage = multer.memoryStorage();
@@ -169,6 +229,8 @@ app.use(express.json());
 
 app.post('/upload/:folderName', upload.array('images', 100), (req, res) => {
   const { folderName } = req.params;
+  const userName = req.body.userName;
+  logger.info(userName)
   const files = req.files;
   if (!files || files.length === 0) {
 
