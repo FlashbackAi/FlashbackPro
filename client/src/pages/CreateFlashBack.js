@@ -105,10 +105,18 @@ function CreateFlashBack() {
       (
       <div>
       <h1>Upload Images to S3</h1>
-      <input type="text" placeholder="Folder Name" onChange={handleFolderNameChange} />
+
+
+
+        <div className="status-post-container">
+          {/*<textarea id="statusInput" placeholder="Create a Flashback?" ></textarea>*/}
+      <input type="text" id="statusInput" placeholder="Enter the Flashback Name" onChange={handleFolderNameChange} />
       {/* <input type="file" multiple onChange={handleFileChange} /> */}
-      <input type="file" name="images" multiple accept="image/*" onChange={handleFileChange} />
+          <input type="file" name="images" multiple accept="image/*" onChange={handleFileChange} />
       <button onClick={handleUpload}>Upload</button>
+        </div>
+
+
       <div className="App">
       {images.length > 0 && <PhotoCollageComponent images={images} />}
       </div>

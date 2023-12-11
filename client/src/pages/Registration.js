@@ -14,8 +14,9 @@ function Registration() {
 
 
   //var isRegistered=false;
-  const handleUsernameChange = (e) => {
+    const handleUsernameChange = (e) => {
     setUsername(e.target.value);
+
   };
   const navigate = useNavigate();
     const handleSubmit = (event) => {
@@ -26,8 +27,7 @@ function Registration() {
         axios.post(`${serverIP}/signup`, {
             username: data.get('username'),
             password: data.get('password'),
-            email: data.get('email'),
-            phoneNumber: data.get('phoneNumber')
+            email: data.get('email')
         }).then(response => {
             //setMessage(response.data.message)
             console.log(response.data.status)
@@ -68,12 +68,17 @@ function Registration() {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="loginContainer">
-            <input name="username" required type="text" placeholder="Username" onChange={handleUsernameChange} />
-            <input name="password" required type="password" placeholder="Password" />
+
+        <form onSubmit={handleSubmit} className="login-form-container">
+            <div className="loginLeft">
+                <p className="loginLogo">Flashback<p className="logoCaption">Create & share memories</p></p>
+            </div>
+            <div className="login-form">
             <input name="email" required type="email" placeholder="Email" />
-            <input name="phoneNumber" required type="phoneNumber" placeholder="Phone Number"/>
+            <input name="password" required type="password" placeholder="Password" />
+            <input name="Referral Code" required type="text" placeholder="Referral Code" onChange={handleUsernameChange} />
             <button type="submit">Sign Up</button>
+                <button type="button" onClick={Login}>Already have an account?</button>
             {
                 isRegistered &&(
                 <div name="verifyCode" className="verifyCode">       
@@ -86,7 +91,7 @@ function Registration() {
                 </div>
             )}
             <p>{message}</p>
-            
+            </div>
         </form>
     );
 }

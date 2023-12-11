@@ -7,10 +7,9 @@ import Login from "./pages/Login";
 import LoadingSpinner from "./pages/LoadingSpinner";
 import Admin from "./pages/Admin";
 import { useEffect, useState } from "react";
-import { jwtDecode } from "jwt-decode";
-import { Navigate } from 'react-router-dom';
 
 function App() {
+
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -18,22 +17,6 @@ function App() {
       setIsLoading(false);
     }, 1000);
   }, []);
-
-
-  const isTokenExpired = (token) => {
-    const decodedToken = jwtDecode(token);
-    const currentDate = new Date();
-  
-    // Token expiry is usually given in seconds but JavaScript uses milliseconds
-    return decodedToken.exp * 1000 < currentDate.getTime();
-  };
-
-  const ProtectedRoute = ({ children }) => {
-    const token = sessionStorage.getItem("accessToken");
-    const isAuthenticated = token && !isTokenExpired(token);
-  
-    return isAuthenticated ? children : <Navigate to="/login" />;
-  };
 
   const [darkMode, setDarkMode] = useState(false);
 
@@ -47,10 +30,13 @@ function App() {
   }, [darkMode]);
   return (
     <div className="App">
+      <div className="Background">
+
+      </div>
       <label className="toggle-switch">
         <div className='Darktitle'>
-          <label> 
-            Dark Mode 
+          <label>
+            Dark Mode
           </label>
         </div>
         <input type="checkbox" checked={darkMode} onChange={(e) => setDarkMode(e.target.checked)} />
@@ -58,10 +44,20 @@ function App() {
 
       </label>
 
+
+
+
+
+
       <Router>
         <div className="navbar">
-          <Link to="/home"> Home</Link>
-          <Link to="/createFlashBack">FlashBack</Link>
+          {/*<img src={"http://localhost:3000/static/media/logo.cf2c8490777d428b465f.png"}></img>*/}
+          {/*<Link to="/"> Home Page</Link>*/}
+          <Link to="/createFlashBack">Home</Link>
+          {/*<Link to="/login"> Login</Link>*/}
+          {/*<Link to="/registration"> Registration</Link>*/}
+          <Link to="/admin"> Admin</Link>
+          <Link to="/"> Logout</Link>
         </div>
         {isLoading ? (
           // Display Loading spinner while waiting
@@ -70,14 +66,13 @@ function App() {
           <Routes>
             <Route path="/registration" element={<Registration />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-            <Route path="/" element={<ProtectedRoute><CreateFlashBack/></ProtectedRoute>} />
-            <Route path="/home" element={<ProtectedRoute><Home/></ProtectedRoute>}></Route>
-            <Route path="/createFlashBack" element={<ProtectedRoute><CreateFlashBack /></ProtectedRoute>} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/" element={<Login />} />
+            <Route path="/createFlashBack" element={<CreateFlashBack />} />
           </Routes>
           )}
         </Router>
-        
+
     </div>
   );
   //       <Switch>
@@ -105,5 +100,8 @@ function App() {
   //   </div>
   // );
 }
+
+
+
 
 export default App;

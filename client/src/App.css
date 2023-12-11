@@ -130,11 +130,12 @@ span {
 
 .navbar {
   width: 100%;
-  height: 70px;
+  height: 5em;
   background-color: dodgerblue;
   display: flex;
   align-items: center;
   font-family: Arial, Helvetica, sans-serif;
+    position: fixed;
 }
 .navbar .links {
   flex: 50%;
@@ -370,9 +371,7 @@ button {
 }
 
 .imageGalleryContainer img {
-  width: 100%; /* Adjust this as needed */
-  height: auto;
-  max-width: 300px; /* Adjust maximum width as needed */
+  max-height: 300px; /* Adjust maximum width as needed */
   border-radius: 8px; /* Optional, for rounded corners */
   box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Optional, for a slight shadow */
 }
@@ -386,8 +385,8 @@ button {
 /*New Registration & Login CSS */
 .login-form input {
     display: block;
-    width: 100%;
-    padding: 10px;
+    width: auto;
+    padding: 1em;
     margin: 10px 0;
     border-radius: 5px;
     border: 1px solid #ddd;
@@ -395,7 +394,7 @@ button {
 .login-form button {
     display: block;
     width: 100%;
-    padding: 10px;
+    padding: 1em;
     margin: 10px 0;
     border: none;
     border-radius: 5px;
@@ -412,51 +411,56 @@ button {
     display: inline-block;
 }
 .loginLeft{
-    display:flex;
-    padding: 25%;
+    display: block;
+    max-width: 25em;
+    /*padding: 25%;*/
 }
 
 /*Facebook Styled Registration & Login CSS */
 .loginBody{
 font-family: Arial, sans-serif;
-/* background-color: #f0f2f5; */
-display: flex;
-align-items: center;
-height: 100vh;
-margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     width: 100%;
+
 }
 
 .login-form-container {
-    margin-left: 100px;
+    /*margin-left: 100px;*/
     background: white;
     padding: 30px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    width: 300px;
-    float: right;
+    width: max-content;
+    display: contents;
+    align-items: center;
 }
 
 .login-form {
-    display: flex;
-    flex-direction: column;
+    display: inline-grid;
+    /*flex-direction: column;*/
+    /*padding: 10%;*/
+    max-width: 20em;
+    width: -webkit-fill-available;
 }
 
 .login-form input {
-    margin-bottom: 10px;
-    padding: 10px;
+    margin-bottom: 1em;
+    padding: 1em;
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 14px;
-    width: 93%;
+    width: 100%;
+    width: -webkit-fill-available;
 }
 
 .login-form button {
-    padding: 10px;
-    margin-bottom: 10px;
+    padding: 1em;
+    margin-bottom: 1em;
     border: none;
-    border-radius: 4px;
-    font-size: 14px;
+    border-radius: 0.5em;
+    font-size: 1em;
     cursor: pointer;
 }
 
@@ -473,14 +477,14 @@ margin: 0;
 .login-form a {
     color: #1877f2;
     text-decoration: none;
-    font-size: 14px;
+    font-size: 1em;
 }
 
 p {
     text-align: center;
-    font-size: 12px;
+    font-size: 1em;
     color: grey;
-    margin-top: 20px;
+    margin-top: 2em;
 }
 
 .loginForgotPassword{
@@ -490,13 +494,15 @@ p {
 .loginLogo{
     font-family: 'Open Sans', sans-serif; /* This is a placeholder; you'd need the actual font used by Facebook */
     color: #1877f2; /* This is the Facebook blue */
-    font-size: 48px; /* Adjust the size as needed */
+    font-size: 3em; /* Adjust the size as needed */
     font-weight: 700; /* Facebook's logo is bold */
     letter-spacing: -0.05em; /* Adjust letter spacing to closely match the logo */
     height: fit-content;
+    width: fit-content;
+    max-width: 25em;
 }
 .logoCaption{
-    font-size: 18px;
+    font-size: 0.5em;
     /* color: #1c1e21; */
     font-family: monospace;
     letter-spacing: 0.05em;
@@ -508,8 +514,8 @@ p {
   border: 5px solid #f3f3f3; /* Light grey */
   border-top: 5px solid #3498db; /* Blue */
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
+  width: 3em;
+  height: 3em;
   animation: spin 2s linear infinite;
 }
 
@@ -517,3 +523,47 @@ p {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+
+.status-post-container {
+    background-color: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    max-width: 500px;
+    margin: auto;
+    margin-top: 15%;
+}
+
+#statusInput {
+    width: 80%;
+    height: 2em;
+    border: 1px solid #ccd0d5;
+    border-radius: 15px;
+    padding: 10px;
+    margin-bottom: 10px;
+    resize: none;
+}
+
+#fileInput {
+    display: block;
+    margin-bottom: 10px;
+}
+
+#postButton {
+    background-color: #4267b2;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#postButton:hover {
+    background-color: #365899;
+}
+
+.navbar img{
+    max-height: 2 em;
+}
+
