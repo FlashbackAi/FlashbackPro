@@ -42,7 +42,7 @@ const poolData = {
 };
 app.post('/signup', function(req, res) {
   var userPool = new CognitoUserPool(poolData);
-
+  logger.info(req.body)
   const emailAttribute = new CognitoUserAttribute({
     Name: "email",
     Value: req.body.email

@@ -56,7 +56,7 @@ function Login() {
 
         <div className="login-form">
       <input
-          type="text" id="email" name="email" placeholder="Email or phone number" required
+          type="text" id="email" name="email" placeholder="Email or User Name" required
         onChange={(event) => {
           setUsername(event.target.value);
         }}
