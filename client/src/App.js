@@ -53,7 +53,7 @@ function App() {
         <div className="navbar">
           {/*<img src={"http://localhost:3000/static/media/logo.cf2c8490777d428b465f.png"}></img>*/}
           {/*<Link to="/"> Home Page</Link>*/}
-          <Link to="/createFlashBack">Home</Link>
+          <Link to="/createFlashBack">Profile</Link>
           {/*<Link to="/login"> Login</Link>*/}
           {/*<Link to="/registration"> Registration</Link>*/}
           <Link to="/admin"> Admin</Link>
