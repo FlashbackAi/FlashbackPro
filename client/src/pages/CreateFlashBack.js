@@ -4,6 +4,7 @@ import PhotoCollageComponent from './PhotoCollageComponent';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { toast } from 'react-toastify';
+import UserMenu from './UserMenu';
 
 function CreateFlashBack() {
   const serverIP = process.env.REACT_APP_SERVER_IP;
@@ -107,7 +108,7 @@ function CreateFlashBack() {
       <div>
       <h1>Upload Images to S3</h1>
 
-
+      <UserMenu/>
 
         <div className="status-post-container">
           {/*<textarea id="statusInput" placeholder="Create a Flashback?" ></textarea>*/}
