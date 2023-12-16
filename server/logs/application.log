@@ -201,3 +201,105 @@
 {"level":"info","message":"Files uploaded successfully. "}
 {"level":"info","message":"Low-resolution image uploaded successfully to sriallaTestdynamo/lowRes"}
 {"level":"info","message":"All low resolution images uploaded successfully"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userUploads already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userUploads already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userUploads already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userUploads already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Received upload request for folder firstupload from user testing"}
+{"Key":{"username":"testing"},"TableName":"userData","level":"info","message":"Fetching user ID with params:"}
+{"level":"info","message":"UserID fetched successfully: Flash_testing_347"}
+{"level":"info","message":"Retrieved userId: Flash_testing_347"}
+{"0":{"PutRequest":{"Item":{"imageId":"firstupload/bench1.png","s3_url":"https://flashbackuseruploads.s3.amazonaws.com/firstupload/bench1.png","upload_date":"2023-12-12T13:49:12.132Z","userId":"Flash_testing_347"}}},"level":"info","message":"uploadParams:"}
+{"level":"info","message":"Writing to DynamoDB and uploading to s3 concurrently..."}
+{"level":"info","message":"images uploaded succesfully in firstupload"}
+{"UnprocessedItems":{},"level":"info","message":"DynamoDB response:"}
+{"level":"info","message":"Files uploaded successfully. "}
+{"level":"info","message":"Low-resolution image uploaded successfully to firstupload/lowRes"}
+{"level":"info","message":"All low resolution images uploaded successfully"}
+{"level":"info","message":"Received upload request for folder secondUpload from user testing"}
+{"Key":{"username":"testing"},"TableName":"userData","level":"info","message":"Fetching user ID with params:"}
+{"level":"info","message":"UserID fetched successfully: Flash_testing_347"}
+{"level":"info","message":"Retrieved userId: Flash_testing_347"}
+{"0":{"PutRequest":{"Item":{"imageId":"secondUpload/bench2.png","s3_url":"https://flashbackuseruploads.s3.amazonaws.com/secondUpload/bench2.png","upload_date":"2023-12-12T13:51:03.012Z","userId":"Flash_testing_347"}}},"level":"info","message":"uploadParams:"}
+{"level":"info","message":"Writing to DynamoDB and uploading to s3 concurrently..."}
+{"level":"info","message":"images uploaded succesfully in secondUpload"}
+{"UnprocessedItems":{},"level":"info","message":"DynamoDB response:"}
+{"level":"info","message":"Files uploaded successfully. "}
+{"level":"info","message":"Low-resolution image uploaded successfully to secondUpload/lowRes"}
+{"level":"info","message":"All low resolution images uploaded successfully"}
+{"level":"info","message":"Received upload request for folder firstupload from user testing"}
+{"Key":{"username":"testing"},"TableName":"userData","level":"info","message":"Fetching user ID with params:"}
+{"level":"info","message":"UserID fetched successfully: Flash_testing_347"}
+{"level":"info","message":"Retrieved userId: Flash_testing_347"}
+{"0":{"PutRequest":{"Item":{"imageId":"firstupload/Screenshot%202023-11-26%20121547.png","s3_url":"https://flashbackuseruploads.s3.amazonaws.com/firstupload/Screenshot%202023-11-26%20121547.png","upload_date":"2023-12-12T13:52:07.873Z","userId":"Flash_testing_347"}}},"level":"info","message":"uploadParams:"}
+{"level":"info","message":"Writing to DynamoDB and uploading to s3 concurrently..."}
+{"level":"info","message":"images uploaded succesfully in firstupload"}
+{"UnprocessedItems":{},"level":"info","message":"DynamoDB response:"}
+{"level":"info","message":"Files uploaded successfully. "}
+{"level":"info","message":"Low-resolution image uploaded successfully to firstupload/lowRes"}
+{"level":"info","message":"All low resolution images uploaded successfully"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userUploads already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Received upload request for folder secondUpload from user testing"}
+{"Key":{"username":"testing"},"TableName":"userData","level":"info","message":"Fetching user ID with params:"}
+{"level":"info","message":"UserID fetched successfully: Flash_testing_347"}
+{"level":"info","message":"Retrieved userId: Flash_testing_347"}
+{"0":{"PutRequest":{"Item":{"imageId":"secondUpload/Predator_Wallpaper_01_3840x2400.jpg","s3_url":"https://flashbackuseruploads.s3.amazonaws.com/secondUpload/Predator_Wallpaper_01_3840x2400.jpg","upload_date":"2023-12-12T13:53:25.078Z","userId":"Flash_testing_347"}}},"level":"info","message":"uploadParams:"}
+{"level":"info","message":"Writing to DynamoDB and uploading to s3 concurrently..."}
+{"level":"info","message":"images uploaded succesfully in secondUpload"}
+{"UnprocessedItems":{},"level":"info","message":"DynamoDB response:"}
+{"level":"info","message":"Files uploaded successfully. "}
+{"level":"info","message":"Low-resolution image uploaded successfully to secondUpload/lowRes"}
+{"level":"info","message":"All low resolution images uploaded successfully"}
+{"level":"info","message":"Received upload request for folder thirdupload from user testing"}
+{"Key":{"username":"testing"},"TableName":"userData","level":"info","message":"Fetching user ID with params:"}
+{"level":"info","message":"UserID fetched successfully: Flash_testing_347"}
+{"level":"info","message":"Retrieved userId: Flash_testing_347"}
+{"0":{"PutRequest":{"Item":{"imageId":"thirdupload/Predator_Wallpaper_03_3840x2400.jpg","s3_url":"https://flashbackuseruploads.s3.amazonaws.com/thirdupload/Predator_Wallpaper_03_3840x2400.jpg","upload_date":"2023-12-12T13:53:56.151Z","userId":"Flash_testing_347"}}},"level":"info","message":"uploadParams:"}
+{"level":"info","message":"Writing to DynamoDB and uploading to s3 concurrently..."}
+{"level":"info","message":"images uploaded succesfully in thirdupload"}
+{"UnprocessedItems":{},"level":"info","message":"DynamoDB response:"}
+{"level":"info","message":"Files uploaded successfully. "}
+{"level":"info","message":"Low-resolution image uploaded successfully to thirdupload/lowRes"}
+{"level":"info","message":"All low resolution images uploaded successfully"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userUploads already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userUploads already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userUploads already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Received upload request for folder test from user testing"}
+{"Key":{"username":"testing"},"TableName":"userData","level":"info","message":"Fetching user ID with params:"}
+{"level":"info","message":"UserID fetched successfully: Flash_testing_347"}
+{"level":"info","message":"Retrieved userId: Flash_testing_347"}
+{"0":{"PutRequest":{"Item":{"imageId":"test/Screenshot%202023-11-26%20121619.png","s3_url":"https://flashbackuseruploads.s3.amazonaws.com/test/Screenshot%202023-11-26%20121619.png","upload_date":"2023-12-14T15:19:22.042Z","userId":"Flash_testing_347"}}},"1":{"PutRequest":{"Item":{"imageId":"test/Screenshot%202023-11-30%20151307.png","s3_url":"https://flashbackuseruploads.s3.amazonaws.com/test/Screenshot%202023-11-30%20151307.png","upload_date":"2023-12-14T15:19:22.042Z","userId":"Flash_testing_347"}}},"level":"info","message":"uploadParams:"}
+{"level":"info","message":"Writing to DynamoDB and uploading to s3 concurrently..."}
+{"level":"info","message":"images uploaded succesfully in test"}
+{"level":"info","message":"images uploaded succesfully in test"}
+{"UnprocessedItems":{},"level":"info","message":"DynamoDB response:"}
+{"level":"info","message":"Files uploaded successfully. "}
+{"level":"info","message":"Low-resolution image uploaded successfully to test/lowRes"}
+{"level":"info","message":"Low-resolution image uploaded successfully to test/lowRes"}
+{"level":"info","message":"All low resolution images uploaded successfully"}
+{"level":"info","message":"Image fetched from cloud: test/lowRes/Screenshot 2023-11-30 151307.png"}
+{"level":"info","message":"Image fetched from cloud: test/lowRes/Screenshot 2023-11-26 121619.png"}
+{"level":"info","message":"downloading ZIP folder :AnirudhAlbum"}
+{"level":"info","message":"Image fetched from cloud: secondUpload/lowRes/Predator_Wallpaper_01_3840x2400.jpg"}
+{"level":"info","message":"Image fetched from cloud: secondUpload/lowRes/bench2.png"}
+{"level":"info","message":"Image fetched from cloud: firstupload/lowRes/bench1.png"}
+{"level":"info","message":"Image fetched from cloud: firstupload/lowRes/Screenshot 2023-11-26 121547.png"}
+{"level":"info","message":"Image fetched from cloud: firstupload/lowRes/Screenshot 2023-11-26 121547.png"}
+{"level":"info","message":"Image fetched from cloud: firstupload/lowRes/bench1.png"}
+{"level":"info","message":"Image fetched from cloud: thirdupload/lowRes/Predator_Wallpaper_03_3840x2400.jpg"}

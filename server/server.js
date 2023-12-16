@@ -571,5 +571,5 @@ async function uploadLowResoltionImages(folderName,files)
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT ,() => {
-  logger.info(`Server started on http://localhost:${PORT}`);
+  logger.info(`Server started on https://localhost:${PORT}`);
 });
