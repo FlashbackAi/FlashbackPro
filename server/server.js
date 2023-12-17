@@ -42,9 +42,11 @@ const poolData = {
 const dynamoDB = new AWS.DynamoDB({ region: 'ap-south-1' });
 const docClient = new AWS.DynamoDB.DocumentClient({ region: 'ap-south-1' });
 
-//  2 tables one for user data and other which has the user uploads data
+// Below are the tables we are using currently
 const userDataTableName = 'userData';
 const userUploadsTableName = 'userUploads';
+const userFoldersTableName = 'userFolders';
+
 
 // Function that creates DynamoDB Tables
 const createTable = async (tableName, KeySchema) => {
@@ -61,7 +63,52 @@ const createTable = async (tableName, KeySchema) => {
     AttributeDefinitions: AttributeDefinitions,
     BillingMode: 'PAY_PER_REQUEST',
   };    
-
+  if (tableName === userDataTableName) {
+    // Define GSI for the userDataTableName
+    params.GlobalSecondaryIndexes = [
+      {
+        IndexName: 'EmailIndex',
+        KeySchema: [
+          { AttributeName: 'email', KeyType: 'HASH' },
+        ],
+        Projection: {
+          ProjectionType: 'ALL', // or choose specific attributes
+        },
+      },
+      // Add more GSIs as needed
+    ];
+    params.AttributeDefinitions.push({ AttributeName: 'email', AttributeType: 'S' }); // we're passing the GSI attributename to attributeDef
+  } else if (tableName === userUploadsTableName) {
+    // Define GSI for the userUploadsTableName
+    params.GlobalSecondaryIndexes = [
+      {
+        IndexName: 'FolderIdIndex',
+        KeySchema: [
+          { AttributeName: 'folder_id', KeyType: 'HASH' },
+        ],
+        Projection: {
+          ProjectionType: 'ALL', // or choose specific attributes
+        },
+      },
+      // Add more GSIs as needed
+    ];
+    params.AttributeDefinitions.push({ AttributeName: 'folder_id', AttributeType: 'S' });
+  } else if (tableName === userFoldersTableName) {
+    // Define GSI for the userFoldersTableName
+    params.GlobalSecondaryIndexes = [
+      {
+        IndexName: 'UserNameIndex',
+        KeySchema: [
+          { AttributeName: 'user_name', KeyType: 'HASH' },
+        ],
+        Projection: {
+          ProjectionType: 'ALL', // or choose specific attributes
+        },
+      },
+      // Add more GSIs as needed
+    ];
+    params.AttributeDefinitions.push({ AttributeName: 'user_name', AttributeType: 'S' });
+  }
   try {
     await dynamoDB.createTable(params).promise();
     logger.info(`Table ${tableName} created successfully. `);
@@ -73,7 +120,7 @@ const createTable = async (tableName, KeySchema) => {
       }
     }
   };
-
+ 
   
 const createTables = async () => {
   try {
@@ -84,6 +131,10 @@ const createTables = async () => {
     await createTable(userUploadsTableName, [
       {AttributeName: 'image_id', AttributeType: 'S', KeyType: 'HASH'},
     ]);
+
+    await createTable(userFoldersTableName, [
+      {AttributeName: 'folder_id', AttributeType: 'S', KeyType: 'HASH'},
+    ]);
   } catch (error){
     logger.error(`Error creating tables: ${error.message}`);
   }
@@ -93,32 +144,14 @@ const createTables = async () => {
 // Calling createTables to create the tables at the start of the script, ignores if the tables already exists.
 createTables();
 
-// This  will be used to import the userId to create a record in the userUploads DDB by a respective user
-const getUserIdByUsername = async (user_name) => {
-  const params = {
-    TableName: 'userData',
-    Key: {
-      user_name: user_name,
-    },
-  };
-
-  try {
-    logger.info(`Fetching user ID with params:`, params);
-    const result = await docClient.get(params).promise();
-
-    if (result.Item && result.Item.user_id) {
-      const userId = result.Item.user_id;
-      logger.info(`UserID fetched successfully: ${userId}`);
-      return userId;
-    } else {
-      console.log(result)
-      console.error(`User not found for username: ${user_name}`);
-      throw new Error(`User not found for username: ${user_name}`);
-    }
-  } catch (error) {
-    console.error(`Error fetching userId: ${error.message}`);
-    throw new Error(`Error fetching userId: ${error.message}`);
+// This function is used to generate the unique random folder_id
+const generateRandomId = (length) => {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
   }
+  return result;
 };
 
 app.post('/signup', async function(req, res) {
@@ -126,7 +159,7 @@ app.post('/signup', async function(req, res) {
     const username = req.body.username.toLowerCase();
     const Flash = 'Flash';
     // This will create a unique userId with format "Flash" as Prefix _"Username"_"randoom number" Eg: Flash_srialla_098
-    const referraId = `${Flash}_${username}_${Math.floor(Math.random() * 1000)}`; 
+    const referralId = `${Flash}_${username}_${Math.floor(Math.random() * 1000)}`; 
     const created_date = new Date().toISOString(); // Created date of the user registration
     const checkUserParams = {
       TableName: userDataTableName,
@@ -146,7 +179,7 @@ app.post('/signup', async function(req, res) {
       TableName: userDataTableName,
       Item: {
         user_name: username,
-        referral_id: referraId,
+        referral_id: referralId,
         email: req.body.email,
         password: req.body.password,
         phoneNumber: req.body.phoneNumber,
@@ -355,19 +388,34 @@ app.post('/upload/:folderName', upload.array('images', 100), async (req, res) =>
     return res.status(400).json({ message: 'No files uploaded' });
   }
 
-  const userId = await getUserIdByUsername(req.body.username);
-  logger.info(`Retrieved userId: ${userId}`);
-
   const uploadDate = new Date().toISOString();
+
+  const folder_id = generateRandomId(10); // this will be fetching the randomId from the function we implemented earlier
+
+// Now, update userFolders table
+    const userFoldersParams = {
+      TableName: userFoldersTableName,
+      Item: {
+        folder_id: folder_id,
+        folder_name: folderName,
+        user_name: username,
+        image_count: files.length,
+        upload_date: uploadDate,
+      },
+    };
+    // Put the item into userFolders table
+    await docClient.put(userFoldersParams).promise();
+    logger.info(`${folder_id}, ${folderName} for the user ${username} has been succesfully stored in userFolders table`);
 
   const uploadParams = files.map((file) => ({
     PutRequest: {
       Item: {
-        image_id: `${folderName}/${encodeURIComponent(file.originalname)}`,
+        image_id: `${folderName}/${file.originalname}`,
         s3_url: `https://${bucketName}.s3.amazonaws.com/${folderName}/${encodeURIComponent(file.originalname)}`,
         user_name: username,
         upload_date: uploadDate,
-        folder_name:`${folderName}`
+        folder_name:`${folderName}`,
+        folder_id: folder_id
       },
     },
   }));
@@ -388,7 +436,7 @@ app.post('/upload/:folderName', upload.array('images', 100), async (req, res) =>
       Promise.all(files.map((file) => {
         const params = {
           Bucket: bucketName,
-          Key: `${folderName}/${encodeURIComponent(file.originalname)}`,
+          Key: `${folderName}/${file.originalname}`,
           Body: file.buffer,
           //ACL: 'public-read',
     };
