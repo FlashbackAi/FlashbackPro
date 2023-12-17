@@ -644,6 +644,8 @@ async function uploadLowResoltionImages(folderName,files)
 
 
 app.get('/folderByUsername/:username', async (req, res) => {
+
+  try{
   const username = req.params.username;
   console.log(username)
   const params = {
@@ -659,6 +661,12 @@ app.get('/folderByUsername/:username', async (req, res) => {
   const result = await docClient.query(params).promise();
   logger.info('total flashbacks fetched for the user: '+result.Count);
   res.send(result.Items)
+}
+catch(err)
+{
+  logger.error("Error in getting flashbacks created by user", err);
+  res.status(500).send('Error in getting flashbacks created by user');
+}
   
 });
 
