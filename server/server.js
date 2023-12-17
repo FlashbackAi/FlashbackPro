@@ -78,11 +78,11 @@ const createTable = async (tableName, KeySchema) => {
 const createTables = async () => {
   try {
     await createTable(userDataTableName, [
-      {AttributeName: 'username', AttributeType: 'S', KeyType: 'HASH'},
+      {AttributeName: 'user_name', AttributeType: 'S', KeyType: 'HASH'},
     ]);
 
     await createTable(userUploadsTableName, [
-      {AttributeName: 'imageId', AttributeType: 'S', KeyType: 'HASH'},
+      {AttributeName: 'image_id', AttributeType: 'S', KeyType: 'HASH'},
     ]);
   } catch (error){
     logger.error(`Error creating tables: ${error.message}`);
@@ -94,11 +94,11 @@ const createTables = async () => {
 createTables();
 
 // This  will be used to import the userId to create a record in the userUploads DDB by a respective user
-const getUserIdByUsername = async (username) => {
+const getUserIdByUsername = async (user_name) => {
   const params = {
     TableName: 'userData',
     Key: {
-      username: username,
+      user_name: user_name,
     },
   };
 
@@ -106,13 +106,14 @@ const getUserIdByUsername = async (username) => {
     logger.info(`Fetching user ID with params:`, params);
     const result = await docClient.get(params).promise();
 
-    if (result.Item && result.Item.userId) {
-      const userId = result.Item.userId;
+    if (result.Item && result.Item.user_id) {
+      const userId = result.Item.user_id;
       logger.info(`UserID fetched successfully: ${userId}`);
       return userId;
     } else {
-      console.error(`User not found for username: ${username}`);
-      throw new Error(`User not found for username: ${username}`);
+      console.log(result)
+      console.error(`User not found for username: ${user_name}`);
+      throw new Error(`User not found for username: ${user_name}`);
     }
   } catch (error) {
     console.error(`Error fetching userId: ${error.message}`);
@@ -122,14 +123,15 @@ const getUserIdByUsername = async (username) => {
 
 app.post('/signup', async function(req, res) {
   try {
+    const username = req.body.username.toLowerCase();
     const Flash = 'Flash';
     // This will create a unique userId with format "Flash" as Prefix _"Username"_"randoom number" Eg: Flash_srialla_098
-    const userId = `${Flash}_${req.body.username}_${Math.floor(Math.random() * 1000)}`; 
+    const referraId = `${Flash}_${username}_${Math.floor(Math.random() * 1000)}`; 
     const created_date = new Date().toISOString(); // Created date of the user registration
     const checkUserParams = {
       TableName: userDataTableName,
       Key: {
-        username: req.body.username,
+        user_name: username,
       },
     };
 
@@ -143,8 +145,8 @@ app.post('/signup', async function(req, res) {
     const userDataParams = {
       TableName: userDataTableName,
       Item: {
-        username: req.body.username,
-        userId: userId,
+        user_name: username,
+        referral_id: referraId,
         email: req.body.email,
         password: req.body.password,
         phoneNumber: req.body.phoneNumber,
@@ -361,10 +363,11 @@ app.post('/upload/:folderName', upload.array('images', 100), async (req, res) =>
   const uploadParams = files.map((file) => ({
     PutRequest: {
       Item: {
-        imageId: `${folderName}/${encodeURIComponent(file.originalname)}`,
+        image_id: `${folderName}/${encodeURIComponent(file.originalname)}`,
         s3_url: `https://${bucketName}.s3.amazonaws.com/${folderName}/${encodeURIComponent(file.originalname)}`,
-        userId: userId,
+        user_name: username,
         upload_date: uploadDate,
+        folder_name:`${folderName}`
       },
     },
   }));
@@ -568,8 +571,32 @@ async function uploadLowResoltionImages(folderName,files)
 }
 
 
+app.get('/folderByUsername:username', async function(req, res) {
+  try {
+    const params = {
+      TableName: userDataTableName,
+      Key: {
+        user_name: req.body.username,
+        ProjectionExpression:'folder_name',
+        KeyConditionExpression: 'user_name = :username',
+        ExpressionAttributeValues: {
+          ':username': username
+        }
+      },
+    };
+    const result = await docClient.query(params).promise();
+    console.log('Query succeeded:', result);
+    
+  }
+  catch{
+
+  }
+});
+
+
+
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT ,() => {
-  logger.info(`Server started on https://localhost:${PORT}`);
+  logger.info(`Server started on http://localhost:${PORT}`);
 });
