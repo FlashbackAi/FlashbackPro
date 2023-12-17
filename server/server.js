@@ -9,8 +9,23 @@ const fs = require('fs');
 const { AWS, AmazonCognitoIdentity, userPool } = require('./config');
 const { CognitoUserPool, CognitoUserAttribute } = require('amazon-cognito-identity-js');
 const archiver = require('archiver');
-
+const https = require('https');
 const { fold } = require('prelude-ls');
+
+const privateKey = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/privkey1.pem', 'utf8');
+const certificate = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/cert1.pem', 'utf8');
+
+const credentials = {
+  key: privateKey,
+  cert: certificate
+}
+
+const httpsServer = https.createServer(credentials, app);
+
+httpsServer.listen(port, () => {
+  logger.info(`Server is running on https://localhost:${port}`);
+});
+
 
 const app = express();
 const port = 5000; // Different port to avoid conflicts with React's default port
