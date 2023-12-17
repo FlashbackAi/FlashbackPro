@@ -16,6 +16,7 @@ function CreateFlashBack() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFlashBack, setSelectedFlashBack] = useState('');
   const [flashBacks, setFlashBacks] = useState([]);
+  const username = sessionStorage.getItem("username")
   
 
   const handleFileChange = (e) => {
@@ -31,7 +32,7 @@ function CreateFlashBack() {
     setIsLoading(true);
     const formData = new FormData();
     formData.append('folderName', folderName);
-    formData.append('username',sessionStorage.getItem("username"));
+    formData.append('username',username);
 
     selectedFiles.forEach(file => {
         formData.append('images', file);
@@ -57,10 +58,10 @@ function CreateFlashBack() {
   };
 
   const fetchImages = async() =>{
-    console.log("images are being fetched from " +folderName)
+    console.log("images are being fetched from " +selectedFlashBack)
     try {
       const fetchedImages = async () => {
-        const response = await fetch(`${serverIP}/images/${folderName}`);
+        const response = await fetch(`${serverIP}/images/${selectedFlashBack}`);
         if(response.status !== 200)
         {
           throw new Error("Error in Uploading Images")
@@ -85,9 +86,12 @@ function CreateFlashBack() {
   };
 
   useEffect(() => {
-    axios.get(`${serverIP}/folderByUsername:${selectedFlashBack}`)
+    console.log(username);
+    axios.get(`${serverIP}/folderByUsername/${username}`)
       .then(response => {
+        console.log(response.data);
         setFlashBacks(response.data);
+        console.log(flashBacks);
       })
       .catch(error => {
         console.error("Error fetching flashBacks: ", error);
@@ -139,11 +143,11 @@ function CreateFlashBack() {
       <div className="App">
       {images.length > 0 && <PhotoCollageComponent images={images} />}
       </div>
-      <h1>Album Folders</h1>
+      <h1>Uploaded FlashBacks</h1>
       <select value={selectedFlashBack} onChange={handleFlashBackName}>
         <option value="">Select an Album</option>
         {flashBacks.map((flashBack, index) => (
-          <option value={flashBack}>{flashBack}</option>
+          <option value={flashBack.folder_name}>{flashBack.folder_name}</option>
         ))}
       </select>
       <button onClick={fetchImages}>Check Images</button>

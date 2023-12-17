@@ -184,7 +184,7 @@ app.post('/signup', async function(req, res) {
         password: req.body.password,
         phoneNumber: req.body.phoneNumber,
         created_date: created_date,
-        // referrerCode: req.body.referrerCode,
+        referrer_Code: req.body.referrerCode,
       },
     };
     
@@ -619,26 +619,47 @@ async function uploadLowResoltionImages(folderName,files)
 }
 
 
-app.get('/folderByUsername:username', async function(req, res) {
-  try {
-    const params = {
-      TableName: userDataTableName,
-      Key: {
-        user_name: req.body.username,
-        ProjectionExpression:'folder_name',
-        KeyConditionExpression: 'user_name = :username',
-        ExpressionAttributeValues: {
-          ':username': username
-        }
-      },
-    };
-    const result = await docClient.query(params).promise();
-    console.log('Query succeeded:', result);
+// app.get('/folderByUsername', async function(req, res) {
+//   try {
+//     const params = {
+//       TableName: userDataTableName,
+//       Key: {
+//         user_name: 'anirudhthadem',
+//         ProjectionExpression:'folder_name',
+//         KeyConditionExpression: 'user_name = :username',
+//         ExpressionAttributeValues: {
+//           ':username': username
+//         }
+//       },
+//     };
+//     const result = await docClient.query(params).promise();
+//     console.log('Query succeeded:', result);
+//     res.send(result)
     
-  }
-  catch{
+//   }
+//   catch{
 
-  }
+//   }
+// });
+
+
+app.get('/folderByUsername/:username', async (req, res) => {
+  const username = req.params.username;
+  console.log(username)
+  const params = {
+    TableName: 'userFolders',
+    IndexName: 'UserNameIndex',
+    ProjectionExpression: 'folder_name',
+    KeyConditionExpression: 'user_name = :username',
+    ExpressionAttributeValues: {
+      ':username': username
+    }
+  };
+  logger.info(params)
+  const result = await docClient.query(params).promise();
+  logger.info('total flashbacks fetched for the user: '+result.Count);
+  res.send(result.Items)
+  
 });
 
 
