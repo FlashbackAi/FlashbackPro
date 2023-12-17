@@ -69,11 +69,11 @@ function App() {
         <div className="navbar">
           {/*<img src={"http://localhost:3000/static/media/logo.cf2c8490777d428b465f.png"}></img>*/}
           {/*<Link to="/"> Home Page</Link>*/}
-          <Link to="/createFlashBack">FlashBack</Link>
+          {/* <Link to="/createFlashBack">FlashBack</Link> */}
           {/*<Link to="/login"> Login</Link>*/}
           {/*<Link to="/registration"> Registration</Link>*/}
           <Link to="/admin"> Admin</Link>
-          { <Link to="/profile"> Profile</Link> }
+          {/* { <Link to="/profile"> Profile</Link> } */}
         </div>
         {isLoading ? (
           // Display Loading spinner while waiting

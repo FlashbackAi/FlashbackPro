@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect} from 'react';
 import axios from "axios";
 import PhotoCollageComponent from './PhotoCollageComponent';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { toast } from 'react-toastify';
+import UserMenu from './UserMenu';
 
 function CreateFlashBack() {
   const serverIP = process.env.REACT_APP_SERVER_IP;
@@ -13,6 +14,8 @@ function CreateFlashBack() {
   const [images, setImages] = useState([]);
   const [uploadedImages, setUploadedImages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedFlashBack, setSelectedFlashBack] = useState('');
+  const [flashBacks, setFlashBacks] = useState([]);
   
 
   const handleFileChange = (e) => {
@@ -28,7 +31,7 @@ function CreateFlashBack() {
     setIsLoading(true);
     const formData = new FormData();
     formData.append('folderName', folderName);
-    formData.append('userName',sessionStorage.getItem("userName"));
+    formData.append('username',sessionStorage.getItem("username"));
 
     selectedFiles.forEach(file => {
         formData.append('images', file);
@@ -76,6 +79,21 @@ function CreateFlashBack() {
       };
   };
 
+  const handleFlashBackName = (event) => {
+    setSelectedFlashBack(event.target.value);
+    console.log(event.target.value);
+  };
+
+  useEffect(() => {
+    axios.get(`${serverIP}/folderByUsername:${selectedFlashBack}`)
+      .then(response => {
+        setFlashBacks(response.data);
+      })
+      .catch(error => {
+        console.error("Error fetching flashBacks: ", error);
+      });
+  }, []);
+
   const ProgressiveImage = ({ highResImage, lowResImage }) => {
     const [loaded, setLoaded] = useState(false);  
     return (
@@ -107,7 +125,7 @@ function CreateFlashBack() {
       <div>
       <h1>Upload Images to S3</h1>
 
-
+      <UserMenu/>
 
         <div className="status-post-container">
           {/*<textarea id="statusInput" placeholder="Create a Flashback?" ></textarea>*/}
@@ -121,6 +139,13 @@ function CreateFlashBack() {
       <div className="App">
       {images.length > 0 && <PhotoCollageComponent images={images} />}
       </div>
+      <h1>Album Folders</h1>
+      <select value={selectedFlashBack} onChange={handleFlashBackName}>
+        <option value="">Select an Album</option>
+        {flashBacks.map((flashBack, index) => (
+          <option value={flashBack}>{flashBack}</option>
+        ))}
+      </select>
       <button onClick={fetchImages}>Check Images</button>
       <div className="imageGalleryContainer">
         {uploadedImages.map((image, index) => (
