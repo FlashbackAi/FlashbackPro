@@ -5,7 +5,7 @@ import { AuthContext } from "../helpers/AuthContext";
 
 
 function Login() {
-  const serverIP = process.env.REACT_APP_SERVER_IP;
+  const serverIP = `https://${process.env.REACT_APP_SERVER_IP}`;
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState('');
