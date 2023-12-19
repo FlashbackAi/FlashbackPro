@@ -9,11 +9,10 @@ const fs = require('fs');
 const { AWS, AmazonCognitoIdentity, userPool } = require('./config');
 const { CognitoUserPool, CognitoUserAttribute } = require('amazon-cognito-identity-js');
 const archiver = require('archiver');
-
+const https = require('https');
 const { fold } = require('prelude-ls');
-
 const app = express();
-const port = 5000; // Different port to avoid conflicts with React's default port
+const PORT = process.env.PORT || 5000;
 
 app.use(cors()); // Allow cross-origin requests
 app.use(express.json());
@@ -26,6 +25,15 @@ const logger = winston.createLogger({
     new winston.transports.File({ filename: 'logs/application.log' })
    ]
  });
+
+ // *** Comment these certificates while testing changes in local developer machine.***
+const privateKey = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/privkey.pem', 'utf8');
+const certificate = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/fullchain.pem', 'utf8');
+
+const credentials = {
+  key: privateKey,
+  cert: certificate
+}
 
 // Set up AWS S3
 const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.js
@@ -618,31 +626,6 @@ async function uploadLowResoltionImages(folderName,files)
 
 }
 
-
-// app.get('/folderByUsername', async function(req, res) {
-//   try {
-//     const params = {
-//       TableName: userDataTableName,
-//       Key: {
-//         user_name: 'anirudhthadem',
-//         ProjectionExpression:'folder_name',
-//         KeyConditionExpression: 'user_name = :username',
-//         ExpressionAttributeValues: {
-//           ':username': username
-//         }
-//       },
-//     };
-//     const result = await docClient.query(params).promise();
-//     console.log('Query succeeded:', result);
-//     res.send(result)
-    
-//   }
-//   catch{
-
-//   }
-// });
-
-
 app.get('/folderByUsername/:username', async (req, res) => {
 
   try{
@@ -671,9 +654,16 @@ catch(err)
 });
 
 
+//*** if you face any issue in testing changes in local dev machine, comment this and use the below listen port***
 
+const httpsServer = https.createServer(credentials, app);
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT ,() => {
-  logger.info(`Server started on http://localhost:${PORT}`);
+httpsServer.listen(PORT, () => {
+  logger.info(`Server is running on https://localhost:${PORT}`);
 });
+
+
+// const PORT = process.env.PORT || 5000;
+// app.listen(PORT ,() => {
+//   logger.info(`Server started on http://localhost:${PORT}`);
+// });
