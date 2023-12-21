@@ -1,0 +1,140 @@
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userUploads already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userFolders already exists. Hence, continuing without creating new table"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":"Image fetched from cloud: sriallaflashtest2/lowRes/Screenshot 2023-12-11 094824.png"}
+{"level":"info","message":"Image fetched from cloud: sriallaflashtest2/lowRes/Screenshot 2023-11-30 174306.png"}
+{"level":"info","message":"Image fetched from cloud: sriallaflashtest2/lowRes/Screenshot 2023-12-12 001756.png"}
+{"level":"info","message":"Image fetched from cloud: sriallaflashtest2/lowRes/Screenshot 2023-12-12 001811.png"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":"Server started on http://localhost:5000"}
+{"level":"info","message":"Validated that Table userData already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userUploads already exists. Hence, continuing without creating new table"}
+{"level":"info","message":"Validated that Table userFolders already exists. Hence, continuing without creating new table"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"sriallaflash"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"anirudhthadem"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}
+{"level":"info","message":{"ExpressionAttributeValues":{":username":"anirudhthadem"},"IndexName":"UserNameIndex","KeyConditionExpression":"user_name = :username","ProjectionExpression":"folder_name","TableName":"userFolders"}}
+{"level":"info","message":"total flashbacks fetched for the user: 2"}

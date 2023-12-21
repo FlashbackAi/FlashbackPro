@@ -27,13 +27,13 @@ const logger = winston.createLogger({
  });
 
  // *** Comment these certificates while testing changes in local developer machine.***
-const privateKey = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/privkey.pem', 'utf8');
-const certificate = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/fullchain.pem', 'utf8');
-
-const credentials = {
-  key: privateKey,
-  cert: certificate
-}
+ 
+// const privateKey = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/privkey.pem', 'utf8');
+// const certificate = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/fullchain.pem', 'utf8');
+// const credentials = {
+//   key: privateKey,
+//   cert: certificate
+// }
 
 // Set up AWS S3
 const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.js
@@ -656,14 +656,11 @@ catch(err)
 
 //*** if you face any issue in testing changes in local dev machine, comment this and use the below listen port***
 
-const httpsServer = https.createServer(credentials, app);
+// const httpsServer = https.createServer(credentials, app);
 
-httpsServer.listen(PORT, () => {
-  logger.info(`Server is running on https://localhost:${PORT}`);
-});
-
-
-// const PORT = process.env.PORT || 5000;
-// app.listen(PORT ,() => {
-//   logger.info(`Server started on http://localhost:${PORT}`);
+// httpsServer.listen(PORT, () => {
+//   logger.info(`Server is running on https://localhost:${PORT}`);
 // });
+app.listen(PORT ,() => {
+  logger.info(`Server started on http://localhost:${PORT}`);
+});

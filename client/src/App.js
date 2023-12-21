@@ -1,5 +1,5 @@
 import "./App.css";
-import { BrowserRouter as Router, Route, Routes, Link } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
 import CreateFlashBack from "./pages/CreateFlashBack";
 import Registration from "./pages/Registration";
@@ -72,7 +72,7 @@ function App() {
           {/* <Link to="/createFlashBack">FlashBack</Link> */}
           {/*<Link to="/login"> Login</Link>*/}
           {/*<Link to="/registration"> Registration</Link>*/}
-          <Link to="/admin"> Admin</Link>
+          {/*<Link to="/admin"> Admin</Link>*/}
           {/* { <Link to="/profile"> Profile</Link> } */}
         </div>
         {isLoading ? (

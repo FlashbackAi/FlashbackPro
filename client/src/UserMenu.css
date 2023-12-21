@@ -21,7 +21,7 @@
   
   .dropdown-content {
     position: absolute;
-    top: 140%; /* Place the dropdown below the user icon */
+    top: 100%; /* Place the dropdown below the user icon */
     background-color: #f9f9f9;
     width: 7rem;
     left: -1rem;
