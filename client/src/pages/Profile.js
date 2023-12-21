@@ -73,7 +73,6 @@ const Profile = () => {
         </div>
         
     </div>
-
 <>
 <footer id="footer" className="flexbox-col">
     <div className="footer-logo-wrapper flexbox">
@@ -86,7 +85,7 @@ const Profile = () => {
     </div>
     <div className="footer-inner flexbox">
         <div className="footer-left">
-            <svg className="footer-ico" xmlns="http://www.w3.org/2000/svg" id="Layer_2" data-name="Layer 2" viewBox="0 0 805.93 878.75">
+            <svg className="footer-ico" src="..\Media\svg\GrayscaleTransparent.svg" id="Layer_2" data-name="Layer 2" viewBox="0 0 805.93 878.75">
                 <defs><style>{`.cls-1{fill:none;stroke:var(--primary);stroke-miterlimit:10;stroke-width:45px;}`}</style></defs>
                 <title>icon</title>
                 <polyline className="cls-1" points="518.08 328.59 783.43 177.13 783.43 39 401.75 258.32 22.5 39 22.5 183.8 588.35 507.92 510.81 553.96 783.43 706.63 783.43 839.92 402.97 621.82 22.5 839.92 22.5 707.85 386 497.02" />
