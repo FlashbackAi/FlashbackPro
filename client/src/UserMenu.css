@@ -1,132 +1,131 @@
 .user-menu-container {
-    position: fixed;
-    top: 1.3rem;
-    left: 5rem;
-    z-index: 1000;
-    width: 60px;
-    height: 34px;
-  }
-  
-  .user-menu {
-    /* background-color: #3498db; */
-    color: white;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-  }
-  
-  .dropdown-content {
-    position: absolute;
-    top: 100%; /* Place the dropdown below the user icon */
-    background-color: #f9f9f9;
-    width: 7rem;
-    left: -1rem;
-    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
-    z-index: 1;
-    border-radius: 1.5rem;
-    padding: 0.8rem;
-    flex-direction: column;
-    display: flex;
-  }
-  
-  .dropdown-content a {
-    color: black;
-    text-decoration: none;
-    padding: 8px;
-    cursor: pointer;
-    display: flex;
-  }
-  
-  .dropdown-content a:hover {
-    background-color: dodgerblue;
-    border-radius: 4rem;
-    padding: 0.5rem;
-    margin-left: -1.5rem;
-    min-width: 4rem;
-  }
-  
-  .user-icon img {
-    width: 100%; /* Set the width to 100% to fill the container */
-    height: 100%; /* Set the height to 100% to fill the container */
-    border-radius: 50%; /* Ensure the image is also circular */
-  }
+  position: fixed;
+  top: 1.5rem;
+  left: 2rem;
+  z-index: 1000;
+  width: 70px;
+  height: 50px;
+}
 
-  /* Spinner around the usermenu logo */
-  body {
-    margin: 0;
-    place-content: center;
-  }
-  
-  @property --a { 
-    syntax: "<angle>";
-    initial-value: 45deg; 
-    inherits: true;
-  }
-  
-  @property --r {
-    syntax: "<angle>";
-    initial-value: 5deg; 
-    inherits: true;
-  }
-  
-  @property --p { 
-    syntax: "<percentage>";
-    initial-value: 0%;
-    inherits: true;
-  }
-  
-  img {
-    --c: #bec1c9; 
-    width: 250px; 
-    aspect-ratio: 1;
-    border-radius: 25px;
-    border: 4px solid #0000; 
-    padding: 4px; 
-    background: 
-      conic-gradient(from var(--a),
-         /* #0000 calc(30% - var(--p)), */
-         var(--c) calc(50% - var(--p)) calc(50% + var(--p)),
-         #0000 calc(70% + var(--p))) border-box;
-    --g: linear-gradient(#000 0 0);
-    -webkit-mask: 
-      var(--g),var(--g) padding-box,
-      conic-gradient(from var(--a),
-         #000d calc(30% - var(--p)),
-         #000  calc(50% - var(--p)) calc(50% + var(--p)),
-         #000d calc(70% + var(--p))) content-box;
-    -webkit-mask-composite: xor;
-            mask-composite: exclude;
-    --_t: perspective(450px); 
-    animation: 3s linear infinite;
-    animation-name: a,r;
-    transition: --p .5s,--r .4s;
-    cursor: pointer;
-  }
-  
-  img:hover {
-    --p: 50%;
-    --r: 0deg;
-    animation-play-state: paused;
-  }
-  
-  @keyframes a {
-    to {--a: 405deg}
-  }
-  
-  @keyframes r{
-    0%,
-    100%  {transform: var(--_t) rotate3d( 1, 1,0,var(--r))}
-    12.5% {transform: var(--_t) rotate3d( 0, 1,0,var(--r))}
-    25%   {transform: var(--_t) rotate3d(-1, 1,0,var(--r))}
-    37.5% {transform: var(--_t) rotate3d(-1, 0,0,var(--r))}
-    50%   {transform: var(--_t) rotate3d(-1,-1,0,var(--r))}
-    62.5% {transform: var(--_t) rotate3d( 0,-1,0,var(--r))}
-    75%   {transform: var(--_t) rotate3d( 1,-1,0,var(--r))}
-    87.5% {transform: var(--_t) rotate3d( 1, 0,0,var(--r))}
-  }
-  
-  
+.user-menu {
+  /* background-color: #3498db; */
+  color: white;
+  width: 3rem;
+  height: 1.8rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.dropdown-content {
+  position: absolute;
+  top: 90%; /* Place the dropdown below the user icon */
+  background-color: #f9f9f9;
+  width: 7rem;
+  left: -1rem;
+  box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+  z-index: 1;
+  border-radius: 1.5rem;
+  padding: 0.8rem;
+  flex-direction: column;
+  display: flex;
+}
+
+.dropdown-content a {
+  color: black;
+  text-decoration: none;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+}
+
+.dropdown-content a:hover {
+  background-color: dodgerblue;
+  border-radius: 4rem;
+  padding: 0.5rem;
+  margin-left: -1.5rem;
+  min-width: 4rem;
+}
+
+.user-icon img {
+  width: 100%; /* Set the width to 100% to fill the container */
+  height: 100%; /* Set the height to 100% to fill the container */
+  border-radius: 50%; /* Ensure the image is also circular */
+}
+
+/* Spinner around the usermenu logo */
+body {
+  margin: 0;
+  place-content: center;
+}
+
+@property --a { 
+  syntax: "<angle>";
+  initial-value: 45deg; 
+  inherits: true;
+}
+
+@property --r {
+  syntax: "<angle>";
+  initial-value: 5deg; 
+  inherits: true;
+}
+
+@property --p { 
+  syntax: "<percentage>";
+  initial-value: 0%;
+  inherits: true;
+}
+
+img {
+  --c: #bec1c9; 
+  width: 250px; 
+  aspect-ratio: 1;
+  border-radius: 25px;
+  border: 4px solid #0000; 
+  padding: 4px; 
+  background: 
+    conic-gradient(from var(--a),
+       /* #0000 calc(30% - var(--p)), */
+       var(--c) calc(50% - var(--p)) calc(50% + var(--p)),
+       #0000 calc(70% + var(--p))) border-box;
+  --g: linear-gradient(#000 0 0);
+  -webkit-mask: 
+    var(--g),var(--g) padding-box,
+    conic-gradient(from var(--a),
+       #000d calc(30% - var(--p)),
+       #000  calc(50% - var(--p)) calc(50% + var(--p)),
+       #000d calc(70% + var(--p))) content-box;
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  --_t: perspective(450px); 
+  animation: 3s linear infinite;
+  animation-name: a,r;
+  transition: --p .5s,--r .4s;
+  cursor: pointer;
+}
+
+img:hover {
+  --p: 50%;
+  --r: 0deg;
+  animation-play-state: paused;
+}
+
+@keyframes a {
+  to {--a: 405deg}
+}
+
+@keyframes r{
+  0%,
+  100%  {transform: var(--_t) rotate3d( 1, 1,0,var(--r))}
+  12.5% {transform: var(--_t) rotate3d( 0, 1,0,var(--r))}
+  25%   {transform: var(--_t) rotate3d(-1, 1,0,var(--r))}
+  37.5% {transform: var(--_t) rotate3d(-1, 0,0,var(--r))}
+  50%   {transform: var(--_t) rotate3d(-1,-1,0,var(--r))}
+  62.5% {transform: var(--_t) rotate3d( 0,-1,0,var(--r))}
+  75%   {transform: var(--_t) rotate3d( 1,-1,0,var(--r))}
+  87.5% {transform: var(--_t) rotate3d( 1, 0,0,var(--r))}
+}
+

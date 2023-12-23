@@ -61,8 +61,9 @@
   --font-secondary: SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
   --font-slim: "Roboto";
 }
-* {
+Avatar {
   box-sizing: border-box;
+  background-color: #000000;
 }
 html, body {
   margin: 0;
@@ -115,14 +116,14 @@ html, body {
 /*User Profile*/ 
 
 
-.user-icon {
+.profile-user-icon {
   width: 100px;
   height: 100px;
   border-radius: 50%;
   overflow: hidden;
   background-color: #007bff;
 }
-.user-icon-wrapper {
+.profile-user-icon-wrapper {
   width: 100px;
   height: 100px;
   
@@ -167,7 +168,8 @@ html, body {
   width: 100%;
   display: grid;
   padding: .75em 0 1em 0;
-  background-color: var(--bc);
+  background-color: transparent;
+  color: #000000;
   grid-template-columns: 1fr 10% 35% 20% 1fr;
   grid-template-rows: auto;
   grid-template-areas:
@@ -212,8 +214,9 @@ html, body {
   cursor: pointer;
 }
 .ufo-bar-fff span {
-  color: var(--dark);
+  color: var(--bc);
   font-weight: 600;
+  font-size: xx-large;
 }
 .ufo-bar-fff-active {
   margin: .25em .5em;
@@ -239,7 +242,7 @@ html, body {
   height: 500%;
   display: grid;
   color: var(--white);
-  background-color: var(--bc);
+  background-color: transparent;
   grid-template-columns: 1fr 16.25% 16.25% 16.25% 16.25% 1fr;
   grid-template-rows: auto;
   grid-template-areas:
@@ -258,10 +261,10 @@ html, body {
   color: var(--dark);
 }
 .ufo-bar2-block h3 {
-  color: var(--white);
-  font-weight: 500;
+  color: var(--bc);
+  font-weight: 1000;
 }
-.ufo-bar2-block:after {
+/* .ufo-bar2-block:after {
   content:"";
   background: var(--gradient);
   background-size: 700%;
@@ -269,7 +272,8 @@ html, body {
   height: 3px;
   width: 100%;
   bottom: 0;
-}
+} */
+
 .ufo-bar2-col2-inner {
   width: 100%;
 }
@@ -287,16 +291,17 @@ html, body {
 }
 /* Button 2 */
 .button2, .btn-secondary2 {
-  margin: 0 .4em;
+  margin: 0.2em;
+  top: 3rem;
   position: relative;
   cursor: pointer;
   padding: .9em 1em;
   letter-spacing: .1em;
   text-align: center;
-  font-weight: 300;
-  color: var(--bc);
+  font-weight: 900;
+  color: dodgerblue;
   font-size: var(--button-small);
-  background: var(--gradient2);
+  background: dodgerblue;
   background-size: 1100%;
   border-radius: 50px;
   border: none;
@@ -353,7 +358,7 @@ html, body {
 }
 .footer-inner {
   width: 80%;
-  min-height: 25vh;
+  min-height: 2.3rem;
 }
 .footer-left {
   width: 50%;
@@ -376,6 +381,12 @@ html, body {
 .footer-ico {
   width: 25px;
 }
+div.footer-inner.flexbox {
+  background-color: #000000;
+  width: 100%;
+  top: 68.7rem;
+  position: fixed;
+}
 .footer-right {
   width: 50%;
   height: 100%;
@@ -383,9 +394,10 @@ html, body {
   justify-content: flex-start;
   flex-direction: column;
   align-items: flex-start;
+  margin: 0 0 1rem 1;
 }
 .footer-links {
-  margin: 0 0 1.5em 0;
+  margin: 0 0 1rem 1;
 }
 .footer-link {
   margin: 0 4em;
@@ -405,7 +417,8 @@ html, body {
 }
 .footer-text {
   margin: 1em .5em;
-  color: var(--gray);
+  color: var(--white);
+  background-color: #000000;
   font-size: .85em;
   width: 50%;
   transition: color .2s ease-in-out;
@@ -491,5 +504,53 @@ html, body {
   .footer-link {
     display: block;
     margin: 1em 0 1em 0;
+  }
+}
+
+
+@import url("https://fonts.googleapis.com/css?family=Poppins:700");
+profile {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+  background: #0f1722;
+  display: flex;
+  align-items: center;
+}
+
+.blob {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: #023f92;
+  border-radius: 63% 37% 32% 68% / 62% 32% 68% 38%;
+  width: 50vmax;
+  aspect-ratio: 1 / 1;
+  z-index: -1;
+  animation: move 10s ease-in-out infinite;
+  transform-origin: 50% 50%;
+}
+
+@keyframes move {
+  0% {
+    transform: scale(1) translate(10px, -30px);
+  }
+  38% {
+    transform: scale(0.8, 1) translate(80vw, 30vh) rotate(160deg);
+  }
+  40% {
+    transform: scale(0.8, 1) translate(80vw, 30vh) rotate(160deg);
+  }
+  78% {
+    transform: scale(1.3) translate(0vw, 50vh) rotate(-20deg);
+  }
+  80% {
+    transform: scale(1.3) translate(0vw, 50vh) rotate(-20deg);
+  }
+  100% {
+    transform: scale(1) translate(10px, -30px);
   }
 }

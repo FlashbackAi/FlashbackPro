@@ -14,7 +14,7 @@ const Profile = () => {
 
   return (
     <>
-    
+    <div className="blob"></div>
     <div className="user-header-wrapper flexbox">
         <div className="user-header-inner flexbox">
             <div className="user-header-overlay"></div>
@@ -24,7 +24,7 @@ const Profile = () => {
         <div className="ufo-bar-col1"></div>
         <div className="ufo-bar-col2">
             <div className="ufo-bar-col2-inner">
-                <div className="user-icon-wrapper">
+                <div className="profile-user-icon-wrapper">
                     <Avatar name = {username} size = "120" square green/>
                 </div>
             </div>
@@ -94,6 +94,7 @@ const Profile = () => {
     </div>
 </footer>
 </>
+
 </>
 
   );
