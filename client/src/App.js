@@ -7,6 +7,7 @@ import Login from "./pages/Login";
 import LoadingSpinner from "./pages/LoadingSpinner";
 import Admin from "./pages/Admin";
 import Profile from "./pages/Profile";
+import Collage from "./pages/Collage";
 import ForgotPassword from "./pages/ForgotPassword";
 import { useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
@@ -74,6 +75,8 @@ function App() {
           {/*<Link to="/registration"> Registration</Link>*/}
           <Link to="/admin"> Admin</Link>
           {/* { <Link to="/profile"> Profile</Link> } */}
+           <Link to="/Collage"> Collage</Link>
+
         </div>
         {isLoading ? (
           // Display Loading spinner while waiting
@@ -90,6 +93,8 @@ function App() {
             <Route path="/home" element={<ProtectedRoute><Home/></ProtectedRoute>}></Route>
             <Route path="/createFlashBack" element={<ProtectedRoute><CreateFlashBack /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/Collage" element={<ProtectedRoute><Collage /></ProtectedRoute>} />
+
           </Routes>
           )}
         </Router>
