@@ -290,57 +290,37 @@ html, body {
   width: 100%;
 }
 /* Button 2 */
-.button2, .btn-secondary2 {
+.button2 {
   margin: 0.2em;
   top: 3rem;
   position: relative;
   cursor: pointer;
-  padding: .9em 1em;
+  padding: .3em 1em;
   letter-spacing: .1em;
   text-align: center;
   font-weight: 900;
   color: dodgerblue;
   font-size: var(--button-small);
   background: dodgerblue;
-  background-size: 1100%;
   border-radius: 50px;
   border: none;
   transform: scaleX(1);
   transition: background-position 3s cubic-bezier(.455,.03,.515,.955),-webkit-transform .3s cubic-bezier(.175,.885,.32,1.275);
-  transition: transform .3s cubic-bezier(.175,.885,.32,1.275),background-position 3s cubic-bezier(.455,.03,.515,.955);
-  transition: transform .3s cubic-bezier(.175,.885,.32,1.275),background-position 3s cubic-bezier(.455,.03,.515,.955),-webkit-transform .3s cubic-bezier(.175,.885,.32,1.275);
 }
-.button2 {
-  transition: bottom .3s cubic-bezier(.175,.885,.32,1.275),background-position 3s cubic-bezier(.455,.03,.515,.955),-webkit-transform .3s cubic-bezier(.175,.885,.32,1.275);
-  transition: transform .3s cubic-bezier(.175,.885,.32,1.275),bottom .3s cubic-bezier(.175,.885,.32,1.275),background-position 3s cubic-bezier(.455,.03,.515,.955);
-  transition: transform .3s cubic-bezier(.175,.885,.32,1.275),bottom .3s cubic-bezier(.175,.885,.32,1.275),background-position 3s cubic-bezier(.455,.03,.515,.955),-webkit-transform .3s cubic-bezier(.175,.885,.32,1.275);
-}
-.button2, .button2 .btn-secondary2 {
-  background-position: 0 50%;
-  bottom: 0;
-}
-.button2 .btn-secondary2 {
-  left: 0;
-  width: 90%;
-  position: absolute;
-  filter: blur(16px);
-  opacity: .9;
-  z-index: -1;
-  transform: scale3d(.9, .9, 1);
-  transition: bottom .3s cubic-bezier(.175,.885,.32,1.275),background-position 3s cubic-bezier(.455,.03,.515,.955),-webkit-transform .3s cubic-bezier(.175,.885,.32,1.275),-webkit-filter .3s cubic-bezier(.175,.885,.32,1.275);
-  transition: transform .3s cubic-bezier(.175,.885,.32,1.275),filter .3s cubic-bezier(.175,.885,.32,1.275),bottom .3s cubic-bezier(.175,.885,.32,1.275),background-position 3s cubic-bezier(.455,.03,.515,.955);
-  transition: transform .3s cubic-bezier(.175,.885,.32,1.275),filter .3s cubic-bezier(.175,.885,.32,1.275),bottom .3s cubic-bezier(.175,.885,.32,1.275),background-position 3s cubic-bezier(.455,.03,.515,.955),-webkit-transform .3s cubic-bezier(.175,.885,.32,1.275),-webkit-filter .3s cubic-bezier(.175,.885,.32,1.275);
-}
-.button2:focus, .button2:hover {
+
+.button2:hover {
   transform: scale3d(1.1, 1.1, 1);
   background-position: 100% 50%;
   outline: none;
   bottom: 2px;
 }
+
+.button2 .btn-secondary2 {
+  display: none;
+}
+
 .button2:focus .btn-secondary2, .button2:hover .btn-secondary2 {
-  background-position: 100% 50%;
-  filter: blur(25px);
-  bottom: -5px;
+  display: none;
 }
 /* Footer */
 #footer {

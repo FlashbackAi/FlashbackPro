@@ -1,5 +1,5 @@
 import "./App.css";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
 import CreateFlashBack from "./pages/CreateFlashBack";
 import Registration from "./pages/Registration";
@@ -10,10 +10,9 @@ import Profile from "./pages/Profile";
 import ForgotPassword from "./pages/ForgotPassword";
 import { useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
-import { Navigate } from 'react-router-dom'
+// import UserMenu from "./pages/UserMenu";
 
 function App() {
-
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -34,6 +33,7 @@ function App() {
   const ProtectedRoute = ({ children }) => {
     const token = sessionStorage.getItem("accessToken");
     const isAuthenticated = token && !isTokenExpired(token);
+    // const location = useLocation();
 
     return isAuthenticated ? children : <Navigate to="/login" />;
   };
@@ -49,6 +49,7 @@ function App() {
     }
   }, [darkMode]);
   return (
+  <Router>
     <div className="App">
       <div className="Background">
 
@@ -65,7 +66,7 @@ function App() {
       </label>
 
 
-      <Router>
+      
         <div className="navbar">
           {/*<img src={"http://localhost:3000/static/media/logo.cf2c8490777d428b465f.png"}></img>*/}
           {/*<Link to="/"> Home Page</Link>*/}
@@ -73,6 +74,9 @@ function App() {
           {/*<Link to="/login"> Login</Link>*/}
           {/*<Link to="/registration"> Registration</Link>*/}
           {/*<Link to="/admin"> Admin</Link>*/}
+          {/* {(location.pathname !== '/login' && location.pathname !== '/registration') && (
+            <UserMenu />
+          )} */}
           {/* { <Link to="/profile"> Profile</Link> } */}
         </div>
         {isLoading ? (
@@ -92,34 +96,9 @@ function App() {
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           </Routes>
           )}
-        </Router>
-
     </div>
+    </Router>
   );
-  //       <Switch>
-  //         <Route path="/" exact component={Home} />
-  //         <Route path="/createFlashBack" exact component={CreateFlashBack} />
-  //         <Route path="/registration" exact component={Registration} />
-  //         <Route path="/login" exact component={Login} />
-  //       </Switch>
-  //     </Router> 
-  //     <Router>
-  //           <div className="navbar">
-  //               <Link to="/"> Home Page</Link>
-  //               <Link to="/createFlashBack"> Create FlashBack</Link>
-  //               <Link to="/login"> Login</Link>
-  //               <Link to="/registration"> Registration</Link>
-  //           </div>
-  //           <Routes>
-  //               <Route path="/registration" element={<Registration />} />
-  //               <Route path="/home" element={<Home />} />
-  //               <Route path="/" element={<Login />} />
-  //               <Route path="/login" element={<Login />} />
-  //               <Route path="/createFlashBack" element={<CreateFlashBack />} />
-  //           </Routes>
-  //       </Router>
-  //   </div>
-  // );
 }
 
 
