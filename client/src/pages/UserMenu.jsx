@@ -26,7 +26,7 @@ const UserMenu = () => {
   return (
     <div className="user-menu-container" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
       <div className={`user-menu ${isMenuOpen ? 'open' : ''}`} ref={menuRef}>
-        <div className="user-icon">
+        <div className="user-icon-d">
         <img src={logoImage} alt="Logo" />
         </div>
       </div>
