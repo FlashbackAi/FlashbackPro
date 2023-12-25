@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState} from 'react';
 import { useNavigation} from 'react-router-dom';
 import html2canvas from 'html2canvas';
 import { saveAs } from 'file-saver';
-//import "./ImageUpload.css"
+//  import "./ImageUpload.css"
 
 const ImageCollage = () => {
     const collageRef = React.useRef(null);
