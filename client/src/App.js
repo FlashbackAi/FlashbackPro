@@ -3,11 +3,12 @@ import { BrowserRouter as Router, Route, Routes, Link } from "react-router-dom";
 import Home from "./pages/Home";
 import CreateFlashBack from "./pages/CreateFlashBack";
 import Registration from "./pages/Registration";
+import ImageUpload from "./pages/ImageUpload";
 import Login from "./pages/Login";
 import LoadingSpinner from "./pages/LoadingSpinner";
 import Admin from "./pages/Admin";
 import Profile from "./pages/Profile";
-import ImageCollage from "./pages/ImageCollage";
+import ImageCollage from "./pages/Template_Collage/ImageCollage";
 import ForgotPassword from "./pages/ForgotPassword";
 import { useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
@@ -75,7 +76,8 @@ function App() {
           {/*<Link to="/registration"> Registration</Link>*/}
           <Link to="/admin"> Admin</Link>
           {/* { <Link to="/profile"> Profile</Link> } */}
-           <Link to="/Collage"> ImageCollage</Link>
+          <Link to="/ImageCollage"> ImageCollage</Link>
+          <Link to="/ImageUpload">ImageUpload</Link>
 
         </div>
         {isLoading ? (
@@ -94,6 +96,7 @@ function App() {
             <Route path="/createFlashBack" element={<ProtectedRoute><CreateFlashBack /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/ImageCollage" element={<ProtectedRoute><ImageCollage /></ProtectedRoute>} />
+            {/* <Route path="/ImageUpload" element={<ProtectedRoute><ImageUpload /></ProtectedRoute>} /> */}
 
           </Routes>
           )}
