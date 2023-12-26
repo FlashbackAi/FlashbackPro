@@ -9,6 +9,7 @@ import LoadingSpinner from "./pages/LoadingSpinner";
 import Admin from "./pages/Admin";
 import Profile from "./pages/Profile";
 import ImageCollage from "./pages/Template_Collage/ImageCollage";
+import ImageCollageNew from "./pages/Template_Collage/ImageCollageNew";
 import ForgotPassword from "./pages/ForgotPassword";
 import { useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
@@ -77,7 +78,8 @@ function App() {
           <Link to="/admin"> Admin</Link>
           {/* { <Link to="/profile"> Profile</Link> } */}
           <Link to="/ImageCollage"> ImageCollage</Link>
-          <Link to="/ImageUpload">ImageUpload</Link>
+          <Link to="/ImageCollageNew"> ImageCollageNew</Link>
+          {/* <Link to="/ImageUpload">ImageUpload</Link> */}
 
         </div>
         {isLoading ? (
@@ -96,7 +98,7 @@ function App() {
             <Route path="/createFlashBack" element={<ProtectedRoute><CreateFlashBack /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/ImageCollage" element={<ProtectedRoute><ImageCollage /></ProtectedRoute>} />
-            {/* <Route path="/ImageUpload" element={<ProtectedRoute><ImageUpload /></ProtectedRoute>} /> */}
+            <Route path="/ImageCollageNew" element={<ProtectedRoute><ImageCollageNew /></ProtectedRoute>} /> */}
 
           </Routes>
           )}

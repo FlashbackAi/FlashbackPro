@@ -9,7 +9,7 @@
     border: 2px dashed #ccc;
     width: 200px; /* Adjust as needed */
     height: 200px; /* Adjust as needed */
-    display: flex;
+    /* display: flex; */
     justify-content: center;
     align-items: center;
     position: relative;
