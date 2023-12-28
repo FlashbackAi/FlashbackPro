@@ -589,7 +589,7 @@ p {
     width: 50%; /* Half the width of the collage container */
     height: 50%; /* Half the height of the collage container */
     object-fit: cover; /* This ensures the images cover their area without distorting */
-    z-index: 1; /* Background images are behind the foreground */
+    z-index: 2; /* Background images are behind the foreground */
 }
 
 .collage .background:nth-child(2) {

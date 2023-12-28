@@ -8,7 +8,7 @@ import Login from "./pages/Login";
 import LoadingSpinner from "./pages/LoadingSpinner";
 import Admin from "./pages/Admin";
 import Profile from "./pages/Profile";
-import ImageCollage from "./pages/Template_Collage/ImageCollage";
+import ImageCollage from "./pages/ImageCollage";
 import ImageCollageNew from "./pages/Template_Collage/ImageCollageNew";
 import ForgotPassword from "./pages/ForgotPassword";
 import { useEffect, useState } from "react";
