@@ -204,12 +204,12 @@ function CreateFlashBack() {
                 Image Template
             </h1>
             <div ref={collageRef} >
-                  <div className="collage" >
-                    <img  src={image1} alt="Image 1" name="img1" className="background" onDrop={(e) => handleDrop(setImage1, e)} onDragOver={handleDragOver}style={{border: '2px solid red'}}/>
-                    <img  src={image2} alt="Image 2" name="img2" className="background" onDrop={(e) => handleDrop(setImage2, e)} onDragOver={handleDragOver}style={{border: '2px solid red'}}/>
-                    <img  src={image3} alt="Image 3" name="img3"className="background" onDrop={(e) => handleDrop(setImage3, e)} onDragOver={handleDragOver}style={{border: '2px solid red'}}/>
-                    <img  src={image4} alt="Image 4" name="img4" className="background" onDrop={(e) => handleDrop(setImage4, e)} onDragOver={handleDragOver}style={{border: '2px solid red'}}/>
-                    {/* <img className="foreground" src="/images/background.png" alt="Foreground Image" />  */}
+                  <div className="collage"  style={{ backgroundImage: `url(require("/images/background.png"))` }}>
+                    <img  src={image1} alt="Image 1" name="img1" className="background" onDrop={(e) => handleDrop(setImage1, e)} onDragOver={handleDragOver}/>
+                    <img  src={image2} alt="Image 2" name="img2" className="background" onDrop={(e) => handleDrop(setImage2, e)} onDragOver={handleDragOver}/>
+                    <img  src={image3} alt="Image 3" name="img3"className="background" onDrop={(e) => handleDrop(setImage3, e)} onDragOver={handleDragOver}/>
+                    <img  src={image4} alt="Image 4" name="img4" className="background" onDrop={(e) => handleDrop(setImage4, e)} onDragOver={handleDragOver}/>
+                    <img className="foreground" src="/images/background.png" alt="Foreground Image" /> 
                   </div>
             </div>
 
