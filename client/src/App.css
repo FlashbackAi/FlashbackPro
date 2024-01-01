@@ -581,6 +581,8 @@ p {
     position: relative;
     width: 500px; /* Set to the desired width of your collage */
     height: 300px; /* Set to the desired height of your collage */
+    touch-action: none;
+    overflow: hidden;
 }
 
 .collage .background {
@@ -591,6 +593,7 @@ p {
     height: 50%; /* Half the height of the collage container */
     object-fit: cover; /* This ensures the images cover their area without distorting */
     z-index: 1; /* Background images are behind the foreground */
+    touch-action: none;
 }
 
 .collage .background:nth-child(2) {
@@ -614,6 +617,12 @@ p {
     height: 100%;
     z-index: 2; /* Ensures the foreground is on top */
     pointer-events: none; 
+}
+
+.collage .background .image {
+  width: auto;
+   max-width: 100%;
+   object-fit:cover;
 }
 
 /*End of Sample*/

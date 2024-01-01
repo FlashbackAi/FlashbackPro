@@ -1,6 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState ,useCallback} from 'react';
 import axios from 'axios';
 import { saveAs } from 'file-saver';
+// import ImageComponent from "./ImageComponent";
+import { useGesture } from '@use-gesture/react';
+import { animated, useSpring } from '@react-spring/web';
+
+
 
 function App() {
   const serverIP = process.env.REACT_APP_SERVER_IP;
@@ -13,7 +18,45 @@ function App() {
   const [image2, setImage2] = useState(null);
   const [image3, setImage3] = useState(null);
   const [image4, setImage4] = useState(null);
+  const imgRef = React.useRef();
+
   
+
+  const ImageComponent = ({ src, alt, onDrop, onDragOver }) => {
+    const [style, api] = useSpring(() => ({
+      x: 0, y: 0, scale: 1
+    }));
+  
+    const bind = useGesture({
+      onDrag: ({event, offset: [x, y] }) => 
+      {
+          event.preventDefault();
+          event.stopPropagation();
+          api.start({ x, y });
+          
+      },
+  
+      onPinch: ({event, offset: [d, a], origin: [ox, oy] }) =>
+        { 
+          event.preventDefault();
+          event.stopPropagation();
+          api.start({ scale: d, ox, oy });
+      }
+    });
+
+    return (
+      <animated.img
+        {...bind()}
+        src={src}
+        alt={alt}
+        style={{ ...style, touchAction: 'none' }}
+        onDrop={onDrop}
+        onDragOver={onDragOver}
+        className="background"
+      />
+    );
+  };
+
   const handleDrop = (imageSetter, e) => {
     e.preventDefault();
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
@@ -152,18 +195,26 @@ const downloadFolder = async () => {
                 Image Template
             </h1>
             <div ref={collageRef} >
-                  <div className="collage"  style={{ backgroundImage: `url(require("/images/background.png"))` }}>
-                    <img  src={image1} alt="Image 1" name="img1" className="background" onDrop={(e) => handleDrop(setImage1, e)} onDragOver={handleDragOver}/>
-                    <img  src={image2} alt="Image 2" name="img2" className="background" onDrop={(e) => handleDrop(setImage2, e)} onDragOver={handleDragOver}/>
-                    <img  src={image3} alt="Image 3" name="img3"className="background" onDrop={(e) => handleDrop(setImage3, e)} onDragOver={handleDragOver}/>
-                    <img  src={image4} alt="Image 4" name="img4" className="background" onDrop={(e) => handleDrop(setImage4, e)} onDragOver={handleDragOver}/>
+                  <div className="collage" > 
+                    <div className="background" onDrop={(e) => handleDrop(setImage1, e)} onDragOver={handleDragOver}>
+                      <ImageComponent className="image"  src={image1} alt="Image 1" name="img1" />
+                    </div>
+                    <div className="background" onDrop={(e) => handleDrop(setImage2, e)} onDragOver={handleDragOver}>
+                      <ImageComponent className="image" src={image2} alt="Image 2" name="img2" />
+                    </div>
+                    <div className="background" onDrop={(e) => handleDrop(setImage3, e)} onDragOver={handleDragOver}>
+                      <ImageComponent className="image" src={image3} alt="Image 3" name="img3"/>
+                    </div>
+                    <div className="background" onDrop={(e) => handleDrop(setImage4, e)} onDragOver={handleDragOver}>
+                      <ImageComponent className="image" src={image4} alt="Image 4" name="img4" />
+                    </div>
                     <img className="foreground" src="/templates/background.png" alt="Foreground Image" /> 
                   </div>
             </div>
             <canvas ref={canvasRef} ></canvas>
             <button onClick={downloadCollage}>Download Collage</button>
-        </div>   
-     
+           
+        </div>
     </div>
   );
 }
