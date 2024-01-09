@@ -618,10 +618,9 @@ p {
     z-index: 2; /* Ensures the foreground is on top */
     pointer-events: none; 
 }
-
-.collage .background .image {
-  width: auto;
-   max-width: 100%;
+ .background .image {
+   height: 100%;
+   width: 100%;
    object-fit:cover;
 }
 

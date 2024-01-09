@@ -49,7 +49,10 @@ function App() {
     }
   }, [darkMode]);
   return (
+
+    
     <div className="App">
+      {/* <meta name="viewport" content="width=device-width, user-scalable=no" /> */}
       <div className="Background">
 
       </div>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState ,useCallback} from 'react';
+import React, { useEffect,useRef, useState ,useCallback} from 'react';
 import axios from 'axios';
 import { saveAs } from 'file-saver';
 // import ImageComponent from "./ImageComponent";
@@ -12,50 +12,60 @@ function App() {
   const [folders, setFolders] = useState([]);
   const [selectedValue, setSelectedValue] = useState('');
   const [uploadedImages, setUploadedImages] = useState([]);
-  const collageRef = React.useRef(null);
-  const canvasRef = React.useRef(null);
+  const collageRef = useRef(null);
+  const canvasRef = useRef(null);
   const [image1, setImage1] = useState(null);
   const [image2, setImage2] = useState(null);
   const [image3, setImage3] = useState(null);
   const [image4, setImage4] = useState(null);
-  const imgRef = React.useRef();
+  const imgRef = useRef();
 
   
 
-  const ImageComponent = ({ src, alt, onDrop, onDragOver }) => {
-    const [style, api] = useSpring(() => ({
-      x: 0, y: 0, scale: 1
-    }));
-  
-    const bind = useGesture({
-      onDrag: ({event, offset: [x, y] }) => 
+
+  function ImageCropper({ src }) {
+    let [crop, setCrop] = useState({ x: 0, y: 0, scale: 1 });
+    let[scale,setScale] = useState();
+    let imageRef = useRef();
+    useGesture(
       {
-          event.preventDefault();
-          event.stopPropagation();
-          api.start({ x, y });
-          
+        onDrag: ({ offset: [dx, dy] }) => {
+          setCrop((crop) => ({ ...crop, x: dx, y: dy }));
+        },
+        onPinch: ({ offset: [d] }) => {
+         
+          setScale(d /2);
+        },
       },
-  
-      onPinch: ({event, offset: [d, a], origin: [ox, oy] }) =>
-        { 
-          event.preventDefault();
-          event.stopPropagation();
-          api.start({ scale: d, ox, oy });
+      {
+        target: imageRef,
+        eventOptions: { passive: false },
       }
-    });
-
-    return (
-      <animated.img
-        {...bind()}
-        src={src}
-        alt={alt}
-        style={{ ...style, touchAction: 'none' }}
-        onDrop={onDrop}
-        onDragOver={onDragOver}
-        className="background"
-      />
     );
-  };
+  
+    return (
+      <>
+          <div style={{border: '2px solid red'}} className='image'>
+            <img
+              src={src}
+              ref={imageRef}
+              style={{
+                position: "relative",
+                left: crop.x,
+                top: crop.y,
+                transform: `scale(${scale})`,
+                touchAction: "none",
+                height: "100%",
+                width: "100%"
+              }}
+             
+            />
+          </div>
+      </>
+    );
+  }
+
+
 
   const handleDrop = (imageSetter, e) => {
     e.preventDefault();
@@ -76,23 +86,14 @@ function App() {
     canvas.width = rect.width * scale;
     canvas.height = rect.height * scale;
     
-    ctx.drawImage(document.getElementsByName('img1')[0], canvas.width * (0 / 100), canvas.height * (0 / 100),250,180)
-    ctx.drawImage(document.getElementsByName('img2')[0],canvas.width * (0 / 100), canvas.height * (50 / 100),250,180)
-    ctx.drawImage(document.getElementsByName('img3')[0],canvas.width * (50 / 100), canvas.height * (0 / 100),250,180)
-    ctx.drawImage(document.getElementsByName('img4')[0],canvas.width * (50 / 100), canvas.height * (50 / 100),250,180)
+    ctx.drawImage(document.getElementsByClassName('image')[0], canvas.width * (0 / 100), canvas.height * (0 / 100),250,180)
+    ctx.drawImage(document.getElementsByClassName('image')[1],canvas.width * (0 / 100), canvas.height * (50 / 100),250,180)
+    ctx.drawImage(document.getElementsByClassName('image')[2],canvas.width * (50 / 100), canvas.height * (0 / 100),250,180)
+    ctx.drawImage(document.getElementsByClassName('image')[3],canvas.width * (50 / 100), canvas.height * (50 / 100),250,180)
     ctx.drawImage(document.getElementsByClassName('foreground')[0],0,0,canvas.width,canvas.height)
     canvas.toBlob(blob => {
         saveAs(blob, 'collage.png');
     });
-  };
-
-  const handleChange = (event) => {
-    setSelectedValue(event.target.value);
-    console.log(event.target.value);
-    if(selectedValue){
-        fetchImages();
-    }
-    
   };
 
   useEffect(() => {
@@ -197,20 +198,24 @@ const downloadFolder = async () => {
             <div ref={collageRef} >
                   <div className="collage" > 
                     <div className="background" onDrop={(e) => handleDrop(setImage1, e)} onDragOver={handleDragOver}>
-                      <ImageComponent className="image"  src={image1} alt="Image 1" name="img1" />
+                      <ImageCropper  src={image1} alt="Image 1" name="img1" />
                     </div>
                     <div className="background" onDrop={(e) => handleDrop(setImage2, e)} onDragOver={handleDragOver}>
-                      <ImageComponent className="image" src={image2} alt="Image 2" name="img2" />
+                      <ImageCropper src={image2} alt="Image 2" name="img2" />
                     </div>
                     <div className="background" onDrop={(e) => handleDrop(setImage3, e)} onDragOver={handleDragOver}>
-                      <ImageComponent className="image" src={image3} alt="Image 3" name="img3"/>
+                      <ImageCropper className="image" src={image3} alt="Image 3" name="img3"/>
                     </div>
                     <div className="background" onDrop={(e) => handleDrop(setImage4, e)} onDragOver={handleDragOver}>
-                      <ImageComponent className="image" src={image4} alt="Image 4" name="img4" />
+                      <ImageCropper className="image" src={image4} alt="Image 4" name="img4" />
                     </div>
                     <img className="foreground" src="/templates/background.png" alt="Foreground Image" /> 
                   </div>
             </div>
+
+            {/* <div className="p-8">
+              <ImageCropper src="http://i3.ytimg.com/vi/bNDCFBIiAe8/maxresdefault.jpg" />
+            </div> */}
             <canvas ref={canvasRef} ></canvas>
             <button onClick={downloadCollage}>Download Collage</button>
            
