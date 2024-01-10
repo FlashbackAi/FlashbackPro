@@ -196,19 +196,44 @@ const downloadFolder = async () => {
                 Image Template
             </h1>
             <div ref={collageRef} >
-                  <div className="collage" > 
+                  <div className="collage" >
+                    
+                  { image1 ? (
+                      <div className="background" onDrop={(e) => handleDrop(setImage1, e)}>
+                      <ImageCropper  src={image1} alt="Image 1" name="img1" />
+                    </div>
+                        ) : ( 
                     <div className="background" onDrop={(e) => handleDrop(setImage1, e)} onDragOver={handleDragOver}>
                       <ImageCropper  src={image1} alt="Image 1" name="img1" />
                     </div>
+                        )}
+                    { image2 ? (
+                      <div className="background" onDrop={(e) => handleDrop(setImage2, e)}>
+                      <ImageCropper  src={image2} alt="Image 1" name="img1" />
+                    </div>
+                        ) : ( 
                     <div className="background" onDrop={(e) => handleDrop(setImage2, e)} onDragOver={handleDragOver}>
                       <ImageCropper src={image2} alt="Image 2" name="img2" />
                     </div>
+                        )}
+                    { image3 ? (
+                      <div className="background" onDrop={(e) => handleDrop(setImage3, e)}>
+                      <ImageCropper  src={image3} alt="Image 3" name="img3" />
+                    </div>
+                        ) : ( 
                     <div className="background" onDrop={(e) => handleDrop(setImage3, e)} onDragOver={handleDragOver}>
                       <ImageCropper className="image" src={image3} alt="Image 3" name="img3"/>
                     </div>
+                        )}
+                      { image4 ? (
+                      <div className="background" onDrop={(e) => handleDrop(setImage4, e)}>
+                      <ImageCropper  src={image4} alt="Image 4" name="img4" />
+                    </div>
+                        ) : ( 
                     <div className="background" onDrop={(e) => handleDrop(setImage4, e)} onDragOver={handleDragOver}>
                       <ImageCropper className="image" src={image4} alt="Image 4" name="img4" />
                     </div>
+                        )}
                     <img className="foreground" src="/templates/background.png" alt="Foreground Image" /> 
                   </div>
             </div>
