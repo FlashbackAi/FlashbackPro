@@ -371,11 +371,17 @@ button {
 }
 /*styling for Images to be displayed*/
 .imageGalleryContainer {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px; /* Adjust the space between images */
-  padding: 20px;
+    width: 30%;
+    max-height: 500px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    padding: 20px;
+    overflow-y: scroll;
+    float: right;
+
+
 }
 
 .imageGalleryContainer img {
@@ -594,6 +600,7 @@ p {
     object-fit: cover; /* This ensures the images cover their area without distorting */
     z-index: 1; /* Background images are behind the foreground */
     touch-action: none;
+    overflow: hidden;
 }
 
 .collage .background:nth-child(2) {
@@ -623,5 +630,6 @@ p {
    width: 100%;
    object-fit:cover;
 }
+
 
 /*End of Sample*/
