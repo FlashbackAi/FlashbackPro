@@ -14,16 +14,17 @@ function App() {
   const [uploadedImages, setUploadedImages] = useState([]);
   const collageRef = useRef(null);
   const canvasRef = useRef(null);
-  const [image1, setImage1] = useState(null);
+  const [image1, setImage1] = useState(ImageCropper);
   const [image2, setImage2] = useState(null);
   const [image3, setImage3] = useState(null);
   const [image4, setImage4] = useState(null);
   const imgRef = useRef();
+  const [templateImages, setTemplateImages] = useState([{}]);
 
   
 
 
-  function ImageCropper({ src }) {
+  const ImageCropper = ({ src }) => {
     let [crop, setCrop] = useState({ x: 0, y: 0, scale: 1 });
     let[scale,setScale] = useState();
     let imageRef = useRef();
@@ -63,14 +64,16 @@ function App() {
           </div>
       </>
     );
-  }
+  };
 
 
 
-  const handleDrop = (imageSetter, e) => {
+  const handleDrop = (imageSetter, name, e) => {
     e.preventDefault();
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       imageSetter(URL.createObjectURL(e.dataTransfer.files[0]));
+      templateImages.map(   )
+
     }
   };
 
@@ -86,10 +89,11 @@ function App() {
     canvas.width = rect.width * scale;
     canvas.height = rect.height * scale;
     
-    ctx.drawImage(document.getElementsByClassName('image')[0], canvas.width * (0 / 100), canvas.height * (0 / 100),250,180)
-    ctx.drawImage(document.getElementsByClassName('image')[1],canvas.width * (0 / 100), canvas.height * (50 / 100),250,180)
-    ctx.drawImage(document.getElementsByClassName('image')[2],canvas.width * (50 / 100), canvas.height * (0 / 100),250,180)
-    ctx.drawImage(document.getElementsByClassName('image')[3],canvas.width * (50 / 100), canvas.height * (50 / 100),250,180)
+    console.log(document.getElementsByName('img1'));
+    ctx.drawImage(document.getElementsByName('img1')[0], canvas.width * (0 / 100), canvas.height * (0 / 100),250,180)
+    ctx.drawImage(document.getElementsByName('img2')[0],canvas.width * (0 / 100), canvas.height * (50 / 100),250,180)
+    ctx.drawImage(document.getElementsByName('img3')[0],canvas.width * (50 / 100), canvas.height * (0 / 100),250,180)
+    ctx.drawImage(document.getElementsByName('img4')[0],canvas.width * (50 / 100), canvas.height * (50 / 100),250,180)
     ctx.drawImage(document.getElementsByClassName('foreground')[0],0,0,canvas.width,canvas.height)
     canvas.toBlob(blob => {
         saveAs(blob, 'collage.png');
@@ -126,20 +130,6 @@ function App() {
     }
 };
 
-const downloadFolderold = async () =>{
-  const folderName = selectedValue
-  console.log(folderName)
-  if(folderName){
-   // downloadZip(folderName)
-      try {
-          const response = await axios.get(`${serverIP}/downloadFolder/${folderName}`);
-          console.log(response);
-      }
-      catch(error ) {
-          console.error('Error fetching images:', error);
-      };
-  }
-};
 
 const downloadFolder = async () => {
     // Replace with your server's endpoint URL
@@ -199,38 +189,38 @@ const downloadFolder = async () => {
                   <div className="collage" >
                     
                   { image1 ? (
-                      <div className="background" onDrop={(e) => handleDrop(setImage1, e)}>
+                      <div className="background" onDrop={(e) => handleDrop(setImage1, "img1", e)}>
                       <ImageCropper  src={image1} alt="Image 1" name="img1" />
                     </div>
                         ) : ( 
-                    <div className="background" onDrop={(e) => handleDrop(setImage1, e)} onDragOver={handleDragOver}>
+                    <div className="background" onDrop={(e) => handleDrop(setImage1, "img1", e)} onDragOver={handleDragOver}>
                       <ImageCropper  src={image1} alt="Image 1" name="img1" />
                     </div>
                         )}
                     { image2 ? (
-                      <div className="background" onDrop={(e) => handleDrop(setImage2, e)}>
-                      <ImageCropper  src={image2} alt="Image 1" name="img1" />
+                      <div className="background" onDrop={(e) => handleDrop(setImage2, "img2", e)}>
+                      <ImageCropper  src={image2} alt="Image 1" name="img2" />
                     </div>
                         ) : ( 
-                    <div className="background" onDrop={(e) => handleDrop(setImage2, e)} onDragOver={handleDragOver}>
+                    <div className="background" onDrop={(e) => handleDrop(setImage2, "img2", e)} onDragOver={handleDragOver}>
                       <ImageCropper src={image2} alt="Image 2" name="img2" />
                     </div>
                         )}
                     { image3 ? (
-                      <div className="background" onDrop={(e) => handleDrop(setImage3, e)}>
+                      <div className="background" onDrop={(e) => handleDrop(setImage3, "img3", e)}>
                       <ImageCropper  src={image3} alt="Image 3" name="img3" />
                     </div>
                         ) : ( 
-                    <div className="background" onDrop={(e) => handleDrop(setImage3, e)} onDragOver={handleDragOver}>
+                    <div className="background" onDrop={(e) => handleDrop(setImage3, "img3", e)} onDragOver={handleDragOver}>
                       <ImageCropper className="image" src={image3} alt="Image 3" name="img3"/>
                     </div>
                         )}
                       { image4 ? (
-                      <div className="background" onDrop={(e) => handleDrop(setImage4, e)}>
+                      <div className="background" onDrop={(e) => handleDrop(setImage4, "img4", e)}>
                       <ImageCropper  src={image4} alt="Image 4" name="img4" />
                     </div>
                         ) : ( 
-                    <div className="background" onDrop={(e) => handleDrop(setImage4, e)} onDragOver={handleDragOver}>
+                    <div className="background" onDrop={(e) => handleDrop(setImage4, "img4", e)} onDragOver={handleDragOver}>
                       <ImageCropper className="image" src={image4} alt="Image 4" name="img4" />
                     </div>
                         )}

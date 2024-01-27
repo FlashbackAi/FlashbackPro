@@ -27,13 +27,13 @@ const logger = winston.createLogger({
  });
 
  // *** Comment these certificates while testing changes in local developer machine.***
-const privateKey = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/privkey.pem', 'utf8');
-const certificate = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/fullchain.pem', 'utf8');
+// const privateKey = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/privkey.pem', 'utf8');
+// const certificate = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/fullchain.pem', 'utf8');
 
-const credentials = {
-  key: privateKey,
-  cert: certificate
-}
+// const credentials = {
+//   key: privateKey,
+//   cert: certificate
+// }
 
 // Set up AWS S3
 const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.js
@@ -90,17 +90,28 @@ const createTable = async (tableName, KeySchema) => {
     // Define GSI for the userUploadsTableName
     params.GlobalSecondaryIndexes = [
       {
-        IndexName: 'FolderIdIndex',
+        IndexName: 'FolderNameIndex',
         KeySchema: [
-          { AttributeName: 'folder_id', KeyType: 'HASH' },
+          { AttributeName: 'folder_name', KeyType: 'HASH' },
         ],
         Projection: {
           ProjectionType: 'ALL', // or choose specific attributes
         },
       },
+      {
+        IndexName: 'ImageStatusIndex',
+        KeySchema: [
+          { AttributeName: 'image_status', KeyType: 'HASH' },
+        ],
+        Projection: {
+          ProjectionType: 'ALL', // or choose specific attributes
+        },
+      }
+      
       // Add more GSIs as needed
     ];
-    params.AttributeDefinitions.push({ AttributeName: 'folder_id', AttributeType: 'S' });
+    params.AttributeDefinitions.push({ AttributeName: 'folder_name', AttributeType: 'S' });
+    params.AttributeDefinitions.push({ AttributeName: 'image_status', AttributeType: 'S' });
   } else if (tableName === userFoldersTableName) {
     // Define GSI for the userFoldersTableName
     params.GlobalSecondaryIndexes = [
@@ -113,9 +124,20 @@ const createTable = async (tableName, KeySchema) => {
           ProjectionType: 'ALL', // or choose specific attributes
         },
       },
+      {
+        IndexName: 'FolderStatusIndex',
+        KeySchema: [
+          { AttributeName: 'folder_status', KeyType: 'HASH' },
+        ],
+        Projection: {
+          ProjectionType: 'ALL', // or choose specific attributes
+        },
+      }
+     
       // Add more GSIs as needed
     ];
     params.AttributeDefinitions.push({ AttributeName: 'user_name', AttributeType: 'S' });
+    params.AttributeDefinitions.push({ AttributeName: 'folder_status', AttributeType: 'S' });
   }
   try {
     await dynamoDB.createTable(params).promise();
@@ -398,7 +420,8 @@ app.post('/upload/:folderName', upload.array('images', 100), async (req, res) =>
 
   const uploadDate = new Date().toISOString();
 
-  const folder_id = generateRandomId(10); // this will be fetching the randomId from the function we implemented earlier
+  const folder_id = username+"//"+folderName; // this will be fetching the randomId from the function we implemented earlier
+  console.log(folder_id);
 
 // Now, update userFolders table
     const userFoldersParams = {
@@ -409,6 +432,7 @@ app.post('/upload/:folderName', upload.array('images', 100), async (req, res) =>
         user_name: username,
         image_count: files.length,
         upload_date: uploadDate,
+        folder_status: "uploaded"
       },
     };
     // Put the item into userFolders table
@@ -423,7 +447,8 @@ app.post('/upload/:folderName', upload.array('images', 100), async (req, res) =>
         user_name: username,
         upload_date: uploadDate,
         folder_name:`${folderName}`,
-        folder_id: folder_id
+        folder_id: folder_id,
+        image_status: "available"
       },
     },
   }));
@@ -453,7 +478,11 @@ app.post('/upload/:folderName', upload.array('images', 100), async (req, res) =>
   })),
 ]);
 
+
   logger.info(`DynamoDB response:`, dynamoResponse);
+
+  // call the function to upload low-resolution images to S3
+  uploadLowResoltionImages(folderName,files);
   
   if (dynamoResponse.UnprocessedItems && Object.keys(dynamoResponse.UnprocessedItems).length > 0) {
     logger.error(`Some items were not processed: ${JSON.stringify(dynamoResponse.UnprocessedItems)}`);
@@ -467,9 +496,6 @@ app.post('/upload/:folderName', upload.array('images', 100), async (req, res) =>
   logger.error(`Error uploading files and updating DynamoDB: ${error.message}`);
   res.status(500).json({ message: `Error uploading files and updating DynamoDB ` });
 }
-
-// call the function to upload low-resolution images to S3
-uploadLowResoltionImages(folderName,files);
   } catch (error) {
     logger.error(`Error uploading files and updating DynamoDB: ${error.message}`);
     res.status(500).json({ message: `Error uploading files and updating DynamoDB.` });
@@ -479,21 +505,40 @@ uploadLowResoltionImages(folderName,files);
 
 app.get('/images/:folderName', async (req, res) => {
   try {
-      const folderName = req.params.folderName;
-      const params = { Bucket: bucketName, Prefix: folderName+"/lowRes" };
-      const s3Response = await s3.listObjectsV2(params).promise();
+   
+     const folderName = req.params.folderName;
+  // console.log(folderName)
+  // const params1 = {
+  //   TableName: userUploadsTableName,
+  //   IndexName: 'FolderNameIndex',
+  //   ProjectionExpression: 'image_id',
+  //   KeyConditionExpression: 'folder_name = :foldername',
+  //   FilterExpression: 'image_status <> :imagestatus',
+  //   ExpressionAttributeValues: {
+  //     ':foldername': folderName,
+  //     ':imagestatus': "deleted"
+  //   }
+  // };
+  // logger.info(params1)
+  const result = await folderImages(folderName);
+  logger.info('total images fetched for the folder: '+result.Count);
+ 
 
-      const imagesPromises = s3Response.Contents.map(async file => {
+      const imagesPromises = result.Items.map(async file => {
         try {
+          const lowResImage=file.image_id.split("/")[0]+"/lowRes/"+file.image_id.split("/")[1];
           const imageData = await s3.getObject({
               Bucket: bucketName,
-              Key: file.Key
+              Key: lowResImage
           }).promise();
 
-          logger.info("Image fetched from cloud: " + file.Key);
+          logger.info("Image fetched from cloud: " + file.image_id);
 
           // Convert image data to base64
-          const base64Image = `data:image/jpeg;base64,${imageData.Body.toString('base64')}`;
+          const base64Image =  {
+            "url": `${file.image_id}`,
+           "imageData":`data:${file.image_id};base64,${imageData.Body.toString('base64')}`
+         }
           return base64Image;
       } catch (err) {
           logger.error("Error fetching image: " + file.Key, err);
@@ -508,7 +553,32 @@ app.get('/images/:folderName', async (req, res) => {
   }
 });
 
+async function folderImages(folderName) {
 
+  try {
+   
+  console.log(folderName)
+  const params = {
+    TableName: userUploadsTableName,
+    IndexName: 'FolderNameIndex',
+    ProjectionExpression: 'image_id',
+    KeyConditionExpression: 'folder_name = :foldername',
+    FilterExpression: 'image_status <> :imagestatus',
+    ExpressionAttributeValues: {
+      ':foldername': folderName,
+      ':imagestatus': "deleted"
+    }
+  };
+  logger.info(params)
+  const result = await docClient.query(params).promise();
+  logger.info('total images fetched for the folder: '+result.Count);
+  return result;
+}
+catch (err) {
+  return err;
+}
+  
+}
 
 app.get('/folders', (req, res) => {
   s3.listObjectsV2({ Bucket: bucketName }, (err, data) => {
@@ -529,36 +599,6 @@ function extractFolderNames(contents) {
   });
   return Array.from(folderSet);
 }
-
-app.get('/downloadFolder-old/:folderName', async (req, res) => {
-
-  const localDownloadPath = '/Downloads/'
-  const  folderName  = req.params.folderName;
-  s3.listObjectsV2({ Bucket: bucketName, Prefix: folderName }, async (err, data) => {
-    if (err) {
-      logger.error("Error in listing S3 objects:", err);
-      return res.status(500).send(err);
-    }
-
-    for (const item of data.Contents) {
-      const fileKey = item.Key;
-      const localFilePath = path.join(localDownloadPath, fileKey);
-
-      // Create directory if it doesn't exist
-      const dir = path.dirname(localFilePath);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-      }
-
-      // Download and save file
-      const params = { Bucket: bucketName, Key: fileKey };
-      const fileStream = fs.createWriteStream(localFilePath);
-      s3.getObject(params).createReadStream().pipe(fileStream);
-      logger.info(`File downloaded: ${fileKey}`)
-    }
-    res.json(folderName);
-  });
-});
 
 
 app.get('/downloadFolder/:folderName', async (req, res) => {
@@ -626,6 +666,9 @@ async function uploadLowResoltionImages(folderName,files)
 
 }
 
+
+
+
 app.get('/folderByUsername/:username', async (req, res) => {
 
   try{
@@ -636,8 +679,10 @@ app.get('/folderByUsername/:username', async (req, res) => {
     IndexName: 'UserNameIndex',
     ProjectionExpression: 'folder_name',
     KeyConditionExpression: 'user_name = :username',
+    FilterExpression: 'folder_status <> :folderstatus',
     ExpressionAttributeValues: {
-      ':username': username
+      ':username': username,
+      ':folderstatus': "deleted"
     }
   };
   logger.info(params)
@@ -654,16 +699,116 @@ catch(err)
 });
 
 
-//*** if you face any issue in testing changes in local dev machine, comment this and use the below listen port***
+app.post('/deleteImages', async(req, res) => {
 
-const httpsServer = https.createServer(credentials, app);
+  try{
+    const imageIds = req.body;
 
-httpsServer.listen(PORT, () => {
-  logger.info(`Server is running on https://localhost:${PORT}`);
+    // let updatePromises = [];
+
+    //  // Loop through each imageName and create an update promise
+    //  for (let image_id of imageNames) {
+    //   const params = {
+    //       TableName: 'userUploads',
+    //       Key: { 'image_id': image_id },
+    //       UpdateExpression: 'SET #attr1 = :value1',
+    //       ExpressionAttributeNames: { '#attr1': 'image_status' },
+    //       ExpressionAttributeValues: { ':value1': 'deleted' },
+    //       ReturnValues: 'UPDATED_NEW'
+    //   };
+
+    //   // Add the update promise to the array
+    //   updatePromises.push(docClient.update(params).promise());
+  //}
+  let results = await deleteImages(imageIds);
+  res.status(200).send('Successfully deleted images');
+}
+  catch(err)
+  {
+    logger.error("Error in deleting images", err);
+    res.status(500).send('Error in deleting selected images');
+  }
+
+});
+
+async function deleteImages(imageIds){
+
+  try{
+    let updatePromises = [];
+
+    // Loop through each imageName and create an update promise
+    for (let image_id of imageIds) {
+     const params = {
+         TableName: 'userUploads',
+         Key: { 'image_id': image_id },
+         UpdateExpression: 'SET #attr1 = :value1',
+         ExpressionAttributeNames: { '#attr1': 'image_status' },
+         ExpressionAttributeValues: { ':value1': 'deleted' },
+         ReturnValues: 'UPDATED_NEW'
+     };
+
+     // Add the update promise to the array
+     updatePromises.push(docClient.update(params).promise());
+ }
+ let results = await Promise.all(updatePromises);
+
+ return results;
+  }
+  catch(err)
+  {
+    return err;
+  }
+}
+
+app.post('/deleteFlashBack/:folderName', async(req,res)=> {
+
+  try{
+    const folderName = req.params.folderName;
+    const folder_id = "anirudhthadem//"+folderName;
+    console.log(folderName);
+    const params = {
+      TableName: 'userFolders',
+      //IndexName: 'UserNameIndex',
+      Key: {
+        'folder_id': folder_id,
+    },
+    UpdateExpression: 'SET #attr1 = :value1',
+    ExpressionAttributeNames: {
+        '#attr1': 'folder_status' // Replace with the name of the attribute to update
+    },
+    ExpressionAttributeValues: {
+        ':value1': 'deleted'
+    },
+    ReturnValues: 'UPDATED_NEW' // Returns the values of the attributes after they were updated
+    };
+    docClient.update(params, function (err, data) {
+    if (err) {
+      res.status(500).send('Error in deleting flashback');
+    } 
+  });
+  const imageIds = await folderImages(folderName);
+  let results = await deleteImages(imageIds);
+  res.status(200).send('Successfully deleted FlashBack');
+}
+  catch(err)
+  {
+    logger.error("Error in deleting flashback", err);
+    res.status(500).send('Error in getting flashback');
+  }
+
 });
 
 
-// const PORT = process.env.PORT || 5000;
-// app.listen(PORT ,() => {
-//   logger.info(`Server started on http://localhost:${PORT}`);
+
+//*** if you face any issue in testing changes in local dev machine, comment this and use the below listen port***
+
+// const httpsServer = https.createServer(credentials, app);
+
+// httpsServer.listen(PORT, () => {
+//   logger.info(`Server is running on https://localhost:${PORT}`);
 // });
+
+
+app.listen(PORT ,() => {
+  logger.info(`Server started on http://localhost:${PORT}`);
+});
