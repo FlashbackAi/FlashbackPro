@@ -27,13 +27,13 @@ const logger = winston.createLogger({
  });
 
  // *** Comment these certificates while testing changes in local developer machine.***
-// const privateKey = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/privkey.pem', 'utf8');
-// const certificate = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/fullchain.pem', 'utf8');
+const privateKey = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/privkey.pem', 'utf8');
+const certificate = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/fullchain.pem', 'utf8');
 
-// const credentials = {
-//   key: privateKey,
-//   cert: certificate
-// }
+const credentials = {
+  key: privateKey,
+  cert: certificate
+}
 
 // Set up AWS S3
 const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.js
@@ -524,7 +524,7 @@ app.get('/images/:folderName', async (req, res) => {
   logger.info('total images fetched for the folder: '+result.Count);
  
 
-      const imagesPromises = result.Items.map(async file => {
+     const imagesPromises = result.Items.map(async file => {
         try {
           const lowResImage=file.image_id.split("/")[0]+"/lowRes/"+file.image_id.split("/")[1];
           const imageData = await s3.getObject({
@@ -540,7 +540,7 @@ app.get('/images/:folderName', async (req, res) => {
            "imageData":`data:${file.image_id};base64,${imageData.Body.toString('base64')}`
          }
           return base64Image;
-      } catch (err) {
+      }  catch (err) {
           logger.error("Error fetching image: " + file.Key, err);
           return null; // Or handle the error as per your application's need
       }
@@ -798,17 +798,53 @@ app.post('/deleteFlashBack/:folderName', async(req,res)=> {
 
 });
 
+app.post('/fetchOriginalImages', async (req, res) => {
+
+  const imagesList = req.body;
+  console.log(imagesList)
+
+  try{
+  const imagesPromises = imagesList.map(async file => {
+    try {
+      const imageData = await s3.getObject({
+          Bucket: bucketName,
+          Key: file
+      }).promise();
+
+      logger.info("Image fetched from cloud: " + file);
+
+      // Convert image data to base64
+      const base64Image =  {
+        "url": `${file}`,
+       "imageData":`data:${file};base64,${imageData.Body.toString('base64')}`
+     }
+      return base64Image;
+  }  catch (err) {
+      logger.error("Error fetching image: " + file.Key, err);
+      return null; // Or handle the error as per your application's need
+  }
+});
+  const images = await Promise.all(imagesPromises);
+  res.json(images);
+} catch (err) {
+  console.error("Error in S3 get", err);
+  res.status(500).send('Error getting images from S3');
+}
+
+  
+});
+
 
 
 //*** if you face any issue in testing changes in local dev machine, comment this and use the below listen port***
 
-// const httpsServer = https.createServer(credentials, app);
+const httpsServer = https.createServer(credentials, app);
 
-// httpsServer.listen(PORT, () => {
-//   logger.info(`Server is running on https://localhost:${PORT}`);
-// });
-
-
-app.listen(PORT ,() => {
-  logger.info(`Server started on http://localhost:${PORT}`);
+httpsServer.listen(PORT, () => {
+  logger.info(`Server is running on https://localhost:${PORT}`);
 });
+
+
+// app.listen(PORT ,() => {
+//   logger.info(`Server started on http://localhost:${PORT}`);
+// });

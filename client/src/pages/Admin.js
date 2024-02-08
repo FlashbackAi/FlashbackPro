@@ -14,12 +14,13 @@ function App() {
   const [uploadedImages, setUploadedImages] = useState([]);
   const collageRef = useRef(null);
   const canvasRef = useRef(null);
-  const [image1, setImage1] = useState(ImageCropper);
+  const [image1, setImage1] = useState(null);
   const [image2, setImage2] = useState(null);
   const [image3, setImage3] = useState(null);
   const [image4, setImage4] = useState(null);
   const imgRef = useRef();
-  const [templateImages, setTemplateImages] = useState([{}]);
+  const [templateImages, setTemplateImages] = useState(new Map());
+  //const [templateImages, setTemplateImages] = useState([{}]);
 
   
 
@@ -69,35 +70,113 @@ function App() {
 
 
   const handleDrop = (imageSetter, name, e) => {
-    e.preventDefault();
+    e.preventDefault(); 
+    
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const img = new Image()
+      let imagedata=e.dataTransfer.getData("text/plain");
+      img.src = imagedata;
+      
+      imagedata = imagedata.split(";base64,")[0];
+      imagedata = imagedata.split(":")[1];
+      console.log(imagedata);
+      setTemplateImages(new Map([...templateImages, [name,imagedata ]]));
       imageSetter(URL.createObjectURL(e.dataTransfer.files[0]));
-      templateImages.map(   )
 
+      
     }
+    // if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+    //   imageSetter(URL.createObjectURL(e.dataTransfer.files[0]));
+    //   templateImages.map(   )
+
+    // }
   };
 
   const handleDragOver = (e) => {
     e.preventDefault();
   };
-  const downloadCollage = () => {
+  const downloadCollage = async() => {   
+
+
+
+
     const collageElement = document.querySelector('.collage');
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const rect = collageElement.getBoundingClientRect();
+    //const scale = window.devicePixelRatio;
     const scale = window.devicePixelRatio;
-    canvas.width = rect.width * scale;
-    canvas.height = rect.height * scale;
+    // canvas.width = rect.width * scale;
+    // canvas.height = rect.height * scale;
+    canvas.width = 3000;
+    canvas.height = 3000;
+    const imagesList = [...templateImages.values()];
+    console.log(imagesList);
+    let originalImages = null;
     
-    console.log(document.getElementsByName('img1'));
-    ctx.drawImage(document.getElementsByName('img1')[0], canvas.width * (0 / 100), canvas.height * (0 / 100),250,180)
-    ctx.drawImage(document.getElementsByName('img2')[0],canvas.width * (0 / 100), canvas.height * (50 / 100),250,180)
-    ctx.drawImage(document.getElementsByName('img3')[0],canvas.width * (50 / 100), canvas.height * (0 / 100),250,180)
-    ctx.drawImage(document.getElementsByName('img4')[0],canvas.width * (50 / 100), canvas.height * (50 / 100),250,180)
-    ctx.drawImage(document.getElementsByClassName('foreground')[0],0,0,canvas.width,canvas.height)
-    canvas.toBlob(blob => {
-        saveAs(blob, 'collage.png');
-    });
+    try{
+      const response = await axios.post(`${serverIP}/fetchOriginalImages`, imagesList);
+      if(response.status != 200)
+      {
+        throw new Error(response.data.message)
+      }
+      else{
+        originalImages=response.data;
+        let imagesLoaded = 0;
+        const totalImages = originalImages.length;
+
+      
+        
+
+        const img1 = new Image();
+        img1.src = originalImages[0].imageData;
+        img1.onload = () => {
+          console.log(img1)
+            ctx.drawImage(img1, 0, 0,1500,1500);
+            checkAllImagesLoaded();
+        };
+
+        const img2 = new Image();
+        img2.src = originalImages[1].imageData;
+        img2.onload = () => {
+            ctx.drawImage(img2, 0,1500,1500,1500);
+            checkAllImagesLoaded();
+        };
+
+        const img3 = new Image();
+        img3.src = originalImages[2].imageData;
+        img3.onload = () => {
+            ctx.drawImage(img3, 1500,0,1500,1500);
+            checkAllImagesLoaded();
+        };
+
+        const img4 = new Image();
+        img4.src = originalImages[3].imageData;
+        img4.onload = () => {
+            ctx.drawImage(img4, 1500, 1500,1500,1500);
+            checkAllImagesLoaded();
+           
+        };
+
+        function checkAllImagesLoaded() {
+          imagesLoaded++;
+          if (imagesLoaded === totalImages) {
+              // All images are loaded, draw the foreground and download the canvas
+              ctx.drawImage(document.getElementsByClassName('foreground')[0], 0, 0, canvas.width, canvas.height);
+              canvas.toBlob(blob => {
+                  saveAs(blob, 'collage.png');
+              });
+          }
+      }
+    //     ctx.drawImage(document.getElementsByClassName('foreground')[0],0,0,canvas.width,canvas.height)
+    // canvas.toBlob(blob => {
+    //     saveAs(blob, 'collage.png');
+    // });
+  }
+}
+catch(error){
+  console.log(error);
+}
   };
 
   useEffect(() => {
@@ -177,7 +256,7 @@ const downloadFolder = async () => {
       <button onClick={downloadFolder}>Download Folder</button>
       <div className="imageGalleryContainer">
         {uploadedImages.map((imageUrl, index) => (
-          <img key={index} src={imageUrl} alt={`img-${index}`} />
+          <img key={imageUrl.url} src={imageUrl.imageData} alt={`img-${index}`} />
         ))}
       </div>
 
@@ -188,42 +267,21 @@ const downloadFolder = async () => {
             <div ref={collageRef} >
                   <div className="collage" >
                     
-                  { image1 ? (
-                      <div className="background" onDrop={(e) => handleDrop(setImage1, "img1", e)}>
-                      <ImageCropper  src={image1} alt="Image 1" name="img1" />
-                    </div>
-                        ) : ( 
+                 
                     <div className="background" onDrop={(e) => handleDrop(setImage1, "img1", e)} onDragOver={handleDragOver}>
                       <ImageCropper  src={image1} alt="Image 1" name="img1" />
                     </div>
-                        )}
-                    { image2 ? (
-                      <div className="background" onDrop={(e) => handleDrop(setImage2, "img2", e)}>
-                      <ImageCropper  src={image2} alt="Image 1" name="img2" />
-                    </div>
-                        ) : ( 
+                      
                     <div className="background" onDrop={(e) => handleDrop(setImage2, "img2", e)} onDragOver={handleDragOver}>
                       <ImageCropper src={image2} alt="Image 2" name="img2" />
                     </div>
-                        )}
-                    { image3 ? (
-                      <div className="background" onDrop={(e) => handleDrop(setImage3, "img3", e)}>
-                      <ImageCropper  src={image3} alt="Image 3" name="img3" />
-                    </div>
-                        ) : ( 
+                  
                     <div className="background" onDrop={(e) => handleDrop(setImage3, "img3", e)} onDragOver={handleDragOver}>
                       <ImageCropper className="image" src={image3} alt="Image 3" name="img3"/>
                     </div>
-                        )}
-                      { image4 ? (
-                      <div className="background" onDrop={(e) => handleDrop(setImage4, "img4", e)}>
-                      <ImageCropper  src={image4} alt="Image 4" name="img4" />
-                    </div>
-                        ) : ( 
                     <div className="background" onDrop={(e) => handleDrop(setImage4, "img4", e)} onDragOver={handleDragOver}>
                       <ImageCropper className="image" src={image4} alt="Image 4" name="img4" />
                     </div>
-                        )}
                     <img className="foreground" src="/templates/background.png" alt="Foreground Image" /> 
                   </div>
             </div>
