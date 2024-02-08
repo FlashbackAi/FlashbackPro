@@ -17,9 +17,21 @@ function CreateFlashBack() {
   const [selectedFlashBack, setSelectedFlashBack] = useState('');
   const [flashBacks, setFlashBacks] = useState([]);
   const username = sessionStorage.getItem("username")
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [selectedImagesUrl,setSelectedImagesUrl] =  useState([]);
 
- 
-  
+
+
+  const handleImageClick = (url,index) => {
+
+    if (selectedImages.includes(index)) {
+      setSelectedImages(selectedImages.filter(i => i !== index));
+      setSelectedImagesUrl(selectedImagesUrl.filter(i => i!==url));
+    } else {
+      setSelectedImages([...selectedImages, index]);
+      setSelectedImagesUrl([...selectedImagesUrl,url]);
+    }
+  }
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
@@ -71,7 +83,7 @@ function CreateFlashBack() {
         
         const imageUrls = await response.json();
         setUploadedImages(imageUrls);
-        console.log(imageUrls);
+        //console.log(imageUrls[0].imageData);
         toast.success("Images Fetched Successfully")
       };
       fetchedImages();
@@ -100,23 +112,62 @@ function CreateFlashBack() {
       });
   }, []);
 
-  const ProgressiveImage = ({ highResImage, lowResImage }) => {
-    const [loaded, setLoaded] = useState(false);  
-    return (
-      <>
-        <img
-          src={lowResImage}
-          alt="Low resolution preview"
-          style={{ display: loaded ? 'none' : 'block' }}
-        />
-        <img
-          src={highResImage}
-          alt="High resolution"
-          onLoad={() => setLoaded(true)}
-          style={{ display: loaded ? 'block' : 'none' }}
-        />
-      </>
-    );
+  const deleteImages = async() =>  {
+      setIsLoading(true);
+      const formData = new FormData();
+      formData.append('FolderName', folderName);
+      formData.append('Username',username);
+      formData.append('selectedImages',selectedImagesUrl);
+      // const headers = {
+      //     'Content-Type': 'multipart/form-data',
+      //   };
+  
+      try {
+        console.log(formData);
+        const response = await axios.post(`${serverIP}/deleteImages`, selectedImagesUrl);
+        if(response.status !== 200 )
+        {
+          throw new Error(response.data)
+        }
+        selectedImagesUrl.forEach(image=>{
+          setUploadedImages(uploadedImages.filter((url,data) => image !== url))
+        });
+        
+
+        toast.success(response.data)
+      } catch (error) {
+        console.error(error);
+        toast.success(error)
+        setMessage('Error uploading files.');
+      }finally {
+        setIsLoading(false);
+      }
+    };
+  const AddImages = async() => {
+    
+
+    setSelectedFiles(selectedImages);
+    setFolderName(selectedFlashBack);
+    handleUpload();
+  };
+
+  const deleteFlashBack = async() => {
+
+    const formData = new FormData();
+   
+
+    try {
+      const response = await axios.post(`${serverIP}/deleteFlashBack/${selectedFlashBack}`);
+      if(response.status !== 200 )
+      {
+        throw new Error(response.data.message)
+      }
+      toast.success(message)
+    } catch (error) {
+      console.error(error);
+      toast.success(error)
+      setMessage('Error Deleted FalshBack folder.');
+    }
   };
   
 
@@ -153,10 +204,23 @@ function CreateFlashBack() {
         ))}
       </select>
       <button onClick={fetchImages}>Check Images</button>
+      <button onClick={deleteFlashBack}>Delete FalshBack</button>
+    
       <div className="imageGalleryContainer">
+      <button onClick={deleteImages}>Delete Images</button>
+      <button onClick={AddImages}>Add Images</button>
         {uploadedImages.map((image, index) => (
-          <img key={index} src={image} alt={`img-${index}`} />
-          //<ProgressiveImage key={index} highResImage={image.highRes} lowResImage={image.lowRes} />
+          // <img key={index} src={image} alt={`img-${index}`} />
+        <img
+          key={index}
+          src={image.imageData}
+          alt={`img-${index}`}
+          onClick={() => handleImageClick(image.url, index)}
+          className={selectedImages.includes(index) ? 'selected' : ''}
+          style={{ 
+            border: selectedImages.includes(index) ? '3px solid blue' : 'none' 
+          }}
+        />
         ))}
       </div>
          
