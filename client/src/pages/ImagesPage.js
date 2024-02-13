@@ -20,64 +20,57 @@ function ImagesPage() {
         console.log(response.data);
         setFlashBacks(response.data);
         console.log(flashBacks);
+        if(!response.data.some(flashBack => flashBack.folder_name === folderName))
+        {
+
+        console.log("user doesnot have ")
+        
+            const response =  axios.post(`${serverIP}/addFolder`,  {folderName:folderName, username: username })
+            .then( response => {
+              fetchImages();
+              if(response.status !== 200 )
+              {
+                throw new Error(response.data.message)
+              }
+            })
+            .catch (error => {
+            console.error(error);
+          });
+      }
+      else
+      {
+        console.log("user already have folder");
+        fetchImages();
+      }
       })
       .catch(error => {
         console.error("Error fetching flashBacks: ", error);
       });
-
-      console.log(flashBacks)
-      if(!flashBacks.some(flashBack => flashBack.folder_name === folderName))
-      {
-        // const formData = new FormData();
-        // formData.append('folderName', folderName);
-        // formData.append('username',username);
-        try {
-            const response =  axios.post(`${serverIP}/addFolder`,  {folderName:folderName, username: username });
-            if(response.status !== 200 )
-            {
-              throw new Error(response.data.message)
-            }
-          } catch (error) {
-            console.error(error);
-          }
-      }
-      else
-      {
-        console.log("user does nothave folder");
-      }
-
-    fetchImages();
+      
   }, [folderName]);
 
-  const fetchImages = async() =>{
-    console.log("images are being fetched from " +folderName)
+  
+
+  const fetchImages = async () => {
+    console.log("images are being fetched from " + folderName);
     try {
-      const fetchedImages = async () => {
-        const response = await fetch(`${serverIP}/images/${folderName}`);
-        if(response.status !== 200)
-        {
-          throw new Error("Error in Uploading Images")
-        }
-        
-        const imageUrls = await response.json();
-        setImages(imageUrls);
-        //console.log(imageUrls[0].imageData);
-        //toast.success("Images Fetched Successfully")
-      };
-      fetchedImages();
+      const response = await fetch(`${serverIP}/images/${folderName}`);
+      if (response.status !== 200) {
+        throw new Error("Error in Fetching Images");
+      }
+      const imageData = await response.json();
+      setImages(imageData);
+    } catch (error) {
+      console.error('Error fetching images:', error);
     }
-    catch(error) {
-        //toast.error(error)
-        console.error('Error fetching images:', error);
-      };
   };
 
   return (
     <div>
       <h1>Images in: {folderName}</h1>
       <div className="images-container">
-      {images.map((image, index) => (
-          // <img key={index} src={image} alt={`img-${index}`} />
+      {images && images.map((image, index) => (
+        image && // <img key={index} src={image} alt={`img-${index}`} />
         <img
           key={index}
           src={image.imageData}

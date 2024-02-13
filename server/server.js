@@ -420,7 +420,8 @@ app.post('/upload/:folderName', upload.array('images', 100), async (req, res) =>
   }
 
   const res =  await addFolderToUser(folderName,username,files.length);
-  
+  const uploadDate = new Date().toISOString();
+  const folder_id = username+"//"+folderName;
  console.log(res+ "after adding user and folder");
 
 
