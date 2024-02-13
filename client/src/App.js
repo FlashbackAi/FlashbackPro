@@ -10,7 +10,9 @@ import Profile from "./pages/Profile";
 import ForgotPassword from "./pages/ForgotPassword";
 import { useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
-import { Navigate } from 'react-router-dom'
+import { useLocation,Navigate } from 'react-router-dom'
+import ImagesPage from './pages/ImagesPage';
+
 
 function App() {
 
@@ -32,10 +34,12 @@ function App() {
   };
 
   const ProtectedRoute = ({ children }) => {
+
+    let location = useLocation();
     const token = sessionStorage.getItem("accessToken");
     const isAuthenticated = token && !isTokenExpired(token);
 
-    return isAuthenticated ? children : <Navigate to="/login" />;
+    return isAuthenticated ? children : <Navigate to="/login" state={{ from: location }} replace />;;
   };
   
   const [darkMode, setDarkMode] = useState(false);
@@ -94,6 +98,7 @@ function App() {
             <Route path="/home" element={<ProtectedRoute><Home/></ProtectedRoute>}></Route>
             <Route path="/createFlashBack" element={<ProtectedRoute><CreateFlashBack /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/images/:folderName" element={<ProtectedRoute><ImagesPage /></ProtectedRoute>} />
 
           </Routes>
           )}
