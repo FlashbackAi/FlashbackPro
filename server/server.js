@@ -11,6 +11,7 @@ const { CognitoUserPool, CognitoUserAttribute } = require('amazon-cognito-identi
 const archiver = require('archiver');
 const https = require('https');
 const { fold } = require('prelude-ls');
+const { func } = require('prop-types');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -418,26 +419,10 @@ app.post('/upload/:folderName', upload.array('images', 100), async (req, res) =>
     return res.status(400).json({ message: 'No files uploaded' });
   }
 
-  const uploadDate = new Date().toISOString();
+  const res =  await addFolderToUser(folderName,username,files.length);
+  
+ console.log(res+ "after adding user and folder");
 
-  const folder_id = username+"//"+folderName; // this will be fetching the randomId from the function we implemented earlier
-  console.log(folder_id);
-
-// Now, update userFolders table
-    const userFoldersParams = {
-      TableName: userFoldersTableName,
-      Item: {
-        folder_id: folder_id,
-        folder_name: folderName,
-        user_name: username,
-        image_count: files.length,
-        upload_date: uploadDate,
-        folder_status: "uploaded"
-      },
-    };
-    // Put the item into userFolders table
-    await docClient.put(userFoldersParams).promise();
-    logger.info(`${folder_id}, ${folderName} for the user ${username} has been succesfully stored in userFolders table`);
 
   const uploadParams = files.map((file) => ({
     PutRequest: {
@@ -502,6 +487,30 @@ app.post('/upload/:folderName', upload.array('images', 100), async (req, res) =>
   }
 });
 
+
+async function addFolderToUser(folderName,username,files_length){
+  
+  const uploadDate = new Date().toISOString();
+  const folder_id = username+"//"+folderName; // this will be fetching the randomId from the function we implemented earlier
+  console.log(folder_id);
+
+  // Now, update userFolders table
+  const userFoldersParams = {
+    TableName: userFoldersTableName,
+    Item: {
+      folder_id: folder_id,
+      folder_name: folderName,
+      user_name: username,
+      image_count: files_length,
+      upload_date: uploadDate,
+      folder_status: "uploaded"
+    },
+  };
+  // Put the item into userFolders table
+  const res= await docClient.put(userFoldersParams).promise();
+  logger.info(`${folder_id}, ${folderName} for the user ${username} has been succesfully stored in userFolders table`);
+  return res;
+}
 
 app.get('/images/:folderName', async (req, res) => {
   try {
@@ -834,6 +843,23 @@ app.post('/fetchOriginalImages', async (req, res) => {
   
 });
 
+app.post('/addFolder', async(req, res) => {
+
+
+  const username = req.body.username;
+  const folderName =  req.body.folderName;
+  try{
+    
+  const result =  await addFolderToUser(folderName,username,0);
+  res.status(200).send('Successfully deleted images');
+}
+  catch(err)
+  {
+    logger.error("Error in deleting images", err);
+    res.status(500).send('Error in deleting selected images');
+  }
+
+});
 
 
 //*** if you face any issue in testing changes in local dev machine, comment this and use the below listen port***

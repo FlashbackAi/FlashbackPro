@@ -49,5 +49,8 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "http://13.126.31.242:5000"
+  "proxy": "http://13.126.31.242:5000",
+  "devDependencies": {
+    "prettier": "3.2.5"
+  }
 }

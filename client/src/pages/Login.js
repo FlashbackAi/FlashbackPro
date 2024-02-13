@@ -2,6 +2,7 @@ import React, { useState, useContext,createContext} from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../helpers/AuthContext";
+import { useLocation } from 'react-router-dom';
 
 
 function Login() {
@@ -11,6 +12,10 @@ function Login() {
   const [message, setMessage] = useState('');
   const { setAuthState } = useContext(AuthContext);
   const [user, setUser] = useState(null);
+
+  let location = useLocation();
+
+  let { from } = location.state || { from: { pathname: "/CreateFlashBack" } }
 
   const navigate = useNavigate();
   const login = () => {
@@ -25,7 +30,9 @@ function Login() {
         
         sessionStorage.setItem("accessToken", response.data.accessToken);
         sessionStorage.setItem("username",response.data.username);
-        navigate("/createFlashBack")
+        console.log(from.pathname)
+        navigate(from.pathname)
+        //navigate("/createFlashBack")
       }
     }).catch(error => {
       console.error(error);

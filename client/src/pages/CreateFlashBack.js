@@ -1,10 +1,12 @@
-import React, { useState, useEffect} from 'react';
+import React, { useState, useEffect, useCallback} from 'react';
 import axios from "axios";
 import PhotoCollageComponent from './PhotoCollageComponent';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { toast } from 'react-toastify';
 import UserMenu from './UserMenu';
+import { useHistory } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 
 function CreateFlashBack() {
   const serverIP = process.env.REACT_APP_SERVER_IP;
@@ -20,6 +22,12 @@ function CreateFlashBack() {
   const [selectedImages, setSelectedImages] = useState([]);
   const [selectedImagesUrl,setSelectedImagesUrl] =  useState([]);
 
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+
+  const togglePopup = useCallback(() => {
+    setIsPopupOpen(prev => !prev);
+  }, []);
+
 
 
   const handleImageClick = (url,index) => {
@@ -33,14 +41,14 @@ function CreateFlashBack() {
     }
   }
 
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    setSelectedFiles(files);
-  };
+  // const handleFileChange = useCallback((e) => {
+  //   const files = Array.from(e.target.files);
+  //   setSelectedFiles(files);
+  // }, []);
 
-  const handleFolderNameChange = (e) => {
-    setFolderName(e.target.value);
-  };
+  // const handleFolderNameChange = useCallback((e) => {
+  //   setFolderName(e.target.value);
+  // }, []);
 
   const handleUpload = async () => {
     setIsLoading(true);
@@ -55,6 +63,7 @@ function CreateFlashBack() {
         'Content-Type': 'multipart/form-data',
       };
 
+    console.log(folderName)
     try {
       const response = await axios.post(`${serverIP}/upload/${folderName}`, formData,{headers});
       if(response.status !== 200 )
@@ -169,40 +178,97 @@ function CreateFlashBack() {
       setMessage('Error Deleted FalshBack folder.');
     }
   };
+
+  const Popup = (({ isOpen, close, uploadHandler}) => {
+    if (!isOpen) return null;
+
+    console.log("pop is called")
+
+    const handleFileChange = (e) => {
+      const files = Array.from(e.target.files);
+      setSelectedFiles(files);
+    };
+  
+    const handleFolderNameChange = (e) => {
+      console.log(e.target.value);
+      setFolderName(e.target.value);
+    };
+    return (
+      <div className="popup-overlay" onClick={close}>
+        
+        <div className="popup-content" onClick={(e) => e.stopPropagation()}>
+        <h1>Upload Images to S3</h1>
+          <button onClick={close}>Close</button>
+          <div className="status-post-container">
+            {/* <textarea id="statusInput" placeholder="Create a Flashback?" value={folderName} onChange={folderNameChange}></textarea> */}
+            <input type="text"  id="statusInput"  autoFocus="autoFocus" value={folderName} placeholder="Enter the Flashback Name"  onChange={handleFolderNameChange} />
+            <input type="file" name="images" multiple accept="image/*" onChange={handleFileChange} />
+            <button onClick={uploadHandler}>Upload</button>
+          </div>
+          <p>{message}</p>
+        </div>
+      </div>
+    );
+  });
+
+
+  function FlashbackCard({ flashback, onSelect }) {
+
+    const navigate = useNavigate();
+
+  const navigateToImages = () => {
+    navigate(`/images/${flashback.folder_name}`);
+  };
+
+    return (
+      <div className="flashback-card" onClick={navigateToImages}>
+        <li>{flashback.folder_name}</li>
+        {/* Add more details you want to show */}
+      </div>
+    );
+  }
+  
   
 
   return (
+    
     <div>
-       {isLoading ? (
-       <div> 
-      <h2>uploading Images</h2>
-      <div className='loader' name='loader'></div>
-      </div>) :
-      (
-      <div>
+
       <h1>Upload Images to S3</h1>
+       <div>
+        <button onClick={togglePopup}>Create New FlashBack</button>
+        <Popup 
+          isOpen={isPopupOpen} 
+          close={togglePopup} 
+          // folderNameChange={handleFolderNameChange} 
+          // fileChange={handleFileChange} 
+          uploadHandler={handleUpload} 
+          // folderName={folderName}
+        />
+      </div>
+
+
+     {/* <div className="status-post-container">
+             <textarea id="statusInput" placeholder="Create a Flashback?" onChange={handleFolderNameChange} ></textarea>
+            <input type="text" id="statusInput" placeholder="Enter the Flashback Name" onChange={handleFolderNameChange} />
+            <input type="file" multiple onChange={handleFileChange} /> 
+            <input type="file" name="images" multiple accept="image/*" onChange={handleFileChange} />
+            <button onClick={handleUpload}>Upload</button> 
+      </div>  */}
 
       <UserMenu/>
-
-        <div className="status-post-container">
-          {/*<textarea id="statusInput" placeholder="Create a Flashback?" ></textarea>*/}
-      <input type="text" id="statusInput" placeholder="Enter the Flashback Name" onChange={handleFolderNameChange} />
-      {/* <input type="file" multiple onChange={handleFileChange} /> */}
-          <input type="file" name="images" multiple accept="image/*" onChange={handleFileChange} />
-      <button onClick={handleUpload}>Upload</button>
-        </div>
-
-
       <div className="App">
       {images.length > 0 && <PhotoCollageComponent images={images} />}
       </div>
       <h1>Uploaded FlashBacks</h1>
-      <select value={selectedFlashBack} onChange={handleFlashBackName}>
-        <option value="">Select an Album</option>
+      {/* <select value={selectedFlashBack} onChange={handleFlashBackName}> */}
+      <div className="flashback-container">
         {flashBacks.map((flashBack, index) => (
-          <option value={flashBack.folder_name}>{flashBack.folder_name}</option>
+          <FlashbackCard key={index} flashback={flashBack} onSelect={handleFlashBackName} />
         ))}
-      </select>
+      </div>
+
+      {/* </select> */}
       <button onClick={fetchImages}>Check Images</button>
       <button onClick={deleteFlashBack}>Delete FalshBack</button>
     
@@ -227,8 +293,6 @@ function CreateFlashBack() {
       <p>{message}</p>
       <ToastContainer />
       </div>
-      )}
-    </div>
   );
 };
 
