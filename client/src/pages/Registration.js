@@ -9,6 +9,11 @@ function Registration() {
   const [isRegistered, setIsRegistered] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
   const [username, setUsername] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [countryCode, setCountryCode] = useState("+91");
+  const [fullPhoneNumber, setFullPhoneNumber] = useState('');
+
+
 
     const Login=()=>{
         navigate("/login")
@@ -19,25 +24,34 @@ function Registration() {
     setUsername(e.target.value);
 
   };
+
+  const handlePhoneNumberChange = (e) => {
+    setPhoneNumber(e.target.value);
+    setFullPhoneNumber(`${countryCode}${phoneNumber}`)
+  };
+  
+  const handleCountryCodeChange = (e) => {
+    setCountryCode(e.target.value);
+  };
+  
   const navigate = useNavigate();
     const handleSubmit = (event) => {
         event.preventDefault();
+
+        //const fullPhoneNumber = `${countryCode}${phoneNumber}`
         const data = new FormData(event.target);
        
 
-        axios.post(`${serverIP}/signup`, {
-            username: data.get('username'),
-            password: data.get('password'),
-            email: data.get('email'),
-            phoneNumber: data.get('phoneNumber'),
-            referrerCode:data.get('referralCode')
+        axios.post(`${serverIP}/request-otp`, {
+            
+            phoneNumber: fullPhoneNumber
         }).then(response => {
             //setMessage(response.data.message)
-            console.log(response.data.status)
-            if(response.data.status === "Success")
+            console.log(response.data)
+            if(response.data.message === "OTP sent successfully.")
             {
                 setIsRegistered(true);
-                setUsername(username);
+                setUsername(fullPhoneNumber);
                 console.log(isRegistered);
                 setMessage("please enter the verification code sent to the registered mail id")
                 
@@ -52,13 +66,13 @@ function Registration() {
     const handleVerification = () => {
         console.log(username)
         console.log(verificationCode)
-        axios.post(`${serverIP}/confirmUser`, {
-            username: username,
-            verificationCode: verificationCode
+        axios.post(`${serverIP}/verify-otp`, {
+            phoneNumber: fullPhoneNumber,
+            otpCode: verificationCode
         }).then(response => {
             setMessage(response.data.message)
             console.log(response.data.status)
-            if(response.data.status === "Success")
+            if(response.data.message === "User confirmed successfully.")
             {
                 setMessage('new user has confirmed');
                 navigate("/login")
@@ -95,11 +109,14 @@ function Registration() {
                 <p className="loginLogo">Flashback<p className="logoCaption">Create & share memories</p></p>
             </div>
             <div className="login-form">
-            <input name="email" required type="email" placeholder="Email" />
-            <input name="username" required type="text" placeholder="User Name" onChange={handleUsernameChange} />
-            <input name="phoneNumber" required type="phoneNumber" placeholder="Phone Number" />
-            <input name="password" required type="password" placeholder="Password" />
-            <input name="referralCode" type="text" placeholder="Referral Code"/>
+            <select name="countryCode" onChange={handleCountryCodeChange} defaultValue="+91">
+                <option value="+1">+1</option> {/* USA */}
+                <option value="+44">+44</option> {/* UK */}
+                <option value="+91">+91</option> {/* India */}
+                {/* Add other countries as needed */}
+            </select>
+
+            <input name="phoneNumber" required type="phoneNumber" placeholder="Phone Number" onChange={handlePhoneNumberChange}/>
             <button type="submit">Sign Up</button>
                 <button type="button" onClick={Login}>Already have an account?</button>
             {
