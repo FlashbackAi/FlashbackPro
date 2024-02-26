@@ -15,6 +15,7 @@ const { func } = require('prop-types');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+
 app.use(cors()); // Allow cross-origin requests
 app.use(express.json());
 
@@ -42,11 +43,6 @@ const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.
 });
 
 const bucketName = 'flashbackuseruploads';
-
-const poolData = {
-  UserPoolId: 'ap-south-1_rTy0HL6Gk',
-  ClientId: '6goctqurrumilpurvtnh6s4fl1',
-};
 // Setting up AWS DynamoDB
 const dynamoDB = new AWS.DynamoDB({ region: 'ap-south-1' });
 const docClient = new AWS.DynamoDB.DocumentClient({ region: 'ap-south-1' });
@@ -56,6 +52,8 @@ const userDataTableName = 'userData';
 const userUploadsTableName = 'userUploads';
 const userFoldersTableName = 'userFolders';
 
+const ClientId = '6goctqurrumilpurvtnh6s4fl1'
+const cognito = new AWS.CognitoIdentityServiceProvider({region: 'ap-south-1'});
 
 // Function that creates DynamoDB Tables
 const createTable = async (tableName, KeySchema) => {
@@ -260,7 +258,7 @@ const cognitoidentityserviceprovider = new AWS.CognitoIdentityServiceProvider();
 app.post('/resend-verification', (req, res) => {  
   const params = {
     Username: req.body.username,
-    ClientId: poolData.ClientId
+    ClientId: ClientId
   };
  // const params = poolData.add(username)
 
@@ -298,6 +296,90 @@ app.post('/confirmUser', function(req, res) {
   }
 });
 });
+
+// app.post('/request-otp', (req, res) => {
+//   const phoneNumber = req.body.phoneNumber;
+//   const password = generateRandomPassword(12); // Ensure this function exists and generates a secure password
+
+//   const params = {
+//       ClientId: ClientId,
+//       Username: phoneNumber,
+//       Password: password, // Password should meet the user pool policy
+//       UserAttributes: [
+//           {
+//               Name: 'phone_number',
+//               Value: phoneNumber
+//           },
+//       ]
+//   };
+
+//   // Sign up the user
+//   cognito.signUp(params, (err, data) => {
+//       if (err) {
+//           console.log(err);
+//           // Check if the error is because the user already exists
+//           if (err.code === 'UsernameExistsException') {
+//               // The user already exists, initiate the resend of the OTP
+//               const resendParams = {
+//                   ClientId: ClientId,
+//                   Username: phoneNumber,
+//               };
+//               cognito.resendConfirmationCode(resendParams, (err, data) => {
+//                   if (err) {
+//                       // Handle the error if the OTP resend fails
+//                       res.status(500).send('Error resending confirmation code: ' + err.message);
+//                   } else {
+//                       // OTP resend succeeded
+//                       console.log(data);
+//                       res.status(200);
+//                       res.json({ message: 'OTP sent successfully.' });
+//                   }
+//               });
+//           } else {
+//               // Handle other errors
+//               res.status(500).send('Error signing up: ' + err.message);
+//           }
+//       } else {
+//           // User signed up successfully, OTP is automatically sent by Cognito
+//           res.json({ message: 'OTP sent successfully.' });
+//       }
+//   });
+// });
+
+
+// function generateRandomPassword(length = 8) {
+//   const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+<>?";
+//   let password = "";
+//   for (let i = 0; i < length; i++) {
+//     const randomIndex = Math.floor(Math.random() * charset.length);
+//     password += charset[randomIndex];
+//   }
+//   return password;
+// }
+
+// app.post('/verify-otp', (req, res) => {
+//   const phoneNumber = req.body.phoneNumber;
+//   const otpCode = req.body.otpCode;
+
+//   const params = {
+//       ClientId: ClientId,
+//       ConfirmationCode: otpCode,
+//       Username: phoneNumber,
+//   };
+
+//   // Confirm the user's sign-up with the OTP code they received
+//   cognito.confirmSignUp(params, (err, data) => {
+//       if (err) {
+//           console.log(err);
+//           res.status(500).send('Error verifying OTP: ' + err.message);
+//       } else {
+//           res.json({ message: 'User confirmed successfully.' });
+//       }
+//   });
+// });
+
+
+
 
 app.post('/login', function(req, res) {
   
@@ -863,6 +945,27 @@ app.post('/addFolder', async(req, res) => {
 });
 
 
+app.post('/downloadImage', async (req, res) => {
+   
+  const imageUrl = req.body.imageUrl;
+ 
+        try {
+          const imageData = await s3.getObject({
+              Bucket: bucketName,
+              Key: imageUrl
+          }).promise();
+
+          logger.info("Image downloaded from cloud: " + imageUrl);
+         // res.json(imageData.Body.toString('base64'));
+          res.json(`data:${imageUrl};base64,${imageData.Body.toString('base64')}`);
+      }  catch (err) {
+          logger.error("Error downloading image: "+imageUrl, err);
+          res.status(500).send('Error getting images from S3');
+      }
+     
+});
+
+
 //*** if you face any issue in testing changes in local dev machine, comment this and use the below listen port***
 
 const httpsServer = https.createServer(credentials, app);
@@ -871,7 +974,7 @@ httpsServer.listen(PORT, () => {
   logger.info(`Server is running on https://localhost:${PORT}`);
 });
 
-// const PORT = process.env.PORT || 5000;
+// // const PORT = process.env.PORT || 5000;
 // app.listen(PORT ,() => {
 //   logger.info(`Server started on http://localhost:${PORT}`);
 // });
