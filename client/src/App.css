@@ -676,6 +676,36 @@ p {
   box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
+/* DownloadButton.module.css */
+.downloadButton {
+  background-color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 25px;
+  color: black;
+  font-size: 15px;
+  cursor: pointer;
+  outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  bottom: 10px; /* Adjust as needed */
+  left: 10px; /* Adjust as needed */
+  border: 2px solid black;
+}
+
+.downloadIcon {
+  margin-left: 20px;
+}
+
+
+
+
+
+
+
+
 
 
 /*End of Sample*/

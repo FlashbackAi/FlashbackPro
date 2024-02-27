@@ -14,14 +14,7 @@ function ImagesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [fetchTimeout, setFetchTimeout] = useState(false);
 
-  // const renderImageItem = (item) => (
-  //   <div className='image-gallery-image'>
-  //     <img src={item.original} alt={item.description} />
-  //      <button href={item.original} onClick={downloadImage(item)} className="download-button">
-  //       Download
-  //     </button> 
-  //   </div>
-  // );
+
   
   const downloadCurrentImage = async () => {
     const currentIndex = galleryRef.current.getCurrentIndex();
@@ -74,6 +67,8 @@ function ImagesPage() {
             original: img.imageData, // Assuming `imageData` is the URL to the image
             thumbnail: img.imageData,
             url: img.url,
+            originalHeight:'800px',
+            originalWidth:'800px'
           }));
           setImages(formattedImages);
         } else {
@@ -98,10 +93,17 @@ function ImagesPage() {
         <p>Loading images...</p> // You can replace this with a spinner or loader component
       ) : images.length > 0 ? (
         <>
-          <ImageGallery ref={galleryRef} items={images} />
-          <button onClick={downloadCurrentImage} disabled={isDownloading}>
-            {isDownloading ? 'Downloading...' : 'Download Current Image'}
+           <ImageGallery ref={galleryRef} items={images} showPlayButton={false} showFullscreenButton={false}  thumbnailPosition={'bottom'} />
+
+
+          
+
+          <button onClick={downloadCurrentImage} disabled={isDownloading} className='downloadButton'>
+            {isDownloading ? 'Downloading...' : 'Download' }
+            {isDownloading ? '' : <span className='downloadIcon'>⬇️</span> }
+
           </button>
+
         </>
       ) : fetchTimeout ? (
         <p>No images to display</p> // Message shown if fetch timeout is reached
