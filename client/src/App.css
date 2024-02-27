@@ -678,11 +678,12 @@ p {
 
 /* DownloadButton.module.css */
 .downloadButton {
-  background-color: white;
+  background-color: transparent;
   border: none;
+  font-weight: bold;
   border-radius: 20px;
   padding: 10px 25px;
-  color: black;
+  color: #ffffff;
   font-size: 15px;
   cursor: pointer;
   outline: none;
@@ -690,13 +691,19 @@ p {
   align-items: center;
   justify-content: center;
   position: absolute;
-  bottom: 10px; /* Adjust as needed */
-  left: 10px; /* Adjust as needed */
-  border: 2px solid black;
+  bottom: -36px;
+  left: 10px;
+  border: 2px solid #fbc90026;
+  left: calc(25%);
+  bottom: calc(25%);
 }
 
 .downloadIcon {
   margin-left: 20px;
+}
+
+.image-gallery {
+  max-width: calc(46vh);
 }
 
 

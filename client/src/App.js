@@ -42,25 +42,22 @@ function App() {
     return isAuthenticated ? children : <Navigate to="/login" state={{ from: location }} replace />;;
   };
   
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
 
   useEffect(() => {
     console.log("Dark mode enabled:",darkMode);
-    if (darkMode) {
       document.documentElement.classList.add("dark-mode");
-    } else {
-      document.documentElement.classList.remove("dark-mode");
-    }
+    
   }, [darkMode]);
   return (
 
     
-    <div className="App">
+    <div className="App1">
       {/* <meta name="viewport" content="width=device-width, user-scalable=no" /> */}
       <div className="Background">
 
       </div>
-      <label className="toggle-switch">
+      {/* <label className="toggle-switch">
         <div className='Darktitle'>
           <label>
             Dark Mode
@@ -69,20 +66,11 @@ function App() {
         <input type="checkbox" checked={darkMode} onChange={(e) => setDarkMode(e.target.checked)} />
         <span className="slider round"></span>
 
-      </label>
+      </label> */}
 
 
       <Router>
-        <div className="navbar">
-          {/*<img src={"http://localhost:3000/static/media/logo.cf2c8490777d428b465f.png"}></img>*/}
-          {/*<Link to="/"> Home Page</Link>*/}
-          {/* <Link to="/createFlashBack">FlashBack</Link> */}
-          {/*<Link to="/login"> Login</Link>*/}
-          {/*<Link to="/registration"> Registration</Link>*/}
-          <Link to="/admin"> Admin</Link>
-          {/* { <Link to="/profile"> Profile</Link> } */}
-
-        </div>
+        
         {isLoading ? (
           // Display Loading spinner while waiting
           <div>

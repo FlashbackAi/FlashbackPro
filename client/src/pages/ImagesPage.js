@@ -88,22 +88,14 @@ function ImagesPage() {
 
   return (
     <div>
-      <h1>Images in: {folderName}</h1>
       {isLoading ? (
         <p>Loading images...</p> // You can replace this with a spinner or loader component
       ) : images.length > 0 ? (
         <>
            <ImageGallery ref={galleryRef} items={images} showPlayButton={false} showFullscreenButton={false}  thumbnailPosition={'bottom'} />
-
-
-          
-
-          <button onClick={downloadCurrentImage} disabled={isDownloading} className='downloadButton'>
+           <button onClick={downloadCurrentImage} disabled={isDownloading} className='downloadButton'>
             {isDownloading ? 'Downloading...' : 'Download' }
-            {isDownloading ? '' : <span className='downloadIcon'>⬇️</span> }
-
           </button>
-
         </>
       ) : fetchTimeout ? (
         <p>No images to display</p> // Message shown if fetch timeout is reached
