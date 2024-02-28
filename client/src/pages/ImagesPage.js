@@ -27,19 +27,19 @@ function ImagesPage() {
 
     setIsDownloading(true);
     try {
-      const response = await axios.post(`${serverIP}/downloadImage`,{"imageUrl":currentImage.url});
-      if (response.status === 200) {
-        console.log(response.data);
+      // const response = await axios.post(`${serverIP}/downloadImage`,{"imageUrl":currentImage.url});
+      // if (response.status === 200) {
+        console.log(currentImage.original);
         const link = document.createElement('a');
-        link.href = response.data;
+        link.href = currentImage.original;
         link.download = currentImage.url;
         document.body.appendChild(link); // Required for FF
         link.click();
         document.body.removeChild(link);
 
-      } else {
-        throw new Error("Failed to fetch images");
-      }
+      // } else {
+      //   throw new Error("Failed to fetch images");
+      // }
     } catch (error) {
       console.error("Error fetching images:", error);
     }

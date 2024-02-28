@@ -735,7 +735,6 @@ async function uploadLowResoltionImages(folderName,files)
 {
   const uploadPromises = files.map(async (file) => {
     const buffer = await sharp(file.buffer)
-      .resize(800) // Example: resize to a width of 800 pixels
       .jpeg({ quality: 50 }) // Convert to JPEG with 50% quality
       .toBuffer();
     // Upload the processed image to S3
@@ -950,6 +949,8 @@ app.post('/downloadImage', async (req, res) => {
   const imageUrl = req.body.imageUrl;
  
         try {
+          
+          logger.info("Image downloading started from cloud: " + imageUrl);
           const imageData = await s3.getObject({
               Bucket: bucketName,
               Key: imageUrl
@@ -974,7 +975,7 @@ httpsServer.listen(PORT, () => {
   logger.info(`Server is running on https://localhost:${PORT}`);
 });
 
-// // const PORT = process.env.PORT || 5000;
+// const PORT = process.env.PORT || 5000;
 // app.listen(PORT ,() => {
 //   logger.info(`Server started on http://localhost:${PORT}`);
 // });
