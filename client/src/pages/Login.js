@@ -17,6 +17,8 @@ function Login() {
 
   let { from } = location.state || { from: { pathname: "/CreateFlashBack" } }
 
+
+  
   const navigate = useNavigate();
   const login = () => {
     axios.post(`${serverIP}/login`, { username: username, password: password }).then((response) => {
@@ -28,8 +30,8 @@ function Login() {
         setMessage(response.data.error)
       } else {
         
-        sessionStorage.setItem("accessToken", response.data.accessToken);
-        sessionStorage.setItem("username",response.data.username);
+        localStorage.setItem("accessToken", response.data.accessToken);
+        localStorage.setItem("username",response.data.username);
         console.log(from.pathname)
         navigate(from.pathname)
         //navigate("/createFlashBack")

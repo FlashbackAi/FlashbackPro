@@ -36,7 +36,7 @@ function App() {
   const ProtectedRoute = ({ children }) => {
 
     let location = useLocation();
-    const token = sessionStorage.getItem("accessToken");
+    const token = localStorage.getItem("accessToken");
     const isAuthenticated = token && !isTokenExpired(token);
 
     return isAuthenticated ? children : <Navigate to="/login" state={{ from: location }} replace />;;
