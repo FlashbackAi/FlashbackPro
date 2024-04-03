@@ -43,14 +43,16 @@ const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.
 });
 
 const bucketName = 'flashbackuseruploads';
+const userBucketName='flashbackuserthumbnails';
 // Setting up AWS DynamoDB
 const dynamoDB = new AWS.DynamoDB({ region: 'ap-south-1' });
 const docClient = new AWS.DynamoDB.DocumentClient({ region: 'ap-south-1' });
 
 // Below are the tables we are using currently
-const userDataTableName = 'userData';
+const userDataTableName = 'users';
 const userUploadsTableName = 'userUploads';
 const userFoldersTableName = 'userFolders';
+const userEventTableBName='user_event_mapping';
 
 const ClientId = '6goctqurrumilpurvtnh6s4fl1'
 const cognito = new AWS.CognitoIdentityServiceProvider({region: 'ap-south-1'});
@@ -889,6 +891,8 @@ app.post('/deleteFlashBack/:folderName', async(req,res)=> {
 
 });
 
+
+
 app.post('/fetchOriginalImages', async (req, res) => {
 
   const imagesList = req.body;
@@ -944,6 +948,7 @@ app.post('/addFolder', async(req, res) => {
 });
 
 
+
 app.post('/downloadImage', async (req, res) => {
    
   const imageUrl = req.body.imageUrl;
@@ -962,6 +967,100 @@ app.post('/downloadImage', async (req, res) => {
       }  catch (err) {
           logger.error("Error downloading image: "+imageUrl, err);
           res.status(500).send('Error getting images from S3');
+      }
+
+
+      app.post('/uploadUserPotrait', upload.single('image'), async (req, res) => {
+        const file = req.file;
+       const username = req.body.username;
+        const params = {
+          Bucket: userBucketName,
+          Key: username+".jpg",
+          Body: file.buffer,
+          ACL: 'public-read', // Optional: Set ACL to public-read for public access
+        };
+      
+        try {
+          // Upload image to S3
+          const data = await s3.upload(params).promise();
+          console.log('Upload successful:', data.Location);
+      
+          // Update DynamoDB with the S3 URL
+          const updateParams = {
+            TableName: userDataTableName,
+            Key: { id: username }, // Assuming you have a primary key 'id'
+            UpdateExpression: 'set potrait_s3_url = :url',
+            ExpressionAttributeValues: {
+              ':url': data.Location,
+            },
+            ReturnValues: 'UPDATED_NEW',
+          };
+      
+          const updateResult = await docClient.update(updateParams).promise();
+
+          console.log('updating s3 image  url for user is successful:', updateResult);
+
+          const updateParamsUserEvent = {
+            TableName: userEventTableBName,
+            Item: {
+              partitionKey: 'KSL_Event1',
+              sortKey: username,
+            }
+          };
+          const putResult = await docClient.put(updateParamsUserEvent).promise()
+          console.log('insert in user-event mapping is successful:', putResult);
+      
+          res.json({ potrait_s3_url: data.Location });
+        } catch (error) {
+          console.error('Error:', error);
+          res.status(500).json({ error: 'Error uploading image' });
+        }
+      });
+
+      app.post('/createUser', async (req, res) => {
+        const { username } = req.username;
+      
+        try {
+          // Check if the user already exists
+          const existingUser = await getUser(username);
+          if (existingUser) {
+            return res.json({ error: 'User already exists', status:'exists' });
+          }
+      
+          // Create a new user entry in DynamoDB
+          await createUser(username);
+          res.json({ message: 'User created successfully', status:'created' });
+        } catch (error) {
+          console.error('Error:', error);
+          res.status(500).json({ error: 'Error creating user' });
+        }
+      });
+      
+      // Function to get a user from DynamoDB
+      async function getUser(username) {
+        const params = {
+          TableName: userDataTableName,
+          Key: {
+            user_phone_number: username
+          }
+        };
+      
+        const data = await docClient.get(params).promise();
+        return data.Item;
+      }
+      
+      // Function to create a new user in DynamoDB
+      async function createUser(username) {
+        const params = {
+          TableName: userDataTableName,
+          Item: {
+            user_phone_number: username,
+            user_name: username,
+            unique_uid: username
+          }
+        };
+      
+        await docClient.put(params).promise();
       }
      
 });

@@ -102,6 +102,11 @@ function Home() {
 //       })}
 //     </div>
 //   );
+return(
+    <body> Congratulations!! You are succesfully registered for the event</body>
+)
 }
+
+
 
 export default Home;

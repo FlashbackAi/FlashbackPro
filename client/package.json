@@ -11,6 +11,7 @@
     "@use-gesture/react": "^10.3.0",
     "amazon-cognito-identity-js": "^6.3.7",
     "axios": "^1.6.2",
+    "face-api.js": "^0.22.2",
     "file-saver": "^2.0.5",
     "formik": "^2.4.5",
     "html2canvas": "^1.4.1",
@@ -24,6 +25,7 @@
     "react-scripts": "5.0.1",
     "react-toastify": "^9.1.3",
     "react-use-gesture": "^9.1.3",
+    "react-webcam": "^7.2.0",
     "react-zoom-pan-pinch": "^3.3.0",
     "web-vitals": "^2.1.4",
     "yup": "^1.3.2"
@@ -53,6 +55,7 @@
   },
   "proxy": "http://13.126.31.242:5000",
   "devDependencies": {
-    "prettier": "3.2.5"
+    "prettier": "3.2.5",
+    "source-map-loader": "^5.0.0"
   }
 }
