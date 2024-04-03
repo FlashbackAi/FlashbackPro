@@ -142,7 +142,24 @@ function Login() {
         //setMessage("please enter the verification code sent to the registered mail id")
     };
 
-    const uploadPhoto = ()=>{
+    const uploadPhoto = async (e)=>{
+
+      e.preventDefault();
+
+      const formData = new FormData();
+      formData.append('image', imgSrc);
+      formData.append('username',username);
+  
+      try {
+        const response = await axios.post('/uploadUserPotrait', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        console.log(response.data);
+      } catch (error) {
+        console.error('Error uploading image:', error);
+      }
 
     }
 
