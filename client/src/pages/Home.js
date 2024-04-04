@@ -102,6 +102,14 @@ function Home() {
 //       })}
 //     </div>
 //   );
+return (
+    <div style={{ textAlign: 'center', paddingTop: '50px', fontSize: '24px', color: 'green' }}>
+      Congratulations!! You are successfully registered for the event
+    </div>
+  );
+  
 }
+
+
 
 export default Home;

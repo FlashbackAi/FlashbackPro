@@ -1,3 +1,4 @@
+
 import "./App.css";
 import { BrowserRouter as Router, Route, Routes, Link } from "react-router-dom";
 import Home from "./pages/Home";
@@ -83,7 +84,7 @@ function App() {
             <Route path="/forgotPassword" element={<ForgotPassword />} />
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="/" element={<ProtectedRoute><CreateFlashBack/></ProtectedRoute>} />
-            <Route path="/home" element={<ProtectedRoute><Home/></ProtectedRoute>}></Route>
+            <Route path="/home" element={<Home/>}></Route>
             <Route path="/createFlashBack" element={<ProtectedRoute><CreateFlashBack /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/images/:folderName" element={<ProtectedRoute><ImagesPage /></ProtectedRoute>} />
