@@ -19,6 +19,7 @@ function Login() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const countryCode = useState("+91");
   const [fullPhoneNumber, setFullPhoneNumber] = useState('');
+  const [phoneNumberError, setPhoneNumberError] = useState('');
 
   const [faceDetected, setFaceDetected] = useState(false);
   const webcamRef = useRef(null);
@@ -37,9 +38,18 @@ function Login() {
   let { from } = location.state || { from: { pathname: "/home" } }
 
   const handlePhoneNumberChange = (e) => {
-    setPhoneNumber(e.target.value);
-    setFullPhoneNumber(`${countryCode}${phoneNumber}`);
-    setUsername(e.target.value);
+    const value = e.target.value;
+    setPhoneNumber(value);
+
+    // Regular expression for a 10-digit phone number
+    const phoneRegex = /^\d{10}$/;
+
+    if (!phoneRegex.test(value)) {
+      console.log("invalid phone number")
+      setPhoneNumberError('Please enter a valid 10-digit phone number');
+    } else {
+      setPhoneNumberError('');
+    }
   };
   
   // useEffect(() => {
@@ -276,6 +286,7 @@ function Login() {
             {!isPhoneNumberValid && (
               <form onSubmit={handleSubmit} className="login-form">
                 <input name="phoneNumber" required type="tel" placeholder="Phone Number" onChange={handlePhoneNumberChange}/>
+                {phoneNumberError && <p style={{ color: 'red' }}>{phoneNumberError}</p>}
                 <button type="submit">Login</button>
                 {error && <p style={{ color: 'red' }}>{error}</p>}
               </form>
