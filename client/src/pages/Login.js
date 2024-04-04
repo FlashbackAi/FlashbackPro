@@ -1,6 +1,6 @@
 import React, {useRef, useState, useContext,useCallback,useEffect} from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useNavigationType } from "react-router-dom";
 import { AuthContext } from "../helpers/AuthContext";
 import { useLocation } from 'react-router-dom';
 import Webcam from 'react-webcam'
@@ -39,7 +39,7 @@ function Login() {
   const handlePhoneNumberChange = (e) => {
     setPhoneNumber(e.target.value);
     setFullPhoneNumber(`${countryCode}${phoneNumber}`);
-    setUsername(`${countryCode}${phoneNumber}`);
+    setUsername(e.target.value);
   };
   
   // useEffect(() => {
@@ -90,21 +90,19 @@ function Login() {
   
     const handleSubmit = async (event) => {
         event.preventDefault();
-
-        const data = new FormData(event.target);
-
-        console.log(data)
+      console.log(username)
+       
         try {
-          const response = await axios.post('${serverIP}/createUser', { username});
+          const response = await axios.post(`${serverIP}/createUser`, { username:username});
           setIsPhoneNumberValid(true);
-          setUsername(fullPhoneNumber);
-          if(response.status==='created')
+          console.log(response.status)
+          if(response.status===201)
           {
             setIsNewUser(true);
             alert('User created successfully please take a selfie');
             console.log("user has been created succesfully");
           }
-          else if(response.status==='exists')
+          else if(response.status===200)
           {
             setIsNewUser(true);
             navigate('/home')
@@ -113,7 +111,8 @@ function Login() {
           
 
         } catch (error) {
-          setError(error.response.data.error);
+          console.log(error)
+          setError(error.message);
         }
        
         // axios.post(`${serverIP}/request-otp`, {
@@ -151,12 +150,13 @@ function Login() {
       formData.append('username',username);
   
       try {
-        const response = await axios.post('/uploadUserPotrait', formData, {
+        const response = await axios.post(`${serverIP}/uploadUserPotrait`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
         });
         console.log(response.data);
+        navigate('/home')
       } catch (error) {
         console.error('Error uploading image:', error);
       }

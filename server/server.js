@@ -29,13 +29,13 @@ const logger = winston.createLogger({
  });
 
  // *** Comment these certificates while testing changes in local developer machine.***
-const privateKey = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/privkey.pem', 'utf8');
-const certificate = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/fullchain.pem', 'utf8');
+// const privateKey = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/privkey.pem', 'utf8');
+// const certificate = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/fullchain.pem', 'utf8');
 
-const credentials = {
-  key: privateKey,
-  cert: certificate
-}
+// const credentials = {
+//   key: privateKey,
+//   cert: certificate
+// }
 
 // Set up AWS S3
 const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.js
@@ -968,16 +968,16 @@ app.post('/downloadImage', async (req, res) => {
           logger.error("Error downloading image: "+imageUrl, err);
           res.status(500).send('Error getting images from S3');
       }
-
+    });
 
       app.post('/uploadUserPotrait', upload.single('image'), async (req, res) => {
-        const file = req.file;
-       const username = req.body.username;
+        const file = req.body.image;
+       const username = "+91"+req.body.username;
         const params = {
           Bucket: userBucketName,
           Key: username+".jpg",
-          Body: file.buffer,
-          ACL: 'public-read', // Optional: Set ACL to public-read for public access
+          Body: Buffer.from(file, 'base64'),
+          //ACL: 'public-read', // Optional: Set ACL to public-read for public access
         };
       
         try {
@@ -988,7 +988,7 @@ app.post('/downloadImage', async (req, res) => {
           // Update DynamoDB with the S3 URL
           const updateParams = {
             TableName: userDataTableName,
-            Key: { id: username }, // Assuming you have a primary key 'id'
+            Key: { user_phone_number: username }, // Assuming you have a primary key 'id'
             UpdateExpression: 'set potrait_s3_url = :url',
             ExpressionAttributeValues: {
               ':url': data.Location,
@@ -1000,16 +1000,7 @@ app.post('/downloadImage', async (req, res) => {
 
           console.log('updating s3 image  url for user is successful:', updateResult);
 
-          const updateParamsUserEvent = {
-            TableName: userEventTableBName,
-            Item: {
-              partitionKey: 'KSL_Event1',
-              sortKey: username,
-            }
-          };
-          const putResult = await docClient.put(updateParamsUserEvent).promise()
-          console.log('insert in user-event mapping is successful:', putResult);
-      
+          
           res.json({ potrait_s3_url: data.Location });
         } catch (error) {
           console.error('Error:', error);
@@ -1018,7 +1009,8 @@ app.post('/downloadImage', async (req, res) => {
       });
 
       app.post('/createUser', async (req, res) => {
-        const { username } = req.username;
+        const  username  = "+91"+req.body.username;
+        console.log("creating user "+username);
       
         try {
           // Check if the user already exists
@@ -1029,7 +1021,19 @@ app.post('/downloadImage', async (req, res) => {
       
           // Create a new user entry in DynamoDB
           await createUser(username);
-          res.json({ message: 'User created successfully', status:'created' });
+          console.log("created sucessfulyy ->"+username)
+
+          const updateParamsUserEvent = {
+            TableName: userEventTableBName,
+            Item: {
+              event_name: 'KSL_Event1',
+              user_phone_number: username,
+            }
+          };
+          const putResult = await docClient.put(updateParamsUserEvent).promise()
+          console.log('insert in user-event mapping is successful:', putResult);
+      
+          res.status(201).json({ message: 'User created successfully', status:'created' });
         } catch (error) {
           console.error('Error:', error);
           res.status(500).json({ error: 'Error creating user' });
@@ -1063,18 +1067,18 @@ app.post('/downloadImage', async (req, res) => {
         await docClient.put(params).promise();
       }
      
-});
+
 
 
 //*** if you face any issue in testing changes in local dev machine, comment this and use the below listen port***
 
-const httpsServer = https.createServer(credentials, app);
+// const httpsServer = https.createServer(credentials, app);
 
-httpsServer.listen(PORT, () => {
-  logger.info(`Server is running on https://localhost:${PORT}`);
-});
+// httpsServer.listen(PORT, () => {
+//   logger.info(`Server is running on https://localhost:${PORT}`);
+// });
 
 // const PORT = process.env.PORT || 5000;
-// app.listen(PORT ,() => {
-//   logger.info(`Server started on http://localhost:${PORT}`);
-// });
+app.listen(PORT ,() => {
+  logger.info(`Server started on http://localhost:${PORT}`);
+});
