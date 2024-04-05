@@ -522,6 +522,28 @@ p {
     letter-spacing: 0.05em;
 }
 
+.Congrats{
+  font-family: monospace; /* This is a placeholder; you'd need the actual font used by Facebook */
+  
+  font-size: 2em; /* Adjust the size as needed */
+  font-weight: 700; /* Facebook's logo is bold */
+  letter-spacing: -0.05em; /* Adjust letter spacing to closely match the logo */
+  height: fit-content;
+  width: fit-content;
+  max-width: 25em;
+}
+
+.CongratsMessage{
+  font-family: monospace; /* This is a placeholder; you'd need the actual font used by Facebook */
+  
+  font-size: 1em; /* Adjust the size as needed */
+  font-weight: 700; /* Facebook's logo is bold */
+  letter-spacing: -0.05em; /* Adjust letter spacing to closely match the logo */
+  height: fit-content;
+  width: fit-content;
+  max-width: 25em;
+}
+
 
 
 .loader {
