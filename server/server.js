@@ -28,7 +28,7 @@ const logger = winston.createLogger({
    ]
  });
 
- // *** Comment these certificates while testing changes in local developer machine.***
+ // *** Comment these certificates while testing changes in local developer machine. And, uncomment while pushing to mainline***
 const privateKey = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/privkey.pem', 'utf8');
 const certificate = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/fullchain.pem', 'utf8');
 
@@ -49,10 +49,11 @@ const dynamoDB = new AWS.DynamoDB({ region: 'ap-south-1' });
 const docClient = new AWS.DynamoDB.DocumentClient({ region: 'ap-south-1' });
 
 // Below are the tables we are using currently
-const userDataTableName = 'users';
+const userrecordstable = 'users';
+const userDataTableName = 'userData';
 const userUploadsTableName = 'userUploads';
 const userFoldersTableName = 'userFolders';
-const userEventTableBName='user_event_mapping';
+const userEventTableName='user_event_mapping';
 
 const ClientId = '6goctqurrumilpurvtnh6s4fl1'
 const cognito = new AWS.CognitoIdentityServiceProvider({region: 'ap-south-1'});
@@ -759,9 +760,6 @@ async function uploadLowResoltionImages(folderName,files)
 
 }
 
-
-
-
 app.get('/folderByUsername/:username', async (req, res) => {
 
   try{
@@ -972,7 +970,7 @@ app.post('/downloadImage', async (req, res) => {
 
       app.post('/uploadUserPotrait', upload.single('image'), async (req, res) => {
         const file = req.body.image;
-       const username = "+91"+req.body.username;
+        const username = req.body.username;
         const params = {
           Bucket: userBucketName,
           Key: username+".jpg",
@@ -987,7 +985,7 @@ app.post('/downloadImage', async (req, res) => {
       
           // Update DynamoDB with the S3 URL
           const updateParams = {
-            TableName: userDataTableName,
+            TableName: userrecordstable,
             Key: { user_phone_number: username }, // Assuming you have a primary key 'id'
             UpdateExpression: 'set potrait_s3_url = :url',
             ExpressionAttributeValues: {
@@ -1009,7 +1007,7 @@ app.post('/downloadImage', async (req, res) => {
       });
 
       app.post('/createUser', async (req, res) => {
-        const  username  = "+91"+req.body.username;
+        const  username  = req.body.username;
         console.log("creating user "+username);
       
         try {
@@ -1024,7 +1022,7 @@ app.post('/downloadImage', async (req, res) => {
           console.log("created sucessfulyy ->"+username)
 
           const updateParamsUserEvent = {
-            TableName: userEventTableBName,
+            TableName: userEventTableName,
             Item: {
               event_name: 'KSL_Event1',
               user_phone_number: username,
@@ -1043,24 +1041,30 @@ app.post('/downloadImage', async (req, res) => {
       // Function to get a user from DynamoDB
       async function getUser(username) {
         const params = {
-          TableName: userDataTableName,
+          TableName: userrecordstable,
           Key: {
             user_phone_number: username
           }
         };
-      
-        const data = await docClient.get(params).promise();
-        return data.Item;
+
+        try {
+          const data = await docClient.get(params).promise();
+          return data.Item; // Return user data if found
+      } catch (error) {
+          console.error('Error retrieving user:', error);
+          throw error;
       }
+  }
       
       // Function to create a new user in DynamoDB
       async function createUser(username) {
+        const unique_uid = `${username}_Flash_${Math.floor(Math.random() * 1000)}`;
         const params = {
-          TableName: userDataTableName,
+          TableName: userrecordstable,
           Item: {
             user_phone_number: username,
             user_name: username,
-            unique_uid: username
+            unique_uid: unique_uid
           }
         };
       
@@ -1068,17 +1072,14 @@ app.post('/downloadImage', async (req, res) => {
       }
      
 
-
-
-//*** if you face any issue in testing changes in local dev machine, comment this and use the below listen port***
-
 const httpsServer = https.createServer(credentials, app);
 
 httpsServer.listen(PORT, () => {
   logger.info(`Server is running on https://localhost:${PORT}`);
 });
 
-// const PORT = process.env.PORT || 5000;
+
+//**Uncomment for dev testing and comment when pushing the code to mainline**/
 // app.listen(PORT ,() => {
 //   logger.info(`Server started on http://localhost:${PORT}`);
-//});
+// });

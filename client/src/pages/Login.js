@@ -17,7 +17,7 @@ function Login() {
   const [isPhoneNumberValid, setIsPhoneNumberValid] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const countryCode = useState("+91");
+  const [countryCode, setCountryCode] = useState("+91");
   const [fullPhoneNumber, setFullPhoneNumber] = useState('');
   const [phoneNumberError, setPhoneNumberError] = useState('');
 
@@ -99,11 +99,12 @@ function Login() {
 
   
     const handleSubmit = async (event) => {
-        event.preventDefault();
-      console.log(username)
+      event.preventDefault();
+      const fullPhoneNumber = countryCode + phoneNumber; // Combine country code and phone number
+      console.log(fullPhoneNumber); // Log the full phone number
        
         try {
-          const response = await axios.post(`${serverIP}/createUser`, { username:username});
+          const response = await axios.post(`${serverIP}/createUser`, { username: fullPhoneNumber});
           setIsPhoneNumberValid(true);
           console.log(response.status)
           if(response.status===201)
@@ -116,7 +117,7 @@ function Login() {
           {
             setIsNewUser(true);
             navigate('/home')
-            alert('User Already successfully');
+            alert(`hey ${fullPhoneNumber}, you already exists. Have a great event ahead..`);
           }
           
 
@@ -154,10 +155,10 @@ function Login() {
     const uploadPhoto = async (e)=>{
 
       e.preventDefault();
-
+      const fullPhoneNumber = countryCode + phoneNumber;
       const formData = new FormData();
       formData.append('image', imgSrc);
-      formData.append('username',username);
+      formData.append('username', fullPhoneNumber );
   
       try {
         const response = await axios.post(`${serverIP}/uploadUserPotrait`, formData, {
