@@ -27,8 +27,8 @@ function Login() {
 
   
   const videoConstraints = {
-    width: 250,
-    height: 400     ,
+    width: 200,
+    height: 500,
     facingMode: "user"
   };
 
