@@ -27,7 +27,7 @@ function Login() {
 
   
   const videoConstraints = {
-    width: 400,
+    width: 350,
     height: 250,
     facingMode: "user"
   };
@@ -304,14 +304,15 @@ function Login() {
                         screenshotFormat="image/jpeg"
                         style={{ zIndex: 0 }}
                         videoConstraints={videoConstraints}
+                        mirrored={true}
                       />
               )}
               <div className="btn-container">
                 {imgSrc ? (
                   <div className="login-form-container">
                     <form className="login-form">
-                    <button type="button" onClick={retake}>Retake photo</button>
                     <button type="button" onClick={uploadPhoto}>Submit photo</button>
+                    <button type="button" onClick={retake}>Retake photo</button>
                   </form>
                 </div>
                 
