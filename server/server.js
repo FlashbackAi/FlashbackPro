@@ -1024,7 +1024,7 @@ app.post('/downloadImage', async (req, res) => {
           const updateParamsUserEvent = {
             TableName: userEventTableName,
             Item: {
-              event_name: 'KSL_Event1',
+              event_name: 'Convocation_PrathimaCollege',
               user_phone_number: username,
             }
           };
