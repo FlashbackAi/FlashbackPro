@@ -1013,7 +1013,8 @@ app.post('/downloadImage', async (req, res) => {
         try {
           // Check if the user already exists
           const existingUser = await getUser(username);
-          if (existingUser) {
+          console.log("existingUser"+ existingUser);
+          if (existingUser && existingUser.potrait_s3_url) {
             return res.json({ error: 'User already exists', status:'exists' });
           }
       
