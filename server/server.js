@@ -46,17 +46,13 @@ const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.
 });
 
 const bucketName = 'flashbackuseruploads';
-<<<<<<< HEAD
 const userBucketName='flashbackuserthumbnails';
-const imagesBucketName = 'flashbackusercollection';
-=======
-const userThumbnailBucketName='flashbackuserthumbnails';
 const indexBucketName = 'flashbackusercollection';
+const imagesBucketName = 'flashbackusercollection';
 
 const rekognition = new AWS.Rekognition({ region: 'ap-south-1' });
 
 
->>>>>>> a7cb197 (Trigger Flashback - Which will query the indexed data with potraits with event input)
 // Setting up AWS DynamoDB
 const dynamoDB = new AWS.DynamoDB({ region: 'ap-south-1' });
 const docClient = new AWS.DynamoDB.DocumentClient({ region: 'ap-south-1' });
@@ -67,13 +63,10 @@ const userDataTableName = 'userData';
 const userUploadsTableName = 'userUploads';
 const userFoldersTableName = 'userFolders';
 const userEventTableName='user_event_mapping';
-<<<<<<< HEAD
 const userOutputTable='user_outputs';
-=======
 const eventsTable = 'events';
-const userOutputsTableName = 'user_outputs';
 const indexedDataTableName = 'indexed_data'
->>>>>>> a7cb197 (Trigger Flashback - Which will query the indexed data with potraits with event input)
+
 
 const ClientId = '6goctqurrumilpurvtnh6s4fl1'
 const cognito = new AWS.CognitoIdentityServiceProvider({region: 'ap-south-1'});
@@ -489,7 +482,7 @@ async function searchFacesByImage(portraitS3Url) {
 
     // Construct the parameters to get the object from S3
     const s3Params = {
-      Bucket: userThumbnailBucketName, // Replace 'your-bucket-name' with the name of your S3 bucket
+      Bucket: userBucketName, // Replace 'your-bucket-name' with the name of your S3 bucket
       Key: objectKey // Use the extracted object key
     };
 
@@ -555,7 +548,7 @@ async function getS3Url(imageId) {
 // Function to store attributes in user_outputs table
 async function storeUserOutput(attributes) {
   const params = {
-    TableName: userOutputsTableName,
+    TableName: userOutputTable,
     Item: {
       'unique_uid': { S: attributes.unique_uid },
       'user_phone_number': { S: attributes.user_phone_number },
@@ -815,7 +808,6 @@ app.get('/images/:eventName/:userId', async (req, res) => {
           }).promise();
 
           logger.info("Image fetched from cloud: " + file.image_id);
-
 
           // Resize image to a maximum of 5MB
         const resizedImageData = await sharp(imageData.Body)
