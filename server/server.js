@@ -6,7 +6,7 @@ const cors = require('cors');
 const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
-const { AWS, AmazonCognitoIdentity, userPool } = require('./config');
+const { AWS, AmazonCognitoIdentity, userPool } = require('./config', 'aws-sdk');
 const { CognitoUserPool, CognitoUserAttribute } = require('amazon-cognito-identity-js');
 const archiver = require('archiver');
 const https = require('https');
@@ -14,9 +14,12 @@ const { fold } = require('prelude-ls');
 const { func } = require('prop-types');
 const app = express();
 const PORT = process.env.PORT || 5000;
+const base64 = require('base64-js');
 
 
 app.use(cors()); // Allow cross-origin requests
+app.use(express.json());
+
 app.use(express.json());
 
 // Configuring winston application logger
@@ -43,8 +46,17 @@ const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.
 });
 
 const bucketName = 'flashbackuseruploads';
+<<<<<<< HEAD
 const userBucketName='flashbackuserthumbnails';
 const imagesBucketName = 'flashbackusercollection';
+=======
+const userThumbnailBucketName='flashbackuserthumbnails';
+const indexBucketName = 'flashbackusercollection';
+
+const rekognition = new AWS.Rekognition({ region: 'ap-south-1' });
+
+
+>>>>>>> a7cb197 (Trigger Flashback - Which will query the indexed data with potraits with event input)
 // Setting up AWS DynamoDB
 const dynamoDB = new AWS.DynamoDB({ region: 'ap-south-1' });
 const docClient = new AWS.DynamoDB.DocumentClient({ region: 'ap-south-1' });
@@ -55,7 +67,13 @@ const userDataTableName = 'userData';
 const userUploadsTableName = 'userUploads';
 const userFoldersTableName = 'userFolders';
 const userEventTableName='user_event_mapping';
+<<<<<<< HEAD
 const userOutputTable='user_outputs';
+=======
+const eventsTable = 'events';
+const userOutputsTableName = 'user_outputs';
+const indexedDataTableName = 'indexed_data'
+>>>>>>> a7cb197 (Trigger Flashback - Which will query the indexed data with potraits with event input)
 
 const ClientId = '6goctqurrumilpurvtnh6s4fl1'
 const cognito = new AWS.CognitoIdentityServiceProvider({region: 'ap-south-1'});
@@ -383,7 +401,173 @@ app.post('/confirmUser', function(req, res) {
 //   });
 // });
 
+app.get('/fetch-events', async (req, res) => {
+  try {
+    const params = {
+      TableName: eventsTable, // Replace with your DynamoDB table name
+    };
+    // Scan the DynamoDB table to fetch all events
+    const data = await dynamoDB.scan(params).promise();
+    const eventNames = data.Items.map(item => item.event_name);
+    
+    // Return the list of events
+    res.json(eventNames);
+  } catch (error) {
+    console.error('Error fetching events:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
+app.post('/trigger-flashback', async (req, res) => {
+  try {
+    const { eventName } = req.body;
+
+    // Query user_event_mapping table to get phone_numbers list
+    const phoneNumbers = await queryUserEventMapping(eventName);
+
+    // Iterate over phoneNumbers and process each user
+    for (const phoneNumber of phoneNumbers) {
+      // Query users table to get portrait_s3_url
+      const portraitS3Url = await queryUsersTable(phoneNumber);
+
+      // Call searchFacesByImage API with portrait_s3_url
+      const imageId = await searchFacesByImage(portraitS3Url);
+
+      // Get s3_url using imageId
+      const s3Url = await getS3Url(imageId);
+
+      // Store attributes in user_outputs table
+      await storeUserOutput({ unique_uid: phoneNumber, user_phone_number: phoneNumber, s3_url: s3Url, event_name: eventName });
+    }
+
+    res.status(200).json({ message: 'Flashback triggered successfully' });
+  } catch (error) {
+    console.error('Error triggering flashback:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Function to query user_event_mapping table
+async function queryUserEventMapping(eventName) {
+  const params = {
+    TableName: userEventTableName,
+    KeyConditionExpression: '#eventName = :eventName',
+    ExpressionAttributeNames: {
+      '#eventName': 'event_name'
+    },
+    ExpressionAttributeValues: {
+      ':eventName': { S: eventName }
+    },
+    ProjectionExpression: 'user_phone_number' // Specify the attribute(s) you want to retrieve
+  };
+
+  const data = await dynamoDB.query(params).promise();
+  const phoneNumbers = data.Items.map(item => item.user_phone_number.S);
+  return phoneNumbers;
+}
+
+// Function to query users table
+async function queryUsersTable(phoneNumber) {
+  const params = {
+    TableName: userrecordstable,
+    Key: { 'user_phone_number': { S: phoneNumber } }
+  };
+
+  const data = await dynamoDB.getItem(params).promise();
+  return data.Item.potrait_s3_url.S;
+}
+
+// Function to call searchFacesByImage API
+async function searchFacesByImage(portraitS3Url) {
+  try {
+    // Decode the URL-encoded characters in the S3 URL
+    const decodedUrl = decodeURIComponent(portraitS3Url);
+
+    // Extract the object key from the decoded S3 URL
+    const objectKey = decodedUrl.split('/').pop();
+    console.log('Object key:', objectKey);
+
+    // Construct the parameters to get the object from S3
+    const s3Params = {
+      Bucket: userThumbnailBucketName, // Replace 'your-bucket-name' with the name of your S3 bucket
+      Key: objectKey // Use the extracted object key
+    };
+
+    // Get the object from S3
+    const s3Data = await s3.getObject(s3Params).promise();
+
+    // Convert the image data to base64
+    const base64Image = s3Data.Body.toString('base64')
+
+    const startIndex = base64Image.indexOf('/9j');
+    const croppedBase64EncodedImage = base64Image.substring(startIndex);
+
+    console.log('Cropped Base64 Encoded Image:', croppedBase64EncodedImage);
+
+
+    // Construct the parameters for the searchFacesByImage operation
+    const rekognitionParams = {
+      CollectionId: 'FlashbackUserCollection', // Replace 'your-collection-id' with the ID of your Rekognition collection
+      Image: {
+        Bytes: Buffer.from(croppedBase64EncodedImage, 'base64') // Convert the base64-encoded image to a Buffer
+      },
+      FaceMatchThreshold: 90
+    };
+
+    // Call the searchFacesByImage operation
+    const data = await rekognition.searchFacesByImage(rekognitionParams).promise();
+
+    // Extract and return the ImageId (if any)
+    if (data.FaceMatches && data.FaceMatches.length > 0) {
+      console.log('Writing the matched faces to user_outputs table');
+      return data.FaceMatches[0].Face.ImageId;
+    } else {
+      throw new Error('No faces found in the image');
+    }
+  } catch (error) {
+    console.error('Error searching faces by image:', error);
+    throw error; // Rethrow the error for the caller to handle
+  }
+}
+
+
+// Function to get s3_url using imageId
+async function getS3Url(imageId) {
+  const params = {
+    TableName: indexedDataTableName,
+    Key: {
+      'image_id': { S: imageId }
+    }
+  };
+
+  try {
+    const data = await dynamoDB.getItem(params).promise();
+    if (!data.Item || !data.Item.s3_url || !data.Item.s3_url.S) {
+      throw new Error(`No s3_url found for image_id: ${imageId}`);
+    }
+    return data.Item.s3_url.S;
+  } catch (error) {
+    console.error('Error retrieving s3_url:', error);
+    throw error; // Rethrow the error for the caller to handle
+  }
+}
+
+// Function to store attributes in user_outputs table
+async function storeUserOutput(attributes) {
+  const params = {
+    TableName: userOutputsTableName,
+    Item: {
+      'unique_uid': { S: attributes.unique_uid },
+      'user_phone_number': { S: attributes.user_phone_number },
+      's3_url': { S: attributes.s3_url },
+      'event_name': { S: attributes.event_name }
+    }
+  };
+
+  await dynamoDB.putItem(params).promise();
+}
+
+module.exports = { searchFacesByImage };
 
 
 app.post('/login', function(req, res) {
@@ -982,7 +1166,7 @@ app.post('/downloadImage', async (req, res) => {
         const file = req.body.image;
         const username = req.body.username;
         const params = {
-          Bucket: userBucketName,
+          Bucket: userThumbnailBucketName,
           Key: username+".jpg",
           Body: Buffer.from(file, 'base64'),
           //ACL: 'public-read', // Optional: Set ACL to public-read for public access

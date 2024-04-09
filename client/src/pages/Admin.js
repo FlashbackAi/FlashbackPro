@@ -4,13 +4,14 @@ import { saveAs } from 'file-saver';
 // import ImageComponent from "./ImageComponent";
 import { useGesture } from '@use-gesture/react';
 import { animated, useSpring } from '@react-spring/web';
-
+import '../Admin.css';
 
 
 function App() {
   const serverIP = process.env.REACT_APP_SERVER_IP;
   const [folders, setFolders] = useState([]);
   const [selectedValue, setSelectedValue] = useState('');
+  const [message, setMessage] = useState('');
   const [uploadedImages, setUploadedImages] = useState([]);
   const collageRef = useRef(null);
   const canvasRef = useRef(null);
@@ -20,9 +21,15 @@ function App() {
   const [image4, setImage4] = useState(null);
   const imgRef = useRef();
   const [templateImages, setTemplateImages] = useState(new Map());
-  //const [templateImages, setTemplateImages] = useState([{}]);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [eventName, setEventName] = useState('');
+  const [events, setEvents] = useState([]);
+
 
   
+  const togglePopup = useCallback(() => {
+    setIsPopupOpen(prev => !prev);
+  }, []);
 
 
   const ImageCropper = ({ src }) => {
@@ -95,6 +102,44 @@ function App() {
   const handleDragOver = (e) => {
     e.preventDefault();
   };
+
+  const handleOpenPopup = () => {
+    setIsPopupOpen(true);
+  };
+
+  const handleClosePopup = () => {
+    setIsPopupOpen(false);
+  };
+
+  const handleEventNameChange = (e) => {
+    setEventName(e.target.value);
+  };
+
+  const handleSubmit = () => {
+    // Check if eventName is selected
+    if (!eventName) {
+      console.error("Please select an event name");
+      alert('Please select an event name')
+      return;
+    }
+  
+    // Make API call to trigger-flashback with the selected event data
+    axios.post(`${serverIP}/trigger-flashback`, { eventName })
+      .then(response => {
+        // Handle successful response from the backend
+        console.log("Flashback triggered successfully:", response.data);
+        alert('Flashback triggered succesffully')
+        // Optionally, you can reset the eventName state after triggering the flashback
+        setEventName('');
+      })
+      .catch(error => {
+        // Handle error response from the backend
+        console.error("Error triggering flashback:", error);
+        alert('Error triggering flashback')
+      });
+  };
+  
+
   const downloadCollage = async() => {   
 
 
@@ -189,6 +234,21 @@ catch(error){
       });
   }, []);
 
+  useEffect(() => {
+    axios.get(`${serverIP}/fetch-events`)
+      .then(response => {
+        // Transform the data before setting the events state
+        const transformedEvents = response.data.map((event, index) => ({
+          id: index + 1, // You can use index or any other unique identifier as the id
+          name: event.S
+        }));
+        setEvents(transformedEvents);
+      })
+      .catch(error => {
+        console.error("Error fetching events: ", error);
+      });
+  }, []);
+
   const fetchImages = (event) =>{
     const folderName = event.target.value
     console.log("images are being fetched from " +folderName)
@@ -208,6 +268,7 @@ catch(error){
         };
     }
 };
+
 
 
 const downloadFolder = async () => {
@@ -242,7 +303,6 @@ const downloadFolder = async () => {
     });
   }
 }
-
 
   return (
     <div>
@@ -293,8 +353,45 @@ const downloadFolder = async () => {
             <button onClick={downloadCollage}>Download Collage</button>
            
         </div>
+        <div className='Buttoncontainer'>
+        <div className='LaunchButton' onClick={togglePopup}>
+        <div class="labels">
+       
+      <p class="redText">Trigger Flashback</p>
+      <div class="redTextActive">
+        </div>
+        </div>
+        <div class="red">
+        </div>
+        </div>
+        </div>
+      {/* Popup */}
+      {isPopupOpen && (
+        <div class ='pop'>
+        <div className="eventpop">
+          <div className="popup-content">
+            <h2>Event Details</h2>
+            <label htmlFor="event_name">Event Name:</label>
+            <select id="event_name" value={eventName} onChange={handleEventNameChange} style={{ color: '#000' }}>
+              <option value="">Select Event Name</option>
+              {events.map(event => (
+                  <option key={event.id} value={event.name}>{event.name}</option>
+                ))}
+            </select>
+            <div className='submitbutton'>
+            <button onClick={handleSubmit}>Create Flashback</button>
+            </div>
+            <div className='Closebutton'>
+            <button onClick={handleClosePopup}>Close</button>
+            </div>
+          </div>
+        </div>
+        </div>
+      )}
+
     </div>
   );
 }
 
 export default App;
+  

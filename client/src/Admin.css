@@ -1,0 +1,211 @@
+@import 'https://fonts.googleapis.com/css?family=Open+Sans:400, 800';
+
+* {
+	box-sizing: border-box;
+  margin: 0;
+  border: 0;
+  vertical-align: baseline;
+}
+
+
+
+.Buttoncontainer {
+  width: 350px;
+  right: -400px;
+  top: -400px;
+  margin: 0 auto;
+  position: relative;
+  
+  -moz-user-select: -moz-none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+}
+
+.LaunchButton {
+  width: 200px;
+  max-width: 1000px;
+  right: 5 00px;
+  height: 200px;
+  border: 1px solid #333;
+  margin: 10px;
+  background-color: #333;
+  border: 1px solid #000;
+  border-radius: 105px;
+  display: inline-block;
+  -webkit-box-shadow: 0px 0px 20px 1px rgba(0,0,0,0.3), inset 0 0 20px #000000;
+  -moz-box-shadow: 0px 0px 20px 1px rgba(0,0,0,0.3), inset 0 0 20px #000000;
+  box-shadow: 0px 0px 20px 1px rgba(0,0,0,0.3),inset 0 0 20px #000000;
+}
+
+.labels {
+  width: 150px;
+  max-width: 1000px;
+  height: 150px;
+  margin: 24px;
+  border-radius: 70px;
+  background-color: transparent;
+  z-index: 30;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.red {
+  width: 150px;
+  max-width: 1000px;
+  height: 150px;
+  margin: 24px;
+  border-radius: 70px;
+  background-color: #cc0004;
+  border: 1px solid #330001;
+  z-index: 20;
+  position: absolute;
+  top: 7%;
+  -webkit-box-shadow: 0px 0px 15px 1px rgba(0,0,0,0.75), inset 0 0 20px #000000;
+  -moz-box-shadow: 0px 0px 15px 1px rgba(0,0,0,0.75), inset 0 0 20px #000000;
+  box-shadow: 0px 0px 15px 1px rgba(0,0,0,0.75),inset 0 0 20px #000000;
+  overflow: hidden;
+  -webkit-transition: background-color 500ms ease;
+  -moz-transition: background-color 500ms ease;
+  -o-transition: background-color 500ms ease;
+  transition: background-color 500ms ease;
+}
+
+
+.redText {
+  color: #fff;
+  font-size: 20px;
+  font-weight: 800;
+  text-align: center;
+  vertical-align: middle;
+  position: relative;
+  top: 10px;
+  z-index: 30;
+}
+
+.redTextActive {
+  color: #fff;
+  font-size: 20px;
+  line-height: 120%;
+  text-align: center;
+  vertical-align: middle;
+  position: relative;
+  left: 100%;
+  top: 9%;
+  z-index: 30;
+}
+
+@keyframes flickerAnimation {
+  0%   { opacity:1; }
+  50%  { opacity:0; }
+  100% { opacity:1; }
+}
+@-o-keyframes flickerAnimation{
+  0%   { opacity:1; }
+  50%  { opacity:0; }
+  100% { opacity:1; }
+}
+@-moz-keyframes flickerAnimation{
+  0%   { opacity:1; }
+  50%  { opacity:0; }
+  100% { opacity:1; }
+}
+@-webkit-keyframes flickerAnimation{
+  0%   { opacity:1; }
+  50%  { opacity:0; }
+  100% { opacity:1; }
+}
+
+.LaunchButton:hover .red {
+  background-color: #ff0006;
+  -webkit-animation: flickerAnimation 1s infinite;
+  -moz-animation: flickerAnimation 1s infinite;
+  -o-animation: flickerAnimation 1s infinite;
+  animation: flickerAnimation 1s infinite;
+}
+
+.button:active .red {
+  background-color: #ff0006;
+  -webkit-animation: 0;
+  -moz-animation: 0;
+  -o-animation: 0;
+  animation: 0;
+  -webkit-box-shadow: 0px 0px 0px 0px rgba(0,0,0,0.75), inset 0 5px 30px #000000;
+  -moz-box-shadow: 0px 0px 0px 0px rgba(0,0,0,0.75), inset 0 5px 30px #000000;
+  box-shadow: 0px 0px 0px 0px rgba(0,0,0,0.75),inset 0 5px 30px #000000;
+}
+
+.button:active .redText {
+  margin-left: 101px;
+}
+
+.button:active .redTextActive {
+  left: 0;
+}
+
+.pop {
+    width: 550px;
+    right: -400px;
+    top: -400px;
+    margin: 0 auto;
+    position: relative;
+
+}
+
+.popup-content {
+    background-color: blue;
+}
+
+div.submitbutton {
+    position: relative;
+     right: -300px;
+ }
+
+div.Closebutton {
+   position: relative;
+    right: -300px;
+}
+
+
+/* Basic styling for the select element */
+.custom-select {
+    display: block;
+    width: 100%;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #495057; /* Text color for the select element */
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  }
+  
+  /* Style for when the select element is focused */
+  .custom-select:focus {
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  }
+  
+  /* Style for dropdown list items */
+  .custom-select option {
+    background-color: black; /* Background color of each dropdown list item */
+    color: red; /* Text color of each dropdown list item */
+    text-decoration-color: #000000;
+  }
+  
+  /* Style for the select element arrow */
+  .custom-select::-ms-expand {
+    display: none; /* Remove the default arrow for Internet Explorer */
+  }
+  
+  .custom-select::after {
+    content: '\25BC'; /* Unicode character for the select element arrow */
+    position: absolute;
+    top: 50%;
+    right: 0.75rem;
+    transform: translateY(-50%);
+  }
+  
