@@ -44,6 +44,7 @@ const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.
 
 const bucketName = 'flashbackuseruploads';
 const userBucketName='flashbackuserthumbnails';
+const imagesBucketName = 'flashbackusercollection';
 // Setting up AWS DynamoDB
 const dynamoDB = new AWS.DynamoDB({ region: 'ap-south-1' });
 const docClient = new AWS.DynamoDB.DocumentClient({ region: 'ap-south-1' });
@@ -54,6 +55,7 @@ const userDataTableName = 'userData';
 const userUploadsTableName = 'userUploads';
 const userFoldersTableName = 'userFolders';
 const userEventTableName='user_event_mapping';
+const userOutputTable='user_outputs';
 
 const ClientId = '6goctqurrumilpurvtnh6s4fl1'
 const cognito = new AWS.CognitoIdentityServiceProvider({region: 'ap-south-1'});
@@ -598,11 +600,12 @@ async function addFolderToUser(folderName,username,files_length){
   return res;
 }
 
-app.get('/images/:folderName', async (req, res) => {
+app.get('/images/:eventName/:userId', async (req, res) => {
   try {
    
-     const folderName = req.params.folderName;
-  // console.log(folderName)
+     const eventName = req.params.eventName;
+     const userId = req.params.userId;
+     console.log("Image are being fetched for event -> "+eventName+"; userId -> "+userId);
   // const params1 = {
   //   TableName: userUploadsTableName,
   //   IndexName: 'FolderNameIndex',
@@ -621,13 +624,20 @@ app.get('/images/:folderName', async (req, res) => {
 
      const imagesPromises = result.Items.map(async file => {
         try {
-          const lowResImage=file.image_id.split("/")[0]+"/lowRes/"+file.image_id.split("/")[1];
+         // const lowResImage=file.image_id.split("/")[0]+"/lowRes/"+file.image_id.split("/")[1];
           const imageData = await s3.getObject({
-              Bucket: bucketName,
-              Key: lowResImage
+              Bucket: imagesBucketName,
+              Key: file.image_id
           }).promise();
 
           logger.info("Image fetched from cloud: " + file.image_id);
+
+
+          // Resize image to a maximum of 5MB
+        const resizedImageData = await sharp(imageData.Body)
+        .resize({ fit: 'inside', width: 1920, height: 1080 }) // Resize image to fit within specified dimensions
+        .jpeg({ quality: 80, force: false }) // Convert image to JPEG with specified quality
+        .toBuffer();
 
           // Convert image data to base64
           const base64Image =  {
@@ -1080,7 +1090,7 @@ httpsServer.listen(PORT, () => {
 });
 
 
-//**Uncomment for dev testing and comment when pushing the code to mainline**/
+// //**Uncomment for dev testing and comment when pushing the code to mainline**/
 // app.listen(PORT ,() => {
 //   logger.info(`Server started on http://localhost:${PORT}`);
 // });

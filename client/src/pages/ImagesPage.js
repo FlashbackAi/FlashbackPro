@@ -6,7 +6,7 @@ import 'react-image-gallery/styles/css/image-gallery.css'; // Import the CSS
 
 function ImagesPage() {
   const serverIP = process.env.REACT_APP_SERVER_IP;
-  const { folderName } = useParams();
+  const { eventName,userId } = useParams();
   const [images, setImages] = useState([]);
   const username = sessionStorage.getItem("username");
   const galleryRef = useRef(null);
@@ -61,7 +61,7 @@ function ImagesPage() {
       }, 5 * 60 * 1000);
   
       try {
-        const response = await axios.get(`${serverIP}/images/${folderName}`);
+        const response = await axios.get(`${serverIP}/images/${eventName}/${userId}`);
         if (response.status === 200) {
           const formattedImages = response.data.map((img) => ({
             original: img.imageData, // Assuming `imageData` is the URL to the image
@@ -83,7 +83,7 @@ function ImagesPage() {
     };
   
     fetchImages();
-  }, [folderName, serverIP, username]);
+  }, [eventName, userId, serverIP, username]);
   
 
   return (

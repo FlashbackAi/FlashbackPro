@@ -87,7 +87,7 @@ function App() {
             <Route path="/home" element={<Home/>}></Route>
             <Route path="/createFlashBack" element={<ProtectedRoute><CreateFlashBack /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/images/:folderName" element={<ProtectedRoute><ImagesPage /></ProtectedRoute>} />
+            <Route path="/images/:eventName/:userId" element={<ImagesPage />} />
 
           </Routes>
           )}

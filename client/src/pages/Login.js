@@ -305,6 +305,7 @@ function Login() {
                         style={{ zIndex: 0 }}
                         videoConstraints={videoConstraints}
                         mirrored={true}
+                        // forceScreenshotSourceSize={true}
                       />
               )}
               <div className="btn-container">
