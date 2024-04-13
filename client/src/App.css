@@ -544,6 +544,11 @@ p {
   max-width: 25em;
 }
 
+.webcam{
+  width: 250;
+  height: 400;   
+}
+
 
 
 .loader {

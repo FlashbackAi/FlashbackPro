@@ -806,31 +806,29 @@ app.get('/images/:eventName/:userId', async (req, res) => {
      const eventName = req.params.eventName;
      const userId = req.params.userId;
      console.log("Image are being fetched for event -> "+eventName+"; userId -> "+userId);
-  // const params1 = {
-  //   TableName: userUploadsTableName,
-  //   IndexName: 'FolderNameIndex',
-  //   ProjectionExpression: 'image_id',
-  //   KeyConditionExpression: 'folder_name = :foldername',
-  //   FilterExpression: 'image_status <> :imagestatus',
-  //   ExpressionAttributeValues: {
-  //     ':foldername': folderName,
-  //     ':imagestatus': "deleted"
-  //   }
-  // };
-  // logger.info(params1)
-  const result = await folderImages(folderName);
-  logger.info('total images fetched for the folder: '+result.Count);
+    //  const params = {
+    //   TableName: userOutputTable,
+    //   IndexName: 'user_outputs_GSI', // Specify the GSI name
+    //   KeyConditionExpression: 'user_phone_number = :partitionKey AND event_name = :sortKey', // Specify the GSI partition and sort key
+    //   ExpressionAttributeValues: {
+    //     ':partitionKey': userId, // Specify the value for the partition key
+    //     ':sortKey': eventName // Specify the value for the sort key
+    //   }
+    // };
+ // logger.info(params)
+  const result = await userEventImages(eventName,userId);
  
 
      const imagesPromises = result.Items.map(async file => {
         try {
-         // const lowResImage=file.image_id.split("/")[0]+"/lowRes/"+file.image_id.split("/")[1];
+          const imagekey=file.s3_url.split("amazonaws.com/")[1];
+          console.log(imagekey);
           const imageData = await s3.getObject({
               Bucket: imagesBucketName,
-              Key: file.image_id
+              Key:imagekey
           }).promise();
 
-          logger.info("Image fetched from cloud: " + file.image_id);
+          logger.info("Image fetched from cloud: " + imagekey);
 
           // Resize image to a maximum of 5MB
         const resizedImageData = await sharp(imageData.Body)
@@ -838,10 +836,12 @@ app.get('/images/:eventName/:userId', async (req, res) => {
         .jpeg({ quality: 80, force: false }) // Convert image to JPEG with specified quality
         .toBuffer();
 
+
+        //logger.info(resizedImageData)
           // Convert image data to base64
           const base64Image =  {
-            "url": `${file.image_id}`,
-           "imageData":`data:${file.image_id};base64,${imageData.Body.toString('base64')}`
+            "url": `${imagekey}`,
+           "imageData":`data:${imagekey};base64,${resizedImageData.toString('base64')}`
          }
           return base64Image;
       }  catch (err) {
@@ -857,28 +857,28 @@ app.get('/images/:eventName/:userId', async (req, res) => {
   }
 });
 
-async function folderImages(folderName) {
+async function userEventImages(eventName,userId){
 
   try {
    
-  console.log(folderName)
+ // console.log(folderName)
   const params = {
-    TableName: userUploadsTableName,
-    IndexName: 'FolderNameIndex',
-    ProjectionExpression: 'image_id',
-    KeyConditionExpression: 'folder_name = :foldername',
-    FilterExpression: 'image_status <> :imagestatus',
+    TableName: userOutputTable,
+    IndexName: 'unique_uid-event_name-index', // Specify the GSI name
+    KeyConditionExpression: 'unique_uid = :partitionKey AND event_name = :sortKey', // Specify the GSI partition and sort key
     ExpressionAttributeValues: {
-      ':foldername': folderName,
-      ':imagestatus': "deleted"
+      ':partitionKey': userId, // Specify the value for the partition key
+      ':sortKey': eventName // Specify the value for the sort key
     }
   };
   logger.info(params)
   const result = await docClient.query(params).promise();
-  logger.info('total images fetched for the folder: '+result.Count);
+  console.log("result->"+result)
+  logger.info('total images fetched for the user -> '+userId+'  in event -> '+eventName +' : '+result.Count);
   return result;
 }
 catch (err) {
+  logger.info(err)
   return err;
 }
   

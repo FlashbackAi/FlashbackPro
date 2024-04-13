@@ -84,10 +84,12 @@ function App() {
             <Route path="/forgotPassword" element={<ForgotPassword />} />
             <Route path="/admin" element={<Admin />} />
             {/* <Route path="/" element={<ProtectedRoute><CreateFlashBack/></ProtectedRoute>} /> */}
-            <Route path="/home" element={<Home/>}></Route>
+            <Route path="/home" element={<Home/>}></Route> 
+            {/* <Route path="/home" element={<ProtectedRoute><Home/></ProtectedRoute>}></Route> */}
             <Route path="/createFlashback" element={<ProtectedRoute><CreateFlashBack /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/images/:eventName/:userId" element={<ImagesPage />} />
+            {/* <Route path="/images/:eventName/:userId" element={<ProtectedRoute><ImagesPage /></ProtectedRoute>} /> */}
+            <Route path="/images/:eventName/:userId" element={<ImagesPage />} /> 
 
           </Routes>
           )}

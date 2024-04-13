@@ -4,7 +4,6 @@ import { useNavigate, useNavigationType } from "react-router-dom";
 import { AuthContext } from "../helpers/AuthContext";
 import { useLocation } from 'react-router-dom';
 import Webcam from 'react-webcam'
-import * as faceapi from 'face-api.js';
 
 function Login() {
   const serverIP = process.env.REACT_APP_SERVER_IP;
@@ -288,7 +287,7 @@ function Login() {
               <form onSubmit={handleSubmit} className="login-form">
                 <input name="phoneNumber" required type="tel" placeholder="Phone Number" onChange={handlePhoneNumberChange}/>
                 {phoneNumberError && <p style={{ color: 'red' }}>{phoneNumberError}</p>}
-                <button type="submit">Login</button>
+                <button type="submit" disabled={phoneNumber.length !== 10}>Login</button>
                 {error && <p style={{ color: 'red' }}>{error}</p>}
               </form>
             ) }
