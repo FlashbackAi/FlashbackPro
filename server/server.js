@@ -421,16 +421,24 @@ app.post('/trigger-flashback', async (req, res) => {
     // Iterate over phoneNumbers and process each user
     for (const phoneNumber of phoneNumbers) {
       // Query users table to get portrait_s3_url
-      const portraitS3Url = await queryUsersTable(phoneNumber);
+      // Query users table to get user data
+      const userData = await queryUsersTable(phoneNumber);
+      const portraitS3Url = userData.portraitS3Url;
+      const uniqueUid = userData.uniqueUid;
 
-      // Call searchFacesByImage API with portrait_s3_url
-      const imageId = await searchFacesByImage(portraitS3Url);
+      // Call searchFacesByImage API with portraitS3Url
+      const result = await searchFacesByImage(portraitS3Url, phoneNumber);
+      const matchedFaces = result.matchedFaces;
 
-      // Get s3_url using imageId
-      const s3Url = await getS3Url(imageId);
+      // Iterate over each match and store attributes in user_outputs table
+      for (const match of matchedFaces) {
 
-      // Store attributes in user_outputs table
-      await storeUserOutput({ unique_uid: phoneNumber, user_phone_number: phoneNumber, s3_url: s3Url, event_name: eventName });
+        // Get s3_url using imageId
+        const s3Url = await getS3Url(match.imageId);
+
+        // Store attributes in user_outputs table
+        await storeUserOutput({ unique_uid: uniqueUid, user_phone_number: phoneNumber, s3_url: s3Url, event_name: eventName });
+      }
     }
 
     res.status(200).json({ message: 'Flashback triggered successfully' });
@@ -467,14 +475,19 @@ async function queryUsersTable(phoneNumber) {
   };
 
   const data = await dynamoDB.getItem(params).promise();
-  return data.Item.potrait_s3_url.S;
+  const userData = {
+    uniqueUid: data.Item.unique_uid.S,
+    portraitS3Url: data.Item.potrait_s3_url.S
+  };
+  return userData;
 }
 
 // Function to call searchFacesByImage API
-async function searchFacesByImage(portraitS3Url) {
+async function searchFacesByImage(portraitS3Url, phoneNumber) {
   try {
     // Decode the URL-encoded characters in the S3 URL
     const decodedUrl = decodeURIComponent(portraitS3Url);
+    console.log('Potrait s3 url fetched:', portraitS3Url);
 
     // Extract the object key from the decoded S3 URL
     const objectKey = decodedUrl.split('/').pop();
@@ -495,7 +508,7 @@ async function searchFacesByImage(portraitS3Url) {
     const startIndex = base64Image.indexOf('/9j');
     const croppedBase64EncodedImage = base64Image.substring(startIndex);
 
-    console.log('Cropped Base64 Encoded Image:', croppedBase64EncodedImage);
+    // console.log('Cropped Base64 Encoded Image:', croppedBase64EncodedImage);
 
 
     // Construct the parameters for the searchFacesByImage operation
@@ -510,13 +523,23 @@ async function searchFacesByImage(portraitS3Url) {
     // Call the searchFacesByImage operation
     const data = await rekognition.searchFacesByImage(rekognitionParams).promise();
 
-    // Extract and return the ImageId (if any)
+    const userData = await queryUsersTable(phoneNumber);
+    const uniqueUid = userData.uniqueUid;
+
+    console.log('unique_uid for the user:', uniqueUid);
+
+    // Extract and return the matched faces
     if (data.FaceMatches && data.FaceMatches.length > 0) {
       console.log('Writing the matched faces to user_outputs table');
-      return data.FaceMatches[0].Face.ImageId;
+      const matchedFaces = data.FaceMatches.map(match => ({ imageId: match.Face.ImageId }));
+      console.log('Matched ImageIds:', matchedFaces.map(face => face.imageId));
+
+      return { matchedFaces, uniqueUid };
+
     } else {
       throw new Error('No faces found in the image');
     }
+
   } catch (error) {
     console.error('Error searching faces by image:', error);
     throw error; // Rethrow the error for the caller to handle
@@ -1266,7 +1289,7 @@ httpsServer.listen(PORT, () => {
 });
 
 
-// //**Uncomment for dev testing and comment when pushing the code to mainline**/
+// //**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
 // app.listen(PORT ,() => {
 //   logger.info(`Server started on http://localhost:${PORT}`);
 // });
