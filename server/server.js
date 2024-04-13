@@ -1181,7 +1181,7 @@ app.post('/downloadImage', async (req, res) => {
         const file = req.body.image;
         const username = req.body.username;
         const params = {
-          Bucket: userThumbnailBucketName,
+          Bucket: userBucketName,
           Key: username+".jpg",
           Body: Buffer.from(file, 'base64'),
           //ACL: 'public-read', // Optional: Set ACL to public-read for public access
