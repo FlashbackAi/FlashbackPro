@@ -24,6 +24,12 @@ function App() {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [eventName, setEventName] = useState('');
   const [events, setEvents] = useState([]);
+  const [progress, setProgress] = useState(0); 
+  const [isProgressVisible, setIsProgressVisible] = useState(false);
+  const [progressMessage, setProgressMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+
+  
 
 
   
@@ -31,6 +37,16 @@ function App() {
     setIsPopupOpen(prev => !prev);
   }, []);
 
+  const handleProgress = useCallback((progressValue) => {
+    const progress = Math.min(Math.max(progressValue, 0), 100);
+    setProgress(progress); // Update progress state
+    setIsProgressVisible(true);
+  }, [progress]);
+  
+
+  const hideProgress = () => {
+    setIsProgressVisible(false);
+  };
 
   const ImageCropper = ({ src }) => {
     let [crop, setCrop] = useState({ x: 0, y: 0, scale: 1 });
@@ -121,29 +137,64 @@ function App() {
       console.error("Please select an event name");
       alert('Please select an event name')
       return;
-    }
-  
+    }  
+
+    setIsProgressVisible(true);
     // Make API call to trigger-flashback with the selected event data
     axios.post(`${serverIP}/trigger-flashback`, { eventName })
       .then(response => {
-        // Handle successful response from the backend
-        console.log("Flashback triggered successfully:", response.data);
-        alert('Flashback triggered succesffully')
-        // Optionally, you can reset the eventName state after triggering the flashback
-        setEventName('');
-      })
-      .catch(error => {
-        // Handle error response from the backend
-        console.error("Error triggering flashback:", error);
-        alert('Error triggering flashback')
-      });
-  };
+
+        const responseData = response.data;
+        const jsonStrings = responseData.split('\n').filter(obj => obj.trim() !== '');
+        console.log('Response data:', jsonStrings);
+
+        jsonStrings.forEach(jsonString => {
+        try {
+          const parsedData = JSON.parse(jsonString);
+          const progress = parsedData.progress;
+    
+          console.log('Progress received:', progress);
+          
   
+          setProgress(prevProgress => {
+            // Ensure that progress is always incremented
+            const newProgress = Math.max(progress, prevProgress);
+            return newProgress;
+        });
+
+
+          if (progress < 100) {
+              // Flashbacks are in progress
+              setProgressMessage(`Flashbacks are in progress... ${progress}%`);
+              setSuccessMessage('');
+          } else {
+              // Flashbacks triggered successfully
+              setProgressMessage('');
+              setSuccessMessage(`Flashback triggered successfully ${progress}%`);
+              setIsProgressVisible(false);
+              setEventName('');
+              alert('Flashback triggered successfully');
+          }
+    
+      } catch (error) {
+        // If parsing as JSON fails, handle the error
+        console.error("Error parsing response:", error);
+        // Display an error message
+        setMessage(`Error parsing response: ${error.message}`);
+        alert('Error parsing response');
+      }
+    });
+  })
+    .catch(error => {
+      // Handle error response from the backend
+      console.error("Error triggering flashback:", error);
+      // Display error message
+      setMessage(`Error triggering flashback: ${error.message}`);
+      alert('Error triggering flashback')
+    });
+  };
 
   const downloadCollage = async() => {   
-
-
-
 
     const collageElement = document.querySelector('.collage');
     const canvas = document.createElement('canvas');
@@ -355,19 +406,19 @@ const downloadFolder = async () => {
         </div>
         <div className='Buttoncontainer'>
         <div className='LaunchButton' onClick={togglePopup}>
-        <div class="labels">
+        <div className="labels">
        
-      <p class="redText">Trigger Flashback</p>
-      <div class="redTextActive">
+      <p className="redText">Trigger Flashback</p>
+      <div className="redTextActive">
         </div>
         </div>
-        <div class="red">
+        <div className="red">
         </div>
         </div>
         </div>
       {/* Popup */}
       {isPopupOpen && (
-        <div class ='pop'>
+        <div className ='pop'>
         <div className="eventpop">
           <div className="popup-content">
             <h2>Event Details</h2>
@@ -388,6 +439,16 @@ const downloadFolder = async () => {
         </div>
         </div>
       )}
+
+      {isProgressVisible && (
+            <div className={`overlay ${isProgressVisible ? 'active' : ''}`}>
+              <div className="progress-container">
+                <div className="progress-message">
+                {`Flashbacks are in progress`}
+                </div>
+              </div>
+            </div>
+          )}
 
     </div>
   );
