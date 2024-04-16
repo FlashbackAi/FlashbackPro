@@ -832,8 +832,8 @@ app.get('/images/:eventName/:userId', async (req, res) => {
 
           // Resize image to a maximum of 5MB
         const resizedImageData = await sharp(imageData.Body)
-        .resize({ fit: 'inside', width: 1920, height: 1080 }) // Resize image to fit within specified dimensions
-        .jpeg({ quality: 80, force: false }) // Convert image to JPEG with specified quality
+        //.resize({ fit: 'inside', width: 1920, height: 1080 }) // Resize image to fit within specified dimensions
+        .jpeg({ quality: 85, force: false }) // Convert image to JPEG with specified quality
         .toBuffer();
 
 
