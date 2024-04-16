@@ -417,33 +417,72 @@ app.post('/trigger-flashback', async (req, res) => {
 
     // Query user_event_mapping table to get phone_numbers list
     const phoneNumbers = await queryUserEventMapping(eventName);
+    const totalUsers = phoneNumbers.length;
+
+    // Set response headers for SSE
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    // send immediate response regarding the progress 
+    res.write(`${JSON.stringify({ progress: 0 })}\n\n`);
+
+    let processedUsers = 0; // Initialize processedUsers count
+
+    // Function to send progress updates
+    const sendProgressUpdate = (progress) => {
+      res.write(`${JSON.stringify({ progress })}\n\n`);
+    };
 
     // Iterate over phoneNumbers and process each user
     for (const phoneNumber of phoneNumbers) {
-      // Query users table to get portrait_s3_url
-      // Query users table to get user data
-      const userData = await queryUsersTable(phoneNumber);
-      const portraitS3Url = userData.portraitS3Url;
-      const uniqueUid = userData.uniqueUid;
+      try {
+        // Increment processed users count
+        processedUsers++;
 
-      // Call searchFacesByImage API with portraitS3Url
-      const result = await searchFacesByImage(portraitS3Url, phoneNumber);
-      const matchedFaces = result.matchedFaces;
+        // Query users table to get portrait_s3_url
+        const userData = await queryUsersTable(phoneNumber);
+        const portraitS3Url = userData.portraitS3Url;
+        const uniqueUid = userData.uniqueUid;
 
-      // Iterate over each match and store attributes in user_outputs table
-      for (const match of matchedFaces) {
+        if (!portraitS3Url) {
+          console.error(`No portrait URL found for phone number: ${phoneNumber}`);
+          continue; // Skip to the next phone number
+        }
 
-        // Get s3_url using imageId
-        const s3Url = await getS3Url(match.imageId);
+        // Call searchFacesByImage API with portraitS3Url
+        const result = await searchFacesByImage(portraitS3Url, phoneNumber);
+        const matchedFaces = result.matchedFaces;
 
-        // Store attributes in user_outputs table
-        await storeUserOutput({ unique_uid: uniqueUid, user_phone_number: phoneNumber, s3_url: s3Url, event_name: eventName });
+        // Iterate over each match and store attributes in user_outputs table
+        for (const match of matchedFaces) {
+          // Get s3_url using imageId
+          const s3Url = await getS3Url(match.imageId);
+
+          // Store attributes in user_outputs table
+          await storeUserOutput({ unique_uid: uniqueUid, user_phone_number: phoneNumber, s3_url: s3Url, event_name: eventName });
+        }
+
+        // Calculate progress percentage
+        const progress = Math.floor((processedUsers / totalUsers) * 100);
+        console.log('Progress:', progress);
+
+        // Send progress update to the frontend using SSE
+        sendProgressUpdate(progress);
+        console.log('Progress update sent.');
+
+      } catch (error) {
+        console.error('Error processing user:', error);
       }
     }
 
-    res.status(200).json({ message: 'Flashback triggered successfully' });
+    // After processing all users, send the final success message along with progress status indicating completion
+    // sendProgressUpdate(100);
+    res.end(); // End the response stream
+
   } catch (error) {
     console.error('Error triggering flashback:', error);
+    // If an error occurs, send an error response to the client
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -560,16 +599,22 @@ async function getS3Url(imageId) {
     const data = await dynamoDB.getItem(params).promise();
     if (!data.Item || !data.Item.s3_url || !data.Item.s3_url.S) {
       throw new Error(`No s3_url found for image_id: ${imageId}`);
+      return null; //null if there is no s3_url for the image
     }
     return data.Item.s3_url.S;
   } catch (error) {
     console.error('Error retrieving s3_url:', error);
-    throw error; // Rethrow the error for the caller to handle
+    return null; // Return null to continue with the execution further.
   }
 }
 
 // Function to store attributes in user_outputs table
 async function storeUserOutput(attributes) {
+  //we're skipping the write if there is no s3_url found for the image
+  if (!attributes.s3_url) {
+    console.error(`Skipping storing user output: No s3_url found for user_phone_number: ${attributes.user_phone_number}`);
+    return; // Skip storing if s3_url is not found
+  }
   const params = {
     TableName: userOutputTable,
     Item: {
@@ -580,7 +625,13 @@ async function storeUserOutput(attributes) {
     }
   };
 
-  await dynamoDB.putItem(params).promise();
+  try {
+    await dynamoDB.putItem(params).promise();
+    console.log(`User output stored successfully for user_phone_number: ${attributes.user_phone_number}`);
+  } catch (error) {
+    console.error('Error storing user output:', error);
+    throw error; // Rethrow the error for the caller to handle
+  }
 }
 
 module.exports = { searchFacesByImage };
@@ -1290,6 +1341,8 @@ httpsServer.listen(PORT, () => {
 
 
 // //**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
+
+
 // app.listen(PORT ,() => {
 //   logger.info(`Server started on http://localhost:${PORT}`);
 // });

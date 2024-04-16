@@ -1,4 +1,4 @@
 node_modules
 
 
-/server/logs/application.log
+server/logs/application.log
