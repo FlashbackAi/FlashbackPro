@@ -3,8 +3,7 @@ import { useParams } from 'react-router-dom';
 import axios from "axios";
 import ImageGallery from 'react-image-gallery';
 import 'react-image-gallery/styles/css/image-gallery.css'; // Import the CSS
-import { PhotoProvider, PhotoView } from 'react-photo-view';
-import 'react-photo-view/dist/react-photo-view.css';
+
 
 
 
