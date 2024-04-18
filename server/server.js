@@ -883,7 +883,7 @@ app.get('/images/:eventName/:userId', async (req, res) => {
 
           // Resize image to a maximum of 5MB
         const resizedImageData = await sharp(imageData.Body)
-        //.resize({ fit: 'inside', width: 1920, height: 1080 }) // Resize image to fit within specified dimensions
+        .resize({ fit: 'inside', width: 1920, height: 1080 }) // Resize image to fit within specified dimensions
         .jpeg({ quality: 85, force: false }) // Convert image to JPEG with specified quality
         .toBuffer();
 
@@ -1275,6 +1275,16 @@ app.post('/downloadImage', async (req, res) => {
           const existingUser = await getUser(username);
           console.log("existingUser"+ existingUser);
           if (existingUser && existingUser.potrait_s3_url) {
+
+            const updateParamsUserEvent = {
+              TableName: userEventTableName,
+              Item: {
+                event_name: 'Neha_ShivaTeja_18042024',
+                user_phone_number: username,
+              }
+            };
+            const putResult = await docClient.put(updateParamsUserEvent).promise()
+            console.log('insert in user-event mapping is successful:', putResult);
             return res.json({ error: 'User already exists', status:'exists' });
           }
       
@@ -1285,7 +1295,7 @@ app.post('/downloadImage', async (req, res) => {
           const updateParamsUserEvent = {
             TableName: userEventTableName,
             Item: {
-              event_name: 'Convocation_PrathimaCollege',
+              event_name: 'Neha_ShivaTeja_18042024',
               user_phone_number: username,
             }
           };
@@ -1341,8 +1351,6 @@ httpsServer.listen(PORT, () => {
 
 
 // //**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
-
-
 // app.listen(PORT ,() => {
 //   logger.info(`Server started on http://localhost:${PORT}`);
 // });

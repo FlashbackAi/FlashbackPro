@@ -1,6 +1,6 @@
 
 import "./App.css";
-import { BrowserRouter as Router, Route, Routes, Link } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
 import CreateFlashBack from "./pages/CreateFlashBack";
 import Registration from "./pages/Registration";
@@ -90,6 +90,7 @@ function App() {
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             {/* <Route path="/images/:eventName/:userId" element={<ProtectedRoute><ImagesPage /></ProtectedRoute>} /> */}
             <Route path="/photos/:eventName/:userId" element={<ImagesPage />} /> 
+            <Route path="/" element={<Login />} />
 
           </Routes>
           )}
