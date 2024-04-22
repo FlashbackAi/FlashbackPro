@@ -132,7 +132,7 @@ function Home () {
     <p className="CongratsMessage"> 
     {/* style={{ textAlign: 'center', paddingTop: '50px', fontSize: '30px', color: 'green' }}> */}
          
-           You are successfully registered for the event "Neha Weds ShivaTeja"
+           You are successfully registered for the event
     </p>
     </div>
     </div>
