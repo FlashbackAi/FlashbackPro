@@ -15,6 +15,7 @@ const { func } = require('prop-types');
 const app = express();
 const PORT = process.env.PORT || 5000;
 const base64 = require('base64-js');
+const { Readable } = require('stream');
 
 
 app.use(cors()); // Allow cross-origin requests
@@ -884,7 +885,7 @@ app.get('/images/:eventName/:userId', async (req, res) => {
           // Resize image to a maximum of 5MB
         const resizedImageData = await sharp(imageData.Body)
         .resize({ fit: 'inside', width: 1920, height: 1080 }) // Resize image to fit within specified dimensions
-        .jpeg({ quality: 85, force: false }) // Convert image to JPEG with specified quality
+        .jpeg({ quality: 50, force: false }) // Convert image to JPEG with specified quality
         .toBuffer();
 
 
@@ -1342,6 +1343,62 @@ app.post('/downloadImage', async (req, res) => {
         await docClient.put(params).promise();
       }
      
+
+      // Route to resize and copy images from a specific subfolder of one S3 bucket to another
+        app.post('/api/resize-copy-images', async (req, res) => {
+          try {
+            const  sourceBucket = "flashbackusercollection";
+            const sourceFolder = "Convocation_PrathimaCollege";
+            const destinationBucket = "flashbackimagesthumbnail";
+
+            // List objects in the source subfolder
+            const sourceObjects = await s3.listObjectsV2({ Bucket: sourceBucket, Prefix: sourceFolder }).promise();
+
+            // Filter out subfolder entries
+            const imageObjects = sourceObjects.Contents.filter(obj => !obj.Key.endsWith('/'));
+
+            // Resize and copy each image to the destination bucket
+            await Promise.all(imageObjects.map(async (obj) => {
+              const sourceObjectKey = obj.Key;
+
+              console.log(sourceObjectKey)
+              try {
+                // Get the image from the source bucket
+                const { Body } = await s3.getObject({ Bucket: sourceBucket, Key: sourceObjectKey }).promise();
+
+                // Check if the Body is empty or null
+                if (!Body) {
+                  throw new Error(`Empty or null Body for object: ${sourceObjectKey}`);
+                }
+
+                // Resize the image
+                const resizedImageStream = await sharp(Body)
+                .resize({ fit: 'inside', width: 1920, height: 1080 }) // Resize image to fit within specified dimensions
+                .jpeg({ quality: 85, force: false }) // Convert image to JPEG with specified quality
+                .toBuffer();
+
+                // Extract the relative path excluding the folder
+                const relativePath = sourceObjectKey.replace(sourceFolder, '');
+
+                // Upload the resized image to the destination bucket with the same relative path
+                await s3.upload({
+                  Bucket: destinationBucket,
+                  Key: sourceFolder + relativePath, // Use the same relative path in the destination bucket
+                  Body: Readable.from(resizedImageStream)
+                }).promise();
+              } catch (error) {
+                console.error(`Error processing object: ${sourceObjectKey}`, error);
+              }
+            }));
+
+            console.log("Images from subfolder resized and copied successfully.");
+            res.status(200).json({ message: 'Images from subfolder resized and copied successfully.' });
+          } catch (error) {
+            console.error('Error:', error);
+            res.status(500).json({ error: 'Internal server error.' });
+          }
+        });
+
 
 const httpsServer = https.createServer(credentials, app);
 

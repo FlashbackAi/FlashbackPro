@@ -742,6 +742,88 @@ p {
   color: green;
 }
 
+/* .wrapper {
+  display: grid;
+  flex-wrap: wrap;
+  grid-gap: 1em;
+  grid-template-columns: repeat(3, 200px);
+}
+
+.wrapper img {
+  cursor: pointer;
+  width: 12.5em;
+  height: 12.5;
+  cursor: pointer;
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(27, 27, 27, 0.541);
+  display: flex;
+  align-items: center;
+}
+/* .overlay img {
+  display: block;
+  max-width: 60%;
+  max-height: 80%;
+  margin: 60px auto;
+  box-shadow: 3px 5px 7px rgba(0, 0, 0, 0.5);
+} 
+
+.overlay img {
+  max-width: 90%;
+  max-height: 80%;
+  padding: 4px;
+  background-color: black;
+  border: 2px solid white;
+}
+.overlay > span {
+  position: absolute;
+  top: 1em;
+  right: 1em;
+  font-size: 1.5em;
+  color: #ffffff;
+  z-index: 999;
+  cursor: pointer;
+}
+.overlay-arrows_left {
+  display: flex;
+  background-color: #6d6d6d;
+  justify-content: space-between;
+  position: absolute;
+  top: 50%;
+  width: 50px;
+  height: 50px;
+  left: 0;
+  z-index: 999;
+}
+
+.overlay-arrows_left svg {
+  width: 50px;
+  height: 50px;
+}
+
+.overlay-arrows_right svg {
+  width: 50px;
+  height: 50px;
+}
+
+.overlay-arrows_right {
+  display: flex;
+  background-color: #6d6d6d;
+  justify-content: space-between;
+  position: absolute;
+  right: 0;
+  width: 50px;
+  height: 50px;
+  top: 50%;
+  z-index: 999;
+}
 
 
 
@@ -749,4 +831,82 @@ p {
 
 
 
-/*End of Sample*/
+End of Sample */
+
+
+/* Base styles */
+.wrapper {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); /* Three images per row, each with a minimum width of 300px */
+  gap: 5px; /* Gap between grid items */
+}
+
+.wrapper-images {
+  width: 100%;
+  height: auto;
+}
+
+.wrapper-images img {
+  width: 100%;
+  height: auto;
+}
+
+/* Media queries for responsiveness */
+@media screen and (max-width: 768px) {
+  .grid-container {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* Adjust columns for smaller screens */
+  }
+}
+
+
+.overlay img {
+  max-width: 90%;
+  max-height: 80%;
+  padding: 1px;
+  background-color: rgb(73, 73, 74);
+  border: 1px solid white;
+  position: centre;
+}
+.overlay > span {
+  position: absolute;
+  top: 1em;
+  right: 1em;
+  font-size: 1.5em;
+  color: #ffffff;
+  z-index: 999;
+  cursor: pointer;
+}
+/* .overlay-arrows_left {
+  display: flex;
+  background-color: #6d6d6d;
+  justify-content: space-between;
+  position: absolute;
+  top: 50%;
+  width: 50px;
+  height: 50px;
+
+  left: 0;
+  z-index: 999;
+} */
+
+/* .overlay-arrows_left svg {
+  width: 50px;
+  height: 50px;
+}
+
+.overlay-arrows_right svg {
+  width: 50px;
+  height: 50px;
+}
+
+.overlay-arrows_right {
+  display: flex;
+  background-color: #6d6d6d;
+  justify-content: space-between;
+  position: absolute;
+  right: 0;
+  width: 50px;
+  height: 50px;
+  top: 50%;
+  z-index: 999;
+} */

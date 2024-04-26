@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from "axios";
-import ImageGallery from 'react-image-gallery';
-import 'react-image-gallery/styles/css/image-gallery.css'; // Import the CSS
+// import ImageGallery from 'react-image-gallery';
+// import 'react-image-gallery/styles/css/image-gallery.css'; // Import the CSS
+
+import Modal from "../components/ImageModal";
 
 
 
@@ -51,6 +53,48 @@ function ImagesPage() {
     }
   };
 
+  const [clickedImg,setClickedImg] = useState(null);
+  const [currentIndex, setCurrentIndex] = useState(null);
+  const handleClick = (item,index) =>{
+
+    setCurrentIndex(index);
+    setClickedImg(item.original);
+  };
+
+  const handelRotationRight = () => {
+    const totalLength = images.length;
+    if (currentIndex + 1 >= totalLength) {
+      setCurrentIndex(0);
+      const newUrl = images[0].original;
+      setClickedImg(newUrl);
+      return;
+    }
+    const newIndex = currentIndex + 1;
+    const newUrl = images.filter((item) => {
+      return images.indexOf(item) === newIndex;
+    });
+    const newItem = newUrl[0].original;
+    setClickedImg(newItem);
+    setCurrentIndex(newIndex);
+  };
+
+  const handelRotationLeft = () => {
+    const totalLength = images.length;
+    if (currentIndex === 0) {
+      setCurrentIndex(totalLength - 1);
+      const newUrl = images[totalLength - 1].original;
+      setClickedImg(newUrl);
+      return;
+    }
+    const newIndex = currentIndex - 1;
+    const newUrl = images.filter((item) => {
+      return images.indexOf(item) === newIndex;
+    });
+    const newItem = newUrl[0].original;
+    setClickedImg(newItem);
+    setCurrentIndex(newIndex);
+  };
+
   useEffect(() => {
     const fetchImages = async () => {
       setIsLoading(true); // Start loading
@@ -94,12 +138,35 @@ function ImagesPage() {
       {isLoading ? (
         <p>Loading images...</p> // You can replace this with a spinner or loader component
       ) : images.length > 0 ? (
-        <>
-           <ImageGallery ref={galleryRef} items={images} showPlayButton={false} showFullscreenButton={false}  thumbnailPosition={'bottom'} />
-           <button onClick={downloadCurrentImage} disabled={isDownloading} className='downloadButton'>
-            {isDownloading ? 'Downloading...' : 'Download' }
-          </button>
-        </>
+        // <>
+        //    <ImageGallery ref={galleryRef} items={images} showPlayButton={false} showFullscreenButton={false}  thumbnailPosition={'bottom'} />
+        //    <button onClick={downloadCurrentImage} disabled={isDownloading} className='downloadButton'>
+        //     {isDownloading ? 'Downloading...' : 'Download' }
+        //   </button>
+        // </>
+
+        <div className='wrapper'>
+          {
+            images.map((item,index)=>(
+              <div key={index} className='wrapper-images'>
+                <img src={item.original} alt={item.thumbnail} onClick={()=>handleClick(item,index)}/>
+              </div>
+            ))
+          }
+          <div>
+            {clickedImg && (
+              <Modal
+                clickedImg={clickedImg}
+                handelRotationRight={handelRotationRight}
+                setClickedImg={setClickedImg}
+                handelRotationLeft={handelRotationLeft}
+              />
+            )}
+          </div>
+          </div>
+
+
+
       ) : fetchTimeout ? (
         <p>No images to display</p> // Message shown if fetch timeout is reached
       ) : (

@@ -278,6 +278,22 @@ function Login() {
     //   </div>
     // );
 
+    const TermsAndConditions = ({ onAccept }) => {
+      return (
+        <div>
+          <h2>Terms and Conditions</h2>
+          <p>Put your terms and conditions text here.</p>
+          <button onClick={onAccept}>Accept</button>
+        </div>
+      );
+    };
+     
+    const [termsAccepted, setTermsAccepted] = useState(false);
+
+    const handleAcceptance = () => {
+      setTermsAccepted(true);
+      // You can also save this acceptance state to local storage or your database.
+    };
     return (
       <div className="loginBody">
         <div className="loginLeft">
@@ -287,7 +303,7 @@ function Login() {
               <form onSubmit={handleSubmit} className="login-form">
                 <input name="phoneNumber" required type="tel" placeholder="Phone Number" onChange={handlePhoneNumberChange}/>
                 {phoneNumberError && <p style={{ color: 'red' }}>{phoneNumberError}</p>}
-                <button type="submit" disabled={phoneNumber.length !== 10}>Login</button>
+                <button type="submit" disabled={phoneNumber.length !== 10}>Login</button>   
                 {error && <p style={{ color: 'red' }}>{error}</p>}
               </form>
             ) }
@@ -328,8 +344,14 @@ function Login() {
             }
           </div>
         </div>
+        <div>
+          {!termsAccepted && <TermsAndConditions onAccept={handleAcceptance} />}
+          {termsAccepted && <p>You've accepted the terms and conditions.</p>}
+        </div>
       </div>
     );
+
+    
   }
 
 export default Login;
