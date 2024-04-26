@@ -344,10 +344,10 @@ function Login() {
             }
           </div>
         </div>
-        <div>
+        {/* <div>
           {!termsAccepted && <TermsAndConditions onAccept={handleAcceptance} />}
           {termsAccepted && <p>You've accepted the terms and conditions.</p>}
-        </div>
+        </div> */}
       </div>
     );
 

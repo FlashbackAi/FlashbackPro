@@ -55,10 +55,12 @@ function ImagesPage() {
 
   const [clickedImg,setClickedImg] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(null);
+  const [clickedUrl, setClickedUrl] = useState(null);
   const handleClick = (item,index) =>{
 
     setCurrentIndex(index);
     setClickedImg(item.original);
+    setClickedUrl(item.url)
   };
 
   const handelRotationRight = () => {
@@ -160,6 +162,7 @@ function ImagesPage() {
                 handelRotationRight={handelRotationRight}
                 setClickedImg={setClickedImg}
                 handelRotationLeft={handelRotationLeft}
+                clickedUrl={clickedUrl}
               />
             )}
           </div>
