@@ -451,17 +451,23 @@ app.post('/trigger-flashback', async (req, res) => {
           continue; // Skip to the next phone number
         }
 
-        // Call searchFacesByImage API with portraitS3Url
-        const result = await searchFacesByImage(portraitS3Url, phoneNumber);
-        const matchedFaces = result.matchedFaces;
+        // Call searchUsersByImage API with portraitS3Url
+        const result = await searchUsersByImage(portraitS3Url, phoneNumber);
+        const matchedUserIds = result.matchedUserIds;
+        console.log('preparing to extract s3_urls with Matched UserIds:', result.matchedUserIds);
+        
+        for (const matchedUser of matchedUserIds) {
+          const s3Urls = await getS3Url(matchedUser);
 
-        // Iterate over each match and store attributes in user_outputs table
-        for (const match of matchedFaces) {
-          // Get s3_url using imageId
-          const s3Url = await getS3Url(match.imageId);
-
-          // Store attributes in user_outputs table
-          await storeUserOutput({ unique_uid: uniqueUid, user_phone_number: phoneNumber, s3_url: s3Url, event_name: eventName });
+          if (s3Urls.length > 0) {
+            for (const s3Url of s3Urls) {
+              // Store attributes in user_outputs table
+              await storeUserOutput({ unique_uid: uniqueUid, user_phone_number: phoneNumber, s3_url: s3Url, event_name: eventName });
+            }
+          } else {
+            // Handle case where no S3 URLs are found for the current userId
+            console.error(`No S3 URLs found for userId: ${matchedUser}`);
+          }
         }
 
         // Calculate progress percentage
@@ -522,8 +528,8 @@ async function queryUsersTable(phoneNumber) {
   return userData;
 }
 
-// Function to call searchFacesByImage API
-async function searchFacesByImage(portraitS3Url, phoneNumber) {
+// Function to call searchUsersByImage API
+async function searchUsersByImage(portraitS3Url, phoneNumber) {
   try {
     // Decode the URL-encoded characters in the S3 URL
     const decodedUrl = decodeURIComponent(portraitS3Url);
@@ -551,17 +557,18 @@ async function searchFacesByImage(portraitS3Url, phoneNumber) {
     // console.log('Cropped Base64 Encoded Image:', croppedBase64EncodedImage);
 
 
-    // Construct the parameters for the searchFacesByImage operation
+    // Construct the parameters for the searchUsersByImage operation
     const rekognitionParams = {
-      CollectionId: 'FlashbackUserCollection', // Replace 'your-collection-id' with the ID of your Rekognition collection
+      CollectionId: 'FlashbackUserDataCollection', // Replace 'your-collection-id' with the ID of your Rekognition collection
       Image: {
         Bytes: Buffer.from(croppedBase64EncodedImage, 'base64') // Convert the base64-encoded image to a Buffer
       },
-      FaceMatchThreshold: 90
+      MaxUsers: 2,
+      UserMatchThreshold: 99
     };
 
-    // Call the searchFacesByImage operation
-    const data = await rekognition.searchFacesByImage(rekognitionParams).promise();
+    // Call the searchUsersByImage operation
+    const data = await rekognition.searchUsersByImage(rekognitionParams).promise();
 
     const userData = await queryUsersTable(phoneNumber);
     const uniqueUid = userData.uniqueUid;
@@ -569,13 +576,11 @@ async function searchFacesByImage(portraitS3Url, phoneNumber) {
     console.log('unique_uid for the user:', uniqueUid);
 
     // Extract and return the matched faces
-    if (data.FaceMatches && data.FaceMatches.length > 0) {
-      console.log('Writing the matched faces to user_outputs table');
-      const matchedFaces = data.FaceMatches.map(match => ({ imageId: match.Face.ImageId }));
-      console.log('Matched ImageIds:', matchedFaces.map(face => face.imageId));
-
-      return { matchedFaces, uniqueUid };
-
+    if (data.UserMatches && data.UserMatches.length > 0) {
+      console.log('Writing the ImageIds of the matched UserIds to user_outputs table');
+      const matchedUserIds = data.UserMatches.map(match => match.User.UserId);
+      console.log('Matched UserIds:', matchedUserIds);
+      return {matchedUserIds};
     } else {
       throw new Error('No faces found in the image');
     }
@@ -587,25 +592,28 @@ async function searchFacesByImage(portraitS3Url, phoneNumber) {
 }
 
 
-// Function to get s3_url using imageId
-async function getS3Url(imageId) {
+// Function to get s3_url using matchedUser
+async function getS3Url(matchedUser) {
   const params = {
     TableName: indexedDataTableName,
-    Key: {
-      'image_id': { S: imageId }
+    IndexName: 'user_id-index', // Specify the GSI name
+    KeyConditionExpression: 'user_id = :partitionKey', // Specify the GSI partition and sort key
+    ExpressionAttributeValues: {
+      ':partitionKey': { S: matchedUser } // Specify the value for the partition key
     }
   };
 
+
   try {
-    const data = await dynamoDB.getItem(params).promise();
+    const data = await dynamoDB.query(params).promise();
     if (!data.Item || !data.Item.s3_url || !data.Item.s3_url.S) {
-      throw new Error(`No s3_url found for image_id: ${imageId}`);
-      return null; //null if there is no s3_url for the image
+      throw new Error(`No s3_url found for user_id: ${matchedUser}`);
     }
-    return data.Item.s3_url.S;
+    const s3Urls = data.Items.map(item => item.s3_url.S);
+    return s3Urls;
   } catch (error) {
     console.error('Error retrieving s3_url:', error);
-    return null; // Return null to continue with the execution further.
+    return []; // Return an empty array to continue with the execution further.
   }
 }
 
@@ -635,7 +643,7 @@ async function storeUserOutput(attributes) {
   }
 }
 
-module.exports = { searchFacesByImage };
+module.exports = { searchUsersByImage };
 
 
 app.post('/login', function(req, res) {
