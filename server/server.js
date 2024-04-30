@@ -1269,23 +1269,23 @@ app.post('/downloadImage', async (req, res) => {
 
       app.post('/createUser', async (req, res) => {
         const  username  = req.body.username;
-        console.log("creating user "+username);
+        logger.info("creating user "+username);
       
         try {
           // Check if the user already exists
           const existingUser = await getUser(username);
-          console.log("existingUser"+ existingUser);
+          logger.info("existingUser"+ existingUser);
           if (existingUser && existingUser.potrait_s3_url) {
 
             const updateParamsUserEvent = {
               TableName: userEventTableName,
               Item: {
-                event_name: 'Neha_ShivaTeja_18042024',
+                event_name: 'Aarthi_Vinay_19122021',
                 user_phone_number: username,
               }
             };
             const putResult = await docClient.put(updateParamsUserEvent).promise()
-            console.log('insert in user-event mapping is successful:', putResult);
+            logger.info('insert in user-event mapping is successful:', putResult);
             return res.json({ error: 'User already exists', status:'exists' });
           }
       
@@ -1296,12 +1296,12 @@ app.post('/downloadImage', async (req, res) => {
           const updateParamsUserEvent = {
             TableName: userEventTableName,
             Item: {
-              event_name: 'KSL_26042024',
+              event_name: 'Neha_ShivaTeja_18042024',
               user_phone_number: username,
             }
           };
           const putResult = await docClient.put(updateParamsUserEvent).promise()
-          console.log('insert in user-event mapping is successful:', putResult);
+          logger.info('insert in user-event mapping is successful:', putResult);
       
           res.status(201).json({ message: 'User created successfully', status:'created' });
         } catch (error) {
