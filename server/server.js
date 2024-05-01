@@ -606,11 +606,12 @@ async function getS3Url(matchedUser) {
 
   try {
     const data = await dynamoDB.query(params).promise();
-    if (!data.Item || !data.Item.s3_url || !data.Item.s3_url.S) {
+    console.log('Returned data:', data);
+    if (!data.Items || data.Items.length === 0 || !data.Items[0].s3_url || !data.Items[0].s3_url.S) {
       throw new Error(`No s3_url found for user_id: ${matchedUser}`);
     }
     const s3Urls = data.Items.map(item => item.s3_url.S);
-    return s3Urls;
+    return s3Urls.filter(Boolean);
   } catch (error) {
     console.error('Error retrieving s3_url:', error);
     return []; // Return an empty array to continue with the execution further.
