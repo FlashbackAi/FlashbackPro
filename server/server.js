@@ -861,12 +861,18 @@ async function addFolderToUser(folderName,username,files_length){
   return res;
 }
 
-app.get('/images/:eventName/:userId', async (req, res) => {
+app.get('/images/:eventName/:userId/:pageNo', async (req, res) => {
   try {
    
      const eventName = req.params.eventName;
      const userId = req.params.userId;
-     console.log("Image are being fetched for event -> "+eventName+"; userId -> "+userId);
+     const pageNo =  req.params.pageNo;
+     console.log("Image are being fetched for event of pageNo -> "+eventName+"; userId -> "+userId +"; pageNo -> "+pageNo);
+
+     const pageSize = 10;
+     const start = (pageNo - 1) * pageSize;
+     const end = start + pageSize;
+
     //  const params = {
     //   TableName: userOutputTable,
     //   IndexName: 'user_outputs_GSI', // Specify the GSI name
@@ -877,10 +883,10 @@ app.get('/images/:eventName/:userId', async (req, res) => {
     //   }
     // };
  // logger.info(params)
-  const result = await userEventImages(eventName,userId);
+    const result = await userEventImages(eventName,userId);
  
 
-     const imagesPromises = result.Items.map(async file => {
+      const imagesPromises = result.Items.slice(start, end).map(async file => {
         try {
           const imagekey=file.s3_url.split("amazonaws.com/")[1];
           console.log(imagekey);
@@ -891,18 +897,11 @@ app.get('/images/:eventName/:userId', async (req, res) => {
 
           logger.info("Image fetched from cloud: " + imagekey);
 
-          // Resize image to a maximum of 5MB
-        const resizedImageData = await sharp(imageData.Body)
-        .resize({ fit: 'inside', width: 1920, height: 1080 }) // Resize image to fit within specified dimensions
-        .jpeg({ quality: 50, force: false }) // Convert image to JPEG with specified quality
-        .toBuffer();
-
-
         //logger.info(resizedImageData)
-          // Convert image data to base64
+        // Convert image data to base64
           const base64Image =  {
             "url": `${imagekey}`,
-           "imageData":`data:${imagekey};base64,${resizedImageData.toString('base64')}`
+           "imageData":`data:${imagekey};base64,${imageData.Body.toString('base64')}`
          }
           return base64Image;
       }  catch (err) {
@@ -911,7 +910,8 @@ app.get('/images/:eventName/:userId', async (req, res) => {
       }
     });
       const images = await Promise.all(imagesPromises);
-      res.json(images);
+
+      res.json({"images":images, 'totalImages':result.Count});
   } catch (err) {
       console.error("Error in S3 get", err);
       res.status(500).send('Error getting images from S3');
@@ -932,9 +932,7 @@ async function userEventImages(eventName,userId){
       ':sortKey': eventName // Specify the value for the sort key
     }
   };
-  logger.info(params)
   const result = await docClient.query(params).promise();
-  console.log("result->"+result)
   logger.info('total images fetched for the user -> '+userId+'  in event -> '+eventName +' : '+result.Count);
   return result;
 }

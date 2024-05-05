@@ -18,6 +18,9 @@ function ImagesPage() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchTimeout, setFetchTimeout] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalImages, setTotalImages] = useState(null);
+  const pageSize = 10;
 
 
   
@@ -99,40 +102,51 @@ function ImagesPage() {
 
   useEffect(() => {
     const fetchImages = async () => {
-      setIsLoading(true); // Start loading
-  
-      // Set a timeout for 5 minutes (5 * 60 * 1000 milliseconds)
-      const timeoutId = setTimeout(() => {
-        if (images.length === 0) {
-          setFetchTimeout(true); // Trigger timeout condition
-          setIsLoading(false); // Stop loading
-        }
-      }, 5 * 60 * 1000);
-  
+      if(images.length==0)
+      setIsLoading(true);
+
       try {
-        const response = await axios.get(`${serverIP}/images/${eventName}/${userId}`);
+        const response = await axios.get(`${serverIP}/images/${eventName}/${userId}/${currentPage}`);
         if (response.status === 200) {
-          const formattedImages = response.data.map((img) => ({
-            original: img.imageData, // Assuming `imageData` is the URL to the image
+          const formattedImages = response.data.images.map((img) => ({
+            original: img.imageData,
             thumbnail: img.imageData,
             url: img.url,
-            originalHeight:'800px',
-            originalWidth:'800px'
+            originalHeight: '800px',
+            originalWidth: '800px'
           }));
-          setImages(formattedImages);
+          setImages(prevImages => [...prevImages, ...formattedImages]);
+          setCurrentPage(prevPage => prevPage + 1);
+          if (!totalImages) {
+            setTotalImages(response.data.totalImages);
+      
+          }
+          console.log(totalImages+" :"+images.length)
+          if (images.length >= totalImages) {
+            setIsLoading(false); // Stop fetching more images when all images are fetched
+          }
         } else {
           throw new Error("Failed to fetch images");
         }
       } catch (error) {
         console.error("Error fetching images:", error);
       } finally {
-        setIsLoading(false); // Stop loading
-        clearTimeout(timeoutId); // Clear the timeout if images are fetched before 5 minutes
+        setIsLoading(false);
       }
     };
-  
-    fetchImages();
-  }, [eventName, userId, serverIP, username]);
+
+    if (images.length < totalImages) {
+      console.log(images.length)
+      fetchImages();
+    }
+    if(!totalImages)
+    {
+      fetchImages();
+    }
+
+    // Intersection Observer...
+  }, [eventName, userId, serverIP, isLoading, fetchTimeout, currentPage, totalImages]);
+
   
 
   return (

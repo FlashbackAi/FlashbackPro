@@ -839,6 +839,8 @@ End of Sample */
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); /* Three images per row, each with a minimum width of 300px */
   gap: 5px; /* Gap between grid items */
+  background-image: url("../public/logo.png");
+  background-size: 2em;
 }
 
 .wrapper-images {
