@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import axios from "axios";
 // import ImageGallery from 'react-image-gallery';
 // import 'react-image-gallery/styles/css/image-gallery.css'; // Import the CSS
-
+import LoadingSpinner from "./LoadingSpinner";
 import Modal from "../components/ImageModal";
 
 
@@ -152,7 +152,7 @@ function ImagesPage() {
   return (
     <div>
       {isLoading ? (
-        <p>Loading images...</p> // You can replace this with a spinner or loader component
+       <LoadingSpinner />// You can replace this with a spinner or loader component
       ) : images.length > 0 ? (
         // <>
         //    <ImageGallery ref={galleryRef} items={images} showPlayButton={false} showFullscreenButton={false}  thumbnailPosition={'bottom'} />

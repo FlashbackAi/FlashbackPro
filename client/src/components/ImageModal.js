@@ -31,10 +31,6 @@ const ImageModal = ({
             const link = document.createElement('a');
             link.href = clickedImg
             link.download = clickedUrl;
-
-            const mimeType = "image/jpeg"; // Adjust this based on the image file type
-            link.type = mimeType;
-
             document.body.appendChild(link); // Required for FF
             link.click();
             document.body.removeChild(link);
