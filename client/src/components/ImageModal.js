@@ -27,10 +27,14 @@ const ImageModal = ({
         try {
           // const response = await axios.post(`${serverIP}/downloadImage`,{"imageUrl":currentImage.url});
           // if (response.status === 200) {
-            console.log(clickedImg);
+            console.log(clickedUrl);
             const link = document.createElement('a');
             link.href = clickedImg
             link.download = clickedUrl;
+
+            const mimeType = "image/jpeg"; // Adjust this based on the image file type
+            link.type = mimeType;
+
             document.body.appendChild(link); // Required for FF
             link.click();
             document.body.removeChild(link);

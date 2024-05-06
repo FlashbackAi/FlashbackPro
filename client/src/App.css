@@ -844,14 +844,16 @@ End of Sample */
 }
 
 .wrapper-images {
-  width: 100%;
-  height: auto;
+  width: 8em;
+  height: 8em;
+  object-fit: cover;
   
 }
 
 .wrapper-images img {
-  width: 100%;
-  height: auto;
+  width: 8em;
+  height: 8em;
+  object-fit: cover;
 }
 
 /* Media queries for responsiveness */

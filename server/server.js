@@ -72,123 +72,7 @@ const indexedDataTableName = 'indexed_data'
 const ClientId = '6goctqurrumilpurvtnh6s4fl1'
 const cognito = new AWS.CognitoIdentityServiceProvider({region: 'ap-south-1'});
 
-// Function that creates DynamoDB Tables
-const createTable = async (tableName, KeySchema) => {
-  const AttributeDefinitions = KeySchema.map(attr => ({
-    AttributeName: attr.AttributeName,
-    AttributeType: attr.AttributeType,
-  }));
 
-  const params = {
-    TableName: tableName,
-    KeySchema: [
-      { AttributeName: KeySchema[0].AttributeName, KeyType: 'HASH' },
-    ],
-    AttributeDefinitions: AttributeDefinitions,
-    BillingMode: 'PAY_PER_REQUEST',
-  };    
-  if (tableName === userDataTableName) {
-    // Define GSI for the userDataTableName
-    params.GlobalSecondaryIndexes = [
-      {
-        IndexName: 'EmailIndex',
-        KeySchema: [
-          { AttributeName: 'email', KeyType: 'HASH' },
-        ],
-        Projection: {
-          ProjectionType: 'ALL', // or choose specific attributes
-        },
-      },
-      // Add more GSIs as needed
-    ];
-    params.AttributeDefinitions.push({ AttributeName: 'email', AttributeType: 'S' }); // we're passing the GSI attributename to attributeDef
-  } else if (tableName === userUploadsTableName) {
-    // Define GSI for the userUploadsTableName
-    params.GlobalSecondaryIndexes = [
-      {
-        IndexName: 'FolderNameIndex',
-        KeySchema: [
-          { AttributeName: 'folder_name', KeyType: 'HASH' },
-        ],
-        Projection: {
-          ProjectionType: 'ALL', // or choose specific attributes
-        },
-      },
-      {
-        IndexName: 'ImageStatusIndex',
-        KeySchema: [
-          { AttributeName: 'image_status', KeyType: 'HASH' },
-        ],
-        Projection: {
-          ProjectionType: 'ALL', // or choose specific attributes
-        },
-      }
-      
-      // Add more GSIs as needed
-    ];
-    params.AttributeDefinitions.push({ AttributeName: 'folder_name', AttributeType: 'S' });
-    params.AttributeDefinitions.push({ AttributeName: 'image_status', AttributeType: 'S' });
-  } else if (tableName === userFoldersTableName) {
-    // Define GSI for the userFoldersTableName
-    params.GlobalSecondaryIndexes = [
-      {
-        IndexName: 'UserNameIndex',
-        KeySchema: [
-          { AttributeName: 'user_name', KeyType: 'HASH' },
-        ],
-        Projection: {
-          ProjectionType: 'ALL', // or choose specific attributes
-        },
-      },
-      {
-        IndexName: 'FolderStatusIndex',
-        KeySchema: [
-          { AttributeName: 'folder_status', KeyType: 'HASH' },
-        ],
-        Projection: {
-          ProjectionType: 'ALL', // or choose specific attributes
-        },
-      }
-     
-      // Add more GSIs as needed
-    ];
-    params.AttributeDefinitions.push({ AttributeName: 'user_name', AttributeType: 'S' });
-    params.AttributeDefinitions.push({ AttributeName: 'folder_status', AttributeType: 'S' });
-  }
-  try {
-    await dynamoDB.createTable(params).promise();
-    logger.info(`Table ${tableName} created successfully. `);
-    } catch (err) {
-      if (err.code !== 'ResourceInUseException') {
-        logger.error(`Error creating table ${tableName}: ${err.message}`);
-      } else {
-        logger.info(`Validated that Table ${tableName} already exists. Hence, continuing without creating new table`);
-      }
-    }
-  };
- 
-  
-const createTables = async () => {
-  try {
-    await createTable(userDataTableName, [
-      {AttributeName: 'user_name', AttributeType: 'S', KeyType: 'HASH'},
-    ]);
-
-    await createTable(userUploadsTableName, [
-      {AttributeName: 'image_id', AttributeType: 'S', KeyType: 'HASH'},
-    ]);
-
-    await createTable(userFoldersTableName, [
-      {AttributeName: 'folder_id', AttributeType: 'S', KeyType: 'HASH'},
-    ]);
-  } catch (error){
-    logger.error(`Error creating tables: ${error.message}`);
-  }
-  
-};
-
-// Calling createTables to create the tables at the start of the script, ignores if the tables already exists.
-createTables();
 
 // This function is used to generate the unique random folder_id
 const generateRandomId = (length) => {
@@ -1414,7 +1298,7 @@ httpsServer.listen(PORT, () => {
 });
 
 
-// //**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
+// // //**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
 // app.listen(PORT ,() => {
 //   logger.info(`Server started on http://localhost:${PORT}`);
 // });
