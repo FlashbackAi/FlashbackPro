@@ -785,7 +785,7 @@ app.get('/images/:eventName/:userId/:pageNo', async (req, res) => {
         // Convert image data to base64
           const base64Image =  {
             "url": `${imagekey}`,
-           "imageData":`data:${imagekey};base64,${imageData.Body.toString('base64')}`
+           "imageData":`data:image/jpeg;base64,${imageData.Body.toString('base64')}`
          }
           return base64Image;
       }  catch (err) {
@@ -1298,7 +1298,7 @@ httpsServer.listen(PORT, () => {
 });
 
 
-// // //**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
+// //**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
 // app.listen(PORT ,() => {
 //   logger.info(`Server started on http://localhost:${PORT}`);
 // });
