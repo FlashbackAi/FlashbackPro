@@ -63,7 +63,6 @@ function ImagesPage() {
             setTotalImages(response.data.totalImages);
       
           }
-          console.log(totalImages+" :"+images.length)
           if (images.length >= totalImages) {
             setIsLoading(false); // Stop fetching more images when all images are fetched
           }
@@ -78,7 +77,6 @@ function ImagesPage() {
     };
 
     if (images.length < totalImages) {
-      console.log(images.length)
       fetchImages();
     }
     if(!totalImages)
@@ -93,15 +91,17 @@ function ImagesPage() {
 
  
   useEffect(() => {
-    if(isModalOpen){
+    
     const handleBackButton = (event) => {
       // Check if the navigation was caused by the back button
       console.log(isModalOpen)
-     
-        if (event.state && event.state.fromMyComponent) {
-          setIsModalOpen(false);
-          setClickedImg(null);
-        }
+      
+       // if (event.state && event.state.fromMyComponent) {
+          if(isModalOpen){
+            setIsModalOpen(false);
+            setClickedImg(null);
+          }
+      //}
       
     };
 
@@ -112,7 +112,6 @@ function ImagesPage() {
     return () => {
       window.removeEventListener('popstate', handleBackButton);
     };
-  }
   }, [isModalOpen]);
 
   useEffect(() => {
