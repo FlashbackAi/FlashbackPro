@@ -5,6 +5,7 @@ import axios from "axios";
 // import 'react-image-gallery/styles/css/image-gallery.css'; // Import the CSS
 import LoadingSpinner from "./LoadingSpinner";
 import Modal from "../components/ImageModal";
+import { useNavigate } from 'react-router-dom';
 
 
 
@@ -15,46 +16,17 @@ function ImagesPage() {
   const [images, setImages] = useState([]);
   const username = sessionStorage.getItem("username");
   const galleryRef = useRef(null);
-  const [isDownloading, setIsDownloading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchTimeout, setFetchTimeout] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalImages, setTotalImages] = useState(null);
   const pageSize = 10;
+  const history = useNavigate();
 
 
   
-  const downloadCurrentImage = async () => {
-    const currentIndex = galleryRef.current.getCurrentIndex();
-    const currentImage = images[currentIndex];
 
-    if (!currentImage) {
-      console.error('No current image found');
-      return;
-    }
-
-    setIsDownloading(true);
-    try {
-      // const response = await axios.post(`${serverIP}/downloadImage`,{"imageUrl":currentImage.url});
-      // if (response.status === 200) {
-        console.log(currentImage.original);
-        const link = document.createElement('a');
-        link.href = currentImage.original;
-        link.download = currentImage.url;
-        document.body.appendChild(link); // Required for FF
-        link.click();
-        document.body.removeChild(link);
-
-      // } else {
-      //   throw new Error("Failed to fetch images");
-      // }
-    } catch (error) {
-      console.error("Error fetching images:", error);
-    }
-    finally {
-      setIsDownloading(false); // End downloading
-    }
-  };
 
   const [clickedImg,setClickedImg] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(null);
@@ -64,41 +36,11 @@ function ImagesPage() {
     setCurrentIndex(index);
     setClickedImg(item.original);
     setClickedUrl(item.url)
+    setIsModalOpen(true);
+    console.log(isModalOpen)
   };
 
-  const handelRotationRight = () => {
-    const totalLength = images.length;
-    if (currentIndex + 1 >= totalLength) {
-      setCurrentIndex(0);
-      const newUrl = images[0].original;
-      setClickedImg(newUrl);
-      return;
-    }
-    const newIndex = currentIndex + 1;
-    const newUrl = images.filter((item) => {
-      return images.indexOf(item) === newIndex;
-    });
-    const newItem = newUrl[0].original;
-    setClickedImg(newItem);
-    setCurrentIndex(newIndex);
-  };
 
-  const handelRotationLeft = () => {
-    const totalLength = images.length;
-    if (currentIndex === 0) {
-      setCurrentIndex(totalLength - 1);
-      const newUrl = images[totalLength - 1].original;
-      setClickedImg(newUrl);
-      return;
-    }
-    const newIndex = currentIndex - 1;
-    const newUrl = images.filter((item) => {
-      return images.indexOf(item) === newIndex;
-    });
-    const newItem = newUrl[0].original;
-    setClickedImg(newItem);
-    setCurrentIndex(newIndex);
-  };
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -149,6 +91,57 @@ function ImagesPage() {
 
   
 
+ 
+  useEffect(() => {
+    if(isModalOpen){
+    const handleBackButton = (event) => {
+      // Check if the navigation was caused by the back button
+      console.log(isModalOpen)
+     
+        if (event.state && event.state.fromMyComponent) {
+          setIsModalOpen(false);
+          setClickedImg(null);
+        }
+      
+    };
+
+    // Add event listener for the popstate event on the window object
+    window.addEventListener('popstate', handleBackButton);
+
+    // Clean up the event listener when the component unmounts
+    return () => {
+      window.removeEventListener('popstate', handleBackButton);
+    };
+  }
+  }, [isModalOpen]);
+
+  useEffect(() => {
+    // Add an entry to the browser's history when the component mounts
+    window.history.pushState({ fromMyComponent: true }, '');
+  }, []);
+
+  useEffect(() => {
+    const handleBackGesture = (event) => {
+      // Check if the user performed a back gesture
+      if (event.deltaX > 50) { // Adjust threshold as needed
+        // Custom logic for handling back gesture
+        if(isModalOpen){
+          setIsModalOpen(false);
+          setClickedImg(null);
+        }
+        console.log('Back gesture detected');
+        // Add your custom logic here, such as navigating back
+        history.goBack(); // Navigate back using React Router
+      }
+    };
+
+    window.addEventListener('touchmove', handleBackGesture);
+
+    return () => {
+      window.removeEventListener('touchmove', handleBackGesture);
+    };
+  }, [history]);
+
   return (
     <div>
       {isLoading ? (
@@ -170,12 +163,11 @@ function ImagesPage() {
             ))
           }
           <div>
-            {clickedImg && (
+            {isModalOpen && (
               <Modal
                 clickedImg={clickedImg}
-                handelRotationRight={handelRotationRight}
                 setClickedImg={setClickedImg}
-                handelRotationLeft={handelRotationLeft}
+                setIsModalOpen={setIsModalOpen}
                 clickedUrl={clickedUrl}
               />
             )}

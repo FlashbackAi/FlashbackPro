@@ -751,7 +751,7 @@ app.get('/images/:eventName/:userId/:pageNo', async (req, res) => {
      const eventName = req.params.eventName;
      const userId = req.params.userId;
      const pageNo =  req.params.pageNo;
-     console.log("Image are being fetched for event of pageNo -> "+eventName+"; userId -> "+userId +"; pageNo -> "+pageNo);
+     logger.info("Image are being fetched for event of pageNo -> "+eventName+"; userId -> "+userId +"; pageNo -> "+pageNo);
 
      const pageSize = 10;
      const start = (pageNo - 1) * pageSize;
@@ -773,21 +773,37 @@ app.get('/images/:eventName/:userId/:pageNo', async (req, res) => {
       const imagesPromises = result.Items.slice(start, end).map(async file => {
         try {
           const imagekey=file.s3_url.split("amazonaws.com/")[1];
-          console.log(imagekey);
           const imageData = await s3.getObject({
               Bucket: imagesBucketName,
               Key:imagekey
           }).promise();
 
-          logger.info("Image fetched from cloud: " + imagekey);
+          // Read the image using sharp
+        const imageBuffer = Buffer.from(imageData.Body);
+
+        // Extract existing metadata
+        const metadata = await sharp(imageBuffer).metadata();
+
+        // Update metadata as needed
+        metadata.creationDate = new Date(); // Update creation date, for example
+
+        // Convert the image to base64 with updated metadata
+        const base64Image = await sharp(imageBuffer)
+            .withMetadata() // Ensure metadata preservation
+            .toFormat('jpeg') // Convert to JPEG format (or 'png' if needed)
+            .toBuffer(); // Convert to buffer
+
+        //const base64ImageData = `data:image/jpeg;base64,${base64Image.toString('base64')}`;
+
+        //return base64ImageData;
 
         //logger.info(resizedImageData)
         // Convert image data to base64
-          const base64Image =  {
+          const base64ImageData =  {
             "url": `${imagekey}`,
-           "imageData":`data:image/jpeg;base64,${imageData.Body.toString('base64')}`
+           "imageData":`data:image/jpeg;base64,${base64Image.toString('base64')}`
          }
-          return base64Image;
+          return base64ImageData;
       }  catch (err) {
           logger.error("Error fetching image: " + file.Key, err);
           return null; // Or handle the error as per your application's need
@@ -797,7 +813,7 @@ app.get('/images/:eventName/:userId/:pageNo', async (req, res) => {
 
       res.json({"images":images, 'totalImages':result.Count});
   } catch (err) {
-      console.error("Error in S3 get", err);
+     logger.info("Error in S3 get", err);
       res.status(500).send('Error getting images from S3');
   }
 });

@@ -555,8 +555,8 @@ p {
   border: 5px solid #f3f3f3; /* Light grey */
   border-top: 5px solid #3498db; /* Blue */
   border-radius: 50%;
-  width: 3em;
-  height: 3em;
+  width: 10em;
+  height: 10em;
   animation: spin 2s linear infinite;
 }
 
