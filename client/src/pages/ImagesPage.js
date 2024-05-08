@@ -6,6 +6,7 @@ import axios from "axios";
 import LoadingSpinner from "./LoadingSpinner";
 import Modal from "../components/ImageModal";
 import { useNavigate } from 'react-router-dom';
+import { LazyLoadImage } from "react-lazy-load-image-component";
 
 
 
@@ -16,12 +17,12 @@ function ImagesPage() {
   const [images, setImages] = useState([]);
   const username = sessionStorage.getItem("username");
   const galleryRef = useRef(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchTimeout, setFetchTimeout] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalImages, setTotalImages] = useState(null);
-  const pageSize = 10;
+  const IMAGES_TO_LOAD = 20;
+  const [loadedImages, setLoadedImages] = useState([]);
   const history = useNavigate();
 
 
@@ -36,7 +37,6 @@ function ImagesPage() {
     setCurrentIndex(index);
     setClickedImg(item.original);
     setClickedUrl(item.url)
-    setIsModalOpen(true);
     window.history.pushState({ id: 1 }, null, '?image=img');
   };
 
@@ -53,11 +53,14 @@ function ImagesPage() {
           const formattedImages = response.data.images.map((img) => ({
             original: img.imageData,
             thumbnail: img.imageData,
-            url: img.url,
-            originalHeight: '800px',
-            originalWidth: '800px'
+            url: img.url
           }));
           setImages(prevImages => [...prevImages, ...formattedImages]);
+          if(currentPage === 1)
+            {
+              console.log("initial hit");
+              setLoadedImages(formattedImages)
+            }
           setCurrentPage(prevPage => prevPage + 1);
           if (!totalImages) {
             setTotalImages(response.data.totalImages);
@@ -96,8 +99,6 @@ function ImagesPage() {
       // Check if the navigation was caused by the back button
        // if (event.state && event.state.fromMyComponent) {
         //alert("clicked back button");
-          
-            setIsModalOpen(false);
             setClickedImg(null);
           
 
@@ -113,19 +114,10 @@ function ImagesPage() {
       window.removeEventListener('popstate', handleBackButton);
     };
   }, []);
-
-  // useEffect(() => {
-  //   // Add an entry to the browser's history when the component mounts
-  //   alert("clicked back button");
-  //   window.history.pushState({ fromMyComponent: true }, '');
-  // }, []);
-
   useEffect(() => {
     const handleBackGesture = (event) => {
       // Check if the user performed a back gesture
       if (event.deltaX > 50) { // Adjust threshold as needed
-        
-          setIsModalOpen(false);
           setClickedImg(null);
           console.log("back gesture detected");
 
@@ -141,16 +133,33 @@ function ImagesPage() {
     };
   }, [history]);
 
+  const handleScroll = () => {
+
+    if (
+      window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight
+    ) {
+      setLoadedImages(prevLoadedImages => [...prevLoadedImages, ...images.slice(prevLoadedImages.length, prevLoadedImages.length + IMAGES_TO_LOAD)]);
+
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [images,loadedImages]);
+
   return (
     <div>
       {isLoading ? (
        <LoadingSpinner />// You can replace this with a spinner or loader component
-      ) : images.length > 0 ? (
+      ) : loadedImages.length > 0 ? (
         <div className='wrapper'>
           {
-            images.map((item,index)=>(
+            loadedImages.map((item,index)=>(
               <div key={index} className='wrapper-images'>
-                <img src={item.original} alt={item.thumbnail} onClick={()=>handleClick(item,index)}/>
+                <LazyLoadImage src={item.original} onClick={()=>handleClick(item,index)}  effect="blur"/>
               </div>
             ))
           }
@@ -159,7 +168,6 @@ function ImagesPage() {
               <Modal
                 clickedImg={clickedImg}
                 setClickedImg={setClickedImg}
-                setIsModalOpen={setIsModalOpen}
                 clickedUrl={clickedUrl}
               />
             )}

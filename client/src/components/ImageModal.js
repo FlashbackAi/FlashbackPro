@@ -2,13 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 const ImageModal = ({
     clickedImg,
     setClickedImg,
-    setIsModalOpen,
     clickedUrl
   }) => {
     const handleClick = (e) => {
       if (e.target.classList.contains("dismiss")) {
         setClickedImg(null);
-        setIsModalOpen(false);
       }
     };
   

@@ -753,7 +753,7 @@ app.get('/images/:eventName/:userId/:pageNo', async (req, res) => {
      const pageNo =  req.params.pageNo;
      logger.info("Image are being fetched for event of pageNo -> "+eventName+"; userId -> "+userId +"; pageNo -> "+pageNo);
 
-     const pageSize = 10;
+     const pageSize = 20;
      const start = (pageNo - 1) * pageSize;
      const end = start + pageSize;
 
@@ -779,19 +779,20 @@ app.get('/images/:eventName/:userId/:pageNo', async (req, res) => {
           }).promise();
 
           // Read the image using sharp
-        const imageBuffer = Buffer.from(imageData.Body);
+        // const imageBuffer = Buffer.from(imageData.Body);
 
-        // Extract existing metadata
-        const metadata = await sharp(imageBuffer).metadata();
+        // // Extract existing metadata
+        // const metadata = await sharp(imageBuffer).metadata();
+        // logger.info("metadata");
+        // console.log(metadata);
+        // // Update metadata as needed
+        // metadata.DateTimeOriginal = new Date(); // Update creation date, for example
 
-        // Update metadata as needed
-        metadata.creationDate = new Date(); // Update creation date, for example
-
-        // Convert the image to base64 with updated metadata
-        const base64Image = await sharp(imageBuffer)
-            .withMetadata() // Ensure metadata preservation
-            .toFormat('jpeg') // Convert to JPEG format (or 'png' if needed)
-            .toBuffer(); // Convert to buffer
+        // // Convert the image to base64 with updated metadata
+        // const base64Image = await sharp(imageBuffer)
+        //     .withMetadata() // Ensure metadata preservation
+        //     .toFormat('jpeg') // Convert to JPEG format (or 'png' if needed)
+        //     .toBuffer(); // Convert to buffer
 
         //const base64ImageData = `data:image/jpeg;base64,${base64Image.toString('base64')}`;
 
@@ -801,7 +802,7 @@ app.get('/images/:eventName/:userId/:pageNo', async (req, res) => {
         // Convert image data to base64
           const base64ImageData =  {
             "url": `${imagekey}`,
-           "imageData":`data:image/jpeg;base64,${base64Image.toString('base64')}`
+           "imageData":`data:image/jpeg;base64,${imageData.Body.toString('base64')}`
          }
           return base64ImageData;
       }  catch (err) {
@@ -1314,7 +1315,7 @@ httpsServer.listen(PORT, () => {
 });
 
 
-// //**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
+//**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
 // app.listen(PORT ,() => {
 //   logger.info(`Server started on http://localhost:${PORT}`);
 // });
