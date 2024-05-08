@@ -37,7 +37,7 @@ function ImagesPage() {
     setClickedImg(item.original);
     setClickedUrl(item.url)
     setIsModalOpen(true);
-    window.history.pushState({ id: 1 }, '?image=img');
+    window.history.pushState({ id: 1 }, null, '?image=img');
   };
 
 
@@ -96,10 +96,10 @@ function ImagesPage() {
       // Check if the navigation was caused by the back button
        // if (event.state && event.state.fromMyComponent) {
         //alert("clicked back button");
-          if(clickedImg){
+          
             setIsModalOpen(false);
             setClickedImg(null);
-          }
+          
 
       //}
       
@@ -124,11 +124,10 @@ function ImagesPage() {
     const handleBackGesture = (event) => {
       // Check if the user performed a back gesture
       if (event.deltaX > 50) { // Adjust threshold as needed
-        if(clickedImg){
+        
           setIsModalOpen(false);
           setClickedImg(null);
-          console.log("back gesture detected")
-        }
+          console.log("back gesture detected");
 
         // Add your custom logic here, such as navigating back
         history.goBack(); // Navigate back using React Router
