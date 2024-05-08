@@ -37,7 +37,7 @@ function ImagesPage() {
     setClickedImg(item.original);
     setClickedUrl(item.url)
     setIsModalOpen(true);
-    console.log(isModalOpen)
+    window.history.pushState({ id: 1 }, '?image=img');
   };
 
 
@@ -94,13 +94,13 @@ function ImagesPage() {
     
     const handleBackButton = (event) => {
       // Check if the navigation was caused by the back button
-      console.log(isModalOpen)
-      
        // if (event.state && event.state.fromMyComponent) {
-          if(isModalOpen){
+        //alert("clicked back button");
+          if(clickedImg){
             setIsModalOpen(false);
             setClickedImg(null);
           }
+
       //}
       
     };
@@ -112,23 +112,24 @@ function ImagesPage() {
     return () => {
       window.removeEventListener('popstate', handleBackButton);
     };
-  }, [isModalOpen]);
-
-  useEffect(() => {
-    // Add an entry to the browser's history when the component mounts
-    window.history.pushState({ fromMyComponent: true }, '');
   }, []);
+
+  // useEffect(() => {
+  //   // Add an entry to the browser's history when the component mounts
+  //   alert("clicked back button");
+  //   window.history.pushState({ fromMyComponent: true }, '');
+  // }, []);
 
   useEffect(() => {
     const handleBackGesture = (event) => {
       // Check if the user performed a back gesture
       if (event.deltaX > 50) { // Adjust threshold as needed
-        // Custom logic for handling back gesture
-        if(isModalOpen){
+        if(clickedImg){
           setIsModalOpen(false);
           setClickedImg(null);
+          console.log("back gesture detected")
         }
-        console.log('Back gesture detected');
+
         // Add your custom logic here, such as navigating back
         history.goBack(); // Navigate back using React Router
       }
@@ -146,13 +147,6 @@ function ImagesPage() {
       {isLoading ? (
        <LoadingSpinner />// You can replace this with a spinner or loader component
       ) : images.length > 0 ? (
-        // <>
-        //    <ImageGallery ref={galleryRef} items={images} showPlayButton={false} showFullscreenButton={false}  thumbnailPosition={'bottom'} />
-        //    <button onClick={downloadCurrentImage} disabled={isDownloading} className='downloadButton'>
-        //     {isDownloading ? 'Downloading...' : 'Download' }
-        //   </button>
-        // </>
-
         <div className='wrapper'>
           {
             images.map((item,index)=>(
@@ -162,7 +156,7 @@ function ImagesPage() {
             ))
           }
           <div>
-            {isModalOpen && (
+            {clickedImg && (
               <Modal
                 clickedImg={clickedImg}
                 setClickedImg={setClickedImg}
