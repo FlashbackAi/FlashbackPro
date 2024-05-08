@@ -16,6 +16,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const base64 = require('base64-js');
 const { Readable } = require('stream');
+const axios = require('axios');
 
 
 app.use(cors()); // Allow cross-origin requests
@@ -33,13 +34,13 @@ const logger = winston.createLogger({
  });
 
  // *** Comment these certificates while testing changes in local developer machine. And, uncomment while pushing to mainline***
-const privateKey = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/privkey.pem', 'utf8');
-const certificate = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/fullchain.pem', 'utf8');
+// const privateKey = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/privkey.pem', 'utf8');
+// const certificate = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/fullchain.pem', 'utf8');
 
-const credentials = {
-  key: privateKey,
-  cert: certificate
-}
+// const credentials = {
+//   key: privateKey,
+//   cert: certificate
+// }
 
 // Set up AWS S3
 const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.js
@@ -1215,6 +1216,100 @@ app.post('/addFolder', async(req, res) => {
 
 });
 
+const compressImage = async (imageBuffer) => {
+  try {
+    // Resize and compress the image using sharp
+    const compressedImageBuffer = await sharp(imageBuffer)
+      .resize({ width: 300 }) // Resize image to a smaller width (adjust as needed)
+      .jpeg({ quality: 80 }) // Set JPEG quality (adjust as needed)
+      .toBuffer();
+
+    return compressedImageBuffer;
+  } catch (error) {
+    console.error('Error compressing image:', error);
+    throw error;
+  }
+};
+
+const downloadImageToBase64 = async (s3Url) => {
+  try {
+    // Extract the object key from the S3 URL
+    const objectKey = s3Url.split('amazonaws.com/')[1];
+
+    // Download image content from S3 using the object key
+    const imageData = await s3.getObject({ Bucket: imagesBucketName, Key: objectKey }).promise();
+
+    // Compress the image using sharp library
+    const compressedImageBuffer = await compressImage(imageData.Body);
+
+    // Convert compressed image buffer to base64
+    const base64Image = compressedImageBuffer.toString('base64');
+
+    return base64Image;
+  } catch (error) {
+    console.error('Error downloading image:', error);
+    throw error;
+  }
+};
+
+app.post('/getPeopleThumbnails', async (req, res) => {
+  try {
+    const { eventName } = req.body;
+    console.log('Received a request for the event:', eventName);
+
+    // Implement logic to fetch thumbnails from DynamoDB based on the event name
+    const params = {
+      TableName: indexedDataTableName,
+      IndexName: 'folder_name-user_id-index',
+      KeyConditionExpression: 'folder_name = :partitionKey',
+      ExpressionAttributeValues: {
+        ':partitionKey': eventName
+      }
+    };
+
+    const data = await docClient.query(params).promise();
+
+    // Process the data to get thumbnails for each user ID
+    const thumbnails = {};
+    let count = 0;
+
+    for (const item of data.Items) {
+      const userId = item.user_id;
+      
+      // Check if thumbnail for this user ID has already been fetched
+      if (!thumbnails[userId]) {
+        // If thumbnail for this user ID hasn't been fetched, fetch it
+        console.log('Getting the thumbnail for the user:', userId);
+        
+        const s3Url = item.s3_url;
+        
+        // Download image content from S3 URL and convert to base64
+        const base64Image = await downloadImageToBase64(s3Url);
+
+        // Add the thumbnail to the thumbnails object
+        thumbnails[userId] = {
+          userId,
+          thumbnailUrl: base64Image
+        };
+
+        count++;
+
+        // If we have fetched 50 records, send the data to frontend
+        if (count === 10) {
+          break;
+        }
+      }
+    }
+
+    // Convert thumbnails object into an array
+    const sortedThumbnails = Object.values(thumbnails);
+
+    res.json(sortedThumbnails);
+  } catch (error) {
+    console.error('Error fetching thumbnails:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 
 app.post('/downloadImage', async (req, res) => {
@@ -1409,14 +1504,18 @@ app.post('/downloadImage', async (req, res) => {
         });
 
 
-const httpsServer = https.createServer(credentials, app);
 
-httpsServer.listen(PORT, () => {
-  logger.info(`Server is running on https://localhost:${PORT}`);
-});
+
+
+
+// const httpsServer = https.createServer(credentials, app);
+
+// httpsServer.listen(PORT, () => {
+//   logger.info(`Server is running on https://localhost:${PORT}`);
+// });
 
 
 // //**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
-// app.listen(PORT ,() => {
-//   logger.info(`Server started on http://localhost:${PORT}`);
-// });
+app.listen(PORT ,() => {
+  logger.info(`Server started on http://localhost:${PORT}`);
+});

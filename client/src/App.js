@@ -6,6 +6,7 @@ import CreateFlashBack from "./pages/CreateFlashBack";
 import Registration from "./pages/Registration";
 import Login from "./pages/Login";
 import LoadingSpinner from "./pages/LoadingSpinner";
+import ShareEvents from "./pages/ShareEvents";
 import Admin from "./pages/Admin";
 import Profile from "./pages/Profile";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -82,7 +83,10 @@ function App() {
             <Route path="/registration" element={<Registration />} />
             <Route path="/login" element={<Login />} />
             <Route path="/forgotPassword" element={<ForgotPassword />} />
-            <Route path="/admin" element={<Admin />} />
+            <Route path="/admin/" element={<Admin />} />
+            <Route path="/admin/ShareEvents" element={<ShareEvents />}>
+              <Route path="/admin/ShareEvents/:eventName/people" element={<ShareEvents />} />
+            </Route>
             {/* <Route path="/" element={<ProtectedRoute><CreateFlashBack/></ProtectedRoute>} /> */}
             <Route path="/home" element={<Home/>}></Route> 
             {/* <Route path="/home" element={<ProtectedRoute><Home/></ProtectedRoute>}></Route> */}
