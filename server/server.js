@@ -1183,6 +1183,7 @@ app.post('/downloadImage', async (req, res) => {
               Item: {
                 event_name: 'Aarthi_Vinay_19122021',
                 user_phone_number: username,
+                created_date: new Date().toISOString()
               }
             };
             const putResult = await docClient.put(updateParamsUserEvent).promise()
@@ -1199,6 +1200,7 @@ app.post('/downloadImage', async (req, res) => {
             Item: {
               event_name: 'Neha_ShivaTeja_18042024',
               user_phone_number: username,
+              created_date: new Date().toISOString()
             }
           };
           const putResult = await docClient.put(updateParamsUserEvent).promise()
@@ -1237,7 +1239,8 @@ app.post('/downloadImage', async (req, res) => {
           Item: {
             user_phone_number: username,
             user_name: username,
-            unique_uid: unique_uid
+            unique_uid: unique_uid,
+            created_date: new Date().toISOString()
           }
         };
       

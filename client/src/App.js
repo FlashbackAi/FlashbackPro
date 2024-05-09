@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import { useLocation,Navigate } from 'react-router-dom'
 import ImagesPage from './pages/ImagesPage';
+import TermsAndConditions from "./pages/TermsAndConditions";
 
 
 function App() {
@@ -91,6 +92,7 @@ function App() {
             {/* <Route path="/images/:eventName/:userId" element={<ProtectedRoute><ImagesPage /></ProtectedRoute>} /> */}
             <Route path="/photos/:eventName/:userId" element={<ImagesPage />} /> 
             <Route path="/" element={<Login />} />
+            <Route path="/TermsAndConditions" element={<TermsAndConditions />} />TermsAndConditions
 
           </Routes>
           )}

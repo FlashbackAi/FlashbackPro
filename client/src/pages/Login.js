@@ -5,6 +5,7 @@ import { AuthContext } from "../helpers/AuthContext";
 import { useLocation } from 'react-router-dom';
 import Webcam from 'react-webcam'
 
+
 function Login() {
   const serverIP = process.env.REACT_APP_SERVER_IP;
   const [username, setUsername] = useState("");
@@ -23,6 +24,7 @@ function Login() {
   const [faceDetected, setFaceDetected] = useState(false);
   const webcamRef = useRef(null);
   const [imgSrc, setImgSrc] = useState(null);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   
   const videoConstraints = {
@@ -50,32 +52,6 @@ function Login() {
       setPhoneNumberError('');
     }
   };
-  
-  // useEffect(() => {
-  //   const loadModelsAndStartCapture = async () => {
-  //     await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
-  //     await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
-  //     await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
-  //   };
-
-  //   loadModelsAndStartCapture();
-  // }, []);
-
-  // const detectFaces = useCallback(async () => {
-  //   const detections = await faceapi.detectAllFaces(webcamRef.current.video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks();
-  //   console.log(detections)
-  //   if (detections && detections.length === 1) {
-  //     //console.log(detections)
-  //     const imageSrc = webcamRef.current.getScreenshot();
-      
-  //     return true;
-  //   } else {
-  //     setFaceDetected(false);
-  //     setImgSrc(null);
-  //     return false;
-  //   }
-  // },[webcamRef]);
-
   const capture = useCallback(async () => {
   const imageSrc = webcamRef.current.getScreenshot();
    //const flag = await detectFaces();
@@ -118,182 +94,50 @@ function Login() {
             navigate('/home')
             alert(`hey ${fullPhoneNumber}, you already exists. Have a great event ahead..`);
           }
-          
-
         } catch (error) {
           console.log(error)
           setError(error.message);
         }
-       
-        // axios.post(`${serverIP}/request-otp`, {
-            
-        //     phoneNumber: fullPhoneNumber
-        // }).then(response => {
-        //     //setMessage(response.data.message)
-        //     console.log(response.data)
-        //     if(response.data.message === "OTP sent successfully.")
-        //     {
-        //         setIsPhoneNumberValid(true);
-        //         setUsername(fullPhoneNumber);
-        //         console.log(isPhoneNumberValid);
-        //         setMessage("please enter the verification code sent to the registered mail id")
-                
-        //     }
-        // })
-        // .catch(error => {
-        //     console.error(error.response.data);
-        //     setMessage(error.response.data)
-        // });
-        // setIsPhoneNumberValid(true);
-        // setUsername(fullPhoneNumber);
-        //setIsNewUser(true);
-        
-        //setMessage("please enter the verification code sent to the registered mail id")
     };
 
     const uploadPhoto = async (e)=>{
 
-      e.preventDefault();
-      const fullPhoneNumber = countryCode + phoneNumber;
-      const formData = new FormData();
-      formData.append('image', imgSrc);
-      formData.append('username', fullPhoneNumber );
-  
-      try {
-        const response = await axios.post(`${serverIP}/uploadUserPotrait`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-        console.log(response.data);
-        navigate('/home')
-      } catch (error) {
-        console.error('Error uploading image:', error);
-      }
+      console.log(termsAccepted)
+      if(termsAccepted){
+        
+        e.preventDefault();
+        const fullPhoneNumber = countryCode + phoneNumber;
+        const formData = new FormData();
+        formData.append('image', imgSrc);
+        formData.append('username', fullPhoneNumber );
+    
+        try {
+          const response = await axios.post(`${serverIP}/uploadUserPotrait`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+          console.log(response.data);
+          navigate('/home')
+        } catch (error) {
+          console.error('Error uploading image:', error);
+        }
+    }
 
     }
 
     const handleVerification = () => {
         console.log(username)
         console.log(verificationCode)
-        // axios.post(`${serverIP}/verify-otp`, {
-        //     phoneNumber: fullPhoneNumber,
-        //     otpCode: verificationCode
-        // }).then(response => {
-        //     setMessage(response.data.message)
-        //     console.log(response.data.status)
-        //     if(response.data.message === "User confirmed successfully.")
-        //     {
-        //         setMessage('new user has confirmed');
-        //         console.log(from.pathname)
-        //         navigate(from.pathname)
-        //     }
-        // })
-        // .catch(error => {
-        //     console.error(error.message);
-        //     setMessage('error in confirming new user');
-        // });
-        
         console.log(from.pathname)
         navigate(from.pathname)
         setIsNewUser(true);
     };
 
     const resendVerification = () => {
-        
-        // axios.post(`${serverIP}/resend-verification`, {
-        //     username: username
-        // }).then(response => {
-        //     console.log(response.data.status)
-        //     if(response.data.status === "Success")
-        //     {
-        //         setMessage('new verification code has been sent');
-                
-        //     }
-        // })
-        // .catch(error => {
-        //     console.error(error.message);
-        //     setMessage('Error in generating new verification code');
-        // });
     };
 
-  
 
-
-    // return (
-    //   <div className="loginBody">
-    //     <div className="loginLeft">
-    //       <p className="loginLogo">Flashback<p className="logoCaption">Create & share memories</p></p>
-    //       <div className="login-form-container">
-    //         {!isPhoneNumberValid ? (
-    //           <form onSubmit={handleSubmit} className="login-form">
-    //             <input name="phoneNumber" required type="tel" placeholder="Phone Number" onChange={handlePhoneNumberChange}/>
-    //             <button type="submit">Send OTP</button>
-    //             <p>{message}</p>
-    //           </form>
-    //         ) : (
-              
-    //           <form className="login-form" onSubmit={handleVerification}>
-    //             <p>OTP has been sent to the {phoneNumber}</p>
-    //             <input 
-    //               name ="verificationCode"
-    //               required 
-    //               type="text"
-    //               value={verificationCode}
-    //               placeholder="Verification Code"
-    //               onChange={(e) => setVerificationCode(e.target.value)}
-    //             />
-    //             <button type="submit" >Verify the Code</button>
-    //             <button type="button" onClick={resendVerification}>Resend Code</button>
-    //             <p>{message}</p>
-    //           </form>
-    //         )}
-    //         {
-    //           isNewUser &&(<div className="container">
-    //           <div className="verifyMobile">
-    //             <input text></input>
-    //           </div>
-    //           {imgSrc ? (
-    //             <img src={imgSrc} alt="webcam" />
-    //           ) : (
-    //             <Webcam
-    //                     audio={false}
-    //                     ref={webcamRef}
-    //                     screenshotFormat="image/jpeg"
-    //                     style={{ zIndex: 0 }}
-    //                   />
-    //           )}
-    //           <div className="btn-container">
-    //             {imgSrc ? (
-    //               <button onClick={retake}>Retake photo</button>
-    //             ) : (
-    //               <button onClick={capture}>Capture photo</button>
-    //             )}
-    //           </div>
-    //           <p>{message}</p>
-    //         </div>)
-    //         }
-    //       </div>
-    //     </div>
-    //   </div>
-    // );
-
-    const TermsAndConditions = ({ onAccept }) => {
-      return (
-        <div>
-          <h2>Terms and Conditions</h2>
-          <p>Put your terms and conditions text here.</p>
-          <button onClick={onAccept}>Accept</button>
-        </div>
-      );
-    };
-     
-    const [termsAccepted, setTermsAccepted] = useState(false);
-
-    const handleAcceptance = () => {
-      setTermsAccepted(true);
-      // You can also save this acceptance state to local storage or your database.
-    };
     return (
       <div className="loginBody">
         <div className="loginLeft">
@@ -322,15 +166,25 @@ function Login() {
                         mirrored={true}
                         // forceScreenshotSourceSize={true}
                       />
+                      
               )}
               <div className="btn-container">
                 {imgSrc ? (
                   <div className="login-form-container">
-                    <form className="login-form">
-                    <button type="button" onClick={uploadPhoto}>Submit photo</button>
-                    <button type="button" onClick={retake}>Retake photo</button>
-                  </form>
-                </div>
+                    <form className="login-form" onSubmit={uploadPhoto}>
+                      <button type="submit" >Submit photo</button>
+                      <button type="button" onClick={retake}>Retake photo</button> 
+                      <label style={{ display: 'flex',}}>
+                        <input name="checkbox" type="checkbox" required style={{transform: 'scale(2.0)'}}
+                         onChange={(e) => setTermsAccepted(e.target.checked)}
+                         onInvalid={(e) => e.target.setCustomValidity('Please accept the terms and conditions.')}
+                         onInput={(e) => e.target.setCustomValidity('')}/>
+                        <a href="/TermsAndConditions" target="_blank" rel="noopener noreferrer" style={{color: "red"}}>Accept terms and conditions</a>
+                      </label>
+                    
+                    </form>
+                    
+                 </div>
                 
                 ) : (
                   <div className="login-form-container">
@@ -344,10 +198,6 @@ function Login() {
             }
           </div>
         </div>
-        {/* <div>
-          {!termsAccepted && <TermsAndConditions onAccept={handleAcceptance} />}
-          {termsAccepted && <p>You've accepted the terms and conditions.</p>}
-        </div> */}
       </div>
     );
 

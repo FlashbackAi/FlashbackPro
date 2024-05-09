@@ -405,6 +405,22 @@ button {
     border-radius: 5px;
     border: 1px solid #ddd;
 }
+
+
+.login-form input[type="checkbox"]{
+  display: block;
+  width: auto;
+  padding: 1em;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+}
+.login-form a{
+  display: block;
+  width: auto;
+  padding: 1em;
+  
+}
+
 .login-form button {
     display: block;
     width: 100%;
@@ -418,6 +434,9 @@ button {
 }
 .login-form button[type="button"] {
     background-color: #42b72a;
+}
+.login-form label{
+  display: flex;
 }
 
 .loginRight{
@@ -929,3 +948,31 @@ End of Sample */
   top: 50%;
   z-index: 999;
 } */
+.terms-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.section {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+h2, h3 {
+  color: #333;
+  margin-bottom: 0;
+}
+
+ul {
+  list-style-type: disc; /* Use bullet points */
+}
+
+li {
+  color: #666;
+  margin-left: 20px; /* Adjust the indentation of bullet points */
+}
