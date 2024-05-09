@@ -1,12 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 const ImageModal = ({
     clickedImg,
     setClickedImg,
-    clickedUrl
+    clickedUrl,
+    handleBackButton
   }) => {
+    const history = useNavigate();
     const handleClick = (e) => {
       if (e.target.classList.contains("dismiss")) {
         setClickedImg(null);
+       history(-1);
       }
     };
   
@@ -47,7 +51,7 @@ const ImageModal = ({
       <>
         <div className="overlay dismiss" onClick={handleClick}>
           <img src={clickedImg} alt="bigger pic" />
-          <span className="dismiss" onClick={handleClick}>
+          <span className="dismiss" onClick={handleBackButton}>
             X
           </span>
 

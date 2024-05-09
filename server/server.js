@@ -778,15 +778,11 @@ app.get('/images/:eventName/:userId/:pageNo', async (req, res) => {
               Key:imagekey
           }).promise();
 
-          // Read the image using sharp
-        // const imageBuffer = Buffer.from(imageData.Body);
-
-        // // Extract existing metadata
-        // const metadata = await sharp(imageBuffer).metadata();
-        // logger.info("metadata");
-        // console.log(metadata);
-        // // Update metadata as needed
-        // metadata.DateTimeOriginal = new Date(); // Update creation date, for example
+      const resizedImageBuffer = await sharp(imageData.Body)
+      .resize(300,300)
+      .jpeg({ quality: 85, force: true })
+      .toBuffer();
+        
 
         // // Convert the image to base64 with updated metadata
         // const base64Image = await sharp(imageBuffer)
@@ -794,14 +790,11 @@ app.get('/images/:eventName/:userId/:pageNo', async (req, res) => {
         //     .toFormat('jpeg') // Convert to JPEG format (or 'png' if needed)
         //     .toBuffer(); // Convert to buffer
 
-        //const base64ImageData = `data:image/jpeg;base64,${base64Image.toString('base64')}`;
-
-        //return base64ImageData;
-
         //logger.info(resizedImageData)
         // Convert image data to base64
           const base64ImageData =  {
             "url": `${imagekey}`,
+           "thumbnail":`data:image/jpeg;base64,${resizedImageBuffer.toString('base64')}`,
            "imageData":`data:image/jpeg;base64,${imageData.Body.toString('base64')}`
          }
           return base64ImageData;
@@ -1281,7 +1274,6 @@ app.post('/downloadImage', async (req, res) => {
 
                 // Resize the image
                 const resizedImageStream = await sharp(Body)
-                .resize({ fit: 'inside', width: 1920, height: 1080 }) // Resize image to fit within specified dimensions
                 .jpeg({ quality: 85, force: false }) // Convert image to JPEG with specified quality
                 .toBuffer();
 

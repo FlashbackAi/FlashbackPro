@@ -7,6 +7,7 @@ import LoadingSpinner from "./LoadingSpinner";
 import Modal from "../components/ImageModal";
 import { useNavigate } from 'react-router-dom';
 import { LazyLoadImage } from "react-lazy-load-image-component";
+import PlaceholderImage from "../Media/blurredLogo.png";
 
 
 
@@ -52,7 +53,7 @@ function ImagesPage() {
         if (response.status === 200) {
           const formattedImages = response.data.images.map((img) => ({
             original: img.imageData,
-            thumbnail: img.imageData,
+            thumbnail: img.thumbnail,
             url: img.url
           }));
           setImages(prevImages => [...prevImages, ...formattedImages]);
@@ -90,21 +91,19 @@ function ImagesPage() {
     // Intersection Observer...
   }, [eventName, userId, serverIP, isLoading, fetchTimeout, currentPage, totalImages]);
 
-  
+  const handleBackButton = () => {
+    // Check if the navigation was caused by the back button
+     // if (event.state && event.state.fromMyComponent) {
+      //alert("clicked back button");
+          setClickedImg(null);
+        
 
- 
+    //}
+    
+  };
   useEffect(() => {
     
-    const handleBackButton = (event) => {
-      // Check if the navigation was caused by the back button
-       // if (event.state && event.state.fromMyComponent) {
-        //alert("clicked back button");
-            setClickedImg(null);
-          
-
-      //}
-      
-    };
+    
 
     // Add event listener for the popstate event on the window object
     window.addEventListener('popstate', handleBackButton);
@@ -159,16 +158,19 @@ function ImagesPage() {
           {
             loadedImages.map((item,index)=>(
               <div key={index} className='wrapper-images'>
-                <LazyLoadImage src={item.original} onClick={()=>handleClick(item,index)}  effect="blur"/>
+                <LazyLoadImage src={item.thumbnail} placeholderSrc={PlaceholderImage}
+                    effect="blur" onClick={()=>handleClick(item,index)}/>
               </div>
             ))
           }
-          <div>
+          <div> 
             {clickedImg && (
               <Modal
                 clickedImg={clickedImg}
                 setClickedImg={setClickedImg}
                 clickedUrl={clickedUrl}
+                handleBackButton = {handleBackButton}
+                
               />
             )}
           </div>
