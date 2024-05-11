@@ -753,7 +753,7 @@ app.get('/images/:eventName/:userId/:pageNo', async (req, res) => {
      const pageNo =  req.params.pageNo;
      logger.info("Image are being fetched for event of pageNo -> "+eventName+"; userId -> "+userId +"; pageNo -> "+pageNo);
 
-     const pageSize = 20;
+     const pageSize = 21;
      const start = (pageNo - 1) * pageSize;
      const end = start + pageSize;
 
@@ -770,18 +770,20 @@ app.get('/images/:eventName/:userId/:pageNo', async (req, res) => {
     const result = await userEventImages(eventName,userId);
  
 
-      const imagesPromises = result.Items.slice(start, end).map(async file => {
-        try {
-          const imagekey=file.s3_url.split("amazonaws.com/")[1];
-          const imageData = await s3.getObject({
-              Bucket: imagesBucketName,
-              Key:imagekey
-          }).promise();
 
-      const resizedImageBuffer = await sharp(imageData.Body)
-      .resize(500,500)
-      .jpeg({ quality: 90, force: true })
-      .toBuffer();
+    logger.info(result)
+      const imagesPromises = result.Items.slice(start, end).map(async file => {
+      //   try {
+      //     const imagekey=file.s3_url.split("amazonaws.com/")[1];
+      //     const imageData = await s3.getObject({
+      //         Bucket: imagesBucketName,
+      //         Key:imagekey
+      //     }).promise();
+
+      // const resizedImageBuffer = await sharp(imageData.Body)
+      // .resize(500,500)
+      // .jpeg({ quality: 90, force: true })
+      // .toBuffer();
         
 
         // // Convert the image to base64 with updated metadata
@@ -794,16 +796,12 @@ app.get('/images/:eventName/:userId/:pageNo', async (req, res) => {
         // Convert image data to base64
        
           const base64ImageData =  {
-            "url": "https://flashbackusercollection.s3.ap-south-1.amazonaws.com/"+`${imagekey}`,
-           "thumbnail":`data:image/jpeg;base64,${resizedImageBuffer.toString('base64')}`,
-           "imageData":`data:image/jpeg;base64,${imageData.Body.toString('base64')}`
+            "url": file.s3_url,
+           "thumbnailUrl":"https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/"+file.s3_url.split("amazonaws.com/")[1],
          }
          console.log(base64ImageData.url);
           return base64ImageData;
-      }  catch (err) {
-          logger.error("Error fetching image: " + file.Key, err);
-          return null; // Or handle the error as per your application's need
-      }
+      
     });
       const images = await Promise.all(imagesPromises);
       logger.info("Sucessfully fetched images");
@@ -1117,15 +1115,15 @@ app.post('/downloadImage', async (req, res) => {
  
         try {
           
-          logger.info("Image downloading started from cloud: " + imageUrl);
+          logger.info("Image downloading started from cloud: " +imagesBucketName+ "-> "+ imageUrl);
           const imageData = await s3.getObject({
-              Bucket: bucketName,
+              Bucket: imagesBucketName,
               Key: imageUrl
           }).promise();
 
           logger.info("Image downloaded from cloud: " + imageUrl);
          // res.json(imageData.Body.toString('base64'));
-          res.json(`data:${imageUrl};base64,${imageData.Body.toString('base64')}`);
+          res.json(`data:image/jpeg;base64,${imageData.Body.toString('base64')}`);
       }  catch (err) {
           logger.error("Error downloading image: "+imageUrl, err);
           res.status(500).send('Error getting images from S3');
@@ -1254,7 +1252,7 @@ app.post('/downloadImage', async (req, res) => {
       app.post('/api/resize-copy-images', async (req, res) => {
         try {
             const sourceBucket = "flashbackusercollection";
-            const sourceFolder = "Aarthi_Vinay_19122021";
+            const sourceFolder = "Jahnavi_Vaishnavi_SC_28042024";
             const destinationBucket = "flashbackimagesthumbnail";
     
             let continuationToken = null;

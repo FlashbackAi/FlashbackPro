@@ -35,10 +35,13 @@ function ImagesPage() {
   const [clickedUrl, setClickedUrl] = useState(null);
   const handleClick = (item,index) =>{
 
+    //console.log(item)
     setCurrentIndex(index);
     setClickedImg(item.original);
-    setClickedUrl(item.url)
-    window.history.pushState({ id: 1 }, null, '?image=img');
+    const imgName =  item.original.split("amazonaws.com/")[1];
+    setClickedUrl(imgName)
+    window.history.pushState({ id: 1 }, null, '?image='+`${imgName}`);
+    //window.history.pushState({ id: 1 }, null, '?image');
   };
 
 
@@ -52,9 +55,8 @@ function ImagesPage() {
         const response = await axios.get(`${serverIP}/images/${eventName}/${userId}/${currentPage}`);
         if (response.status === 200) {
           const formattedImages = response.data.images.map((img) => ({
-            original: img.imageData,
-            thumbnail: img.thumbnail,
-            url: img.url
+            original: img.url,
+            thumbnail: img.thumbnailUrl
           }));
           setImages(prevImages => [...prevImages, ...formattedImages]);
           if(currentPage === 1)
@@ -158,7 +160,7 @@ function ImagesPage() {
           {
             loadedImages.map((item,index)=>(
               <div key={index} className='wrapper-images'>
-                <LazyLoadImage src={item.url} placeholderSrc={PlaceholderImage}
+                <LazyLoadImage src={item.thumbnail} placeholderSrc={PlaceholderImage}
                     effect="blur" onClick={()=>handleClick(item,index)}/>
               </div>
             ))
