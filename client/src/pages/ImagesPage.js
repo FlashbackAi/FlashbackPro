@@ -158,7 +158,7 @@ function ImagesPage() {
           {
             loadedImages.map((item,index)=>(
               <div key={index} className='wrapper-images'>
-                <LazyLoadImage src={item.thumbnail} placeholderSrc={PlaceholderImage}
+                <LazyLoadImage src={item.url} placeholderSrc={PlaceholderImage}
                     effect="blur" onClick={()=>handleClick(item,index)}/>
               </div>
             ))
