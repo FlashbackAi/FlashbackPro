@@ -16,6 +16,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const base64 = require('base64-js');
 const { Readable } = require('stream');
+const axios = require('axios');
 
 
 app.use(cors()); // Allow cross-origin requests
@@ -279,6 +280,60 @@ app.post('/confirmUser', function(req, res) {
 //   });
 // });
 
+app.post('/getPeopleThumbnails', async (req, res) => {
+  try {
+    const { eventName } = req.body;
+
+    console.log('Received a request for the event:', eventName);
+
+    // Scan the table with the event name and get all records
+    const params = {
+      TableName: indexedDataTableName,
+      FilterExpression: 'folder_name = :eventName',
+      ExpressionAttributeValues: {
+        ':eventName': eventName
+      }
+    };
+
+    const data = await docClient.scan(params).promise();
+
+    // Process the data to get thumbnails for each unique user ID
+    const thumbnails = [];
+    const userIdCounts = {};
+
+    for (const item of data.Items) {
+      const userId = item.user_id;
+
+      if (!thumbnails.some(thumbnail => thumbnail.userId === userId)) {
+        console.log('Getting the thumbnail for the user:', userId);
+        const s3Url = item.s3_url;
+
+        thumbnails.push({
+          userId,
+          s3Url,
+          count: 1
+        });
+
+        userIdCounts[userId] = 1; // Initialize count to 1
+      } else {
+        userIdCounts[userId]++; // Increment count
+        thumbnails.find(thumbnail => thumbnail.userId === userId).count++;
+
+      }
+    }
+
+    // Sort thumbnails by the count of occurrences of each user ID (most appeared to least appeared)
+    thumbnails.sort((a, b) => userIdCounts[b.userId] - userIdCounts[a.userId]);
+    const totalUniqueUserIds = Object.keys(userIdCounts).length;
+
+    res.json({ thumbnails });
+  } catch (error) {
+    console.error('Error fetching thumbnails:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+
 app.get('/fetch-events', async (req, res) => {
   try {
     const params = {
@@ -447,8 +502,8 @@ async function searchUsersByImage(portraitS3Url, phoneNumber) {
       Image: {
         Bytes: Buffer.from(croppedBase64EncodedImage, 'base64') // Convert the base64-encoded image to a Buffer
       },
-      MaxUsers: 2,
-      UserMatchThreshold: 99
+      MaxUsers: 1,
+      UserMatchThreshold: 90
     };
 
     // Call the searchUsersByImage operation

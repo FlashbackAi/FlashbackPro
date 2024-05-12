@@ -7,6 +7,7 @@ import Registration from "./pages/Registration";
 import Login from "./pages/Login";
 import LoadingSpinner from "./pages/LoadingSpinner";
 import Admin from "./pages/Admin";
+import ShareEvents from "./pages/ShareEvents";
 import Profile from "./pages/Profile";
 import ForgotPassword from "./pages/ForgotPassword";
 import { useEffect, useState } from "react";
@@ -84,6 +85,9 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/forgotPassword" element={<ForgotPassword />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/admin/ShareEvents" element={<ShareEvents />}>
+              <Route path="/admin/ShareEvents/:eventName/people" element={<ShareEvents />} />
+            </Route>
             {/* <Route path="/" element={<ProtectedRoute><CreateFlashBack/></ProtectedRoute>} /> */}
             <Route path="/home" element={<Home/>}></Route> 
             {/* <Route path="/home" element={<ProtectedRoute><Home/></ProtectedRoute>}></Route> */}
