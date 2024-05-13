@@ -857,7 +857,7 @@ End of Sample */
 .wrapper {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); /* Three images per row, each with a minimum width of 300px */
-  /* gap: 5; Gap between grid items */
+    gap: .65em; /*Gap between grid items */ 
   background-size: 8em;
 }
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect} from 'react';
 import { useParams } from 'react-router-dom';
 import axios from "axios";
 // import ImageGallery from 'react-image-gallery';
@@ -17,26 +17,20 @@ function ImagesPage() {
   const { eventName,userId } = useParams();
   const [images, setImages] = useState([]);
   const username = sessionStorage.getItem("username");
-  const galleryRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchTimeout, setFetchTimeout] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+  //const [currentPage, setCurrentPage] = useState(1);
   const [totalImages, setTotalImages] = useState(null);
-  const IMAGES_TO_LOAD = 20;
-  const [loadedImages, setLoadedImages] = useState([]);
+  const [lastEvaluatedKey, setLastEvaluatedKey] = useState();
   const history = useNavigate();
 
-
-  
-
-
   const [clickedImg,setClickedImg] = useState(null);
-  const [currentIndex, setCurrentIndex] = useState(null);
+ // const [currentIndex, setCurrentIndex] = useState(null);
   const [clickedUrl, setClickedUrl] = useState(null);
   const handleClick = (item,index) =>{
 
     //console.log(item)
-    setCurrentIndex(index);
+    //setCurrentIndex(index);
     setClickedImg(item.original);
     const imgName =  item.original.split("amazonaws.com/")[1];
     setClickedUrl(imgName)
@@ -48,23 +42,25 @@ function ImagesPage() {
 
   useEffect(() => {
     const fetchImages = async () => {
-      if(images.length==0)
+      if(images.length === 0)
       setIsLoading(true);
 
       try {
-        const response = await axios.get(`${serverIP}/images/${eventName}/${userId}/${currentPage}`);
+        const response = await axios.post(`${serverIP}/images/${eventName}/${userId}  `,{ lastEvaluatedKey: lastEvaluatedKey});
         if (response.status === 200) {
           const formattedImages = response.data.images.map((img) => ({
             original: img.url,
             thumbnail: img.thumbnailUrl
           }));
           setImages(prevImages => [...prevImages, ...formattedImages]);
-          if(currentPage === 1)
-            {
-              console.log("initial hit");
-              setLoadedImages(formattedImages)
-            }
-          setCurrentPage(prevPage => prevPage + 1);
+          console.log(response.data.lastEvaluatedKey)
+          setLastEvaluatedKey(response.data.lastEvaluatedKey);
+          // if(currentPage === 1)
+          //   {
+          //     console.log("initial hit");
+          //     setLoadedImages(formattedImages)
+          //   }
+          // setCurrentPage(prevPage => prevPage + 1);
           if (!totalImages) {
             setTotalImages(response.data.totalImages);
       
@@ -82,16 +78,21 @@ function ImagesPage() {
       }
     };
 
-    if (images.length < totalImages) {
+    if (lastEvaluatedKey) {
       fetchImages();
     }
     if(!totalImages)
-    {
-      fetchImages();
+      {
+        fetchImages();
+      }
+    else{
+      console.log("end");
+      console.log(images.length)
     }
 
+
     // Intersection Observer...
-  }, [eventName, userId, serverIP, isLoading, fetchTimeout, currentPage, totalImages]);
+  }, [eventName, userId, serverIP, isLoading, fetchTimeout, totalImages,lastEvaluatedKey,images]);
 
   const handleBackButton = () => {
     // Check if the navigation was caused by the back button
@@ -134,31 +135,31 @@ function ImagesPage() {
     };
   }, [history]);
 
-  const handleScroll = () => {
+  // const handleScroll = () => {
 
-    if (
-      window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight
-    ) {
-      setLoadedImages(prevLoadedImages => [...prevLoadedImages, ...images.slice(prevLoadedImages.length, prevLoadedImages.length + IMAGES_TO_LOAD)]);
+  //   if (
+  //     window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight
+  //   ) {
+  //     setLoadedImages(prevLoadedImages => [...prevLoadedImages, ...images.slice(prevLoadedImages.length, prevLoadedImages.length + IMAGES_TO_LOAD)]);
 
-    }
-  };
+  //   }
+  // };
 
-  useEffect(() => {
-    window.addEventListener('scroll', handleScroll);
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, [images,loadedImages]);
+  // useEffect(() => {
+  //   window.addEventListener('scroll', handleScroll);
+  //   return () => {
+  //     window.removeEventListener('scroll', handleScroll);
+  //   };
+  // }, [images,loadedImages]);
 
   return (
     <div>
       {isLoading ? (
        <LoadingSpinner />// You can replace this with a spinner or loader component
-      ) : loadedImages.length > 0 ? (
+      ) : images.length > 0 ? (
         <div className='wrapper'>
           {
-            loadedImages.map((item,index)=>(
+            images.map((item,index)=>(
               <div key={index} className='wrapper-images'>
                 <LazyLoadImage src={item.thumbnail} placeholderSrc={PlaceholderImage}
                     effect="blur" onClick={()=>handleClick(item,index)}/>

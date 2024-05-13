@@ -800,17 +800,17 @@ async function addFolderToUser(folderName,username,files_length){
   return res;
 }
 
-app.get('/images/:eventName/:userId/:pageNo', async (req, res) => {
+app.post('/images/:eventName/:userId', async (req, res) => {
   try {
    
      const eventName = req.params.eventName;
      const userId = req.params.userId;
-     const pageNo =  req.params.pageNo;
-     logger.info("Image are being fetched for event of pageNo -> "+eventName+"; userId -> "+userId +"; pageNo -> "+pageNo);
+     const lastEvaluatedKey = req.body.lastEvaluatedKey;
+     logger.info("Image are being fetched for event of pageNo -> "+eventName+"; userId -> "+userId +"; pageNo -> "+lastEvaluatedKey);
 
-     const pageSize = 21;
-     const start = (pageNo - 1) * pageSize;
-     const end = start + pageSize;
+    //  const pageSize = 21;
+    //  const start = (pageNo - 1) * pageSize;
+    //  const end = start + pageSize;
 
     //  const params = {
     //   TableName: userOutputTable,
@@ -822,12 +822,8 @@ app.get('/images/:eventName/:userId/:pageNo', async (req, res) => {
     //   }
     // };
  // logger.info(params)
-    const result = await userEventImages(eventName,userId);
- 
-
-
-    logger.info(result)
-      const imagesPromises = result.Items.slice(start, end).map(async file => {
+    const result = await userEventImages(eventName,userId,lastEvaluatedKey);
+      const imagesPromises = result.Items.map(async file => {
       //   try {
       //     const imagekey=file.s3_url.split("amazonaws.com/")[1];
       //     const imageData = await s3.getObject({
@@ -860,35 +856,37 @@ app.get('/images/:eventName/:userId/:pageNo', async (req, res) => {
     });
       const images = await Promise.all(imagesPromises);
       logger.info("Sucessfully fetched images");
-      res.json({"images":images, 'totalImages':result.Count});
+      res.json({"images":images, 'totalImages':result.Count,'lastEvaluatedKey':result.LastEvaluatedKey});
   } catch (err) {
      logger.info("Error in S3 get", err);
       res.status(500).send('Error getting images from S3');
   }
 });
 
-async function userEventImages(eventName,userId){
+async function userEventImages(eventName,userId,lastEvaluatedKey){
 
-  try {
-   
- // console.log(folderName)
-  const params = {
-    TableName: userOutputTable,
-    IndexName: 'unique_uid-event_name-index', // Specify the GSI name
-    KeyConditionExpression: 'unique_uid = :partitionKey AND event_name = :sortKey', // Specify the GSI partition and sort key
-    ExpressionAttributeValues: {
-      ':partitionKey': userId, // Specify the value for the partition key
-      ':sortKey': eventName // Specify the value for the sort key
+      try {
+      const params = {
+        TableName: userOutputTable,
+        IndexName: 'unique_uid-event_name-index', // Specify the GSI name
+        KeyConditionExpression: 'unique_uid = :partitionKey AND event_name = :sortKey', // Specify the GSI partition and sort key
+        ExpressionAttributeValues: {
+          ':partitionKey': userId, // Specify the value for the partition key
+          ':sortKey': eventName // Specify the value for the sort key
+        },
+        Limit: 20
+      };
+      if(lastEvaluatedKey){
+        params.ExclusiveStartKey = lastEvaluatedKey;
+      }
+      const result = await docClient.query(params).promise();
+      logger.info('total images fetched for the user -> '+userId+'  in event -> '+eventName +' : '+result.Count);
+      return result;
     }
-  };
-  const result = await docClient.query(params).promise();
-  logger.info('total images fetched for the user -> '+userId+'  in event -> '+eventName +' : '+result.Count);
-  return result;
-}
-catch (err) {
-  logger.info(err)
-  return err;
-}
+    catch (err) {
+      logger.info(err)
+      return err;
+    }
   
 }
 
