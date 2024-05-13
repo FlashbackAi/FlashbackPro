@@ -1304,8 +1304,8 @@ app.post('/downloadImage', async (req, res) => {
       // Route to resize and copy images from a specific subfolder of one S3 bucket to another
       app.post('/api/resize-copy-images', async (req, res) => {
         try {
-            const sourceBucket = "flashbackusercollection";
-            const sourceFolder = "Jahnavi_Vaishnavi_SC_28042024";
+            const sourceBucket = "flashbackprathimacollection";
+            const sourceFolder = "Convocation_PrathimaCollege";
             const destinationBucket = "flashbackimagesthumbnail";
     
             let continuationToken = null;
