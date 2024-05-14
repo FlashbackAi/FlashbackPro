@@ -1,0 +1,33 @@
+header {
+    padding: 0.8em 2rem;
+    margin-bottom: 1em;
+    display: flex;
+    justify-content: center;
+    /* background-color: red; */
+  }
+  
+  header h2 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.1em;
+    color: #bbb6b6;
+    font-size: 2em;
+    position: relative;
+    width: fit-content;
+  }
+  
+  header h2::after {
+    content: "Create & Share Memories";
+    position: absolute;
+    bottom: -1em;
+    display: block;
+    text-align: center;
+    font-size: 0.3em;
+    letter-spacing: 0.1em;
+  }
+  
+  header img {
+    width: 1.1em;
+    height: 1em;
+  }
