@@ -40,6 +40,7 @@ function ImagesPage() {
 
 
 
+
   useEffect(() => {
     const fetchImages = async () => {
       if(images.length === 0)
@@ -93,6 +94,23 @@ function ImagesPage() {
 
     // Intersection Observer...
   }, [eventName, userId, serverIP, isLoading, fetchTimeout, totalImages,lastEvaluatedKey,images]);
+
+
+  useEffect(() => {
+    if (images.length > 0) {
+      console.log(images)
+      const firstImageUrl = images[0].url; // Assuming images is an array of objects with a 'url' property
+      setClickedImg(firstImageUrl);
+     // setClickedUrl(firstImageUrl.split("amazonaws.com/")[1]); // Extracting the image name from the URL
+      
+      // Dynamically set og:image meta tag
+      const ogImageMeta = document.createElement('meta');
+      ogImageMeta.setAttribute('property', 'og:image');
+      ogImageMeta.setAttribute('content', firstImageUrl);
+      document.head.appendChild(ogImageMeta);
+    };
+  }, [images]);
+
 
   const handleBackButton = () => {
     // Check if the navigation was caused by the back button
