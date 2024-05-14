@@ -812,10 +812,11 @@ app.get('/photos/:eventName/:userId', async (req, res) => {
 
   // Construct the user-specific image URL based on the parameters
   const userImage =  await userEventImages(eventName,userId,'');
-  const userImageUrl = userImage.items[0].s3_url;
+  const userImageUrl = userImage.Items[0].s3_url;
+  logger.info("eventName : "+eventName+" userId : "+ " image rendering");
 
   // Read the index.html file
-  const indexHtmlPath = path.resolve(__dirname, '..', 'build', 'index.html');
+  const indexHtmlPath = path.resolve(__dirname, '..', 'client//build', 'index.html');
   fs.readFile(indexHtmlPath, 'utf8', (err, data) => {
     if (err) {
       console.error('Error reading index.html:', err);
