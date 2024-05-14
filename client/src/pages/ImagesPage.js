@@ -87,6 +87,9 @@ function ImagesPage() {
       {
         fetchImages();
       }
+      if(totalImages === 0){
+        setFetchTimeout(true)
+      }
     else{
       console.log("end");
       console.log(images.length)

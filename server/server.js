@@ -17,7 +17,9 @@ const PORT = process.env.PORT || 5000;
 const base64 = require('base64-js');
 const { Readable } = require('stream');
 const axios = require('axios');
-
+const ReactDOMServer = require('react-dom/server');
+const React = require('react');
+//const App = require('..\\client');
 
 app.use(cors()); // Allow cross-origin requests
 app.use(express.json());
@@ -800,6 +802,44 @@ async function addFolderToUser(folderName,username,files_length){
   return res;
 }
 
+
+// Serve static assets (e.g., CSS, JS, images)
+app.use(express.static(path.resolve(__dirname, '..', 'client//build')));
+
+// Define a route to render the React app
+app.get('/photos/:eventName/:userId', async (req, res) => {
+  const { eventName, userId } = req.params;
+
+  // Construct the user-specific image URL based on the parameters
+  const userImage =  await userEventImages(eventName,userId,'');
+  const userImageUrl = userImage.items[0].s3_url;
+
+  // Read the index.html file
+  const indexHtmlPath = path.resolve(__dirname, '..', 'build', 'index.html');
+  fs.readFile(indexHtmlPath, 'utf8', (err, data) => {
+    if (err) {
+      console.error('Error reading index.html:', err);
+      return res.status(500).send('Internal Server Error');
+    }
+
+    // Modify the HTML content to include the Open Graph meta tags
+    const modifiedHtml = data.replace(
+      '<!-- SSR_META_TAGS -->',
+      `
+      <meta property="og:title" content="Your Open Graph Title" />
+      <meta property="og:description" content="Your Open Graph Description" />
+      <meta property="og:image" content="${userImageUrl}" />
+      <!-- Add other Open Graph meta tags here -->
+      `
+    );
+
+    // Send the modified HTML content as the server response
+    return res.send(modifiedHtml.replace('<div id="root"></div>', `<div id="root">${appHtml}</div>`));
+  });
+});
+
+
+
 app.post('/images/:eventName/:userId', async (req, res) => {
   try {
    
@@ -846,11 +886,18 @@ app.post('/images/:eventName/:userId', async (req, res) => {
         //logger.info(resizedImageData)
         // Convert image data to base64
        
-          const base64ImageData =  {
-            "url": file.s3_url,
-           "thumbnailUrl":"https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/"+file.s3_url.split("amazonaws.com/")[1],
+           // Convert image data to base64
+        const base64ImageData =  {
+          "thumbnailUrl":"https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/"+file.s3_url.split("amazonaws.com/")[1]
+        }
+         if(eventName === 'Convocation_PrathimaCollege'){
+           base64ImageData.url = "https://flashbackprathimacollection.s3.ap-south-1.amazonaws.com/"+file.s3_url.split("amazonaws.com/")[1];
+ 
          }
-         console.log(base64ImageData.url);
+         else{
+           base64ImageData.url = file.s3_url;
+         }
+         //console.log(base64ImageData.url);
           return base64ImageData;
       
     });
