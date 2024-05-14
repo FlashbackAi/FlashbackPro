@@ -3,8 +3,8 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 90px; /* Adjust the width as needed */
-  height: 90px; /* Adjust the height as needed */
+  width: 15em; /* Adjust the width as needed */
+  height: 15em; /* Adjust the height as needed */
   background: none; /* Remove background */
 }
 
