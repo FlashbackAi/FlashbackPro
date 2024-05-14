@@ -852,7 +852,8 @@ End of Sample */
   ); /* Three images per row, each with a minimum width of 300px */
   gap: 0.65em; /*Gap between grid items */
   background-size: 8em;
-  width: calc(100% - 1.3em);
+  width: calc(100% - 1.4em);
+  margin-left: 0.5em;
 }
 
 .wrapper-images {
@@ -862,7 +863,7 @@ End of Sample */
 }
 
 .wrapper-images img {
-  width: 8em;
+  width: 7.5em;
   height: 8em;
   object-fit: cover;
 }
