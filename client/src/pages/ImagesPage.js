@@ -43,6 +43,7 @@ function ImagesPage() {
 
   useEffect(() => {
     const fetchImages = async () => {
+      
       if(images.length === 0)
       setIsLoading(true);
 
@@ -82,7 +83,7 @@ function ImagesPage() {
     if (lastEvaluatedKey) {
       fetchImages();
     }
-    if(!totalImages)
+    if(!totalImages  && totalImages!=0)
       {
         fetchImages();
       }
