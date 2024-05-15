@@ -804,40 +804,40 @@ async function addFolderToUser(folderName,username,files_length){
 
 
 // Serve static assets (e.g., CSS, JS, images)
-app.use(express.static(path.resolve(__dirname, '..', 'client//build')));
+//app.use(express.static(path.resolve(__dirname, '..', 'client//build')));
 
 // Define a route to render the React app
-app.get('/photos/:eventName/:userId', async (req, res) => {
-  const { eventName, userId } = req.params;
+// app.get('/photos/:eventName/:userId', async (req, res) => {
+//   const { eventName, userId } = req.params;
 
-  // Construct the user-specific image URL based on the parameters
-  const userImage =  await userEventImages(eventName,userId,'');
-  const userImageUrl = userImage.Items[0].s3_url;
-  logger.info("eventName : "+eventName+" userId : "+ " image rendering");
+//   // Construct the user-specific image URL based on the parameters
+//   const userImage =  await userEventImages(eventName,userId,'');
+//   const userImageUrl = userImage.Items[0].s3_url;
+//   logger.info("eventName : "+eventName+" userId : "+ " image rendering");
 
-  // Read the index.html file
-  const indexHtmlPath = path.resolve(__dirname, '..', 'client//build', 'index.html');
-  fs.readFile(indexHtmlPath, 'utf8', (err, data) => {
-    if (err) {
-      console.error('Error reading index.html:', err);
-      return res.status(500).send('Internal Server Error');
-    }
+//   // Read the index.html file
+//   const indexHtmlPath = path.resolve(__dirname, '..', 'client//build', 'index.html');
+//   fs.readFile(indexHtmlPath, 'utf8', (err, data) => {
+//     if (err) {
+//       console.error('Error reading index.html:', err);
+//       return res.status(500).send('Internal Server Error');
+//     }
 
-    // Modify the HTML content to include the Open Graph meta tags
-    const modifiedHtml = data.replace(
-      '<!-- SSR_META_TAGS -->',
-      `
-      <meta property="og:title" content="Your Open Graph Title" />
-      <meta property="og:description" content="Your Open Graph Description" />
-      <meta property="og:image" content="${userImageUrl}" />
-      <!-- Add other Open Graph meta tags here -->
-      `
-    );
+//     // Modify the HTML content to include the Open Graph meta tags
+//     const modifiedHtml = data.replace(
+//       '<!-- SSR_META_TAGS -->',
+//       `
+//       <meta property="og:title" content="Flashabck" />
+//       <meta property="og:description" content="Create and Share Memories" />
+//       <meta property="og:image" content="${userImageUrl}" />
+//       <!-- Add other Open Graph meta tags here -->
+//       `
+//     );
 
-    // Send the modified HTML content as the server response
-    return res.send(modifiedHtml.replace('<div id="root"></div>', `<div id="root">${appHtml}</div>`));
-  });
-});
+//     // Send the modified HTML content as the server response
+//     return res.send(modifiedHtml.replace('<div id="root"></div>', `<div id="root">${appHtml}</div>`));
+//   });
+// });
 
 
 
@@ -1217,8 +1217,14 @@ app.post('/downloadImage', async (req, res) => {
         try {
           
           logger.info("Image downloading started from cloud: " +imagesBucketName+ "-> "+ imageUrl);
+          const eventName = imageUrl.split('/')[0]
+          logger.info("Image downloading started from cloud: " +imagesBucketName+ "-> "+ imageUrl +"for event - >"+eventName);
+          const bucket = imagesBucketName
+          if(eventName === 'Convocation_PrathimaCollege'){
+               bucket = 'flashbackprathimacollection'
+          }
           const imageData = await s3.getObject({
-              Bucket: imagesBucketName,
+              Bucket: bucket,
               Key: imageUrl
           }).promise();
 
