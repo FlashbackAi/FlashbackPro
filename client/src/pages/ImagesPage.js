@@ -109,9 +109,9 @@ function ImagesPage() {
   ]);
 
   useEffect(() => {
-    if (images.length > 0) {
-      console.log(images);
-      const firstImageUrl = images[0].thumbnail; // Assuming images is an array of objects with a 'url' property
+    // if (images.length > 0) {
+      // console.log(images);
+      // const firstImageUrl = images[0].thumbnail; // Assuming images is an array of objects with a 'url' property
       // setClickedImg(firstImageUrl);
       // setClickedUrl(firstImageUrl.split("amazonaws.com/")[1]); // Extracting the image name from the URL
 
@@ -125,18 +125,20 @@ function ImagesPage() {
       );
       if (!ogImageMeta) {
         ogImageMeta = document.createElement("meta");
-        const ogTypeMeta = document.createElement("meta");
         ogImageMeta.setAttribute("property", "og:image");
-        ogImageMeta.setAttribute("property", "og:type");
         ogImageMeta.setAttribute("name", "flashback-og:image");
-        ogImageMeta.setAttribute("content", firstImageUrl);
         ogImageMeta.setAttribute("itemprop", "image");
-        ogImageMeta.setAttribute("content", "website");
+        ogImageMeta.setAttribute("content", "https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/Aarthi_Vinay_19122021/Ec_E__DSC1682.jpg");
         document.head.appendChild(ogImageMeta);
-        document.head.appendChild(ogTypeMeta);
+        // const ogTypeMeta = document.createElement("meta");
+        // ogTypeMeta.setAttribute("property", "og:type");
+        // ogTypeMeta.setAttribute("name", "flashback-og:type");
+        // ogTypeMeta.setAttribute("content", "website");
+        // document.head.appendChild(ogTypeMeta);
       }
-    }
-  }, [images]);
+    // }
+  // }, [images]); // checking with hardcoding on load
+  }, [eventName]);
 
   const handleBackButton = () => {
     // Check if the navigation was caused by the back button
