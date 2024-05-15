@@ -1216,13 +1216,15 @@ app.post('/downloadImage', async (req, res) => {
  
         try {
           
-          logger.info("Image downloading started from cloud: " +imagesBucketName+ "-> "+ imageUrl);
+          
           const eventName = imageUrl.split('/')[0];
           logger.info("Image downloading started from cloud: " +imagesBucketName+ "-> "+ imageUrl +"for event - >"+eventName);
-          const bucket = imagesBucketName
+          let bucket = imagesBucketName
           if(eventName === 'Convocation_PrathimaCollege'){
                bucket = 'flashbackprathimacollection'
+               logger.info(bucket);
           }
+          
           const imageData = await s3.getObject({
               Bucket: bucket,
               Key: imageUrl
