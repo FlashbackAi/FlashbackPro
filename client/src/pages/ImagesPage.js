@@ -111,7 +111,7 @@ function ImagesPage() {
   useEffect(() => {
     if (images.length > 0) {
       console.log(images);
-      const firstImageUrl = images[0].thumbnail; // Assuming images is an array of objects with a 'url' property
+      const firstImageUrl = images[0].original; // Assuming images is an array of objects with a 'url' property
       // setClickedImg(firstImageUrl);
       // setClickedUrl(firstImageUrl.split("amazonaws.com/")[1]); // Extracting the image name from the URL
 
@@ -214,7 +214,7 @@ function ImagesPage() {
   }, []);
 
   const handleFavourite = ()=>{
-    
+
   }
 
   return (
