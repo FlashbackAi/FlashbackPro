@@ -2,14 +2,14 @@
   position: fixed;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-40%, -40%);
   width: 15em; /* Adjust the width as needed */
   height: 15em; /* Adjust the height as needed */
   background: none; /* Remove background */
 }
 
 .loading-spinner img {
-  width: 100%;
+  width: 70%;
   height: 30%;
   animation: spin 1s linear infinite;
 }

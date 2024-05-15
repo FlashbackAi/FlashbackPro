@@ -1,5 +1,5 @@
 import React from "react";
-import loadingImage from "../Media/logo.png"; 
+import loadingImage from "../Media/logoCropped.png"; 
 import "../LoadingSpinner.css";
 
 const LoadingSpinner = () => {

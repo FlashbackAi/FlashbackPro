@@ -9,13 +9,13 @@
 body {
   margin: 0;
   padding: 0;
-    /*background-image:url("./Media/logo.svg");*/
-    /*background-repeat: repeat-x;*/
-    /*background-size: 10 em;*/
+  /*background-image:url("./Media/logo.svg");*/
+  /*background-repeat: repeat-x;*/
+  /*background-size: 10 em;*/
 }
 
-button{
-    cursor: pointer;
+button {
+  cursor: pointer;
 }
 
 .post {
@@ -142,7 +142,7 @@ span {
   display: flex;
   align-items: center;
   font-family: Arial, Helvetica, sans-serif;
-    position: fixed;
+  position: fixed;
 }
 .navbar .links {
   flex: 50%;
@@ -263,15 +263,15 @@ button {
 
 .loginContainer {
   display: inline-block;
-    float: left;
+  float: left;
   align-items: center;
   flex-direction: column;
   width: 100%;
   height: 100%;
   padding-left: 100px;
-    padding-right: 100px;
-    padding-top: 100px;
-    padding-bottom: 100px;
+  padding-right: 100px;
+  padding-top: 100px;
+  padding-bottom: 100px;
 }
 
 .loginContainer input,
@@ -297,7 +297,7 @@ button {
 .dark-mode {
   background-color: #1c1c1c;
   color: #f0f0f0;
-  font-family: 'Open Sans', sans-serif;
+  font-family: "Open Sans", sans-serif;
 }
 
 /* toggle switch */
@@ -309,15 +309,15 @@ button {
   z-index: 1000;
   width: 60px;
   height: 34px;
- }
- 
- .toggle-switch input {
+}
+
+.toggle-switch input {
   opacity: 0;
   width: 0;
   height: 0;
- }
- 
- .slider {
+}
+
+.slider {
   position: absolute;
   cursor: pointer;
   top: 0;
@@ -325,11 +325,11 @@ button {
   right: 0;
   bottom: 0;
   background-color: #ccc;
-  -webkit-transition: .4s;
-  transition: .4s;
- }
- 
- .slider:before {
+  -webkit-transition: 0.4s;
+  transition: 0.4s;
+}
+
+.slider:before {
   position: absolute;
   content: "";
   height: 26px;
@@ -337,29 +337,29 @@ button {
   left: 4px;
   bottom: 4px;
   background-color: white;
-  -webkit-transition: .4s;
-  transition: .4s;
- }
- 
- input:checked + .slider {
-  background-color: #2196F3;
- }
- 
- input:checked + .slider:before {
+  -webkit-transition: 0.4s;
+  transition: 0.4s;
+}
+
+input:checked + .slider {
+  background-color: #2196f3;
+}
+
+input:checked + .slider:before {
   -webkit-transform: translateX(26px);
   -ms-transform: translateX(26px);
   transform: translateX(26px);
- }
- 
- .slider.round {
-  border-radius: 34px;
- }
- 
- .slider.round:before {
-  border-radius: 50%;
- }
+}
 
- .Darktitle{
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+.Darktitle {
   position: fixed;
   top: 20px;
   font-size: 16px;
@@ -367,27 +367,24 @@ button {
   right: 70px;
   width: 60px;
   line-height: 1.2;
-
 }
 /*styling for Images to be displayed*/
 .imageGalleryContainer {
-    width: 30%;
-    max-height: 500px;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-    padding: 20px;
-    overflow-y: scroll;
-    float: right;
-
-
+  width: 30%;
+  max-height: 500px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  overflow-y: scroll;
+  float: right;
 }
 
 .imageGalleryContainer img {
   max-height: 300px; /* Adjust maximum width as needed */
   border-radius: 8px; /* Optional, for rounded corners */
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Optional, for a slight shadow */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Optional, for a slight shadow */
 }
 @media (max-width: 600px) {
   .imageGalleryContainer img {
@@ -395,155 +392,151 @@ button {
   }
 }
 
-
 /*New Registration & Login CSS */
 .login-form input {
-    display: block;
-    width: auto;
-    padding: 1em;
-    margin: 10px 0;
-    border-radius: 5px;
-    border: 1px solid #ddd;
+  display: block;
+  width: auto;
+  padding: 1em;
+  margin: 10px 0;
+  border-radius: 5px;
+  border: 1px solid #ddd;
 }
 
-
-.login-form input[type="checkbox"]{
+.login-form input[type="checkbox"] {
   display: block;
   width: auto;
   padding: 1em;
   border-radius: 5px;
   border: 1px solid #ddd;
 }
-.login-form a{
+.login-form a {
   display: block;
   width: auto;
   padding: 1em;
-  
 }
 
 .login-form button {
-    display: block;
-    width: 100%;
-    padding: 1em;
-    margin: 10px 0;
-    border: none;
-    border-radius: 5px;
-    background-color: #1877f2;
-    color: white;
-    cursor: pointer;
+  display: block;
+  width: 100%;
+  padding: 1em;
+  margin: 10px 0;
+  border: none;
+  border-radius: 5px;
+  background-color: #1877f2;
+  color: white;
+  cursor: pointer;
 }
 .login-form button[type="button"] {
-    background-color: #42b72a;
+  background-color: #42b72a;
 }
-.login-form label{
+.login-form label {
   display: flex;
 }
 
-.loginRight{
-    float: Right;
-    display: inline-block;
+.loginRight {
+  float: Right;
+  display: inline-block;
 }
-.loginLeft{
-    display: block;
-    max-width: 25em;
-    /*padding: 25%;*/
+.loginLeft {
+  display: block;
+  max-width: 25em;
+  /*padding: 25%;*/
 }
 
 /*Facebook Styled Registration & Login CSS */
-.loginBody{
-font-family: Arial, sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-
+.loginBody {
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
 }
 
 .login-form-container {
-    /*margin-left: 100px;*/
-    background: white;
-    padding: 30px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    width: max-content;
-    display: contents;
-    align-items: center;
+  /*margin-left: 100px;*/
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: max-content;
+  display: contents;
+  align-items: center;
 }
 
 .login-form {
-    display: inline-grid;
-    /*flex-direction: column;*/
-    /*padding: 10%;*/
-    max-width: 20em;
-    width: -webkit-fill-available;
+  display: inline-grid;
+  /*flex-direction: column;*/
+  /*padding: 10%;*/
+  max-width: 20em;
+  width: -webkit-fill-available;
 }
 
 .login-form input {
-    margin-bottom: 1em;
-    padding: 1em;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-    width: 100%;
-    width: -webkit-fill-available;
+  margin-bottom: 1em;
+  padding: 1em;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  width: 100%;
+  width: -webkit-fill-available;
 }
 
 .login-form button {
-    padding: 1em;
-    margin-bottom: 1em;
-    border: none;
-    border-radius: 0.5em;
-    font-size: 1em;
-    cursor: pointer;
+  padding: 1em;
+  margin-bottom: 1em;
+  border: none;
+  border-radius: 0.5em;
+  font-size: 1em;
+  cursor: pointer;
 }
 
 .login-form button[type="submit"] {
-    background-color: #1877f2;
-    color: white;
+  background-color: #1877f2;
+  color: white;
 }
 
 .login-form button[type="button"] {
-    background-color: #42b72a;
-    color: white;
+  background-color: #42b72a;
+  color: white;
 }
 
 .login-form a {
-    color: #1877f2;
-    text-decoration: none;
-    font-size: 1em;
+  color: #1877f2;
+  text-decoration: none;
+  font-size: 1em;
 }
 
 p {
-    text-align: center;
-    font-size: 1em;
-    color: grey;
-    margin-top: 2em;
+  text-align: center;
+  font-size: 1em;
+  color: grey;
+  margin-top: 2em;
 }
 
-.loginForgotPassword{
-    padding-left: 25%;
+.loginForgotPassword {
+  padding-left: 25%;
 }
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@700&display=swap');
-.loginLogo{
-    font-family: 'Open Sans', sans-serif; /* This is a placeholder; you'd need the actual font used by Facebook */
-    color: #1877f2; /* This is the Facebook blue */
-    font-size: 3em; /* Adjust the size as needed */
-    font-weight: 700; /* Facebook's logo is bold */
-    letter-spacing: -0.05em; /* Adjust letter spacing to closely match the logo */
-    height: fit-content;
-    width: fit-content;
-    max-width: 25em;
+@import url("https://fonts.googleapis.com/css2?family=Open+Sans:wght@700&display=swap");
+.loginLogo {
+  font-family: "Open Sans", sans-serif; /* This is a placeholder; you'd need the actual font used by Facebook */
+  color: #1877f2; /* This is the Facebook blue */
+  font-size: 3em; /* Adjust the size as needed */
+  font-weight: 700; /* Facebook's logo is bold */
+  letter-spacing: -0.05em; /* Adjust letter spacing to closely match the logo */
+  height: fit-content;
+  width: fit-content;
+  max-width: 25em;
 }
-.logoCaption{
-    font-size: 0.5em;
-    /* color: #1c1e21; */
-    font-family: monospace;
-    letter-spacing: 0.05em;
+.logoCaption {
+  font-size: 0.5em;
+  /* color: #1c1e21; */
+  font-family: monospace;
+  letter-spacing: 0.05em;
 }
 
-.Congrats{
+.Congrats {
   font-family: monospace; /* This is a placeholder; you'd need the actual font used by Facebook */
-  
+
   font-size: 2em; /* Adjust the size as needed */
   font-weight: 700; /* Facebook's logo is bold */
   letter-spacing: -0.05em; /* Adjust letter spacing to closely match the logo */
@@ -552,9 +545,9 @@ p {
   max-width: 25em;
 }
 
-.CongratsMessage{
+.CongratsMessage {
   font-family: monospace; /* This is a placeholder; you'd need the actual font used by Facebook */
-  
+
   font-size: 1em; /* Adjust the size as needed */
   font-weight: 700; /* Facebook's logo is bold */
   letter-spacing: -0.05em; /* Adjust letter spacing to closely match the logo */
@@ -563,12 +556,10 @@ p {
   max-width: 25em;
 }
 
-.webcam{
+.webcam {
   width: 250;
-  height: 400;   
+  height: 400;
 }
-
-
 
 .loader {
   border: 5px solid #f3f3f3; /* Light grey */
@@ -580,105 +571,105 @@ p {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
-
 .status-post-container {
-    background-color: white;
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    max-width: 500px;
-    margin: auto;
-    margin-top: 15%;
+  background-color: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  margin: auto;
+  margin-top: 15%;
 }
 
 #statusInput {
-    width: 80%;
-    height: 2em;
-    border: 1px solid #ccd0d5;
-    border-radius: 15px;
-    padding: 10px;
-    margin-bottom: 10px;
-    resize: none;
+  width: 80%;
+  height: 2em;
+  border: 1px solid #ccd0d5;
+  border-radius: 15px;
+  padding: 10px;
+  margin-bottom: 10px;
+  resize: none;
 }
 
 #fileInput {
-    display: block;
-    margin-bottom: 10px;
+  display: block;
+  margin-bottom: 10px;
 }
 
 #postButton {
-    background-color: #4267b2;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
+  background-color: #4267b2;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
 }
 
 #postButton:hover {
-    background-color: #365899;
+  background-color: #365899;
 }
 
-.navbar img{
-    max-height: 2 em;
+.navbar img {
+  max-height: 2 em;
 }
 
 /*Sample Code*/
 .collage {
-    /* background-image: url("/images/background.png"); */
-    position: relative;
-    width: 500px; /* Set to the desired width of your collage */
-    height: 300px; /* Set to the desired height of your collage */
-    touch-action: none;
-    overflow: hidden;
+  /* background-image: url("/images/background.png"); */
+  position: relative;
+  width: 500px; /* Set to the desired width of your collage */
+  height: 300px; /* Set to the desired height of your collage */
+  touch-action: none;
+  overflow: hidden;
 }
 
 .collage .background {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 50%; /* Half the width of the collage container */
-    height: 50%; /* Half the height of the collage container */
-    object-fit: cover; /* This ensures the images cover their area without distorting */
-    z-index: 1; /* Background images are behind the foreground */
-    touch-action: none;
-    overflow: hidden;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%; /* Half the width of the collage container */
+  height: 50%; /* Half the height of the collage container */
+  object-fit: cover; /* This ensures the images cover their area without distorting */
+  z-index: 1; /* Background images are behind the foreground */
+  touch-action: none;
+  overflow: hidden;
 }
 
 .collage .background:nth-child(2) {
-    left: 50%; /* Moves the second image to the right half */
+  left: 50%; /* Moves the second image to the right half */
 }
 
 .collage .background:nth-child(3) {
-    top: 50%; /* Moves the third image to the bottom left */
+  top: 50%; /* Moves the third image to the bottom left */
 }
 
 .collage .background:nth-child(4) {
-    top: 50%;
-    left: 50%; /* Moves the fourth image to the bottom right */
+  top: 50%;
+  left: 50%; /* Moves the fourth image to the bottom right */
 }
 
 .collage .foreground {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%; /* Foreground image covers the entire collage */
-    height: 100%;
-    z-index: 2; /* Ensures the foreground is on top */
-    pointer-events: none; 
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%; /* Foreground image covers the entire collage */
+  height: 100%;
+  z-index: 2; /* Ensures the foreground is on top */
+  pointer-events: none;
 }
- .background .image {
-   height: 100%;
-   width: 100%;
-   object-fit:cover;
+.background .image {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
 }
-
-
-
 
 /*pop up css*/
 .popup-overlay {
@@ -701,7 +692,6 @@ p {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
-
 .flashback-container {
   display: flex;
   flex-wrap: wrap;
@@ -711,16 +701,18 @@ p {
 .flashback-card {
   cursor: pointer;
   background-color: #f0f0f0;
-  color:black;
+  color: black;
   padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .flashback-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* DownloadButton.module.css */
@@ -752,7 +744,6 @@ p {
 .image-gallery {
   max-width: calc(46vh);
 }
-
 
 .registration-message {
   text-align: center;
@@ -852,24 +843,27 @@ p {
 
 End of Sample */
 
-
 /* Base styles */
 .wrapper {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); /* Three images per row, each with a minimum width of 300px */
-    gap: .65em; /*Gap between grid items */ 
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(6.9em, 1fr)
+  ); /* Three images per row, each with a minimum width of 300px */
+  gap: 0.65em; /*Gap between grid items */
   background-size: 8em;
+  width: calc(100% - 1.4em);
+  margin-left: 0.5em;
 }
 
 .wrapper-images {
   width: 8em;
   height: 8em;
   object-fit: cover;
-  
 }
 
 .wrapper-images img {
-  width: 8em;
+  width: 7.5em;
   height: 8em;
   object-fit: cover;
 }
@@ -877,10 +871,12 @@ End of Sample */
 /* Media queries for responsiveness */
 @media screen and (max-width: 768px) {
   .grid-container {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* Adjust columns for smaller screens */
+    grid-template-columns: repeat(
+      auto-fill,
+      minmax(200px, 1fr)
+    ); /* Adjust columns for smaller screens */
   }
 }
-
 
 .overlay {
   display: flex;
@@ -899,7 +895,7 @@ End of Sample */
   position: centre;
   padding-top: 10px;
 }
-.overlay > span {
+.overlay > .dismiss {
   position: absolute;
   top: 1em;
   right: 1em;
@@ -962,7 +958,8 @@ End of Sample */
   text-align: left;
 }
 
-h2, h3 {
+h2,
+h3 {
   color: #333;
   margin-bottom: 0;
 }
@@ -974,4 +971,202 @@ ul {
 li {
   color: #666;
   margin-left: 20px; /* Adjust the indentation of bullet points */
+}
+
+/* Image Modal Additional CSS */
+
+.dNone {
+  display: none;
+}
+
+.hidden {
+  visibility: hidden;
+  opacity: 1;
+  transition: visibility 0s ease-in;
+}
+
+.visible {
+  visibility: visible;
+  opacity: 1;
+}
+
+.modalOuter {
+  display: flex;
+  width: max-content;
+  height: -webkit-fill-available;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.modalOuter img {
+  /* width: 100%; */
+  /* height: 100%; */
+  /* border: 2px solid #b0b3b6 !important; */
+  padding: 0;
+  max-width: 90%;
+  max-height: 80%;
+}
+
+.modalOuter > .dismiss {
+  width: 88%;
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1em;
+  font-size: 1.5em;
+  color: #ffffff;
+  z-index: 999;
+  cursor: pointer;
+}
+
+.dismiss span {
+  color: inherit;
+}
+
+/* ToolBox */
+
+.imageToolBox {
+  width: 90%;
+  display: flex;
+  background: #dbe0e4;
+  padding: 1em;
+  gap: 1em;
+  font-size: 0.8em;
+  color: #1c1c1c;
+  /* margin-top: 10px; */
+  /* flex-direction: column; */
+  /* height: 78.5%; */
+  align-items: center;
+}
+
+.imageToolBox svg {
+  width: 1em;
+  height: 1em;
+}
+
+.helper {
+  display: inline-block;
+  height: 100%;
+  vertical-align: middle;
+}
+
+.imageToolBox > div {
+  letter-spacing: 1px;
+  font-size: 1.1em;
+  font-weight: 600;
+  color: black;
+}
+
+.dFlex {
+  display: flex;
+  gap: 0.5em;
+}
+
+.dFlexCol {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+.alignCenter {
+  align-items: center;
+}
+
+.justifyCenter {
+  justify-content: center;
+}
+
+#download {
+  cursor: pointer;
+}
+
+.bgRed {
+  animation: like 1s cubic-bezier(0.17, 0.89, 0.32, 1.49) forwards;
+  /* visibility: hidden !important; */
+}
+
+@keyframes like {
+  0% {
+    visibility: hidden !important;
+    fill: red;
+    color: red;
+  }
+  75% {
+    visibility: visible !important;
+    opacity: 1;
+    fill: red;
+    color: red;
+    transform: scale(1.4);
+  }
+  100% {
+    visibility: visible !important;
+    opacity: 1;
+    fill: red;
+    color: red;
+    transform: scale(1.1);
+  }
+}
+
+.isDownloading {
+  animation-play-state: running;
+  position: relative;
+  margin-left: 15%;
+}
+
+.isDownloading:before,
+.isDownloading:after {
+  content: " ";
+  display: block;
+  position: absolute;
+  left: -16%;
+  color: black;
+  font-weight: 600;
+  top: 60%;
+}
+
+/* Download box shape  */
+.isDownloading:before {
+  width: 10px;
+  height: 2px;
+  border-style: solid;
+  border-width: 0 2px 2px;
+}
+
+/* Download arrow shape */
+.isDownloading::after {
+  width: 0;
+  height: 0;
+  margin-left: 3px;
+  margin-top: -7px;
+
+  border-style: solid;
+  border-width: 4px 4px 0 4px;
+  border-color: transparent;
+  border-top-color: inherit;
+
+  animation: downloadArrow 2s linear infinite;
+  /* animation-play-state: paused; */
+}
+
+/* keyframes for the download icon anim */
+@keyframes downloadArrow {
+  /* 0% and 0.001% keyframes used as a hackish way of having the button frozen on a nice looking frame by default */
+  0% {
+    margin-top: -7px;
+    opacity: 1;
+  }
+
+  0.001% {
+    margin-top: -15px;
+    opacity: 0;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    margin-top: 0;
+    opacity: 0;
+  }
 }
