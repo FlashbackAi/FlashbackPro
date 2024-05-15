@@ -7,6 +7,7 @@ import LoadingSpinner from "./LoadingSpinner";
 import Modal from "../components/ImageModal";
 import { useNavigate } from "react-router-dom";
 import { LazyLoadImage } from "react-lazy-load-image-component";
+import { Helmet } from "react-helmet";
 import PlaceholderImage from "../Media/blurredLogo.png";
 import Header from "../components/Header";
 
@@ -108,37 +109,38 @@ function ImagesPage() {
     images,
   ]);
 
-  useEffect(() => {
-    // if (images.length > 0) {
-      // console.log(images);
-      // const firstImageUrl = images[0].thumbnail; // Assuming images is an array of objects with a 'url' property
-      // setClickedImg(firstImageUrl);
-      // setClickedUrl(firstImageUrl.split("amazonaws.com/")[1]); // Extracting the image name from the URL
+  // useEffect(() => {
+  //   // if (images.length > 0) {
+  //   // console.log(images);
+  //   // const firstImageUrl = images[0].thumbnail; // Assuming images is an array of objects with a 'url' property
+  //   // setClickedImg(firstImageUrl);
+  //   // setClickedUrl(firstImageUrl.split("amazonaws.com/")[1]); // Extracting the image name from the URL
 
-      // Dynamically set og:image meta tag
-      // const ogImageMeta = document.createElement("meta");
-      // ogImageMeta.setAttribute("property", "og:image");
-      // ogImageMeta.setAttribute("content", firstImageUrl);
-      // document.head.appendChild(ogImageMeta);
-      var ogImageMeta = document.querySelector(
-        "meta[name='flashback-og:image']"
-      );
-      if (!ogImageMeta) {
-        ogImageMeta = document.createElement("meta");
-        ogImageMeta.setAttribute("property", "og:image");
-        ogImageMeta.setAttribute("name", "flashback-og:image");
-        ogImageMeta.setAttribute("itemprop", "image");
-        ogImageMeta.setAttribute("content", "https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/Aarthi_Vinay_19122021/Ec_E__DSC1682.jpg");
-        document.head.appendChild(ogImageMeta);
-        // const ogTypeMeta = document.createElement("meta");
-        // ogTypeMeta.setAttribute("property", "og:type");
-        // ogTypeMeta.setAttribute("name", "flashback-og:type");
-        // ogTypeMeta.setAttribute("content", "website");
-        // document.head.appendChild(ogTypeMeta);
-      }
-    // }
-  // }, [images]); // checking with hardcoding on load
-  }, [eventName]);
+  //   // Dynamically set og:image meta tag
+  //   // const ogImageMeta = document.createElement("meta");
+  //   // ogImageMeta.setAttribute("property", "og:image");
+  //   // ogImageMeta.setAttribute("content", firstImageUrl);
+  //   // document.head.appendChild(ogImageMeta);
+  //   var ogImageMeta = document.querySelector("meta[name='flashback-og:image']");
+  //   if (!ogImageMeta) {
+  //     ogImageMeta = document.createElement("meta");
+  //     ogImageMeta.setAttribute("property", "og:image");
+  //     ogImageMeta.setAttribute("name", "flashback-og:image");
+  //     ogImageMeta.setAttribute("itemprop", "image");
+  //     ogImageMeta.setAttribute(
+  //       "content",
+  //       "https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/Aarthi_Vinay_19122021/Ec_E__DSC1682.jpg"
+  //     );
+  //     document.head.appendChild(ogImageMeta);
+  //     // const ogTypeMeta = document.createElement("meta");
+  //     // ogTypeMeta.setAttribute("property", "og:type");
+  //     // ogTypeMeta.setAttribute("name", "flashback-og:type");
+  //     // ogTypeMeta.setAttribute("content", "website");
+  //     // document.head.appendChild(ogTypeMeta);
+  //   }
+  //   // }
+  //   // }, [images]); // checking with hardcoding on load
+  // }, [eventName]);
 
   const handleBackButton = () => {
     // Check if the navigation was caused by the back button
@@ -224,6 +226,22 @@ function ImagesPage() {
 
   return (
     <div>
+      <Helmet>
+        <meta property="og:type" content="website" />
+        <meta
+          property="og:url"
+          content="https://app.flashback.inc/photos/Aarthi_Vinay_19122021/+918978073062_Flash_401"
+        />
+        <meta property="og:title" content="" />
+        <meta
+          property="og:description"
+          content="Flashback - Create & Share Memories!"
+        />
+        <meta
+          property="og:image"
+          content="https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/Aarthi_Vinay_19122021/Ec_E__DSC1682.jpg"
+        />
+      </Helmet>
       {isLoading ? (
         <LoadingSpinner /> // You can replace this with a spinner or loader component
       ) : (
