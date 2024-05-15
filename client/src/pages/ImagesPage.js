@@ -226,7 +226,7 @@ function ImagesPage() {
 
   return (
     <div>
-      <Helmet>
+      {/* <Helmet>
         <meta property="og:type" content="website" />
         <meta
           property="og:url"
@@ -241,7 +241,7 @@ function ImagesPage() {
           property="og:image"
           content="https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/Aarthi_Vinay_19122021/Ec_E__DSC1682.jpg"
         />
-      </Helmet>
+      </Helmet> */}
       {isLoading ? (
         <LoadingSpinner /> // You can replace this with a spinner or loader component
       ) : (

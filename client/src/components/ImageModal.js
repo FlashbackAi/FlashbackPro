@@ -101,10 +101,10 @@ const ImageModal = ({
                 {isDownloading ? "Downloading..." : "Download"}
               </button>
             )} */}
-            <div className="dFlex alignCenter" onClick={addToFavourite}>
+            {/* <div className="dFlex alignCenter" onClick={addToFavourite}>
               <Heart className="favourite" />
               Favourite
-            </div>
+            </div> */}
             <div
               className="dFlex alignCenter"
               onClick={downloadCurrentImage}
