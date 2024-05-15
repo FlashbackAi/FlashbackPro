@@ -111,7 +111,7 @@ function ImagesPage() {
   useEffect(() => {
     if (images.length > 0) {
       console.log(images);
-      const firstImageUrl = images[0].original; // Assuming images is an array of objects with a 'url' property
+      const firstImageUrl = images[0].thumbnail; // Assuming images is an array of objects with a 'url' property
       // setClickedImg(firstImageUrl);
       // setClickedUrl(firstImageUrl.split("amazonaws.com/")[1]); // Extracting the image name from the URL
 
@@ -125,10 +125,15 @@ function ImagesPage() {
       );
       if (!ogImageMeta) {
         ogImageMeta = document.createElement("meta");
+        const ogTypeMeta = document.createElement("meta");
         ogImageMeta.setAttribute("property", "og:image");
+        ogImageMeta.setAttribute("property", "og:type");
         ogImageMeta.setAttribute("name", "flashback-og:image");
         ogImageMeta.setAttribute("content", firstImageUrl);
+        ogImageMeta.setAttribute("itemprop", "image");
+        ogImageMeta.setAttribute("content", "website");
         document.head.appendChild(ogImageMeta);
+        document.head.appendChild(ogTypeMeta);
       }
     }
   }, [images]);
@@ -213,9 +218,7 @@ function ImagesPage() {
     window.addEventListener("touchstart", touchHandler, { passive: false });
   }, []);
 
-  const handleFavourite = ()=>{
-
-  }
+  const handleFavourite = () => {};
 
   return (
     <div>
