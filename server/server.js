@@ -1290,7 +1290,7 @@ app.post('/downloadImage', async (req, res) => {
             const updateParamsUserEvent = {
               TableName: userEventTableName,
               Item: {
-                event_name: 'KSL_16052024',
+                event_name: 'Convocation_PrathimaCollege',
                 user_phone_number: username,
                 created_date: new Date().toISOString()
               }
@@ -1307,7 +1307,7 @@ app.post('/downloadImage', async (req, res) => {
           const updateParamsUserEvent = {
             TableName: userEventTableName,
             Item: {
-              event_name: 'KSL_16052024',
+              event_name: 'Convocation_PrathimaCollege',
               user_phone_number: username,
               created_date: new Date().toISOString()
             }
