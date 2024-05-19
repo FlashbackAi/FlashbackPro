@@ -14,6 +14,7 @@ import { useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import { useLocation,Navigate } from 'react-router-dom'
 import ImagesPage from './pages/ImagesPage';
+import Pro from './pages/Pro';
 import TermsAndConditions from "./pages/TermsAndConditions";
 
 
@@ -95,6 +96,7 @@ function App() {
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             {/* <Route path="/images/:eventName/:userId" element={<ProtectedRoute><ImagesPage /></ProtectedRoute>} /> */}
             <Route path="/photos/:eventName/:userId" element={<ImagesPage />} /> 
+            <Route path="/pro/:eventName" element={<Pro />} /> 
             <Route path="/" element={<Login />} />
             <Route path="/TermsAndConditions" element={<TermsAndConditions />} />TermsAndConditions
 

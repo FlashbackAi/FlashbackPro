@@ -917,12 +917,14 @@ async function userEventImages(eventName,userId,lastEvaluatedKey){
       const params = {
         TableName: userOutputTable,
         IndexName: 'unique_uid-event_name-index', // Specify the GSI name
-        KeyConditionExpression: 'unique_uid = :partitionKey AND event_name = :sortKey', // Specify the GSI partition and sort key
+        KeyConditionExpression: 'unique_uid = :partitionKey AND event_name = :sortKey',
+        FilterExpression: "is_favourite <> :isFav",
         ExpressionAttributeValues: {
           ':partitionKey': userId, // Specify the value for the partition key
-          ':sortKey': eventName // Specify the value for the sort key
+          ':sortKey': eventName,
+          ':isFav':  true// Specify the value for the sort key
         },
-        Limit: 20
+        Limit:20
       };
       if(lastEvaluatedKey){
         params.ExclusiveStartKey = lastEvaluatedKey;
@@ -938,6 +940,231 @@ async function userEventImages(eventName,userId,lastEvaluatedKey){
   
 }
 
+
+app.post('/images-new/:eventName/:userId', async (req, res) => {
+  try {
+   
+     const eventName = req.params.eventName;
+     const userId = req.params.userId;
+     const isFavourites = req.body.isFavourites;
+     const lastEvaluatedKey = req.body.lastEvaluatedKey;
+     logger.info("Image are being fetched for event of pageNo -> "+eventName+"; userId -> "+userId +"; isFavourites -> "+isFavourites);
+
+    const result = await userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites);
+      const imagesPromises = result.Items.map(async file => {
+        const base64ImageData =  {
+          "thumbnailUrl":"https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/"+file.s3_url.split("amazonaws.com/")[1]
+        }
+         if(eventName === 'Convocation_PrathimaCollege'){
+           base64ImageData.url = "https://flashbackprathimacollection.s3.ap-south-1.amazonaws.com/"+file.s3_url.split("amazonaws.com/")[1];
+         }
+         else{
+           base64ImageData.url = file.s3_url;
+         }
+          return base64ImageData;
+      
+    });
+      const images = await Promise.all(imagesPromises);
+      logger.info('total images fetched for the user -> '+userId+'  in event -> '+eventName +"isFavourites -> "+isFavourites+' : '+result.Count);
+      res.json({"images":images, 'totalImages':result.Count,'lastEvaluatedKey':result.LastEvaluatedKey});
+  } catch (err) {
+     logger.info("Error in S3 get", err);
+      res.status(500).send('Error getting images from S3');
+  }
+});
+
+async function userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites){
+    
+   logger.info(isFavourites)
+    try {
+    let params = {}
+    if(isFavourites){
+      params = {
+        TableName: userOutputTable,
+        IndexName: 'unique_uid-event_name-index', 
+        KeyConditionExpression: 'unique_uid = :partitionKey AND event_name = :sortKey',
+        FilterExpression : "is_favourite = :isFav",
+        ExpressionAttributeValues: {
+          ':partitionKey': userId, // Specify the value for the partition key
+          ':sortKey': eventName,
+          ':isFav':  true// Specify the value for the sort key
+        }        
+      };
+    }
+    else{
+      params = {
+        TableName: userOutputTable,
+        IndexName: 'unique_uid-event_name-index', 
+        KeyConditionExpression: 'unique_uid = :partitionKey AND event_name = :sortKey',
+        FilterExpression : "is_favourite <> :isFav",
+        ExpressionAttributeValues: {
+          ':partitionKey': userId, // Specify the value for the partition key
+          ':sortKey': eventName,
+          ':isFav':  true// Specify the value for the sort key
+        },
+        Limit : 20,        
+      };
+      if(lastEvaluatedKey){
+        params.ExclusiveStartKey = lastEvaluatedKey;
+      }
+    }
+      const result = await docClient.query(params).promise();
+
+      return result;
+    }
+    catch (err) {
+      logger.info(err)
+      return err;
+    }
+  
+}
+
+app.get('/userThumbnails/:eventName/', async (req, res) => {
+  try {
+   
+     const eventName = req.params.eventName;
+
+     logger.info("Thumbnails are being fetched for even : " +eventName);
+
+     const params = {
+      TableName: indexedDataTableName,
+      IndexName: 'folder_name-user_id-index', 
+      ProjectionExpression: 'user_id, image_id',
+      KeyConditionExpression: 'folder_name = :folderName',
+      ExpressionAttributeValues: {
+        ':folderName': eventName
+      }        
+    };
+
+    let items = [];
+    let lastEvaluatedKey = null;
+    do {
+      if (lastEvaluatedKey) {
+        params.ExclusiveStartKey = lastEvaluatedKey;
+      }
+
+      const data = await docClient.query(params).promise();
+      items = items.concat(data.Items);
+      lastEvaluatedKey = data.LastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    const userCountMap = new Map();
+
+    // Iterate over each item
+    items.forEach(item => {
+      const userId = item.user_id;
+      // If the userId is not in the map, initialize it with a Set
+     if (!userCountMap.has(userId)) {
+          userCountMap.set(userId, 0);
+        }
+        // Increment the count for this userId
+        userCountMap.set(userId, userCountMap.get(userId) + 1);
+       // logger.info(userCountMap.size)
+    }); 
+    const usersIds = Array.from(userCountMap.keys());
+    const keys = usersIds.map(userId => ({ user_id: userId }));
+    const TABLE_NAME = 'RekognitionUsersData';
+    console.log(keys)
+    const params1 = {
+      RequestItems: {
+        [TABLE_NAME]: {
+          Keys: keys,
+          ProjectionExpression: 'user_id, face_url',
+        }
+      }
+    };
+
+    const data = await docClient.batchGet(params1).promise();
+
+    const thumbnailObject = data.Responses[TABLE_NAME];
+    thumbnailObject.forEach( item=>{
+      item.count = userCountMap.get(item.user_id)
+    })
+    logger.info("Total number of user thumbnails fetched : "+thumbnailObject.length)
+     res.json(thumbnailObject.sort((a, b) => b.count - a.count));
+  } catch (err) {
+     logger.info("Error in S3 get", err);
+      res.status(500).send('Error getting images from S3');
+  }
+});
+
+async function userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites){
+    
+   logger.info(isFavourites)
+    try {
+    let params = {}
+    if(isFavourites){
+      params = {
+        TableName: userOutputTable,
+        IndexName: 'unique_uid-event_name-index', 
+        KeyConditionExpression: 'unique_uid = :partitionKey AND event_name = :sortKey',
+        FilterExpression : "is_favourite = :isFav",
+        ExpressionAttributeValues: {
+          ':partitionKey': userId, // Specify the value for the partition key
+          ':sortKey': eventName,
+          ':isFav':  true// Specify the value for the sort key
+        }        
+      };
+    }
+    else{
+      params = {
+        TableName: userOutputTable,
+        IndexName: 'unique_uid-event_name-index', 
+        KeyConditionExpression: 'unique_uid = :partitionKey AND event_name = :sortKey',
+        FilterExpression : "is_favourite <> :isFav",
+        ExpressionAttributeValues: {
+          ':partitionKey': userId, // Specify the value for the partition key
+          ':sortKey': eventName,
+          ':isFav':  true// Specify the value for the sort key
+        },
+        Limit : 20,        
+      };
+      if(lastEvaluatedKey){
+        params.ExclusiveStartKey = lastEvaluatedKey;
+      }
+    }
+      const result = await docClient.query(params).promise();
+
+      return result;
+    }
+    catch (err) {
+      logger.info(err)
+      return err;
+    }
+  
+}
+
+app.post('/setFavourites', async (req,res) => {
+
+  try{
+
+    const userId = req.body.userId;
+    const imageUrl = req.body.imageUrl;
+
+    const params = {
+      TableName: userOutputTable,
+      Key: {
+        unique_uid: userId,
+        s3_url: imageUrl
+      },
+      UpdateExpression: 'set is_favourite = :isFav',
+      ExpressionAttributeValues: {
+          ':isFav': true
+      },
+      ReturnValues: 'UPDATED_NEW'
+  };
+
+  const result = await docClient.update(params).promise();
+  logger.info("Update succeeded:", result);
+  res.send(result);
+
+  }
+  catch (err) {
+    logger.error("Unable to update item. Error JSON:", err);
+    res.status(500).send('Unable to mark the photo as favourite');
+}
+
+});
 app.get('/folders', (req, res) => {
   s3.listObjectsV2({ Bucket: bucketName }, (err, data) => {
     if (err) {
