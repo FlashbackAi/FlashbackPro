@@ -1,6 +1,7 @@
 import axios from 'axios';
 import React, { useState } from 'react';
 import { useNavigate} from "react-router-dom";
+import API_UTIL from '../services/AuthIntereptor';
 
 function Registration() {
 
@@ -42,7 +43,7 @@ function Registration() {
         const data = new FormData(event.target);
        
 
-        axios.post(`${serverIP}/request-otp`, {
+        API_UTIL.post(`${serverIP}/request-otp`, {
             
             phoneNumber: fullPhoneNumber
         }).then(response => {
@@ -57,16 +58,16 @@ function Registration() {
                 
             }
         })
-        .catch(error => {
-            console.error(error.response.data);
-            setMessage(error.response.data)
-        });
+        // .catch(error => {
+        //     console.error(error.response.data);
+        //     setMessage(error.response.data)
+        // });
     };
 
     const handleVerification = () => {
         console.log(username)
         console.log(verificationCode)
-        axios.post(`${serverIP}/verify-otp`, {
+        API_UTIL.post(`${serverIP}/verify-otp`, {
             phoneNumber: fullPhoneNumber,
             otpCode: verificationCode
         }).then(response => {
@@ -78,15 +79,15 @@ function Registration() {
                 navigate("/login")
             }
         })
-        .catch(error => {
-            console.error(error.message);
-            setMessage('error in confirming new user');
-        });
+        // .catch(error => {
+        //     console.error(error.message);
+        //     setMessage('error in confirming new user');
+        // });
     };
 
     const resendVerfication = () => {
         
-        axios.post(`${serverIP}/resend-verification`, {
+        API_UTIL.post(`${serverIP}/resend-verification`, {
             username: username
         }).then(response => {
             console.log(response.data.status)
@@ -96,10 +97,10 @@ function Registration() {
                 navigate("/login")
             }
         })
-        .catch(error => {
-            console.error(error.message);
-            setMessage('error in generating new verification code');
-        });
+        // .catch(error => {
+        //     console.error(error.message);
+        //     setMessage('error in generating new verification code');
+        // });
     };
 
     return (

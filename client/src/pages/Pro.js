@@ -8,6 +8,7 @@ import { LazyLoadImage } from "react-lazy-load-image-component";
 import PlaceholderImage from "../Media/blurredLogo.png";
 import Header from "../components/Header";
 import { set } from "internal-slot";
+import API_UTIL from "../services/AuthIntereptor";
 
 function Pro() {
   const serverIP = process.env.REACT_APP_SERVER_IP;
@@ -37,7 +38,7 @@ function Pro() {
     if (userThumbnails.length === 0) setIsLoading(true);
 
     try {
-      const response = await axios.get(
+      const response = await API_UTIL.get(
         `${serverIP}/userThumbnails/${eventName}`
       );
       if (response.status === 200) {

@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import PlaceholderImage from "../Media/blurredLogo.png";
 import Header from "../components/Header";
+import API_UTIL from "../services/AuthIntereptor";
 
 function ImagesPage() {
   const serverIP = process.env.REACT_APP_SERVER_IP;
@@ -40,7 +41,7 @@ function ImagesPage() {
     if (images.length === 0) setIsLoading(true);
 
     try {
-      const response = await axios.post(
+      const response = await API_UTIL.post(
         `${serverIP}/images/${eventName}/${userId}  `,
         { lastEvaluatedKey: lastEvaluatedKey }
       );

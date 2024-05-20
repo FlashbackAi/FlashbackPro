@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 import UserMenu from './UserMenu';
 import { useHistory } from 'react-router-dom';
 import { useNavigate } from "react-router-dom";
+import API_UTIL from '../services/AuthIntereptor';
 
 function CreateFlashBack() {
   const serverIP = process.env.REACT_APP_SERVER_IP;
@@ -65,7 +66,7 @@ function CreateFlashBack() {
 
     console.log(folderName)
     try {
-      const response = await axios.post(`${serverIP}/upload/${folderName}`, formData,{headers});
+      const response = await API_UTIL.post(`${serverIP}/upload/${folderName}`, formData,{headers});
       if(response.status !== 200 )
       {
         throw new Error(response.data.message)
@@ -110,15 +111,12 @@ function CreateFlashBack() {
 
   useEffect(() => {
     console.log(username);
-    axios.get(`${serverIP}/folderByUsername/${username}`)
+    API_UTIL.get(`${serverIP}/folderByUsername/${username}`)
       .then(response => {
         console.log(response.data);
         setFlashBacks(response.data);
         console.log(flashBacks);
       })
-      .catch(error => {
-        console.error("Error fetching flashBacks: ", error);
-      });
   }, []);
 
   const deleteImages = async() =>  {
@@ -133,7 +131,7 @@ function CreateFlashBack() {
   
       try {
         console.log(formData);
-        const response = await axios.post(`${serverIP}/deleteImages`, selectedImagesUrl);
+        const response = await API_UTIL.post(`${serverIP}/deleteImages`, selectedImagesUrl);
         if(response.status !== 200 )
         {
           throw new Error(response.data)
@@ -166,7 +164,7 @@ function CreateFlashBack() {
    
 
     try {
-      const response = await axios.post(`${serverIP}/deleteFlashBack/${selectedFlashBack}`);
+      const response = await API_UTIL.post(`${serverIP}/deleteFlashBack/${selectedFlashBack}`);
       if(response.status !== 200 )
       {
         throw new Error(response.data.message)
