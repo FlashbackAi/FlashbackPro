@@ -804,40 +804,40 @@ async function addFolderToUser(folderName,username,files_length){
 
 
 // Serve static assets (e.g., CSS, JS, images)
-app.use(express.static(path.resolve(__dirname, '..', 'client//build')));
+//app.use(express.static(path.resolve(__dirname, '..', 'client//build')));
 
 // Define a route to render the React app
-app.get('/photos/:eventName/:userId', async (req, res) => {
-  const { eventName, userId } = req.params;
+// app.get('/photos/:eventName/:userId', async (req, res) => {
+//   const { eventName, userId } = req.params;
 
-  // Construct the user-specific image URL based on the parameters
-  const userImage =  await userEventImages(eventName,userId,'');
-  const userImageUrl = userImage.Items[0].s3_url;
-  logger.info("eventName : "+eventName+" userId : "+ " image rendering");
+//   // Construct the user-specific image URL based on the parameters
+//   const userImage =  await userEventImages(eventName,userId,'');
+//   const userImageUrl = userImage.Items[0].s3_url;
+//   logger.info("eventName : "+eventName+" userId : "+ " image rendering");
 
-  // Read the index.html file
-  const indexHtmlPath = path.resolve(__dirname, '..', 'client//build', 'index.html');
-  fs.readFile(indexHtmlPath, 'utf8', (err, data) => {
-    if (err) {
-      console.error('Error reading index.html:', err);
-      return res.status(500).send('Internal Server Error');
-    }
+//   // Read the index.html file
+//   const indexHtmlPath = path.resolve(__dirname, '..', 'client//build', 'index.html');
+//   fs.readFile(indexHtmlPath, 'utf8', (err, data) => {
+//     if (err) {
+//       console.error('Error reading index.html:', err);
+//       return res.status(500).send('Internal Server Error');
+//     }
 
-    // Modify the HTML content to include the Open Graph meta tags
-    const modifiedHtml = data.replace(
-      '<!-- SSR_META_TAGS -->',
-      `
-      <meta property="og:title" content="Your Open Graph Title" />
-      <meta property="og:description" content="Your Open Graph Description" />
-      <meta property="og:image" content="${userImageUrl}" />
-      <!-- Add other Open Graph meta tags here -->
-      `
-    );
+//     // Modify the HTML content to include the Open Graph meta tags
+//     const modifiedHtml = data.replace(
+//       '<!-- SSR_META_TAGS -->',
+//       `
+//       <meta property="og:title" content="Flashabck" />
+//       <meta property="og:description" content="Create and Share Memories" />
+//       <meta property="og:image" content="${userImageUrl}" />
+//       <!-- Add other Open Graph meta tags here -->
+//       `
+//     );
 
-    // Send the modified HTML content as the server response
-    return res.send(modifiedHtml.replace('<div id="root"></div>', `<div id="root">${appHtml}</div>`));
-  });
-});
+//     // Send the modified HTML content as the server response
+//     return res.send(modifiedHtml.replace('<div id="root"></div>', `<div id="root">${appHtml}</div>`));
+//   });
+// });
 
 
 
@@ -917,12 +917,14 @@ async function userEventImages(eventName,userId,lastEvaluatedKey){
       const params = {
         TableName: userOutputTable,
         IndexName: 'unique_uid-event_name-index', // Specify the GSI name
-        KeyConditionExpression: 'unique_uid = :partitionKey AND event_name = :sortKey', // Specify the GSI partition and sort key
+        KeyConditionExpression: 'unique_uid = :partitionKey AND event_name = :sortKey',
+        FilterExpression: "is_favourite <> :isFav",
         ExpressionAttributeValues: {
           ':partitionKey': userId, // Specify the value for the partition key
-          ':sortKey': eventName // Specify the value for the sort key
+          ':sortKey': eventName,
+          ':isFav':  true// Specify the value for the sort key
         },
-        Limit: 20
+        Limit:20
       };
       if(lastEvaluatedKey){
         params.ExclusiveStartKey = lastEvaluatedKey;
@@ -938,6 +940,246 @@ async function userEventImages(eventName,userId,lastEvaluatedKey){
   
 }
 
+
+app.post('/images-new/:eventName/:userId', async (req, res) => {
+  try {
+   
+     const eventName = req.params.eventName;
+     const userId = req.params.userId;
+     const isFavourites = req.body.isFavourites;
+     const lastEvaluatedKey = req.body.lastEvaluatedKey;
+     logger.info("Image are being fetched for event of pageNo -> "+eventName+"; userId -> "+userId +"; isFavourites -> "+isFavourites);
+
+    const result = await userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites);
+      const imagesPromises = result.Items.map(async file => {
+        const base64ImageData =  {
+          "thumbnailUrl":"https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/"+file.s3_url.split("amazonaws.com/")[1]
+        }
+         if(eventName === 'Convocation_PrathimaCollege'){
+           base64ImageData.url = "https://flashbackprathimacollection.s3.ap-south-1.amazonaws.com/"+file.s3_url.split("amazonaws.com/")[1];
+         }
+         else{
+           base64ImageData.url = file.s3_url;
+         }
+          return base64ImageData;
+      
+    });
+      const images = await Promise.all(imagesPromises);
+      logger.info('total images fetched for the user -> '+userId+'  in event -> '+eventName +"isFavourites -> "+isFavourites+' : '+result.Count);
+      res.json({"images":images, 'totalImages':result.Count,'lastEvaluatedKey':result.LastEvaluatedKey});
+  } catch (err) {
+     logger.info("Error in S3 get", err);
+      res.status(500).send('Error getting images from S3');
+  }
+});
+
+async function userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites){
+    
+   logger.info(isFavourites)
+    try {
+    let params = {}
+    if(isFavourites === true){
+      params = {
+        TableName: userOutputTable,
+        IndexName: 'unique_uid-event_name-index', 
+        KeyConditionExpression: 'unique_uid = :partitionKey AND event_name = :sortKey',
+        FilterExpression : "is_favourite = :isFav",
+        ExpressionAttributeValues: {
+          ':partitionKey': userId, // Specify the value for the partition key
+          ':sortKey': eventName,
+          ':isFav':  true// Specify the value for the sort key
+        }        
+      };
+    }
+    else{
+      params = {
+        TableName: userOutputTable,
+        IndexName: 'unique_uid-event_name-index', 
+        KeyConditionExpression: 'unique_uid = :partitionKey AND event_name = :sortKey',
+        FilterExpression : "is_favourite <> :isFav",
+        ExpressionAttributeValues: {
+          ':partitionKey': userId, // Specify the value for the partition key
+          ':sortKey': eventName,
+          ':isFav':  true// Specify the value for the sort key
+        },
+        Limit : 20,        
+      };
+      if(lastEvaluatedKey){
+        params.ExclusiveStartKey = lastEvaluatedKey;
+      }
+    }
+      const result = await docClient.query(params).promise();
+
+      return result;
+    }
+    catch (err) {
+      logger.info(err)
+      return err;
+    }
+  
+}
+
+app.get('/userThumbnails/:eventName/', async (req, res) => {
+  try {
+   
+     const eventName = req.params.eventName;
+
+     logger.info("Thumbnails are being fetched for even : " +eventName);
+
+     const params = {
+      TableName: indexedDataTableName,
+      IndexName: 'folder_name-user_id-index', 
+      ProjectionExpression: 'user_id, image_id',
+      KeyConditionExpression: 'folder_name = :folderName',
+      ExpressionAttributeValues: {
+        ':folderName': eventName
+      }        
+    };
+
+    let items = [];
+    let lastEvaluatedKey = null;
+    do {
+      if (lastEvaluatedKey) {
+        params.ExclusiveStartKey = lastEvaluatedKey;
+      }
+
+      const data = await docClient.query(params).promise();
+      items = items.concat(data.Items);
+      lastEvaluatedKey = data.LastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    const userCountMap = new Map();
+
+    // Iterate over each item
+    items.forEach(item => {
+      const userId = item.user_id;
+      // If the userId is not in the map, initialize it with a Set
+     if (!userCountMap.has(userId)) {
+          userCountMap.set(userId, 0);
+        }
+        // Increment the count for this userId
+        userCountMap.set(userId, userCountMap.get(userId) + 1);
+       // logger.info(userCountMap.size)
+    }); 
+    logger.info("Total number of user userIds fetched : "+userCountMap.size)
+    const usersIds = Array.from(userCountMap.keys());
+    const keys = usersIds.map(userId => ({ user_id: userId }));
+    const TABLE_NAME = 'RekognitionUsersData';
+    const BATCH_SIZE = 100;
+   const keyBatches = [];
+   const thumbnailObject = [];
+   for (let i = 0; i < keys.length; i += BATCH_SIZE) {
+    keyBatches.push(keys.slice(i, i + BATCH_SIZE));
+   }
+
+   for (const batch of keyBatches) {
+    const params1 = {
+      RequestItems: {
+        [TABLE_NAME]: {
+          Keys: batch,
+          ProjectionExpression: 'user_id, face_url',
+        }
+      }
+    };
+
+    try {
+      const data = await docClient.batchGet(params1).promise();
+      const responses = data.Responses[TABLE_NAME];
+      thumbnailObject.push(...responses);
+    } catch (error) {
+      console.error('Error fetching batch:', error);
+    }
+  }
+
+    thumbnailObject.forEach( item=>{
+      item.count = userCountMap.get(item.user_id)
+    })
+    logger.info("Total number of user thumbnails fetched : "+thumbnailObject.length)
+     res.json(thumbnailObject.sort((a, b) => b.count - a.count));
+  } catch (err) {
+     logger.info("Error in S3 get", err);
+      res.status(500).send('Error getting images from S3');
+  }
+});
+
+async function userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites){
+    
+   logger.info(isFavourites)
+    try {
+    let params = {}
+    if(isFavourites){
+      params = {
+        TableName: userOutputTable,
+        IndexName: 'unique_uid-event_name-index', 
+        KeyConditionExpression: 'unique_uid = :partitionKey AND event_name = :sortKey',
+        FilterExpression : "is_favourite = :isFav",
+        ExpressionAttributeValues: {
+          ':partitionKey': userId, // Specify the value for the partition key
+          ':sortKey': eventName,
+          ':isFav':  true// Specify the value for the sort key
+        }        
+      };
+    }
+    else{
+      params = {
+        TableName: userOutputTable,
+        IndexName: 'unique_uid-event_name-index', 
+        KeyConditionExpression: 'unique_uid = :partitionKey AND event_name = :sortKey',
+        FilterExpression : "is_favourite <> :isFav",
+        ExpressionAttributeValues: {
+          ':partitionKey': userId, // Specify the value for the partition key
+          ':sortKey': eventName,
+          ':isFav':  true// Specify the value for the sort key
+        },
+        Limit : 20,        
+      };
+      if(lastEvaluatedKey){
+        params.ExclusiveStartKey = lastEvaluatedKey;
+      }
+    }
+      const result = await docClient.query(params).promise();
+
+      return result;
+    }
+    catch (err) {
+      logger.info(err)
+      return err;
+    }
+  
+}
+
+app.post('/setFavourites', async (req,res) => {
+
+  try{
+
+    const userId = req.body.userId;
+    const imageUrl = req.body.imageUrl;
+    const isFav = req.body.isFav;
+
+    const params = {
+      TableName: userOutputTable,
+      Key: {
+        unique_uid: userId,
+        s3_url: imageUrl
+      },
+      UpdateExpression: 'set is_favourite = :isFav',
+      ExpressionAttributeValues: {
+          ':isFav': isFav
+      },
+      ReturnValues: 'UPDATED_NEW'
+  };
+
+  const result = await docClient.update(params).promise();
+  logger.info("Update succeeded:", result);
+  res.send(result);
+
+  }
+  catch (err) {
+    logger.error("Unable to update item. Error JSON:", err);
+    res.status(500).send('Unable to mark the photo as favourite');
+}
+
+});
 app.get('/folders', (req, res) => {
   s3.listObjectsV2({ Bucket: bucketName }, (err, data) => {
     if (err) {
@@ -1216,9 +1458,17 @@ app.post('/downloadImage', async (req, res) => {
  
         try {
           
-          logger.info("Image downloading started from cloud: " +imagesBucketName+ "-> "+ imageUrl);
+          
+          const eventName = imageUrl.split('/')[0];
+          logger.info("Image downloading started from cloud: " +imagesBucketName+ "-> "+ imageUrl +"for event - >"+eventName);
+          let bucket = imagesBucketName
+          if(eventName === 'Convocation_PrathimaCollege'){
+               bucket = 'flashbackprathimacollection'
+               logger.info(bucket);
+          }
+          
           const imageData = await s3.getObject({
-              Bucket: imagesBucketName,
+              Bucket: bucket,
               Key: imageUrl
           }).promise();
 
@@ -1271,10 +1521,15 @@ app.post('/downloadImage', async (req, res) => {
 
       app.post('/createUser', async (req, res) => {
         const  username  = req.body.username;
+        const eventName = req.body.eventName;
         logger.info("creating user "+username);
       
         try {
           // Check if the user already exists
+          if(!eventName)
+            {
+              eventName = 'Convocation_PrathimaCollege'
+            }
           const existingUser = await getUser(username);
           logger.info("existingUser"+ existingUser);
           if (existingUser && existingUser.potrait_s3_url) {
@@ -1282,13 +1537,13 @@ app.post('/downloadImage', async (req, res) => {
             const updateParamsUserEvent = {
               TableName: userEventTableName,
               Item: {
-                event_name: 'ShraddInn_10052024',
+                event_name: eventName,
                 user_phone_number: username,
                 created_date: new Date().toISOString()
               }
             };
             const putResult = await docClient.put(updateParamsUserEvent).promise()
-            logger.info('insert in user-event mapping is successful:', putResult);
+            logger.info('insert in user-event mapping is successful:', eventName);
             return res.json({ error: 'User already exists', status:'exists' });
           }
       
@@ -1299,7 +1554,7 @@ app.post('/downloadImage', async (req, res) => {
           const updateParamsUserEvent = {
             TableName: userEventTableName,
             Item: {
-              event_name: 'ShraddInn_10052024',
+              event_name: eventName,
               user_phone_number: username,
               created_date: new Date().toISOString()
             }
@@ -1427,6 +1682,6 @@ httpsServer.listen(PORT, () => {
 
 
 //**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
-// app.listen(PORT ,() => {
-//   logger.info(`Server started on http://localhost:${PORT}`);
-// });
+app.listen(PORT ,() => {
+  logger.info(`Server started on http://localhost:${PORT}`);
+});

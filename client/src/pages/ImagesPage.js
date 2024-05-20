@@ -7,7 +7,6 @@ import LoadingSpinner from "./LoadingSpinner";
 import Modal from "../components/ImageModal";
 import { useNavigate } from "react-router-dom";
 import { LazyLoadImage } from "react-lazy-load-image-component";
-import { Helmet } from "react-helmet";
 import PlaceholderImage from "../Media/blurredLogo.png";
 import Header from "../components/Header";
 

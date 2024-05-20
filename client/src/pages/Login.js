@@ -13,6 +13,7 @@ import Webcam from "react-webcam";
 import logo from "../Media/logoCropped.png";
 import india from "../Media/india.webp";
 import { Slide, toast } from "react-toastify";
+import { useParams } from "react-router-dom";
 
 function Login() {
   const serverIP = process.env.REACT_APP_SERVER_IP;
@@ -20,7 +21,7 @@ function Login() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const { setAuthState } = useContext(AuthContext);
-
+  const { eventName } = useParams();
   const [isNewUser, setIsNewUser] = useState(false);
   const [isPhoneNumberValid, setIsPhoneNumberValid] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
@@ -85,6 +86,7 @@ function Login() {
     try {
       const response = await axios.post(`${serverIP}/createUser`, {
         username: fullPhoneNumber,
+        eventName: eventName,
       });
       setIsPhoneNumberValid(true);
       console.log(response.status);
@@ -171,12 +173,36 @@ function Login() {
               />
               {/* </div> */}
               {phoneNumberError && (
-                <p style={{ color: "#cc0033", backgroundColor:"#FFBABA", padding:"0.2em",fontSize:"0.9rem",borderRadius:"2px", margin:"0.5em 0" }}>{phoneNumberError}</p>
+                <p
+                  style={{
+                    color: "#cc0033",
+                    backgroundColor: "#FFBABA",
+                    padding: "0.2em",
+                    fontSize: "0.9rem",
+                    borderRadius: "2px",
+                    margin: "0.5em 0",
+                  }}
+                >
+                  {phoneNumberError}
+                </p>
               )}
               <button type="submit" disabled={phoneNumber.length !== 10}>
                 Login
               </button>
-              {error && <p style={{ color: "#cc0033", backgroundColor:"#FFBABA",padding:"0.2em",fontSize:"0.9rem",borderRadius:"2px", margin:"0.5em" }}>{error}</p>}
+              {error && (
+                <p
+                  style={{
+                    color: "#cc0033",
+                    backgroundColor: "#FFBABA",
+                    padding: "0.2em",
+                    fontSize: "0.9rem",
+                    borderRadius: "2px",
+                    margin: "0.5em",
+                  }}
+                >
+                  {error}
+                </p>
+              )}
             </form>
           )}
           {isNewUser && (
@@ -202,7 +228,9 @@ function Login() {
                       <button type="button" onClick={retake}>
                         Retake photo
                       </button>
-                      <label style={{ display: "flex",justifyContent:"center" }}>
+                      <label
+                        style={{ display: "flex", justifyContent: "center" }}
+                      >
                         <input
                           name="checkbox"
                           type="checkbox"
