@@ -117,6 +117,7 @@
 import React from 'react'
 //import useWindowSize from 'react-use/lib/useWindowSize'
 import Confetti from 'react-confetti'
+import logo from "../Media/logoCropped.png"
 
 function Home () {
   //const { width, height } = useWindowSize()
@@ -127,7 +128,16 @@ function Home () {
 
     <Confetti opacity="0.7" friction="0.95 "
     />
-    <p className="loginLogo">Flashback<p className="logoCaption">Create & share memories</p></p>
+     <div className="loginLogoBox">
+          <h2>
+            FlashB
+            <span>
+              <img src={logo} />
+            </span>
+            ck
+          </h2>
+        </div>
+    {/* <p className="loginLogo">Flashback<p className="logoCaption">Create & share memories</p></p> */}
     <p className="Congrats"> Congratulations!! </p>
     <p className="CongratsMessage"> 
     {/* style={{ textAlign: 'center', paddingTop: '50px', fontSize: '30px', color: 'green' }}> */}

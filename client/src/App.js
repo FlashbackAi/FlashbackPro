@@ -1,4 +1,3 @@
-
 import "./App.css";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
@@ -12,13 +11,15 @@ import Profile from "./pages/Profile";
 import ForgotPassword from "./pages/ForgotPassword";
 import { useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
-import { useLocation,Navigate } from 'react-router-dom'
-import ImagesPage from './pages/ImagesPage';
+import { useLocation, Navigate } from "react-router-dom";
+import ImagesPage from "./pages/ImagesPage";
 import TermsAndConditions from "./pages/TermsAndConditions";
+import logo from "./Media/logoCropped.png";
 
+import { Slide, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function App() {
-
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -27,7 +28,6 @@ function App() {
     }, 1000);
   }, []);
 
-  
   const isTokenExpired = (token) => {
     const decodedToken = jwtDecode(token);
     const currentDate = new Date();
@@ -37,29 +37,27 @@ function App() {
   };
 
   const ProtectedRoute = ({ children }) => {
-
     let location = useLocation();
     const token = localStorage.getItem("accessToken");
     const isAuthenticated = token && !isTokenExpired(token);
 
-    return isAuthenticated ? children : <Navigate to="/login" state={{ from: location }} replace />;;
+    return isAuthenticated ? (
+      children
+    ) : (
+      <Navigate to="/login" state={{ from: location }} replace />
+    );
   };
-  
+
   const [darkMode, setDarkMode] = useState(true);
 
   useEffect(() => {
-    console.log("Dark mode enabled:",darkMode);
-      document.documentElement.classList.add("dark-mode");
-    
+    console.log("Dark mode enabled:", darkMode);
+    document.documentElement.classList.add("dark-mode");
   }, [darkMode]);
   return (
-
-    
     <div className="App1">
       {/* <meta name="viewport" content="width=device-width, user-scalable=no" /> */}
-      <div className="Background">
-
-      </div>
+      <div className="Background"></div>
       {/* <label className="toggle-switch">
         <div className='Darktitle'>
           <label>
@@ -71,13 +69,11 @@ function App() {
 
       </label> */}
 
-
       <Router>
-        
         {isLoading ? (
           // Display Loading spinner while waiting
           <div>
-          <LoadingSpinner />
+            <LoadingSpinner />
           </div>
         ) : (
           <Routes>
@@ -86,22 +82,50 @@ function App() {
             <Route path="/forgotPassword" element={<ForgotPassword />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/admin/ShareEvents" element={<ShareEvents />}>
-              <Route path="/admin/ShareEvents/:eventName/people" element={<ShareEvents />} />
+              <Route
+                path="/admin/ShareEvents/:eventName/people"
+                element={<ShareEvents />}
+              />
             </Route>
             {/* <Route path="/" element={<ProtectedRoute><CreateFlashBack/></ProtectedRoute>} /> */}
-            <Route path="/home" element={<Home/>}></Route> 
+            <Route path="/home" element={<Home />}></Route>
             {/* <Route path="/home" element={<ProtectedRoute><Home/></ProtectedRoute>}></Route> */}
-            <Route path="/createFlashback" element={<ProtectedRoute><CreateFlashBack /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route
+              path="/createFlashback"
+              element={
+                <ProtectedRoute>
+                  <CreateFlashBack />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
             {/* <Route path="/images/:eventName/:userId" element={<ProtectedRoute><ImagesPage /></ProtectedRoute>} /> */}
-            <Route path="/photos/:eventName/:userId" element={<ImagesPage />} /> 
+            <Route path="/photos/:eventName/:userId" element={<ImagesPage />} />
             <Route path="/" element={<Login />} />
-            <Route path="/TermsAndConditions" element={<TermsAndConditions />} />TermsAndConditions
-
+            <Route
+              path="/TermsAndConditions"
+              element={<TermsAndConditions />}
+            />
+            TermsAndConditions
           </Routes>
-          )}
-        </Router>
-
+        )}
+      </Router>
+      <ToastContainer
+        limit={1}
+        position="bottom-right"
+        autoClose={4000}
+        closeOnClick
+        theme="light"
+        transition={Slide}
+        icon={({ theme, type }) => <img src={logo} />}
+      />
     </div>
   );
   //       <Switch>
@@ -110,7 +134,7 @@ function App() {
   //         <Route path="/registration" exact component={Registration} />
   //         <Route path="/login" exact component={Login} />
   //       </Switch>
-  //     </Router> 
+  //     </Router>
   //     <Router>
   //           <div className="navbar">
   //               <Link to="/"> Home Page</Link>
@@ -129,8 +153,5 @@ function App() {
   //   </div>
   // );
 }
-
-
-
 
 export default App;

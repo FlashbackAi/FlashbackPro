@@ -1,3 +1,22 @@
+/* Toast Start */
+
+.Toastify__close-button {
+  width: max-content;
+  height: auto;
+  align-self: center !important;
+}
+
+.Toastify__toast-icon img {
+  width: 100%;
+  height: auto;
+}
+
+.Toastify__progress-bar-theme--light {
+  background:linear-gradient( to right, #b48e75, #db8f5d, #d07030, #72350c, #502305, #54290b ) !important;
+}
+
+/* Toast End */
+
 .App {
   width: 100%;
   height: auto;
@@ -440,6 +459,11 @@ input:checked + .slider:before {
 .loginLeft {
   display: block;
   max-width: 25em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2em;
   /*padding: 25%;*/
 }
 
@@ -461,6 +485,13 @@ input:checked + .slider:before {
   width: max-content;
   display: contents;
   align-items: center;
+}
+
+.btn-container {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .login-form {
@@ -491,7 +522,8 @@ input:checked + .slider:before {
 }
 
 .login-form button[type="submit"] {
-  background-color: #1877f2;
+  /* background-color: #1877f2; */
+  background-color: #b48e75;
   color: white;
 }
 
@@ -516,6 +548,42 @@ p {
 .loginForgotPassword {
   padding-left: 25%;
 }
+
+.loginLogoBox {
+  padding: 0.8em 2rem;
+  margin-top: 7em;
+  margin-bottom: 1em;
+  display: flex;
+  justify-content: center;
+  /* background-color: red; */
+}
+
+.loginLogoBox h2 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1em;
+  color: #bbb6b6;
+  font-size: 2.5em;
+  position: relative;
+  width: fit-content;
+}
+
+.loginLogoBox h2::after {
+  content: "Create & Share Memories";
+  position: absolute;
+  bottom: -1em;
+  display: block;
+  text-align: center;
+  font-size: 0.3em;
+  letter-spacing: 0.1em;
+}
+
+.loginLogoBox img {
+  width: 1.1em;
+  height: 1em;
+}
+
 @import url("https://fonts.googleapis.com/css2?family=Open+Sans:wght@700&display=swap");
 .loginLogo {
   font-family: "Open Sans", sans-serif; /* This is a placeholder; you'd need the actual font used by Facebook */
@@ -1169,4 +1237,19 @@ li {
     margin-top: 0;
     opacity: 0;
   }
+}
+
+
+.countryCode{
+  display: flex;
+  width: 1.5em;
+  align-items: center;
+  gap: 0.2em;
+  position: absolute;
+  background-color: grey;
+}
+
+.countryCode img{
+  width: 100%;
+  height: 100%;
 }
