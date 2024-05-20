@@ -103,7 +103,8 @@ function Login() {
       }
     } catch (error) {
       console.log(error);
-      setError(error.message);
+      toast.error(error.message, {theme:"colored",hideProgressBar:true,icon:true})
+      // setError(error.message);
     }
   };
 
@@ -170,20 +171,22 @@ function Login() {
                 type="tel"
                 placeholder="Phone Number"
                 onChange={handlePhoneNumberChange}
+                className={phoneNumberError && "error"}
               />
               {/* </div> */}
               {phoneNumberError && (
                 <p
                   style={{
-                    color: "#cc0033",
-                    backgroundColor: "#FFBABA",
+                    color: "#f66060",
+                    // backgroundColor: "#FFBABA",
                     padding: "0.2em",
-                    fontSize: "0.9rem",
+                    fontSize: "0.8rem",
                     borderRadius: "2px",
-                    margin: "0.5em 0",
+                    margin: "0",
+                    textAlign:"left"
                   }}
                 >
-                  {phoneNumberError}
+                  *{phoneNumberError}
                 </p>
               )}
               <button type="submit" disabled={phoneNumber.length !== 10}>
@@ -224,8 +227,8 @@ function Login() {
                 {imgSrc ? (
                   <div className="login-form-container">
                     <form className="login-form" onSubmit={uploadPhoto}>
-                      <button type="submit">Submit photo</button>
-                      <button type="button" onClick={retake}>
+                      <button type="submit" className="submitPhoto">Submit photo</button>
+                      <button type="button" className="retakePhoto" onClick={retake}>
                         Retake photo
                       </button>
                       <label
@@ -235,7 +238,7 @@ function Login() {
                           name="checkbox"
                           type="checkbox"
                           required
-                          style={{ transform: "scale(2.0)" }}
+                          style={{ transform: "scale(1.1)" }}
                           onChange={(e) => setTermsAccepted(e.target.checked)}
                           onInvalid={(e) =>
                             e.target.setCustomValidity(
@@ -248,7 +251,7 @@ function Login() {
                           href="/TermsAndConditions"
                           target="_blank"
                           rel="noopener noreferrer"
-                          style={{ color: "red" }}
+                          className="termsAndConditionButton"
                         >
                           Accept terms and conditions
                         </a>
