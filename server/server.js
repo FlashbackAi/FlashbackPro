@@ -36,13 +36,13 @@ const logger = winston.createLogger({
  });
 
  // *** Comment these certificates while testing changes in local developer machine. And, uncomment while pushing to mainline***
-const privateKey = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/privkey.pem', 'utf8');
-const certificate = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/fullchain.pem', 'utf8');
+// const privateKey = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/privkey.pem', 'utf8');
+// const certificate = fs.readFileSync('/etc/letsencrypt/live/app.flashback.inc/fullchain.pem', 'utf8');
 
-const credentials = {
-  key: privateKey,
-  cert: certificate
-}
+// const credentials = {
+//   key: privateKey,
+//   cert: certificate
+// }
 
 // Set up AWS S3
 const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.js
@@ -427,6 +427,46 @@ app.post('/trigger-flashback', async (req, res) => {
     // After processing all users, send the final success message along with progress status indicating completion
     // sendProgressUpdate(100);
     res.end(); // End the response stream
+
+  } catch (error) {
+    console.error('Error triggering flashback:', error);
+    // If an error occurs, send an error response to the client
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
+app.post('/trigger-flashback-new', async (req, res) => {
+  try {
+    const { eventName } = req.body;
+    
+     logger.info("Images are being fetched for event : " +eventName);
+
+     const params = {
+      TableName: indexedDataTableName,
+      IndexName: 'folder_name-user_id-index', 
+      ProjectionExpression: 'user_id, image_id,s3_url,folder_name,faces_in_image',
+      KeyConditionExpression: 'folder_name = :folderName',
+      ExpressionAttributeValues: {
+        ':folderName': eventName
+      }        
+    };
+
+    let items = [];
+    let lastEvaluatedKey = null;
+    do {
+      if (lastEvaluatedKey) {
+        params.ExclusiveStartKey = lastEvaluatedKey;
+      }
+
+      const data = await docClient.query(params).promise();
+      items = items.concat(data.Items);
+      lastEvaluatedKey = data.LastEvaluatedKey;
+    } while (lastEvaluatedKey)
+      items.sort((a, b) => b.faces_in_image - a.faces_in_image);
+
+
+    res.send(items); // End the response stream
 
   } catch (error) {
     console.error('Error triggering flashback:', error);
@@ -1682,6 +1722,6 @@ httpsServer.listen(PORT, () => {
 
 
 //**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
-app.listen(PORT ,() => {
-  logger.info(`Server started on http://localhost:${PORT}`);
-});
+// app.listen(PORT ,() => {
+//   logger.info(`Server started on http://localhost:${PORT}`);
+// });
