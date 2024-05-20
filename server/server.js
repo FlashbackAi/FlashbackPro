@@ -1140,6 +1140,7 @@ app.post('/setFavourites', async (req,res) => {
 
     const userId = req.body.userId;
     const imageUrl = req.body.imageUrl;
+    const isFav = req.body.isFav;
 
     const params = {
       TableName: userOutputTable,
@@ -1149,7 +1150,7 @@ app.post('/setFavourites', async (req,res) => {
       },
       UpdateExpression: 'set is_favourite = :isFav',
       ExpressionAttributeValues: {
-          ':isFav': true
+          ':isFav': isFav
       },
       ReturnValues: 'UPDATED_NEW'
   };
