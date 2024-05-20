@@ -435,6 +435,46 @@ app.post('/trigger-flashback', async (req, res) => {
   }
 });
 
+
+app.post('/trigger-flashback-new', async (req, res) => {
+  try {
+    const { eventName } = req.body;
+    
+     logger.info("Images are being fetched for event : " +eventName);
+
+     const params = {
+      TableName: indexedDataTableName,
+      IndexName: 'folder_name-user_id-index', 
+      ProjectionExpression: 'user_id, image_id,s3_url,folder_name,faces_in_image',
+      KeyConditionExpression: 'folder_name = :folderName',
+      ExpressionAttributeValues: {
+        ':folderName': eventName
+      }        
+    };
+
+    let items = [];
+    let lastEvaluatedKey = null;
+    do {
+      if (lastEvaluatedKey) {
+        params.ExclusiveStartKey = lastEvaluatedKey;
+      }
+
+      const data = await docClient.query(params).promise();
+      items = items.concat(data.Items);
+      lastEvaluatedKey = data.LastEvaluatedKey;
+    } while (lastEvaluatedKey)
+      items.sort((a, b) => b.faces_in_image - a.faces_in_image);
+
+
+    res.send(items); // End the response stream
+
+  } catch (error) {
+    console.error('Error triggering flashback:', error);
+    // If an error occurs, send an error response to the client
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Function to query user_event_mapping table
 async function queryUserEventMapping(eventName) {
   const params = {
@@ -1521,7 +1561,7 @@ app.post('/downloadImage', async (req, res) => {
 
       app.post('/createUser', async (req, res) => {
         const  username  = req.body.username;
-        const eventName = req.body.eventName;
+        let eventName = req.body.eventName;
         logger.info("creating user "+username);
       
         try {
@@ -1682,6 +1722,6 @@ httpsServer.listen(PORT, () => {
 
 
 //**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
-app.listen(PORT ,() => {
-  logger.info(`Server started on http://localhost:${PORT}`);
-});
+// app.listen(PORT ,() => {
+//   logger.info(`Server started on http://localhost:${PORT}`);
+// });
