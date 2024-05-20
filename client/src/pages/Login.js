@@ -161,19 +161,18 @@ function Login() {
         <div className="login-form-container">
           {!isPhoneNumberValid && (
             <form onSubmit={handleSubmit} className="login-form">
-              {/* <div className="phoneOuter" style={{position:"relative"}}>
+              <div className={"phoneOuter "+(phoneNumberError && "error")} style={{position:"relative"}}>
                 <div className="countryCode"> 
                 <img src={india}/> +91
-                </div> */}
+                </div>
               <input
                 name="phoneNumber"
                 required
                 type="tel"
                 placeholder="Phone Number"
                 onChange={handlePhoneNumberChange}
-                className={phoneNumberError && "error"}
               />
-              {/* </div> */}
+              </div>
               {phoneNumberError && (
                 <p
                   style={{
@@ -228,7 +227,7 @@ function Login() {
                   <div className="login-form-container">
                     <form className="login-form" onSubmit={uploadPhoto}>
                       <button type="submit" className="submitPhoto">Submit photo</button>
-                      <button type="button" className="retakePhoto" onClick={retake}>
+                      <button type="button" className="takePhoto" onClick={retake}>
                         Retake photo
                       </button>
                       <label
@@ -261,7 +260,7 @@ function Login() {
                 ) : (
                   <div className="login-form-container">
                     <form className="login-form">
-                      <button type="button" onClick={capture}>
+                      <button className="takePhoto" type="button" onClick={capture}>
                         Capture photo
                       </button>
                     </form>
