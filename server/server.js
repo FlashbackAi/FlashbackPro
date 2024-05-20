@@ -1561,7 +1561,7 @@ app.post('/downloadImage', async (req, res) => {
 
       app.post('/createUser', async (req, res) => {
         const  username  = req.body.username;
-        const eventName = req.body.eventName;
+        let eventName = req.body.eventName;
         logger.info("creating user "+username);
       
         try {
