@@ -978,7 +978,7 @@ async function userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites
    logger.info(isFavourites)
     try {
     let params = {}
-    if(isFavourites){
+    if(isFavourites === true){
       params = {
         TableName: userOutputTable,
         IndexName: 'unique_uid-event_name-index', 
@@ -1061,22 +1061,36 @@ app.get('/userThumbnails/:eventName/', async (req, res) => {
         userCountMap.set(userId, userCountMap.get(userId) + 1);
        // logger.info(userCountMap.size)
     }); 
+    logger.info("Total number of user userIds fetched : "+userCountMap.size)
     const usersIds = Array.from(userCountMap.keys());
     const keys = usersIds.map(userId => ({ user_id: userId }));
     const TABLE_NAME = 'RekognitionUsersData';
-    console.log(keys)
+    const BATCH_SIZE = 100;
+   const keyBatches = [];
+   const thumbnailObject = [];
+   for (let i = 0; i < keys.length; i += BATCH_SIZE) {
+    keyBatches.push(keys.slice(i, i + BATCH_SIZE));
+   }
+
+   for (const batch of keyBatches) {
     const params1 = {
       RequestItems: {
         [TABLE_NAME]: {
-          Keys: keys,
+          Keys: batch,
           ProjectionExpression: 'user_id, face_url',
         }
       }
     };
 
-    const data = await docClient.batchGet(params1).promise();
+    try {
+      const data = await docClient.batchGet(params1).promise();
+      const responses = data.Responses[TABLE_NAME];
+      thumbnailObject.push(...responses);
+    } catch (error) {
+      console.error('Error fetching batch:', error);
+    }
+  }
 
-    const thumbnailObject = data.Responses[TABLE_NAME];
     thumbnailObject.forEach( item=>{
       item.count = userCountMap.get(item.user_id)
     })
