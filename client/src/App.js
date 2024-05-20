@@ -94,10 +94,10 @@ function App() {
             {/* <Route path="/home" element={<ProtectedRoute><Home/></ProtectedRoute>}></Route> */}
             <Route path="/createFlashback" element={<ProtectedRoute><CreateFlashBack /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            {/* <Route path="/images/:eventName/:userId" element={<ProtectedRoute><ImagesPage /></ProtectedRoute>} /> */}
             <Route path="/photos/:eventName/:userId" element={<ImagesPage />} /> 
             <Route path="/pro/:eventName" element={<Pro />} /> 
             <Route path="/" element={<Login />} />
+            <Route path="/login/:eventName" element={<Login />} />
             <Route path="/TermsAndConditions" element={<TermsAndConditions />} />TermsAndConditions
 
           </Routes>

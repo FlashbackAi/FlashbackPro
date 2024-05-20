@@ -1521,10 +1521,15 @@ app.post('/downloadImage', async (req, res) => {
 
       app.post('/createUser', async (req, res) => {
         const  username  = req.body.username;
+        const eventName = req.body.eventName;
         logger.info("creating user "+username);
       
         try {
           // Check if the user already exists
+          if(!eventName)
+            {
+              eventName = 'Convocation_PrathimaCollege'
+            }
           const existingUser = await getUser(username);
           logger.info("existingUser"+ existingUser);
           if (existingUser && existingUser.potrait_s3_url) {
@@ -1532,13 +1537,13 @@ app.post('/downloadImage', async (req, res) => {
             const updateParamsUserEvent = {
               TableName: userEventTableName,
               Item: {
-                event_name: 'Convocation_PrathimaCollege',
+                event_name: eventName,
                 user_phone_number: username,
                 created_date: new Date().toISOString()
               }
             };
             const putResult = await docClient.put(updateParamsUserEvent).promise()
-            logger.info('insert in user-event mapping is successful:', putResult);
+            logger.info('insert in user-event mapping is successful:', eventName);
             return res.json({ error: 'User already exists', status:'exists' });
           }
       
@@ -1549,7 +1554,7 @@ app.post('/downloadImage', async (req, res) => {
           const updateParamsUserEvent = {
             TableName: userEventTableName,
             Item: {
-              event_name: 'Convocation_PrathimaCollege',
+              event_name: eventName,
               user_phone_number: username,
               created_date: new Date().toISOString()
             }
@@ -1677,6 +1682,6 @@ httpsServer.listen(PORT, () => {
 
 
 //**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
-// app.listen(PORT ,() => {
-//   logger.info(`Server started on http://localhost:${PORT}`);
-// });
+app.listen(PORT ,() => {
+  logger.info(`Server started on http://localhost:${PORT}`);
+});

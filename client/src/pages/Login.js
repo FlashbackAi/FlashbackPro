@@ -1,9 +1,10 @@
-import React, {useRef, useState, useContext,useCallback,useEffect} from "react";
+import React, {useRef, useState, useContext,useCallback} from "react";
 import axios from "axios";
 import { useNavigate, useNavigationType } from "react-router-dom";
 import { AuthContext } from "../helpers/AuthContext";
 import { useLocation } from 'react-router-dom';
 import Webcam from 'react-webcam'
+import { useParams } from "react-router-dom";
 
 
 function Login() {
@@ -12,13 +13,12 @@ function Login() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const { setAuthState } = useContext(AuthContext);
-
+  const { eventName} = useParams();
   const [isNewUser, setIsNewUser] = useState(false);
   const [isPhoneNumberValid, setIsPhoneNumberValid] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [countryCode, setCountryCode] = useState("+91");
-  const [fullPhoneNumber, setFullPhoneNumber] = useState('');
   const [phoneNumberError, setPhoneNumberError] = useState('');
 
   const [faceDetected, setFaceDetected] = useState(false);
@@ -79,7 +79,7 @@ function Login() {
       console.log(fullPhoneNumber); // Log the full phone number
        
         try {
-          const response = await axios.post(`${serverIP}/createUser`, { username: fullPhoneNumber});
+          const response = await axios.post(`${serverIP}/createUser`, { username: fullPhoneNumber, eventName: eventName});
           setIsPhoneNumberValid(true);
           console.log(response.status)
           if(response.status===201)
