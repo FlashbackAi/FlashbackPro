@@ -463,10 +463,80 @@ app.post('/trigger-flashback-new', async (req, res) => {
       items = items.concat(data.Items);
       lastEvaluatedKey = data.LastEvaluatedKey;
     } while (lastEvaluatedKey)
-      items.sort((a, b) => b.faces_in_image - a.faces_in_image);
-
-
-    res.send(items); // End the response stream
+      logger.info("total images fetched from index table : "+items.length)
+      items.sort((a, b) => a.faces_in_image - b.faces_in_image);
+      const indexData = items.map(item => ({
+        event_name: item.folder_name,
+        unique_uid: item.user_id,
+        faces_in_image: item.faces_in_image,
+        s3_url: item.s3_url,
+        image_id: item.image_id
+      }));
+      const promises = indexData.map(item => {
+        const params = {
+          TableName: "user_outputs",
+          Item: item
+        };
+    
+        return docClient.put(params).promise();
+      });
+    
+      try {
+        await Promise.all(promises);
+        logger.info('All items successfully inserted');
+        const phoneNumbers = await queryUserEventMapping(eventName);
+        const totalUsers = phoneNumbers.length;
+        logger.info("total number of users fetched from user-event mapping: ",totalUsers)
+        // Iterate over phoneNumbers and process each user
+        for (const phoneNumber of phoneNumbers) {
+          try {
+            
+            // Query users table to get portrait_s3_url
+            const userData = await queryUsersTable(phoneNumber);
+            const portraitS3Url = userData.portraitS3Url;
+            const uniqueUid = userData.uniqueUid;
+    
+            if (!portraitS3Url) {
+              console.error(`No portrait URL found for phone number: ${phoneNumber}`);
+              continue; // Skip to the next phone number
+            }
+    
+            // Call searchUsersByImage API with portraitS3Url
+            const result = await searchUsersByImage(portraitS3Url, phoneNumber);
+            const matchedUserIds = result.matchedUserIds;
+            console.log('preparing to extract s3_urls with Matched UserIds:', result.matchedUserIds);
+            
+            for (const matchedUser of matchedUserIds) {
+              const s3Urls = await getS3Url(matchedUser);
+    
+              if (s3Urls.length > 0) {
+                for (const s3Url of s3Urls) {
+                  // Store attributes in user_outputs table
+                  await storeUserOutput({ unique_uid: uniqueUid, user_phone_number: phoneNumber, s3_url: s3Url, event_name: eventName });
+                }
+              } else {
+                // Handle case where no S3 URLs are found for the current userId
+                console.error(`No S3 URLs found for userId: ${matchedUser}`);
+              }
+            }
+    
+            // Calculate progress percentage
+            const progress = Math.floor((processedUsers / totalUsers) * 100);
+            console.log('Progress:', progress);
+    
+            // Send progress update to the frontend using SSE
+            sendProgressUpdate(progress);
+            console.log('Progress update sent.');
+    
+          } catch (error) {
+            console.error('Error processing user:', error);
+          }
+        }
+        res.send("indexData inserted successfully"); // End the response stream
+      } catch (error) {
+        console.error('Error inserting or updating items:', error);
+        throw new Error('Error inserting or updating items in DynamoDB');
+      }
 
   } catch (error) {
     console.error('Error triggering flashback:', error);
@@ -988,6 +1058,7 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
      const userId = req.params.userId;
      const isFavourites = req.body.isFavourites;
      const lastEvaluatedKey = req.body.lastEvaluatedKey;
+     const isUserRegistered = checkIsUserRegistered(userId);
      logger.info("Image are being fetched for event of pageNo -> "+eventName+"; userId -> "+userId +"; isFavourites -> "+isFavourites);
 
     const result = await userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites);
@@ -1057,6 +1128,26 @@ async function userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites
       return err;
     }
   
+}
+
+async function checkIsUserRegistered(userId){
+
+  const params = {
+    TableName: "users",
+    FilterExpression: 'userId = :userId',
+    ExpressionAttributeValues: {
+      ':userId': userId
+    },
+    ProjectionExpression: 'userId' // Only return the userId field
+  };
+
+  try {
+    const data = await docClient.scan(params).promise();
+    return data.Items.length > 0;
+  } catch (error) {
+    console.error('Error scanning DynamoDB:', error);
+    throw new Error('Error scanning DynamoDB');
+  }
 }
 
 app.get('/userThumbnails/:eventName/', async (req, res) => {
