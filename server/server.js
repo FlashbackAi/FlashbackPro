@@ -1691,7 +1691,7 @@ app.post('/downloadImage', async (req, res) => {
             }
           };
           const putResult = await docClient.put(updateParamsUserEvent).promise()
-          logger.info('insert in user-event mapping is successful:', putResult);
+          logger.info('insert in user-event mapping is successful:', eventName);
       
           res.status(201).json({ message: 'User created successfully', status:'created' });
         } catch (error) {
