@@ -8,6 +8,7 @@ import {
 import PlaceholderImage from "../Media/blurredLogo.png";
 import LoadingSpinner from "../pages/LoadingSpinner";
 import { ArrowDownToLine, Heart } from "lucide-react";
+import API_UTIL from "../services/AuthIntereptor";
 
 const ImageModal = ({
   clickedImg,
@@ -37,7 +38,7 @@ const ImageModal = ({
 
     setIsDownloading(true);
     try {
-      const response = await axios.post(`${serverIP}/downloadImage`, {
+      const response = await API_UTIL.post(`${serverIP}/downloadImage`, {
         imageUrl: clickedUrl,
       });
       if (response.status === 200) {

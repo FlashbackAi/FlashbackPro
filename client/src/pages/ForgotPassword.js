@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from "react-router-dom";
+import API_UTIL from '../services/AuthIntereptor';
 
 const ForgotPassword = () => {
 
@@ -15,24 +16,24 @@ const ForgotPassword = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        try {
-            const response = await axios.post(`${serverIP}/forgot-password`, { email });
+        // try {
+            const response = await API_UTIL.post(`${serverIP}/forgot-password`, { email });
             setMessage(response.data.message);
             setCodeSent(true);
-        } catch (error) {
-            setMessage(error.response.data.message);
-        }
+        // } catch (error) {
+        //     setMessage(error.response.data.message);
+        // }
     };
 
     const resetPassword = async (e) => {
         e.preventDefault();
-        try {
-            const response = await axios.post(`${serverIP}/reset-password`, { email,code,newPassword });
+        // try {
+            const response = await API_UTIL.post(`${serverIP}/reset-password`, { email,code,newPassword });
             setMessage(response.data.message);
             navigate("/login")
-        } catch (error) {
-            setMessage(error.response.data.message);
-        }
+        // } catch (error) {
+        //     setMessage(error.response.data.message);
+        // }
     };
 
     return (

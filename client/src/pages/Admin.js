@@ -5,6 +5,8 @@ import { saveAs } from 'file-saver';
 import { useGesture } from '@use-gesture/react';
 import { animated, useSpring } from '@react-spring/web';
 import '../Admin.css';
+import API_UTIL from '../services/AuthIntereptor';
+import { toast } from 'react-toastify';
 
 
 function App() {
@@ -141,7 +143,7 @@ function App() {
 
     setIsProgressVisible(true);
     // Make API call to trigger-flashback with the selected event data
-    axios.post(`${serverIP}/trigger-flashback`, { eventName })
+    API_UTIL.post(`${serverIP}/trigger-flashback`, { eventName })
       .then(response => {
 
         const responseData = response.data;
@@ -181,7 +183,7 @@ function App() {
         console.error("Error parsing response:", error);
         // Display an error message
         setMessage(`Error parsing response: ${error.message}`);
-        alert('Error parsing response');
+        toast.error('Error parsing response');
       }
     });
   })
@@ -190,7 +192,7 @@ function App() {
       console.error("Error triggering flashback:", error);
       // Display error message
       setMessage(`Error triggering flashback: ${error.message}`);
-      alert('Error triggering flashback')
+      toast.error('Error triggering flashback')
     });
   };
 
@@ -210,8 +212,8 @@ function App() {
     console.log(imagesList);
     let originalImages = null;
     
-    try{
-      const response = await axios.post(`${serverIP}/fetchOriginalImages`, imagesList);
+    // try{
+      const response = await API_UTIL.post(`${serverIP}/fetchOriginalImages`, imagesList);
       if(response.status != 200)
       {
         throw new Error(response.data.message)
@@ -270,23 +272,20 @@ function App() {
     // });
   }
 }
-catch(error){
-  console.log(error);
-}
-  };
+// catch(error){
+  // console.log(error);
+// }
+  // };
 
   useEffect(() => {
-    axios.get(`${serverIP}/folders`)
+    API_UTIL.get(`${serverIP}/folders`)
       .then(response => {
         setFolders(response.data);
       })
-      .catch(error => {
-        console.error("Error fetching data: ", error);
-      });
   }, []);
 
   useEffect(() => {
-    axios.get(`${serverIP}/fetch-events`)
+    API_UTIL.get(`${serverIP}/fetch-events`)
       .then(response => {
         // Transform the data before setting the events state
         const transformedEvents = response.data.map((event, index) => ({
@@ -295,9 +294,6 @@ catch(error){
         }));
         setEvents(transformedEvents);
       })
-      .catch(error => {
-        console.error("Error fetching events: ", error);
-      });
   }, []);
 
   const fetchImages = (event) =>{

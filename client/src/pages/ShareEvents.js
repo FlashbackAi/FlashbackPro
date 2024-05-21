@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link, useLocation } from 'react-router-dom';
 import '../ShareEvents.css';
+import API_UTIL from '../services/AuthIntereptor';
 
 const ShareEvents = () => {
   const serverIP = process.env.REACT_APP_SERVER_IP;
@@ -24,7 +25,7 @@ const ShareEvents = () => {
 
   const fetchEvents = async () => {
     try {
-      const response = await axios.get(`${serverIP}/fetch-events`);
+      const response = await API_UTIL.get(`${serverIP}/fetch-events`);
       setEvents(response.data);
       setLoading(false); // Set loading to false after events are loaded
     } catch (error) {
@@ -37,7 +38,7 @@ const ShareEvents = () => {
     setCurrentEventName(eventName);
     try {
       setLoading(true);
-      const response = await axios.post(`${serverIP}/getPeopleThumbnails`, { eventName });
+      const response = await API_UTIL.post(`${serverIP}/getPeopleThumbnails`, { eventName });
       setThumbnails(response.data.thumbnails);
       setTotalUniqueUserIds(response.data.totalUniqueUserIds); // Set totalUniqueUserIds
       setLoading(false);

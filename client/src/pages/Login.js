@@ -1,19 +1,13 @@
-import React, {
-  useRef,
-  useState,
-  useContext,
-  useCallback,
-  useEffect,
-} from "react";
-import axios from "axios";
-import { useNavigate, useNavigationType } from "react-router-dom";
+import React, { useRef, useState, useContext, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../helpers/AuthContext";
 import { useLocation } from "react-router-dom";
 import Webcam from "react-webcam";
 import logo from "../Media/logoCropped.png";
 import india from "../Media/india.webp";
-import { Slide, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import { useParams } from "react-router-dom";
+import API_UTIL from "../services/AuthIntereptor";
 
 function Login() {
   const serverIP = process.env.REACT_APP_SERVER_IP;
@@ -54,7 +48,6 @@ function Login() {
     const phoneRegex = /^\d{10}$/;
 
     if (!phoneRegex.test(value)) {
-      console.log("invalid phone number");
       setPhoneNumberError("Please enter a valid 10-digit phone number");
     } else {
       setPhoneNumberError("");
@@ -64,7 +57,6 @@ function Login() {
     const imageSrc = webcamRef.current.getScreenshot();
     //const flag = await detectFaces();
     const flag = true;
-    console.log("capture clicked  - " + flag);
 
     if (flag) {
       setImgSrc(imageSrc);
@@ -81,34 +73,25 @@ function Login() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     const fullPhoneNumber = countryCode + phoneNumber; // Combine country code and phone number
-    console.log(fullPhoneNumber); // Log the full phone number
 
-    try {
-      const response = await axios.post(`${serverIP}/createUser`, {
-        username: fullPhoneNumber,
-        eventName: eventName,
-      });
-      setIsPhoneNumberValid(true);
-      console.log(response.status);
-      if (response.status === 201) {
-        setIsNewUser(true);
-        toast("User created successfully please take a selfie");
-        console.log("user has been created succesfully");
-      } else if (response.status === 200) {
-        setIsNewUser(true);
-        navigate("/home");
-        toast(
-          `hey ${fullPhoneNumber}, you already exists. Have a great event ahead..`
-        );
-      }
-    } catch (error) {
-      console.log(error);
-      setError(error.message);
+    const response = await API_UTIL.post(`${serverIP}/createUser`, {
+      username: fullPhoneNumber,
+      eventName: eventName,
+    });
+    setIsPhoneNumberValid(true);
+    if (response.status === 201) {
+      setIsNewUser(true);
+      toast("User created successfully please take a selfie");
+    } else if (response.status === 200) {
+      setIsNewUser(true);
+      navigate("/home");
+      toast(
+        `hey ${fullPhoneNumber}, you already exists. Have a great event ahead..`
+      );
     }
   };
 
   const uploadPhoto = async (e) => {
-    console.log(termsAccepted);
     if (termsAccepted) {
       e.preventDefault();
       const fullPhoneNumber = countryCode + phoneNumber;
@@ -117,7 +100,7 @@ function Login() {
       formData.append("username", fullPhoneNumber);
 
       try {
-        const response = await axios.post(
+        const response = await API_UTIL.post(
           `${serverIP}/uploadUserPotrait`,
           formData,
           {
@@ -126,7 +109,6 @@ function Login() {
             },
           }
         );
-        console.log(response.data);
         navigate("/home");
       } catch (error) {
         console.error("Error uploading image:", error);
@@ -135,9 +117,6 @@ function Login() {
   };
 
   const handleVerification = () => {
-    console.log(username);
-    console.log(verificationCode);
-    console.log(from.pathname);
     navigate(from.pathname);
     setIsNewUser(true);
   };
@@ -160,30 +139,34 @@ function Login() {
         <div className="login-form-container">
           {!isPhoneNumberValid && (
             <form onSubmit={handleSubmit} className="login-form">
-              {/* <div className="phoneOuter" style={{position:"relative"}}>
-                <div className="countryCode"> 
-                <img src={india}/> +91
-                </div> */}
-              <input
-                name="phoneNumber"
-                required
-                type="tel"
-                placeholder="Phone Number"
-                onChange={handlePhoneNumberChange}
-              />
-              {/* </div> */}
+              <div
+                className={"phoneOuter " + (phoneNumberError && "error")}
+                style={{ position: "relative" }}
+              >
+                <div className="countryCode">
+                  <img src={india} /> +91
+                </div>
+                <input
+                  name="phoneNumber"
+                  required
+                  type="tel"
+                  placeholder="Phone Number"
+                  onChange={handlePhoneNumberChange}
+                />
+              </div>
               {phoneNumberError && (
                 <p
                   style={{
-                    color: "#cc0033",
-                    backgroundColor: "#FFBABA",
+                    color: "#f66060",
+                    // backgroundColor: "#FFBABA",
                     padding: "0.2em",
-                    fontSize: "0.9rem",
+                    fontSize: "0.8rem",
                     borderRadius: "2px",
-                    margin: "0.5em 0",
+                    margin: "0",
+                    textAlign: "left",
                   }}
                 >
-                  {phoneNumberError}
+                  *{phoneNumberError}
                 </p>
               )}
               <button type="submit" disabled={phoneNumber.length !== 10}>
@@ -224,8 +207,14 @@ function Login() {
                 {imgSrc ? (
                   <div className="login-form-container">
                     <form className="login-form" onSubmit={uploadPhoto}>
-                      <button type="submit">Submit photo</button>
-                      <button type="button" onClick={retake}>
+                      <button type="submit" className="submitPhoto">
+                        Submit photo
+                      </button>
+                      <button
+                        type="button"
+                        className="takePhoto"
+                        onClick={retake}
+                      >
                         Retake photo
                       </button>
                       <label
@@ -235,7 +224,7 @@ function Login() {
                           name="checkbox"
                           type="checkbox"
                           required
-                          style={{ transform: "scale(2.0)" }}
+                          style={{ transform: "scale(1.1)" }}
                           onChange={(e) => setTermsAccepted(e.target.checked)}
                           onInvalid={(e) =>
                             e.target.setCustomValidity(
@@ -248,7 +237,7 @@ function Login() {
                           href="/TermsAndConditions"
                           target="_blank"
                           rel="noopener noreferrer"
-                          style={{ color: "red" }}
+                          className="termsAndConditionButton"
                         >
                           Accept terms and conditions
                         </a>
@@ -258,7 +247,11 @@ function Login() {
                 ) : (
                   <div className="login-form-container">
                     <form className="login-form">
-                      <button type="button" onClick={capture}>
+                      <button
+                        className="takePhoto"
+                        type="button"
+                        onClick={capture}
+                      >
                         Capture photo
                       </button>
                     </form>
