@@ -239,7 +239,8 @@ a {
 }
 
 .addCommentContainer input,
-button {
+.button,
+.submit {
   width: 200px;
   height: 50px;
   border-radius: 8px;
@@ -302,7 +303,8 @@ button {
 }
 
 .loginContainer input,
-button {
+.button,
+.submit {
   width: 200px;
   height: 50px;
   border-radius: 8px;
@@ -310,7 +312,8 @@ button {
   margin: 10px;
 }
 
-.loginContainer button {
+.loginContainer .button,
+.loggedInContainer.submit {
   background-color: dodgerblue;
   color: white;
 }
@@ -449,7 +452,8 @@ input:checked + .slider:before {
   padding: 1em;
 }
 
-.login-form button {
+.login-form .button,
+.login-form .submit {
   display: block;
   width: 100%;
   padding: 1em;
@@ -460,7 +464,7 @@ input:checked + .slider:before {
   color: white;
   cursor: pointer;
 }
-.login-form button[type="button"] {
+.login-form .button {
   background-color: #42b72a;
 }
 .login-form label {
@@ -541,7 +545,8 @@ input:checked + .slider:before {
   width: -webkit-fill-available;
 }
 
-.login-form button {
+.login-form .button,
+.login-form .submit {
   padding: 1em;
   margin-bottom: 1em;
   border: none;
@@ -550,13 +555,13 @@ input:checked + .slider:before {
   cursor: pointer;
 }
 
-.login-form button[type="submit"] {
+.login-form .submit {
   /* background-color: #1877f2; */
   background-color: #b48e75;
   color: white;
 }
 
-.login-form button[type="button"] {
+.login-form .button {
   background-color: #42b72a;
   color: white;
 }
@@ -1268,35 +1273,123 @@ li {
   }
 }
 
-.phoneOuter{
-  position: relative;
-  margin: 10px 0;
-  border: 1px solid #ddd;
-    border-radius: 4px;
-  overflow: hidden;
+.flagOption {
+  display: flex;
+  align-items: center;
+  height: fit-content;
+  font-size: 0.9em;
+  gap: 0.5em;
+  padding: 0.5em;
+  justify-content: flex-start;
+  width: 100%;
+  color: black;
+  /* min-width: 8em; */
+ 
 }
 
-.phoneOuter input{
+.fb__value-container{
+  padding: 0 0.3em !important;
+  outline: 0;
+}
+
+.customControl{
+  gap:0;
+  width: max-content;
+  outline: 0;
+}
+
+.customOption{
+  /* min-width: 20em !important; */
+}
+
+.fb__indicator{
+  padding: 8px 3px !important;
+}
+
+.flagOption::selection{
+  color: white;
+}
+
+.phoneOuter{
+  display: flex;
+  position: relative;
+}
+
+.phoneOuter input {
+
+  /* margin: 10px 0;
+  border: 1px solid #ddd;
+    border-radius: 4px;
+  /* overflow: hidden; */
+  /* display: flex;  */
+
+  /* .login-form input { */
+  display: block;
+  width: auto;
+  padding: 1em;
+  margin: 10px 0;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+  outline: 0;
+
+  padding: 1em;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  width: 100%;
+  width: -webkit-fill-available;
+  color: inherit;
+}
+
+.phoneOuter input {
   margin: 0;
-  padding-left: 6em;
+  /* padding-left: 6em; */
   overflow: hidden;
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  /* color: inherit; */
+  color: black;
 }
 
 .countryCode {
-  display: flex;
+  /* display: flex; */
   width: max-content;
   align-items: center;
   gap: 0.4em;
-  position: absolute;
-  background-color: #f0f0f0;
+  /* position: absolute; */
+  /* background-color: #f0f0f0; */
   /* top: 10px; */
-  height: 100%;
-  padding: 0.5em;
-  color: #000000;
+  /* height: 100%; */
+  /* padding: 0.5em; */
+  /* color: #000000; */
   font-size: 14px;
+  outline: 0;
+  border: 0;
+  color: inherit;
 }
 
-.countryCode img {
+.fb__control{
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  outline: 0 !important;
+  color: inherit;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.fb__control:focus{
+  outline: 0 !important;
+}
+
+.countryCode input{
+  outline: 0;
+  border: 0;
+}
+
+.countryCode img,
+.iconImg {
   width: 2em;
   height: 2em;
+  /* flex: 0.3; */
+  /* align-self: flex-start; */
 }

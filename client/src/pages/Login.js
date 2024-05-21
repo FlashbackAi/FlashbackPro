@@ -4,10 +4,42 @@ import { AuthContext } from "../helpers/AuthContext";
 import { useLocation } from "react-router-dom";
 import Webcam from "react-webcam";
 import logo from "../Media/logoCropped.png";
-import india from "../Media/india.webp";
 import { toast } from "react-toastify";
 import { useParams } from "react-router-dom";
 import API_UTIL from "../services/AuthIntereptor";
+import CountryCodes from "../Media/CountryCodes.json";
+import Select, { components } from "react-select";
+
+const CustomOption = ({ children, ...props }) => {
+  console.log(`assets/CountryFlags/${props.data.code}.png`);
+  return (
+    <components.Option {...props}>
+      <div className="flagOption customOption" style={{ display: "flex" }}>
+        <img
+          className="iconImg"
+          src={`assets/CountryFlags/${props.data.code}.png`}
+        />
+        {props.data.code}
+        {children}
+      </div>
+    </components.Option>
+  );
+};
+
+const CustomControl = ({ children, ...props }) => {
+  console.log(props);
+  return (
+    <components.Control {...props}>
+      <div className="flagOption customControl" style={{ display: "flex" }}>
+        <img
+          className="iconImg"
+          src={`assets/CountryFlags/${props.getValue()[0]?.code}.png`}
+        />
+        {children}
+      </div>
+    </components.Control>
+  );
+};
 
 function Login() {
   const serverIP = process.env.REACT_APP_SERVER_IP;
@@ -74,7 +106,7 @@ function Login() {
     event.preventDefault();
     const fullPhoneNumber = countryCode + phoneNumber; // Combine country code and phone number
 
-    const response = await API_UTIL.post(`${serverIP}/createUser`, {
+    const response = await API_UTIL.post(`/createUser`, {
       username: fullPhoneNumber,
       eventName: eventName,
     });
@@ -125,6 +157,17 @@ function Login() {
 
   return (
     <div className="loginBody">
+      {/* {CountryCodes.map((cnt) => {
+        return (
+          <div className="flagOption">
+            <img
+              className="iconImg"
+              src={`assets/CountryFlags/${cnt.code}.png`}
+            />
+            {cnt.code} {cnt.dial_code}
+          </div>
+        );
+      })} */}
       <div className="loginLeft">
         {/* <p className="loginLogo">Flashback<p className="logoCaption">Create & share memories</p></p> */}
         <div className="loginLogoBox">
@@ -143,16 +186,38 @@ function Login() {
                 className={"phoneOuter " + (phoneNumberError && "error")}
                 style={{ position: "relative" }}
               >
-                <div className="countryCode">
-                  <img src={india} /> +91
-                </div>
-                <input
-                  name="phoneNumber"
-                  required
-                  type="tel"
-                  placeholder="Phone Number"
-                  onChange={handlePhoneNumberChange}
-                />
+                {/* <div className="countryCode"> */}
+                {/* <img src={india} /> +91 */}
+                <Select
+                  className="countryCode"
+                  classNamePrefix={"fb"}
+                  options={CountryCodes}
+                  defaultValue={{
+                    name: "India",
+                    dial_code: "+91",
+                    code: "IN",
+                    label: "+91",
+                    value: "+91",
+                  }}
+                  components={{ Option: CustomOption, Control: CustomControl }}
+                  />
+                  <input
+                    name="phoneNumber"
+                    required
+                    type="tel"
+                    placeholder="Phone Number"
+                    onChange={handlePhoneNumberChange}
+                  />
+                {/* </div> */}
+                {/* <PhoneInput
+                className="phoneOuter"
+                placeholder="Phone Number"
+                forceDialCode={true}
+                inputClassName="inputClass"
+                  defaultCountry="in"
+                  // value={phone}
+                  // onChange={(phone) => setPhone(phone)}
+                /> */}
               </div>
               {phoneNumberError && (
                 <p
@@ -169,7 +234,11 @@ function Login() {
                   *{phoneNumberError}
                 </p>
               )}
-              <button type="submit" disabled={phoneNumber.length !== 10}>
+              <button
+                type="submit"
+                className="submit"
+                disabled={phoneNumber.length !== 10}
+              >
                 Login
               </button>
               {error && (
@@ -207,12 +276,12 @@ function Login() {
                 {imgSrc ? (
                   <div className="login-form-container">
                     <form className="login-form" onSubmit={uploadPhoto}>
-                      <button type="submit" className="submitPhoto">
+                      <button type="submit" className="submit submitPhoto">
                         Submit photo
                       </button>
                       <button
                         type="button"
-                        className="takePhoto"
+                        className="button takePhoto"
                         onClick={retake}
                       >
                         Retake photo
@@ -248,7 +317,7 @@ function Login() {
                   <div className="login-form-container">
                     <form className="login-form">
                       <button
-                        className="takePhoto"
+                        className="button takePhoto"
                         type="button"
                         onClick={capture}
                       >
