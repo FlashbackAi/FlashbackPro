@@ -614,7 +614,7 @@ async function searchUsersByImage(portraitS3Url, phoneNumber) {
       Image: {
         Bytes: Buffer.from(croppedBase64EncodedImage, 'base64') // Convert the base64-encoded image to a Buffer
       },
-      MaxUsers: 1,
+      MaxUsers: 2,
       UserMatchThreshold: 90
     };
 
