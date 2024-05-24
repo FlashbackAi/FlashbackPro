@@ -1,11 +1,10 @@
 import React, { useRef, useState, useContext, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../helpers/AuthContext";
-import { useLocation } from "react-router-dom";
 import Webcam from "react-webcam";
 import logo from "../Media/logoCropped.png";
 import { toast } from "react-toastify";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import API_UTIL from "../services/AuthIntereptor";
 import CountryCodes from "../Media/CountryCodes.json";
 import Select, { components } from "react-select";
@@ -70,7 +69,7 @@ function Login() {
   let location = useLocation();
   const navigate = useNavigate();
 
-  let { from } = location.state || { from: { pathname: "/home" } };
+  const from = location.state?.from || "/home";
 
   const handlePhoneNumberChange = (e) => {
     const value = e.target.value;
@@ -115,8 +114,9 @@ function Login() {
       setIsNewUser(true);
       toast("User created successfully please take a selfie");
     } else if (response.status === 200) {
-      setIsNewUser(true);
-      navigate("/home");
+      //setIsNewUser(true);
+      console.log(from);
+      navigate(from);
       toast(
         `hey ${fullPhoneNumber}, you already exists. Have a great event ahead..`
       );
@@ -141,7 +141,21 @@ function Login() {
             },
           }
         );
-        navigate("/home");
+        if(from.includes("pictures")){
+          try{
+          const response = await API_UTIL.post(`${serverIP}/userIdPhoneNumberMapping`, {
+            phoneNumber: fullPhoneNumber
+          });
+          if(response.status == 200)
+            {
+              console.log("Succesfully mapped the userId and phoneNumber");
+            }
+        }
+        catch(error){
+          console.log("error in mapping the userId and phone number");
+        }
+        }
+        navigate(from);
       } catch (error) {
         console.error("Error uploading image:", error);
       }
@@ -149,7 +163,7 @@ function Login() {
   };
 
   const handleVerification = () => {
-    navigate(from.pathname);
+    navigate(from);
     setIsNewUser(true);
   };
 

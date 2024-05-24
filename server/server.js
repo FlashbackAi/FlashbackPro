@@ -19,6 +19,7 @@ const { Readable } = require('stream');
 const axios = require('axios');
 const ReactDOMServer = require('react-dom/server');
 const React = require('react');
+const { set } = require('lodash');
 //const App = require('..\\client');
 
 app.use(cors()); // Allow cross-origin requests
@@ -382,6 +383,7 @@ app.post('/trigger-flashback', async (req, res) => {
         // Increment processed users count
         processedUsers++;
 
+        logger.info("fetch s3 url for phoneNumber: "+phoneNumber);
         // Query users table to get portrait_s3_url
         const userData = await queryUsersTable(phoneNumber);
         const portraitS3Url = userData.portraitS3Url;
@@ -394,11 +396,11 @@ app.post('/trigger-flashback', async (req, res) => {
 
         // Call searchUsersByImage API with portraitS3Url
         const result = await searchUsersByImage(portraitS3Url, phoneNumber);
-        const matchedUserIds = result.matchedUserIds;
-        console.log('preparing to extract s3_urls with Matched UserIds:', result.matchedUserIds);
+        const matchedUserIds = result.matchedUserId;
+        console.log('preparing to extract s3_urls with Matched UserIds:', result.matchedUserId);
         
         for (const matchedUser of matchedUserIds) {
-          const s3Urls = await getS3Url(matchedUser);
+          const s3Urls = await getS3Url(matchedUser,eventName);
 
           if (s3Urls.length > 0) {
             for (const s3Url of s3Urls) {
@@ -465,12 +467,39 @@ app.post('/trigger-flashback-new', async (req, res) => {
     } while (lastEvaluatedKey)
       logger.info("total images fetched from index table : "+items.length)
       items.sort((a, b) => a.faces_in_image - b.faces_in_image);
+      const userIds = [...new Set(items.map(item => item.user_id))];
+      const userBatches = [];
+      const usersObject = {};
+      for (let i = 0; i < userIds.length; i += 100) {
+        userBatches.push(keys.slice(i, i + 100));
+       }
+    
+       for (const batch of userBatches) {
+        const userParams = {
+        RequestItems: {
+          'users': { // Replace with your table name
+            Keys: batch,
+            ProjectionExpression: 'user_id, phone_number' 
+          }
+        }
+      };
+    
+      try {
+        const data = await docClient.batchGet(userParams).promise();
+        const responses = data.Responses['users'];
+        usersObject.push(...responses);
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        throw new Error('Error fetching user data from DynamoDB');
+      }
+      const userMap = new Map(userData.map(user => [user.user_id, user.phone_number]));
       const indexData = items.map(item => ({
         event_name: item.folder_name,
         unique_uid: item.user_id,
         faces_in_image: item.faces_in_image,
         s3_url: item.s3_url,
-        image_id: item.image_id
+        image_id: item.image_id,
+        user_phone_number: userMap.get(item.user_id) || null
       }));
       const promises = indexData.map(item => {
         const params = {
@@ -500,36 +529,12 @@ app.post('/trigger-flashback-new', async (req, res) => {
               console.error(`No portrait URL found for phone number: ${phoneNumber}`);
               continue; // Skip to the next phone number
             }
-    
-            // Call searchUsersByImage API with portraitS3Url
-            const result = await searchUsersByImage(portraitS3Url, phoneNumber);
-            const matchedUserIds = result.matchedUserIds;
-            console.log('preparing to extract s3_urls with Matched UserIds:', result.matchedUserIds);
-            
-            for (const matchedUser of matchedUserIds) {
-              const s3Urls = await getS3Url(matchedUser);
-    
-              if (s3Urls.length > 0) {
-                for (const s3Url of s3Urls) {
-                  // Store attributes in user_outputs table
-                  await storeUserOutput({ unique_uid: uniqueUid, user_phone_number: phoneNumber, s3_url: s3Url, event_name: eventName });
-                }
-              } else {
-                // Handle case where no S3 URLs are found for the current userId
-                console.error(`No S3 URLs found for userId: ${matchedUser}`);
-              }
-            }
-    
-            // Calculate progress percentage
-            const progress = Math.floor((processedUsers / totalUsers) * 100);
-            console.log('Progress:', progress);
-    
-            // Send progress update to the frontend using SSE
-            sendProgressUpdate(progress);
-            console.log('Progress update sent.');
+
+            mapUserIdAndPhoneNumber(phoneNumber,portraitS3Url);
     
           } catch (error) {
-            console.error('Error processing user:', error);
+            logger.info("Failure in marking the userId and phone number");
+            res.status(500).send({"message":"Failure in marking the userId and phone number"});
           }
         }
         res.send("indexData inserted successfully"); // End the response stream
@@ -538,7 +543,8 @@ app.post('/trigger-flashback-new', async (req, res) => {
         throw new Error('Error inserting or updating items in DynamoDB');
       }
 
-  } catch (error) {
+  } 
+}catch (error) {
     console.error('Error triggering flashback:', error);
     // If an error occurs, send an error response to the client
     res.status(500).json({ error: 'Internal server error' });
@@ -614,8 +620,8 @@ async function searchUsersByImage(portraitS3Url, phoneNumber) {
       Image: {
         Bytes: Buffer.from(croppedBase64EncodedImage, 'base64') // Convert the base64-encoded image to a Buffer
       },
-      MaxUsers: 2,
-      UserMatchThreshold: 90
+      MaxUsers: 5,
+      UserMatchThreshold: 95
     };
 
     // Call the searchUsersByImage operation
@@ -628,12 +634,12 @@ async function searchUsersByImage(portraitS3Url, phoneNumber) {
 
     // Extract and return the matched faces
     if (data.UserMatches && data.UserMatches.length > 0) {
-      console.log('Writing the ImageIds of the matched UserIds to user_outputs table');
-      const matchedUserIds = data.UserMatches.map(match => match.User.UserId);
-      console.log('Matched UserIds:', matchedUserIds);
-      return {matchedUserIds};
+      //console.log('Writing the ImageIds of the matched UserIds to user_outputs table');
+      const matchedUserId = data.UserMatches.map(match => match.User.UserId);
+      console.log('Matched UserIds:', matchedUserId);
+      return {matchedUserId};
     } else {
-      throw new Error('No faces found in the image');
+      throw new Error('No Matches found for the image');
     }
 
   } catch (error) {
@@ -642,15 +648,68 @@ async function searchUsersByImage(portraitS3Url, phoneNumber) {
   }
 }
 
+async function mapUserIdAndPhoneNumber(phoneNumber,imageUrl){
+    try {
+      // Call searchUsersByImage API with portraitS3Url
+      const result = await searchUsersByImage(imageUrl, phoneNumber);
+      const matchedUserId = result.matchedUserId[0];
+      console.log('Matched userId for the phoneNumber: '+phoneNumber+' and imageUrl: '+imageUrl+'is :', matchedUserId);
+      const userUpdateParams = {
+        TableName: 'users', // Replace with your table name
+        Key: {
+          'user_phone_number': phoneNumber // Replace with your partition key name
+        },
+        UpdateExpression: 'set user_id = :userId',
+        ExpressionAttributeValues: {
+          ':userId': matchedUserId
+        },
+        ReturnValues: 'UPDATED_NEW'
+      };
+    
+      try {
+        const result = await docClient.update(userUpdateParams).promise();
+        logger.info('Updated userId for :'+ phoneNumber);
+        return result;
+      } catch (error) {
+        logger.info("Failure is updating the userId in users table : "+error);
+        throw error;
+      }
+
+      // const userOutputUpdateParams = {
+      //   TableName: 'user_outputs', // Replace with your table name
+      //   Key: {
+      //     'unique_uid': matchedUserId // Replace with your partition key name
+      //   },
+      //   UpdateExpression: 'set user_phone_number = :userPhoneNumber',
+      //   ExpressionAttributeValues: {
+      //     ':userPhoneNumber': phoneNumber
+      //   },
+      //   ReturnValues: 'UPDATED_NEW'
+      // };
+      // try {
+      //   const result = await docClient.update(userOutputUpdateParams).promise();
+      //   logger.info('Update phoneNumber for userId:', matchedUserId);
+      //   return result;
+      // } catch (error) {
+      //   logger.info("Failure is updating the userId in users table : "+error);
+      //   throw error;
+      // }
+
+    } catch (error) {
+      logger.info("Error in marking the userId and phone number");
+      throw error;
+    }
+}
 
 // Function to get s3_url using matchedUser
-async function getS3Url(matchedUser) {
+async function getS3Url(matchedUser,eventName) {
   const params = {
     TableName: indexedDataTableName,
-    IndexName: 'user_id-index', // Specify the GSI name
-    KeyConditionExpression: 'user_id = :partitionKey', // Specify the GSI partition and sort key
+    IndexName: 'folder_name-user_id-index', // Specify the GSI name
+    KeyConditionExpression: 'user_id = :partitionKey and folder_name = :eventName', // Specify the GSI partition and sort key
     ExpressionAttributeValues: {
-      ':partitionKey': { S: matchedUser } // Specify the value for the partition key
+      ':partitionKey': { S: matchedUser },
+      ':eventName': {S: eventName} 
     }
   };
 
@@ -697,6 +756,23 @@ async function storeUserOutput(attributes) {
 
 module.exports = { searchUsersByImage };
 
+app.post('/userIdPhoneNumberMapping',async (req,res) =>{
+
+  try{
+    const phoneNumber =req.body.phoneNumber;
+    const imageUrl = "https://flashbackuserthumbnails.s3.ap-south-1.amazonaws.com/"+phoneNumber+".jpg";
+    const result = await mapUserIdAndPhoneNumber(phoneNumber,imageUrl);
+    logger.info(result)
+    logger.info("Succesfully mapped userId and phone number");
+    res.send(result);
+  }
+  catch(error)
+  {
+    logger.info("Error in mapping userId with phone number");
+    res.status(500).send({"message":"Error in mapping userId with phone number"});
+  }
+
+});
 
 app.post('/login', function(req, res) {
   
@@ -1058,7 +1134,14 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
      const userId = req.params.userId;
      const isFavourites = req.body.isFavourites;
      const lastEvaluatedKey = req.body.lastEvaluatedKey;
-     const isUserRegistered = checkIsUserRegistered(userId);
+     const isUserRegistered = await checkIsUserRegistered(userId);
+     logger.info("isUserRegistered: "+ isUserRegistered);
+     if(!isUserRegistered)
+      {
+        logger.info("user doesnot exists... navigate to login page");
+          res.status(500).send({"message":"UserDoesnotExist"})
+      }else{
+      logger.info("user exists:"+userId);
      logger.info("Image are being fetched for event of pageNo -> "+eventName+"; userId -> "+userId +"; isFavourites -> "+isFavourites);
 
     const result = await userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites);
@@ -1078,6 +1161,7 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
       const images = await Promise.all(imagesPromises);
       logger.info('total images fetched for the user -> '+userId+'  in event -> '+eventName +"isFavourites -> "+isFavourites+' : '+result.Count);
       res.json({"images":images, 'totalImages':result.Count,'lastEvaluatedKey':result.LastEvaluatedKey});
+  }
   } catch (err) {
      logger.info("Error in S3 get", err);
       res.status(500).send('Error getting images from S3');
@@ -1134,7 +1218,7 @@ async function checkIsUserRegistered(userId){
 
   const params = {
     TableName: "users",
-    FilterExpression: 'userId = :userId',
+    FilterExpression: 'user_id = :userId',
     ExpressionAttributeValues: {
       ':userId': userId
     },
@@ -1143,14 +1227,15 @@ async function checkIsUserRegistered(userId){
 
   try {
     const data = await docClient.scan(params).promise();
-    return data.Items.length > 0;
+     const res = data.Items.length > 0;
+     return res;
   } catch (error) {
     console.error('Error scanning DynamoDB:', error);
     throw new Error('Error scanning DynamoDB');
   }
 }
 
-app.get('/userThumbnails/:eventName/', async (req, res) => {
+app.get('/userThumbnails/:eventName', async (req, res) => {
   try {
    
      const eventName = req.params.eventName;
@@ -1195,7 +1280,78 @@ app.get('/userThumbnails/:eventName/', async (req, res) => {
     logger.info("Total number of user userIds fetched : "+userCountMap.size)
     const usersIds = Array.from(userCountMap.keys());
     const keys = usersIds.map(userId => ({ user_id: userId }));
-    const TABLE_NAME = 'RekognitionUsersData';
+
+    const thumbnailObject = await getThumbanailsForUserIds(keys);
+   
+    logger.info("Total number of user thumbnails fetched : "+thumbnailObject.length)
+     res.json(thumbnailObject);
+  } catch (err) {
+     logger.info("Error in S3 get", err);
+      res.status(500).send('Error getting images from S3');
+  }
+});
+
+app.get('/userThumbnails/:eventName/:userId', async (req, res) => {
+  try {
+   
+     const eventName = req.params.eventName;
+     const userId = req.params.userId;
+
+     logger.info("Thumbnails are being fetched for event : " +eventName+" and userId : "+userId);
+
+     const params = {
+      TableName: indexedDataTableName,
+      IndexName: 'folder_name-user_id-index', 
+      ProjectionExpression: 'user_id, image_id',
+      KeyConditionExpression: 'folder_name = :folderName and user_id =:userId',
+      ExpressionAttributeValues: {
+        ':folderName': eventName,
+        ':userId': userId
+      }        
+    };
+
+    let items = [];
+    let lastEvaluatedKey = null;
+    do {
+      if (lastEvaluatedKey) {
+        params.ExclusiveStartKey = lastEvaluatedKey;
+      }
+
+      const data = await docClient.query(params).promise();
+      items = items.concat(data.Items);
+      lastEvaluatedKey = data.LastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    const userCountMap = new Map();
+
+    // Iterate over each item
+    items.forEach(item => {
+      const userId = item.user_id;
+      // If the userId is not in the map, initialize it with a Set
+     if (!userCountMap.has(userId)) {
+          userCountMap.set(userId, 0);
+        }
+        // Increment the count for this userId
+        userCountMap.set(userId, userCountMap.get(userId) + 1);
+       // logger.info(userCountMap.size)
+    }); 
+    logger.info("Total number of  userIds fetched : "+userCountMap.size)
+    const usersIds = Array.from(userCountMap.keys());
+    const keys = usersIds.map(userId => ({ user_id: userId }));
+
+    const thumbnailObject = await getThumbanailsForUserIds(keys);
+   
+    logger.info("Total number of user thumbnails fetched : "+thumbnailObject.length)
+     res.json(thumbnailObject);
+  } catch (err) {
+     logger.info("Error in S3 get", err);
+      res.status(500).send('Error getting images from S3');
+  }
+});
+
+async function getThumbanailsForUserIds(keys){
+
+  const TABLE_NAME = 'RekognitionUsersData';
     const BATCH_SIZE = 100;
    const keyBatches = [];
    const thumbnailObject = [];
@@ -1219,19 +1375,15 @@ app.get('/userThumbnails/:eventName/', async (req, res) => {
       thumbnailObject.push(...responses);
     } catch (error) {
       console.error('Error fetching batch:', error);
+      throw error;
     }
   }
 
     thumbnailObject.forEach( item=>{
       item.count = userCountMap.get(item.user_id)
     })
-    logger.info("Total number of user thumbnails fetched : "+thumbnailObject.length)
-     res.json(thumbnailObject.sort((a, b) => b.count - a.count));
-  } catch (err) {
-     logger.info("Error in S3 get", err);
-      res.status(500).send('Error getting images from S3');
-  }
-});
+    return thumbnailObject.sort((a, b) => b.count - a.count);
+}
 
 async function userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites){
     
@@ -1738,8 +1890,8 @@ app.post('/downloadImage', async (req, res) => {
       // Route to resize and copy images from a specific subfolder of one S3 bucket to another
       app.post('/api/resize-copy-images', async (req, res) => {
         try {
-            const sourceBucket = "flashbackprathimacollection";
-            const sourceFolder = "Convocation_PrathimaCollege";
+            const sourceBucket = "flashbackusercollection";
+            const sourceFolder = "KSL_22052024";
             const destinationBucket = "flashbackimagesthumbnail";
     
             let continuationToken = null;

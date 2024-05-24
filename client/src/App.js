@@ -16,6 +16,7 @@ import ImagesPage from "./pages/ImagesPage";
 import Pro from './pages/Pro';
 import TermsAndConditions from "./pages/TermsAndConditions";
 import logo from "./Media/logoCropped.png";
+import Flashs from "./pages/Flashs";
 
 import { Slide, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -108,6 +109,7 @@ function App() {
               }
             />
             <Route path="/photos/:eventName/:userId" element={<ImagesPage />} />
+            <Route path="/pictures/:eventName/:userId" element={<Flashs />} />
             <Route path="/pro/:eventName" element={<Pro />} /> 
             <Route path="/" element={<Login />} />
             <Route path="/login/:eventName" element={<Login />} />

@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import LoadingSpinner from "./LoadingSpinner";
 import Modal from "../components/ImageModal";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import { Helmet } from "react-helmet";
 import PlaceholderImage from "../Media/blurredLogo.png";
@@ -20,6 +20,7 @@ function Flashs() {
   const [lastEvaluatedKey, setLastEvaluatedKey] = useState(undefined);
   const isDataFetched = useRef(false);
   const history = useNavigate();
+  const location = useLocation();
 
   const [clickedImg, setClickedImg] = useState(null);
   const [clickedUrl, setClickedUrl] = useState(null);
@@ -56,6 +57,12 @@ function Flashs() {
         throw new Error("Failed to fetch images");
       }
     } catch (error) {
+      
+      if(error.response.data.message === "UserDoesnotExist"){
+        console.log("user does not exist");
+        console.log(location.pathname)
+        history(`/login/${eventName}`, { state: { from: location.pathname } });
+      }
       console.error("Error fetching images:", error);
     } finally {
       setIsLoading(false);
