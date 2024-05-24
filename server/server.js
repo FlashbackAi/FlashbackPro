@@ -1282,6 +1282,10 @@ app.get('/userThumbnails/:eventName', async (req, res) => {
     const keys = usersIds.map(userId => ({ user_id: userId }));
 
     const thumbnailObject = await getThumbanailsForUserIds(keys);
+    thumbnailObject.forEach( item=>{
+      item.count = userCountMap.get(item.user_id)
+    })
+     thumbnailObject.sort((a, b) => b.count - a.count);
    
     logger.info("Total number of user thumbnails fetched : "+thumbnailObject.length)
      res.json(thumbnailObject);
@@ -1379,10 +1383,7 @@ async function getThumbanailsForUserIds(keys){
     }
   }
 
-    thumbnailObject.forEach( item=>{
-      item.count = userCountMap.get(item.user_id)
-    })
-    return thumbnailObject.sort((a, b) => b.count - a.count);
+ return thumbnailObject;
 }
 
 async function userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites){

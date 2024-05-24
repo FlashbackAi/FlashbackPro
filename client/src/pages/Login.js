@@ -116,6 +116,20 @@ function Login() {
     } else if (response.status === 200) {
       //setIsNewUser(true);
       console.log(from);
+      if(from.includes("pictures")){
+        try{
+        const response = await API_UTIL.post(`${serverIP}/userIdPhoneNumberMapping`, {
+          phoneNumber: fullPhoneNumber
+        });
+        if(response.status == 200)
+          {
+            console.log("Succesfully mapped the userId and phoneNumber");
+          }
+      }
+      catch(error){
+        console.log("error in mapping the userId and phone number");
+      }
+    }
       navigate(from);
       toast(
         `hey ${fullPhoneNumber}, you already exists. Have a great event ahead..`

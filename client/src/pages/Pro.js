@@ -29,11 +29,11 @@ function Pro() {
 
   const shareOnWhatsApp = (item) => {
     const userId = item.user_id;
-    const text = `Hey we have found images of you please follow the url to view images ${serverIP}/pictures/${eventName}/${userId}`;
+    const text = `*Greetings*,\nWe have discovered your images captured during the event *"${eventName}"*.\nKindly proceed to the provided URL to access and view your photographs:\nhttps://app.flashback.inc/pictures/${eventName}/${userId}\n\nCheers,\n*Flashback*`;
     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
     window.open(whatsappUrl, "_blank");
   };
-
+  
   const fetchThumbnails = async () => {
     if (userThumbnails.length === 0) setIsLoading(true);
 
