@@ -291,7 +291,7 @@ a {
 
 .loginContainer {
   display: inline-block;
-  float: left;
+  /* float: left; */
   align-items: center;
   flex-direction: column;
   width: 100%;
@@ -486,7 +486,7 @@ input:checked + .slider:before {
 }
 
 .loginRight {
-  float: Right;
+  /* float: Right; */
   display: inline-block;
 }
 .loginLeft {
@@ -959,6 +959,7 @@ End of Sample */
 }
 
 .wrapper-images {
+  position: relative;
   width: 8em;
   height: 8em;
   object-fit: cover;
@@ -1298,9 +1299,6 @@ li {
   outline: 0;
 }
 
-.customOption{
-  /* min-width: 20em !important; */
-}
 
 .fb__indicator{
   padding: 8px 3px !important;
@@ -1392,4 +1390,19 @@ li {
   height: 2em;
   /* flex: 0.3; */
   /* align-self: flex-start; */
+}
+
+
+.image_favourite_down{
+  position: absolute;
+  bottom: 0.1em;
+  right: 0.5em;
+  fill: red;
+  color: transparent;
+  width: 1em;
+  height: 1em;
+}
+
+.cursor-pointer{
+  cursor: pointer;
 }

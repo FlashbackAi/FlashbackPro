@@ -1,8 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
-import axios from "axios";
-// import ImageGallery from 'react-image-gallery';
-// import 'react-image-gallery/styles/css/image-gallery.css'; // Import the CSS
 import LoadingSpinner from "./LoadingSpinner";
 import Modal from "../components/ImageModal";
 import { useNavigate } from "react-router-dom";
@@ -10,55 +7,87 @@ import { LazyLoadImage } from "react-lazy-load-image-component";
 import PlaceholderImage from "../Media/blurredLogo.png";
 import Header from "../components/Header";
 import API_UTIL from "../services/AuthIntereptor";
+import { Heart } from "lucide-react";
+import { element } from "prop-types";
 
 function ImagesPage() {
-  const serverIP = process.env.REACT_APP_SERVER_IP;
-  const { eventName, userId } = useParams();
-  const [images, setImages] = useState([]);
-  const username = sessionStorage.getItem("username");
-  const [isLoading, setIsLoading] = useState(true);
-  const [fetchTimeout, setFetchTimeout] = useState(false);
-  //const [currentPage, setCurrentPage] = useState(1);
-  const [totalImages, setTotalImages] = useState(null);
   const [lastEvaluatedKey, setLastEvaluatedKey] = useState(undefined);
-  const isDataFetched = useRef(false);
-  const history = useNavigate();
-
-  const [clickedImg, setClickedImg] = useState(null);
-  // const [currentIndex, setCurrentIndex] = useState(null);
+  const [fetchTimeout, setFetchTimeout] = useState(false);
+  const [totalImages, setTotalImages] = useState(null);
   const [clickedUrl, setClickedUrl] = useState(null);
+  const [clickedImgIndex, setClickedImgIndex] = useState(null);
+  const [clickedImgFavourite, setClickedImgFavourite] = useState(null);
+  const [clickedImg, setClickedImg] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [lastFavIndex, setLastFavIndex] = useState(-1);
+  const [apiCount, setApiCount] = useState(1);
+  const [images, setImages] = useState([]);
+  const { eventName, userId } = useParams();
+  const history = useNavigate();
+  const isDataFetched = useRef(false);
+  const isFavouritesFetched = useRef(false);
+
   const handleClick = (item, index) => {
-    //console.log(item)
-    //setCurrentIndex(index);
     setClickedImg(item.original);
+    setClickedImgIndex(index);
+    setClickedImgFavourite(item.isFavourites);
     const imgName = item.original.split("amazonaws.com/")[1];
     setClickedUrl(imgName);
     window.history.pushState({ id: 1 }, null, "?image=" + `${imgName}`);
-    //window.history.pushState({ id: 1 }, null, '?image');
   };
 
-  const fetchImages = async () => {
-    if (images.length === 0) setIsLoading(true);
-
+  const fetchFavouriteImages = async () => {
+    setIsLoading(true);
     try {
       const response = await API_UTIL.post(
-        `${serverIP}/images/${eventName}/${userId}  `,
-        { lastEvaluatedKey: lastEvaluatedKey }
+        `/images-new/${eventName}/${userId}  `,
+        {
+          isFavourites: true,
+        }
       );
       if (response.status === 200) {
         const formattedImages = response.data.images.map((img) => ({
           original: img.url,
           thumbnail: img.thumbnailUrl,
+          isFavourites: true,
+        }));
+        setImages((prevImages) => [...prevImages, ...formattedImages]);
+        if (!totalImages) {
+          setTotalImages(response.data.totalImages);
+        }
+        setLastFavIndex(response.data.totalImages - 1);
+        if (images.length >= totalImages) {
+          setIsLoading(false); // Stop fetching more images when all images are fetched
+        }
+      } else {
+        throw new Error("Failed to fetch images");
+      }
+    } catch (error) {
+      console.error("Error fetching images:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchImages = async () => {
+    if (images.length === 0) setIsLoading(true);
+    try {
+      const response = await API_UTIL.post(
+        `/images-new/${eventName}/${userId}  `,
+        {
+          isFavourites: false,
+          lastEvaluatedKey: lastEvaluatedKey,
+        }
+      );
+      if (response.status === 200) {
+        const formattedImages = response.data.images.map((img) => ({
+          original: img.url,
+          thumbnail: img.thumbnailUrl,
+          isFavourites: false,
         }));
         setImages((prevImages) => [...prevImages, ...formattedImages]);
         console.log(response.data.lastEvaluatedKey);
         setLastEvaluatedKey(response.data.lastEvaluatedKey);
-        // if(currentPage === 1)
-        //   {
-        //     console.log("initial hit");
-        //     setLoadedImages(formattedImages)
-        //   }
-        // setCurrentPage(prevPage => prevPage + 1);
         if (!totalImages) {
           setTotalImages(response.data.totalImages);
         }
@@ -75,80 +104,36 @@ function ImagesPage() {
     }
   };
 
+  const fetchAllImages = async () => {
+    await fetchFavouriteImages();
+    // if (isDataFetched.current) return;
+    await fetchImages();
+    // isDataFetched.current = true;
+  };
+
   useEffect(() => {
-    if (isDataFetched.current) return;
-    fetchImages();
-    isDataFetched.current = true;
+    if (isFavouritesFetched.current) return;
+    fetchAllImages();
+    isFavouritesFetched.current = true;
   }, []);
+
+  useEffect(() => {
+    if (totalImages === 0) {
+      setFetchTimeout(true);
+    }
+  }, [totalImages]);
 
   useEffect(() => {
     if (lastEvaluatedKey) {
       console.log("call");
       fetchImages();
     }
-    // if (totalImages===null) {
-    //   console.log("call2");
-    //   fetchImages();
-    // }
-    if (totalImages === 0) {
-      setFetchTimeout(true);
-    } else {
-      console.log("end");
-      console.log(images.length);
-    }
-
-    // Intersection Observer...
-  }, [
-    eventName,
-    userId,
-    serverIP,
-    isLoading,
-    fetchTimeout,
-    totalImages,
-    lastEvaluatedKey,
-    images,
-  ]);
-
-  // useEffect(() => {
-  //   // if (images.length > 0) {
-  //   // console.log(images);
-  //   // const firstImageUrl = images[0].thumbnail; // Assuming images is an array of objects with a 'url' property
-  //   // setClickedImg(firstImageUrl);
-  //   // setClickedUrl(firstImageUrl.split("amazonaws.com/")[1]); // Extracting the image name from the URL
-
-  //   // Dynamically set og:image meta tag
-  //   // const ogImageMeta = document.createElement("meta");
-  //   // ogImageMeta.setAttribute("property", "og:image");
-  //   // ogImageMeta.setAttribute("content", firstImageUrl);
-  //   // document.head.appendChild(ogImageMeta);
-  //   var ogImageMeta = document.querySelector("meta[name='flashback-og:image']");
-  //   if (!ogImageMeta) {
-  //     ogImageMeta = document.createElement("meta");
-  //     ogImageMeta.setAttribute("property", "og:image");
-  //     ogImageMeta.setAttribute("name", "flashback-og:image");
-  //     ogImageMeta.setAttribute("itemprop", "image");
-  //     ogImageMeta.setAttribute(
-  //       "content",
-  //       "https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/Aarthi_Vinay_19122021/Ec_E__DSC1682.jpg"
-  //     );
-  //     document.head.appendChild(ogImageMeta);
-  //     // const ogTypeMeta = document.createElement("meta");
-  //     // ogTypeMeta.setAttribute("property", "og:type");
-  //     // ogTypeMeta.setAttribute("name", "flashback-og:type");
-  //     // ogTypeMeta.setAttribute("content", "website");
-  //     // document.head.appendChild(ogTypeMeta);
-  //   }
-  //   // }
-  //   // }, [images]); // checking with hardcoding on load
-  // }, [eventName]);
+    console.log(images.length);
+  }, [lastEvaluatedKey]);
 
   const handleBackButton = () => {
     // Check if the navigation was caused by the back button
-    // if (event.state && event.state.fromMyComponent) {
-    //alert("clicked back button");
     setClickedImg(null);
-
-    //}
   };
   useEffect(() => {
     // Add event listener for the popstate event on the window object
@@ -179,23 +164,6 @@ function ImagesPage() {
     };
   }, [history]);
 
-  // const handleScroll = () => {
-
-  //   if (
-  //     window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight
-  //   ) {
-  //     setLoadedImages(prevLoadedImages => [...prevLoadedImages, ...images.slice(prevLoadedImages.length, prevLoadedImages.length + IMAGES_TO_LOAD)]);
-
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   window.addEventListener('scroll', handleScroll);
-  //   return () => {
-  //     window.removeEventListener('scroll', handleScroll);
-  //   };
-  // }, [images,loadedImages]);
-
   useEffect(() => {
     const disablePinchZoom = (e) => {
       if (e.touches.length > 1) {
@@ -212,7 +180,6 @@ function ImagesPage() {
 
   useEffect(() => {
     function touchHandler(event) {
-      console.log(event);
       if (event.touches.length > 1) {
         //the event is multi-touch
         //you can then prevent the behavior
@@ -222,28 +189,54 @@ function ImagesPage() {
     window.addEventListener("touchstart", touchHandler, { passive: false });
   }, []);
 
-  const handleFavourite = () => {};
+  // useEffect(()=>{
+  //   displayFavIcon(lastFavIndex+1)
+  // },[images])
+
+  const handleFavourite = async (index, imageUrl, isFav) => {
+    if (isFav) {
+      const favIndex = lastFavIndex + 1;
+      const tempImages = [...images];
+      tempImages[index].isFavourites = true;
+      tempImages.splice(favIndex, 0, tempImages.splice(index, 1)[0]);
+      displayFavIcon(favIndex);
+      setClickedImgIndex(favIndex);
+      setLastFavIndex((favIndex) => favIndex + 1);
+      setImages(tempImages);
+    } else {
+      // to do: remove from favorites, adjust position in array
+      const unFavIndex = lastFavIndex;
+      const tempImages = [...images];
+      tempImages[index].isFavourites = false;
+      tempImages.splice(unFavIndex, 0, tempImages.splice(index, 1)[0]);
+      hideFavIcon(unFavIndex);
+      setClickedImgIndex(unFavIndex);
+      setLastFavIndex((favIndex) => favIndex - 1);
+      setImages(tempImages);
+    }
+    await API_UTIL.post("/setFavourites", {
+      imageUrl,
+      userId,
+      isFav,
+    });
+  };
+
+  const displayFavIcon = (index) => {
+    console.log(index);
+    document
+      .querySelector(`svg[data-key="${index}"]`)
+      .classList.remove("hidden");
+  };
+
+  const hideFavIcon = (index) => {
+    console.log(index);
+    document.querySelector(`svg[data-key="${index}"]`).classList.add("hidden");
+  };
 
   return (
     <div>
-      {/* <Helmet>
-        <meta property="og:type" content="website" />
-        <meta
-          property="og:url"
-          content="https://app.flashback.inc/photos/Aarthi_Vinay_19122021/+918978073062_Flash_401"
-        />
-        <meta property="og:title" content="" />
-        <meta
-          property="og:description"
-          content="Flashback - Create & Share Memories!"
-        />
-        <meta
-          property="og:image"
-          content="https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/Aarthi_Vinay_19122021/Ec_E__DSC1682.jpg"
-        />
-      </Helmet> */}
       {isLoading ? (
-        <LoadingSpinner /> // You can replace this with a spinner or loader component
+        <LoadingSpinner />
       ) : (
         <>
           <Header />
@@ -255,17 +248,27 @@ function ImagesPage() {
                     src={item.thumbnail}
                     placeholderSrc={PlaceholderImage}
                     effect="blur"
+                    onLoad={() => item.isFavourites && displayFavIcon(index)}
                     onClick={() => handleClick(item, index)}
                   />
+                  {/* {item.isFavourites && ( */}
+                  <Heart
+                    data-key={index}
+                    className="image_favourite_down hidden"
+                  />
+                  {/* )} */}
                 </div>
               ))}
               <div>
                 {clickedImg && (
                   <Modal
                     clickedImg={clickedImg}
+                    clickedImgIndex={clickedImgIndex}
+                    clickedImgFavourite={clickedImgFavourite}
                     setClickedImg={setClickedImg}
                     clickedUrl={clickedUrl}
                     handleBackButton={handleBackButton}
+                    handleFavourite={handleFavourite}
                   />
                 )}
               </div>

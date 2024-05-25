@@ -132,7 +132,7 @@ function Home () {
           <h2>
             FlashB
             <span>
-              <img src={logo} />
+              <img alt='logo' src={logo} />
             </span>
             ck
           </h2>

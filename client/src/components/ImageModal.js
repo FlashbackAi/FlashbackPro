@@ -12,9 +12,12 @@ import API_UTIL from "../services/AuthIntereptor";
 
 const ImageModal = ({
   clickedImg,
+  clickedImgIndex,
   setClickedImg,
   clickedUrl,
   handleBackButton,
+  handleFavourite,
+  clickedImgFavourite,
 }) => {
   const serverIP = process.env.REACT_APP_SERVER_IP;
   const history = useNavigate();
@@ -27,6 +30,7 @@ const ImageModal = ({
 
   const galleryRef = useRef(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isFavourite, setIsFavourite] = useState(clickedImgFavourite);
   const downloadCurrentImage = async () => {
     // const currentIndex = galleryRef.current.getCurrentIndex();
     // const currentImage = images[currentIndex];
@@ -68,7 +72,6 @@ const ImageModal = ({
   };
 
   const onLoad = (event) => {
-    console.log(event);
     const lazySpan = document.querySelector(".lazyImage");
     const loader = document.querySelector(
       ".overlay.dismiss .loading-spinner-container"
@@ -77,9 +80,12 @@ const ImageModal = ({
     lazySpan && lazySpan.classList.add("visible");
   };
 
-  const addToFavourite = (event) => {
+  const addToFavourite = () => {
     const fav = document.querySelector(".favourite");
-    fav.classList.add("bgRed");
+    if (isFavourite) fav.classList.remove("bgRed");
+    else fav.classList.add("bgRed");
+    handleFavourite(clickedImgIndex, clickedImg, !isFavourite);
+    setIsFavourite((isFav) => !isFav);
   };
 
   return (
@@ -102,10 +108,12 @@ const ImageModal = ({
                 {isDownloading ? "Downloading..." : "Download"}
               </button>
             )} */}
-            {/* <div className="dFlex alignCenter" onClick={addToFavourite}>
-              <Heart className="favourite" />
+            <div className="dFlex alignCenter cursor-pointer" onClick={addToFavourite}>
+              <Heart
+                className={"favourite " + (clickedImgFavourite && "bgRed")}
+              />
               Favourite
-            </div> */}
+            </div>
             <div
               className="dFlex alignCenter"
               onClick={downloadCurrentImage}
@@ -113,9 +121,7 @@ const ImageModal = ({
               id="download"
             >
               {isDownloading ? (
-                <span className="isDownloading">
-                  Downloading...
-                </span>
+                <span className="isDownloading">Downloading...</span>
               ) : (
                 <>
                   <ArrowDownToLine />

@@ -214,7 +214,7 @@ function App() {
     
     // try{
       const response = await API_UTIL.post(`${serverIP}/fetchOriginalImages`, imagesList);
-      if(response.status != 200)
+      if(response.status !== 200)
       {
         throw new Error(response.data.message)
       }

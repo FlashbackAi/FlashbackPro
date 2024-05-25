@@ -1,6 +1,6 @@
-import React, { useRef, useState, useContext, useCallback } from "react";
+import React, { useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { AuthContext } from "../helpers/AuthContext";
+// import { AuthContext } from "../helpers/AuthContext";
 import Webcam from "react-webcam";
 import logo from "../Media/logoCropped.png";
 import { toast } from "react-toastify";
@@ -16,6 +16,7 @@ const CustomOption = ({ children, ...props }) => {
       <div className="flagOption customOption" style={{ display: "flex" }}>
         <img
           className="iconImg"
+          alt={props.data.code}
           src={`assets/CountryFlags/${props.data.code}.png`}
         />
         {props.data.code}
@@ -31,6 +32,7 @@ const CustomControl = ({ children, ...props }) => {
     <components.Control {...props}>
       <div className="flagOption customControl" style={{ display: "flex" }}>
         <img
+          alt={props.getValue()[0]?.code}
           className="iconImg"
           src={`assets/CountryFlags/${props.getValue()[0]?.code}.png`}
         />
@@ -42,20 +44,20 @@ const CustomControl = ({ children, ...props }) => {
 
 function Login() {
   const serverIP = process.env.REACT_APP_SERVER_IP;
-  const [username, setUsername] = useState("");
+  // const [username, setUsername] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const { setAuthState } = useContext(AuthContext);
+  // const { setAuthState } = useContext(AuthContext);
   const { eventName } = useParams();
   const [isNewUser, setIsNewUser] = useState(false);
   const [isPhoneNumberValid, setIsPhoneNumberValid] = useState(false);
-  const [verificationCode, setVerificationCode] = useState("");
+  // const [verificationCode, setVerificationCode] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [countryCode, setCountryCode] = useState("+91");
-  const [fullPhoneNumber, setFullPhoneNumber] = useState("");
+  // const [fullPhoneNumber, setFullPhoneNumber] = useState("");
   const [phoneNumberError, setPhoneNumberError] = useState("");
 
-  const [faceDetected, setFaceDetected] = useState(false);
+  // const [faceDetected, setFaceDetected] = useState(false);
   const webcamRef = useRef(null);
   const [imgSrc, setImgSrc] = useState(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -146,7 +148,7 @@ function Login() {
       formData.append("username", fullPhoneNumber);
 
       try {
-        const response = await API_UTIL.post(
+        await API_UTIL.post(
           `${serverIP}/uploadUserPotrait`,
           formData,
           {
@@ -181,7 +183,7 @@ function Login() {
     setIsNewUser(true);
   };
 
-  const resendVerification = () => {};
+  // const resendVerification = () => {};
 
   return (
     <div className="loginBody">
@@ -228,14 +230,14 @@ function Login() {
                     value: "+91",
                   }}
                   components={{ Option: CustomOption, Control: CustomControl }}
-                  />
-                  <input
-                    name="phoneNumber"
-                    required
-                    type="tel"
-                    placeholder="Phone Number"
-                    onChange={handlePhoneNumberChange}
-                  />
+                />
+                <input
+                  name="phoneNumber"
+                  required
+                  type="tel"
+                  placeholder="Phone Number"
+                  onChange={handlePhoneNumberChange}
+                />
                 {/* </div> */}
                 {/* <PhoneInput
                 className="phoneOuter"
