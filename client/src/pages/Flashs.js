@@ -7,10 +7,12 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import PlaceholderImage from "../Media/blurredLogo.png";
 import Header from "../components/Header";
+import { Helmet } from 'react-helmet';
 
 function Flashs() {
   const serverIP = process.env.REACT_APP_SERVER_IP;
   const { eventName, userId } = useParams();
+  const thumbnailUrl = `https://rekognitionuserfaces.s3.amazonaws.com/thumbnails/${userId}.jpg`;
   const [images, setImages] = useState([]);
   const username = sessionStorage.getItem("username");
   const [isLoading, setIsLoading] = useState(true);
@@ -163,7 +165,13 @@ function Flashs() {
 
   return (
     <div>
-
+    <Helmet>
+      <title>Home Page</title>
+      <meta name="description" content="This is the page to display images." />
+      <meta property="og:title" content="Flashbacks" />
+      <meta property="og:image" content={thumbnailUrl} />
+      <meta property="og:description" content="This is the page to display images." />
+    </Helmet>
       {isLoading ? (
         <LoadingSpinner /> 
       ) : (

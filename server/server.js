@@ -440,6 +440,7 @@ app.post('/trigger-flashback', async (req, res) => {
 
 app.post('/trigger-flashback-new', async (req, res) => {
   try {
+    const result ={};
     const { eventName } = req.body;
     
      logger.info("Images are being fetched for event : " +eventName);
@@ -465,57 +466,59 @@ app.post('/trigger-flashback-new', async (req, res) => {
       items = items.concat(data.Items);
       lastEvaluatedKey = data.LastEvaluatedKey;
     } while (lastEvaluatedKey)
-      logger.info("total images fetched from index table : "+items.length)
+      logger.info("total image entries fetched from index table : "+items.length)
       items.sort((a, b) => a.faces_in_image - b.faces_in_image);
-      const userIds = [...new Set(items.map(item => item.user_id))];
-      const userBatches = [];
-      const usersObject = {};
-      for (let i = 0; i < userIds.length; i += 100) {
-        userBatches.push(keys.slice(i, i + 100));
-       }
+      // const userIds = [...new Set(items.map(item => item.user_id))];
+      // const userBatches = [];
+      // const usersObject = {};
+      // for (let i = 0; i < userIds.length; i += 100) {
+      //   userBatches.push(userIds.slice(i, i + 100));
+      //  }
     
-       for (const batch of userBatches) {
-        const userParams = {
-        RequestItems: {
-          'users': { // Replace with your table name
-            Keys: batch,
-            ProjectionExpression: 'user_id, phone_number' 
-          }
-        }
-      };
+      //  for (const batch of userBatches) {
+      // //   const userParams = {
+      // //   RequestItems: {
+      // //     'users': { // Replace with your table name
+      // //       Keys: batch,
+      // //       ProjectionExpression: 'user_id, phone_number' 
+      // //     }
+      // //   }
+      // // };
     
-      try {
-        const data = await docClient.batchGet(userParams).promise();
-        const responses = data.Responses['users'];
-        usersObject.push(...responses);
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-        throw new Error('Error fetching user data from DynamoDB');
-      }
-      const userMap = new Map(userData.map(user => [user.user_id, user.phone_number]));
+      // try {
+      //   const data = await docClient.batchGet(userParams).promise();
+      //   const responses = data.Responses['users'];
+      //   usersObject.push(...responses);
+      // } catch (error) {
+      //   console.error('Error fetching user data:', error);
+      //   throw new Error('Error fetching user data from DynamoDB');
+      // }
+      //const userMap = new Map(userData.map(user => [user.user_id, user.phone_number]));
       const indexData = items.map(item => ({
         event_name: item.folder_name,
         unique_uid: item.user_id,
         faces_in_image: item.faces_in_image,
         s3_url: item.s3_url,
-        image_id: item.image_id,
-        user_phone_number: userMap.get(item.user_id) || null
+        image_id: item.image_id
       }));
+      
       const promises = indexData.map(item => {
         const params = {
           TableName: "user_outputs",
           Item: item
         };
-    
+        console.log(item.faces_in_image)
         return docClient.put(params).promise();
       });
     
       try {
         await Promise.all(promises);
+        result.IndexDataCount = indexData.length;
         logger.info('All items successfully inserted');
         const phoneNumbers = await queryUserEventMapping(eventName);
         const totalUsers = phoneNumbers.length;
-        logger.info("total number of users fetched from user-event mapping: ",totalUsers)
+        result.totalExistingUsers = totalUsers;
+        logger.info("total number of users fetched from user-event mapping: "+totalUsers)
         // Iterate over phoneNumbers and process each user
         for (const phoneNumber of phoneNumbers) {
           try {
@@ -531,23 +534,24 @@ app.post('/trigger-flashback-new', async (req, res) => {
             }
 
             mapUserIdAndPhoneNumber(phoneNumber,portraitS3Url);
+            logger.info(result)
+            res.send(result); // End the response stream
     
           } catch (error) {
-            logger.info("Failure in marking the userId and phone number");
-            res.status(500).send({"message":"Failure in marking the userId and phone number"});
+            logger.info("Failure in marking the userId and phone number:", error);
+            throw new Error('Error inserting or updating items in DynamoDB');
+            // res.status(500).send({"message":"Failure in marking the userId and phone number"});
           }
         }
-        res.send("indexData inserted successfully"); // End the response stream
+       
       } catch (error) {
         console.error('Error inserting or updating items:', error);
         throw new Error('Error inserting or updating items in DynamoDB');
-      }
-
-  } 
+      } 
 }catch (error) {
     console.error('Error triggering flashback:', error);
     // If an error occurs, send an error response to the client
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({"message":"Failure in creating flashbacks"});
   }
 });
 
@@ -578,6 +582,7 @@ async function queryUsersTable(phoneNumber) {
   };
 
   const data = await dynamoDB.getItem(params).promise();
+  logger.info(phoneNumber);
   const userData = {
     uniqueUid: data.Item.unique_uid.S,
     portraitS3Url: data.Item.potrait_s3_url.S
@@ -620,8 +625,8 @@ async function searchUsersByImage(portraitS3Url, phoneNumber) {
       Image: {
         Bytes: Buffer.from(croppedBase64EncodedImage, 'base64') // Convert the base64-encoded image to a Buffer
       },
-      MaxUsers: 5,
-      UserMatchThreshold: 95
+      MaxUsers: 2,
+      UserMatchThreshold: 99
     };
 
     // Call the searchUsersByImage operation
@@ -1892,7 +1897,7 @@ app.post('/downloadImage', async (req, res) => {
       app.post('/api/resize-copy-images', async (req, res) => {
         try {
             const sourceBucket = "flashbackusercollection";
-            const sourceFolder = "KSL_22052024";
+            const sourceFolder = "Venky_Spandana_Reception_06022022";
             const destinationBucket = "flashbackimagesthumbnail";
     
             let continuationToken = null;
