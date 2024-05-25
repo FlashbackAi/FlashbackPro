@@ -1139,7 +1139,19 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
      const userId = req.params.userId;
      const isFavourites = req.body.isFavourites;
      const lastEvaluatedKey = req.body.lastEvaluatedKey;
-     const isUserRegistered = await checkIsUserRegistered(userId);
+     const isProUser = req.body.isProUser;
+     let isUserRegistered ;
+     if(isProUser)
+      {
+        isUserRegistered = await checkIsUserRegistered(userId);
+        logger.info("ProUser")
+
+      }
+      else{
+        isUserRegistered =true;
+        logger.info("normal user");
+      }
+     // isUserRegistered = await checkIsUserRegistered(userId);
      logger.info("isUserRegistered: "+ isUserRegistered);
      if(!isUserRegistered)
       {
