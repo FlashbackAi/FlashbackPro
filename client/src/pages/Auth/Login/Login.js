@@ -113,7 +113,7 @@ function Login() {
     setIsPhoneNumberValid(true);
     if (response.status === 201) {
       setIsNewUser(true);
-      toast("User created successfully please take a selfie");
+      toast("User created successfully please take a selfie",{position:"top-center"});
     } else if (response.status === 200) {
       //setIsNewUser(true);
       console.log(from);
@@ -133,7 +133,7 @@ function Login() {
     }
       navigate(from);
       toast(
-        `hey ${fullPhoneNumber}, you already exists. Have a great event ahead..`
+        `hey ${fullPhoneNumber}, you already exists. Have a great event ahead..`,{position:"top-center"}
       );
     }
   };

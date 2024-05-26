@@ -8,7 +8,6 @@ import PlaceholderImage from "../../media/images/blurredLogo.png";
 import Header from "../../components/Header/Header";
 import API_UTIL from "../../services/AuthIntereptor";
 import { Heart } from "lucide-react";
-import { element } from "prop-types";
 
 function ImagesPage() {
   const [lastEvaluatedKey, setLastEvaluatedKey] = useState(undefined);
@@ -20,12 +19,10 @@ function ImagesPage() {
   const [clickedImg, setClickedImg] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastFavIndex, setLastFavIndex] = useState(-1);
-  const [apiCount, setApiCount] = useState(1);
   const [images, setImages] = useState([]);
   const { eventName, userId } = useParams();
-  const history = useNavigate();
-  const isDataFetched = useRef(false);
   const isFavouritesFetched = useRef(false);
+  const history = useNavigate();
 
   const handleClick = (item, index) => {
     setClickedImg(item.original);
@@ -106,9 +103,7 @@ function ImagesPage() {
 
   const fetchAllImages = async () => {
     await fetchFavouriteImages();
-    // if (isDataFetched.current) return;
     await fetchImages();
-    // isDataFetched.current = true;
   };
 
   useEffect(() => {
