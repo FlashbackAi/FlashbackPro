@@ -1,0 +1,58 @@
+[
+  {
+    "name": "United Arab Emirates",
+    "dial_code": "+971",
+    "code": "AE",
+    "label":"+971",
+    "value":"AE +971"
+  },
+  {
+    "name": "Australia",
+    "dial_code": "+61",
+    "code": "AU",
+    "label":"+61",
+    "value":"AU +61"
+  },
+  {
+    "name": "Canada",
+    "dial_code": "+1",
+    "code": "CA",
+    "label":"+1",
+    "value":"CA +1"
+  },
+  {
+    "name": "France",
+    "dial_code": "+33",
+    "code": "FR",
+    "label":"+33",
+    "value":"FR +33"
+  },
+  {
+    "name": "United Kingdom",
+    "dial_code": "+44",
+    "code": "GB",
+    "label":"+44",
+    "value":"GB +44"
+  },
+  {
+    "name": "India",
+    "dial_code": "+91",
+    "code": "IN",
+    "label":"+91",
+    "value":"IN +91"
+  },
+  {
+    "name": "Sri Lanka",
+    "dial_code": "+94",
+    "code": "LK",
+    "label":"+94",
+    "value":"LK +94"
+  },
+  {
+    "name": "United States",
+    "dial_code": "+1",
+    "code": "US",
+    "label":"+1",
+    "value":"US +1"
+  }
+]
