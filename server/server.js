@@ -27,6 +27,43 @@ app.use(express.json());
 
 app.use(express.json());
 
+// SSR Start
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "SSR"));
+app.use(express.static(path.join(__dirname, "public")));
+
+app.get("/photos/:eventName/:userId", async(req, res) => {
+  try{
+    const eventName=req.params.eventName
+    const userId=req.params.userId
+    const lastEvaluatedKey = null;
+  const result = await userEventImages(eventName,userId,lastEvaluatedKey);
+      const imagesPromises = result.Items.map(async file => {
+           // Convert image data to base64
+        const base64ImageData =  {
+          "thumbnailUrl":"https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/"+file.s3_url.split("amazonaws.com/")[1]
+        }
+         if(eventName === 'Convocation_PrathimaCollege'){
+           base64ImageData.url = "https://flashbackprathimacollection.s3.ap-south-1.amazonaws.com/"+file.s3_url.split("amazonaws.com/")[1];
+ 
+         }
+         else{
+           base64ImageData.url = file.s3_url;
+         }
+         //console.log(base64ImageData.url);
+          return base64ImageData;
+      
+    });
+      const images = await Promise.all(imagesPromises);
+      res.render("index",{eventName:req.params.eventName,userId:req.params.userId,image:images[0].thumbnailUrl}); // Assuming you have an "index.ejs" file in the "views" directory
+  } catch (err) {
+     logger.info("Error in S3 get", err);
+      res.status(500).send('Error getting images from S3');
+  }
+});
+
+// SSR ends
+
 // Configuring winston application logger
 
 const logger = winston.createLogger({
@@ -1143,8 +1180,7 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
      let isUserRegistered ;
      if(isProUser)
       {
-        isUserRegistered = await checkIsUserRegistered(userId);
-        logger.info("ProUser")
+          logger.info("ProUser")
 
       }
       else{
