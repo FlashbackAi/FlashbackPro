@@ -5,25 +5,31 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title>Flashback</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="title" content="" />
+    <link rel="stylesheet" href="/index.css">
+    <meta name="title" content="FlashBack" />
     <meta name="description" content="Flashback - Create & Share Memories!" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta
-      property="og:url"
-      content="https://app.flashback.inc"
-    />
+    <meta property="og:url" content="https://app.flashback.inc" />
     <meta property="og:title" content="Flashback" />
     <meta
       property="og:description"
       content="Flashback - Create & Share Memories!"
     />
-    <meta
-      property="og:image"
-      content="<%= image %>"
-    />
+    <meta property="og:image" content="<%= image %>" />
   </head>
   <body>
+    <p>If you are not redirected, <a href="https://app.flashback.inc/<%= redirectUrl %>">Click here</a>.</p>
+    <div class="loading-spinner-container">
+      <div class="loading-spinner">
+        <img src="/logoCropped.png" />
+      </div>
+    </div>
+    <script>
+      window.onload = function(){
+        window.location.href = "https://app.flashback.inc/<%= redirectUrl %>"
+      }
+    </script>
   </body>
 </html>
