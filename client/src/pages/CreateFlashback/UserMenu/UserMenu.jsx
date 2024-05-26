@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom'
-import logoImage from '../Media/logo.png';
-import '../UserMenu.css'; 
+import logoImage from '../../../media/images/logo.png';
+import './UserMenu.css'; 
 
 const UserMenu = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);

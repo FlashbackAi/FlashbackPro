@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
-import LoadingSpinner from "./LoadingSpinner";
-import Modal from "../components/ImageModal";
+import LoadingSpinner from "../../components/Loader/LoadingSpinner";
+import Modal from "../../components/ImageModal/ImageModal";
 import { useNavigate } from "react-router-dom";
 import { LazyLoadImage } from "react-lazy-load-image-component";
-import PlaceholderImage from "../Media/blurredLogo.png";
-import Header from "../components/Header";
-import API_UTIL from "../services/AuthIntereptor";
+import PlaceholderImage from "../../media/images/blurredLogo.png";
+import Header from "../../components/Header/Header";
+import API_UTIL from "../../services/AuthIntereptor";
 import { Heart } from "lucide-react";
 import { element } from "prop-types";
 

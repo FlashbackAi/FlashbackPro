@@ -1,16 +1,14 @@
 import React, { useState, useEffect, useCallback} from 'react';
-import axios from "axios";
-import PhotoCollageComponent from './PhotoCollageComponent';
+import PhotoCollageComponent from '../PhotoCollage/PhotoCollageComponent';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { toast } from 'react-toastify';
-import UserMenu from './UserMenu';
+import UserMenu from './UserMenu/UserMenu';
 import { useHistory } from 'react-router-dom';
 import { useNavigate } from "react-router-dom";
-import API_UTIL from '../services/AuthIntereptor';
+import API_UTIL from '../../services/AuthIntereptor';
 
 function CreateFlashBack() {
-  const serverIP = process.env.REACT_APP_SERVER_IP;
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [folderName, setFolderName] = useState('');
   const [message, setMessage] = useState('');
@@ -66,7 +64,7 @@ function CreateFlashBack() {
 
     console.log(folderName)
     try {
-      const response = await API_UTIL.post(`${serverIP}/upload/${folderName}`, formData,{headers});
+      const response = await API_UTIL.post(`/upload/${folderName}`, formData,{headers});
       if(response.status !== 200 )
       {
         throw new Error(response.data.message)
@@ -85,7 +83,7 @@ function CreateFlashBack() {
     console.log("images are being fetched from " +selectedFlashBack)
     try {
       const fetchedImages = async () => {
-        const response = await fetch(`${serverIP}/images/${selectedFlashBack}`);
+        const response = await API_UTIL.get(`/images/${selectedFlashBack}`);
         if(response.status !== 200)
         {
           throw new Error("Error in Uploading Images")
@@ -111,7 +109,7 @@ function CreateFlashBack() {
 
   useEffect(() => {
     console.log(username);
-    API_UTIL.get(`${serverIP}/folderByUsername/${username}`)
+    API_UTIL.get(`/folderByUsername/${username}`)
       .then(response => {
         console.log(response.data);
         setFlashBacks(response.data);
@@ -131,7 +129,7 @@ function CreateFlashBack() {
   
       try {
         console.log(formData);
-        const response = await API_UTIL.post(`${serverIP}/deleteImages`, selectedImagesUrl);
+        const response = await API_UTIL.post(`/deleteImages`, selectedImagesUrl);
         if(response.status !== 200 )
         {
           throw new Error(response.data)
@@ -164,7 +162,7 @@ function CreateFlashBack() {
    
 
     try {
-      const response = await API_UTIL.post(`${serverIP}/deleteFlashBack/${selectedFlashBack}`);
+      const response = await API_UTIL.post(`/deleteFlashBack/${selectedFlashBack}`);
       if(response.status !== 200 )
       {
         throw new Error(response.data.message)

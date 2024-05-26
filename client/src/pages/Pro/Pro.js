@@ -1,17 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
-import axios from "axios";
-import LoadingSpinner from "./LoadingSpinner";
-import Modal from "../components/ImageModal";
+import LoadingSpinner from "../../components/Loader/LoadingSpinner";
+import Modal from "../../components/ImageModal/ImageModal";
 import { useNavigate } from "react-router-dom";
 import { LazyLoadImage } from "react-lazy-load-image-component";
-import PlaceholderImage from "../Media/blurredLogo.png";
-import Header from "../components/Header";
+import PlaceholderImage from "../../media/images/blurredLogo.png";
+import Header from "../../components/Header/Header";
 import { set } from "internal-slot";
-import API_UTIL from "../services/AuthIntereptor";
+import API_UTIL from "../../services/AuthIntereptor";
 
 function Pro() {
-  const serverIP = process.env.REACT_APP_SERVER_IP;
   const { eventName} = useParams();
   const [userThumbnails, setUserThumbnails] = useState([]);
   const username = sessionStorage.getItem("username");
@@ -39,7 +37,7 @@ function Pro() {
 
     try {
       const response = await API_UTIL.get(
-        `${serverIP}/userThumbnails/${eventName}`
+        `/userThumbnails/${eventName}`
       );
       if (response.status === 200) {
         

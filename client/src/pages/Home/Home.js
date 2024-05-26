@@ -117,7 +117,7 @@
 import React from 'react'
 //import useWindowSize from 'react-use/lib/useWindowSize'
 import Confetti from 'react-confetti'
-import logo from "../Media/logoCropped.png"
+import logo from "../../media/images/logoCropped.png"
 
 function Home () {
   //const { width, height } = useWindowSize()

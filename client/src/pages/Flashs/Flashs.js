@@ -1,16 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
-import axios from "axios";
-import LoadingSpinner from "./LoadingSpinner";
-import Modal from "../components/ImageModal";
+import LoadingSpinner from "../../components/Loader/LoadingSpinner";
+import Modal from "../../components/ImageModal/ImageModal";
 import { useNavigate, useLocation } from "react-router-dom";
 import { LazyLoadImage } from "react-lazy-load-image-component";
-import PlaceholderImage from "../Media/blurredLogo.png";
-import Header from "../components/Header";
+import PlaceholderImage from "../../media/images/blurredLogo.png";
+import Header from "../../components/Header/Header";
 import { Helmet } from 'react-helmet';
+import API_UTIL from "../../services/AuthIntereptor";
 
 function Flashs() {
-  const serverIP = process.env.REACT_APP_SERVER_IP;
   const { eventName, userId } = useParams();
   const thumbnailUrl = `https://rekognitionuserfaces.s3.amazonaws.com/thumbnails/${userId}.jpg`;
   const [images, setImages] = useState([]);
@@ -36,8 +35,8 @@ function Flashs() {
     if (images.length === 0) setIsLoading(true);
 
     try {
-      const response = await axios.post(
-        `${serverIP}/images-new/${eventName}/${userId}  `,
+      const response = await API_UTIL.post(
+        `/images-new/${eventName}/${userId}  `,
         { lastEvaluatedKey: lastEvaluatedKey }
       );
       if (response.status === 200) {
@@ -92,7 +91,6 @@ function Flashs() {
   }, [
     eventName,
     userId,
-    serverIP,
     isLoading,
     fetchTimeout,
     totalImages,
