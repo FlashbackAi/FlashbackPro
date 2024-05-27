@@ -117,14 +117,18 @@ function Login() {
     } else if (response.status === 200) {
       //setIsNewUser(true);
       console.log(from);
-      if(from.includes("pictures")){
+      if(from.includes("photos")){
         try{
+        const urlArray = from.split('/');
         const response = await API_UTIL.post(`/userIdPhoneNumberMapping`, {
-          phoneNumber: fullPhoneNumber
+          phoneNumber: fullPhoneNumber,
+          eventName:urlArray[urlArray.length-2],
+          userId:urlArray[urlArray.length-1]
         });
         if(response.status == 200)
           {
             console.log("Succesfully mapped the userId and phoneNumber");
+            navigate(from);
           }
       }
       catch(error){
@@ -156,14 +160,18 @@ function Login() {
             },
           }
         );
-        if(from.includes("pictures")){
-          try{
-          const response = await API_UTIL.post(`userIdPhoneNumberMapping`, {
-            phoneNumber: fullPhoneNumber
-          });
+        if(from.includes("photos")){
+         try{
+        const urlArray = from.split('/');
+        const response = await API_UTIL.post(`/userIdPhoneNumberMapping`, {
+          phoneNumber: fullPhoneNumber,
+          eventName:urlArray[urlArray.length-2],
+          userId:urlArray[urlArray.length-1]
+        });
           if(response.status == 200)
             {
               console.log("Succesfully mapped the userId and phoneNumber");
+              navigate(from);
             }
         }
         catch(error){

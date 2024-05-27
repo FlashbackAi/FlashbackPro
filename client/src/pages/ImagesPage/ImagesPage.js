@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import LoadingSpinner from "../../components/Loader/LoadingSpinner";
 import Modal from "../../components/ImageModal/ImageModal";
-import { useNavigate } from "react-router-dom";
+import { useNavigate,useLocation } from "react-router-dom";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import PlaceholderImage from "../../media/images/blurredLogo.png";
 import Header from "../../components/Header/Header";
@@ -23,6 +23,7 @@ function ImagesPage() {
   const { eventName, userId } = useParams();
   const isFavouritesFetched = useRef(false);
   const history = useNavigate();
+  const location = useLocation();
 
   const handleClick = (item, index) => {
     setClickedImg(item.original);
@@ -40,6 +41,7 @@ function ImagesPage() {
         `/images-new/${eventName}/${userId}  `,
         {
           isFavourites: true,
+          isProUser:true,
         }
       );
       if (response.status === 200) {
@@ -60,6 +62,10 @@ function ImagesPage() {
         throw new Error("Failed to fetch images");
       }
     } catch (error) {
+      if( error.response.status === 404 && error.response.data.message === "UserDoesnotExist"){;
+        console.log(location.pathname)
+        history(`/login/${eventName}`, { state: { from: location.pathname } });
+      }
       console.error("Error fetching images:", error);
     } finally {
       setIsLoading(false);
@@ -74,6 +80,7 @@ function ImagesPage() {
         {
           isFavourites: false,
           lastEvaluatedKey: lastEvaluatedKey,
+          isProUser:true
         }
       );
       if (response.status === 200) {

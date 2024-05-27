@@ -23,11 +23,26 @@ API_UTIL.interceptors.response.use(
   (error) => {
     // Process Errors
     console.error(error);
-    toast.error(error.message, {
-      theme: "colored",
-      hideProgressBar: true,
-      icon: true,
-    });
+  //   if( error.status === 404 && error.message === "UserDoesnotExist")
+  //     {
+  //       toast.error(error.message, {
+  //         theme: "colored",
+  //         hideProgressBar: true,
+  //         icon: true,
+  //       });
+  //     }
+  //     else{
+  //   toast.error(error.message, {
+  //     theme: "colored",
+  //     hideProgressBar: true,
+  //     icon: true,
+  //   });
+  // }
+  toast.error(error.message, {
+        theme: "colored",
+        hideProgressBar: true,
+        icon: true,
+      });
     return Promise.reject(error);
   }
 );

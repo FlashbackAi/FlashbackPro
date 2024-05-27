@@ -534,7 +534,7 @@ app.post('/trigger-flashback-new', async (req, res) => {
           TableName: "user_outputs",
           Item: item
         };
-        console.log(item.faces_in_image)
+       // console.log(item.faces_in_image)
         return docClient.put(params).promise();
       });
     
@@ -560,10 +560,8 @@ app.post('/trigger-flashback-new', async (req, res) => {
               continue; // Skip to the next phone number
             }
 
-            mapUserIdAndPhoneNumber(phoneNumber,portraitS3Url);
+            const mappedUser = await mapUserIdAndPhoneNumber(phoneNumber,portraitS3Url,eventName,'');
             logger.info(result)
-            res.send(result); // End the response stream
-    
           } catch (error) {
             logger.info("Failure in marking the userId and phone number:", error);
             throw new Error('Error inserting or updating items in DynamoDB');
@@ -574,7 +572,8 @@ app.post('/trigger-flashback-new', async (req, res) => {
       } catch (error) {
         console.error('Error inserting or updating items:', error);
         throw new Error('Error inserting or updating items in DynamoDB');
-      } 
+      }
+      res.send(result); // End the response stream 
 }catch (error) {
     console.error('Error triggering flashback:', error);
     // If an error occurs, send an error response to the client
@@ -586,17 +585,15 @@ app.post('/trigger-flashback-new', async (req, res) => {
 async function queryUserEventMapping(eventName) {
   const params = {
     TableName: userEventTableName,
-    KeyConditionExpression: '#eventName = :eventName',
-    ExpressionAttributeNames: {
-      '#eventName': 'event_name'
-    },
+    FilterExpression: 'event_name = :eventName AND flashback_status <> :flashbackStatus',
     ExpressionAttributeValues: {
-      ':eventName': { S: eventName }
+      ':eventName': { S: eventName }, // Assuming eventName is a string variable
+      ':flashbackStatus': { S: 'triggered' } // Assuming flashbackStatus is a string
     },
-    ProjectionExpression: 'user_phone_number' // Specify the attribute(s) you want to retrieve
+    ProjectionExpression: 'user_phone_number'
   };
 
-  const data = await dynamoDB.query(params).promise();
+  const data = await dynamoDB.scan(params).promise();
   const phoneNumbers = data.Items.map(item => item.user_phone_number.S);
   return phoneNumbers;
 }
@@ -611,9 +608,11 @@ async function queryUsersTable(phoneNumber) {
   const data = await dynamoDB.getItem(params).promise();
   logger.info(phoneNumber);
   const userData = {
-    uniqueUid: data.Item.unique_uid.S,
-    portraitS3Url: data.Item.potrait_s3_url.S
+    uniqueUid: data.Item.unique_uid.S
   };
+  if(data.Item.potrait_s3_url){
+    userData.portraitS3Url=data.Item.potrait_s3_url.S;
+  }
   return userData;
 }
 
@@ -653,7 +652,7 @@ async function searchUsersByImage(portraitS3Url, phoneNumber) {
         Bytes: Buffer.from(croppedBase64EncodedImage, 'base64') // Convert the base64-encoded image to a Buffer
       },
       MaxUsers: 2,
-      UserMatchThreshold: 99
+      UserMatchThreshold: 95
     };
 
     // Call the searchUsersByImage operation
@@ -671,7 +670,9 @@ async function searchUsersByImage(portraitS3Url, phoneNumber) {
       console.log('Matched UserIds:', matchedUserId);
       return {matchedUserId};
     } else {
-      throw new Error('No Matches found for the image');
+      logger.info(data);
+      return;
+      //throw new Error('No Matches found for the image');
     }
 
   } catch (error) {
@@ -680,14 +681,22 @@ async function searchUsersByImage(portraitS3Url, phoneNumber) {
   }
 }
 
-async function mapUserIdAndPhoneNumber(phoneNumber,imageUrl){
+async function mapUserIdAndPhoneNumber(phoneNumber,imageUrl,eventName,userId){
     try {
       // Call searchUsersByImage API with portraitS3Url
       const result = await searchUsersByImage(imageUrl, phoneNumber);
+      if(!result){
+        logger.info("matched user not found: "+phoneNumber);
+        return;
+      }
       const matchedUserId = result.matchedUserId[0];
+      if(userId && matchedUserId != userId){
+        logger.info(userId);
+        throw Error("UserId not matched")
+      }
       console.log('Matched userId for the phoneNumber: '+phoneNumber+' and imageUrl: '+imageUrl+'is :', matchedUserId);
       const userUpdateParams = {
-        TableName: 'users', // Replace with your table name
+        TableName: userrecordstable, // Replace with your table name
         Key: {
           'user_phone_number': phoneNumber // Replace with your partition key name
         },
@@ -697,35 +706,31 @@ async function mapUserIdAndPhoneNumber(phoneNumber,imageUrl){
         },
         ReturnValues: 'UPDATED_NEW'
       };
+
+      const userEventUpdateParams = {
+        TableName: userEventTableName, // Replace with your table name
+        Key: {
+          'event_name':eventName,
+          'user_phone_number': phoneNumber // Replace with your partition key name
+        },
+        UpdateExpression: 'set flashback_status = :flashbackStatus, user_id = :userId',
+        ExpressionAttributeValues: {
+          ':flashbackStatus': "triggered",
+          ':userId':matchedUserId
+        },
+        ReturnValues: 'UPDATED_NEW'
+      };
+    
     
       try {
-        const result = await docClient.update(userUpdateParams).promise();
-        logger.info('Updated userId for :'+ phoneNumber);
-        return result;
+        const userResult = await docClient.update(userUpdateParams).promise();
+        const eventResult = await docClient.update(userEventUpdateParams).promise();
+        logger.info('Updated userId and flashback status for :'+ phoneNumber);
+        return userResult;
       } catch (error) {
         logger.info("Failure is updating the userId in users table : "+error);
         throw error;
       }
-
-      // const userOutputUpdateParams = {
-      //   TableName: 'user_outputs', // Replace with your table name
-      //   Key: {
-      //     'unique_uid': matchedUserId // Replace with your partition key name
-      //   },
-      //   UpdateExpression: 'set user_phone_number = :userPhoneNumber',
-      //   ExpressionAttributeValues: {
-      //     ':userPhoneNumber': phoneNumber
-      //   },
-      //   ReturnValues: 'UPDATED_NEW'
-      // };
-      // try {
-      //   const result = await docClient.update(userOutputUpdateParams).promise();
-      //   logger.info('Update phoneNumber for userId:', matchedUserId);
-      //   return result;
-      // } catch (error) {
-      //   logger.info("Failure is updating the userId in users table : "+error);
-      //   throw error;
-      // }
 
     } catch (error) {
       logger.info("Error in marking the userId and phone number");
@@ -792,8 +797,10 @@ app.post('/userIdPhoneNumberMapping',async (req,res) =>{
 
   try{
     const phoneNumber =req.body.phoneNumber;
+    const eventName = req.body.eventName;
+    const userId = req.body.userId;
     const imageUrl = "https://flashbackuserthumbnails.s3.ap-south-1.amazonaws.com/"+phoneNumber+".jpg";
-    const result = await mapUserIdAndPhoneNumber(phoneNumber,imageUrl);
+    const result = await mapUserIdAndPhoneNumber(phoneNumber,imageUrl,eventName,userId);
     logger.info(result)
     logger.info("Succesfully mapped userId and phone number");
     res.send(result);
@@ -1170,8 +1177,7 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
      let isUserRegistered ;
      if(isProUser)
       {
-          logger.info("ProUser")
-
+        isUserRegistered = await checkIsUserRegistered(userId);
       }
       else{
         isUserRegistered =true;
@@ -1182,7 +1188,7 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
      if(!isUserRegistered)
       {
         logger.info("user doesnot exists... navigate to login page");
-          res.status(500).send({"message":"UserDoesnotExist"})
+          res.status(404).send({"message":"UserDoesnotExist"})
       }else{
       logger.info("user exists:"+userId);
      logger.info("Image are being fetched for event of pageNo -> "+eventName+"; userId -> "+userId +"; isFavourites -> "+isFavourites);
@@ -1855,7 +1861,7 @@ app.post('/downloadImage', async (req, res) => {
           // Check if the user already exists
           if(!eventName)
             {
-              eventName = 'KSL_22052024'
+              eventName = 'Unnati_27052024'
             }
           const existingUser = await getUser(username);
           logger.info("existingUser"+ existingUser);
@@ -1935,11 +1941,12 @@ app.post('/downloadImage', async (req, res) => {
       app.post('/api/resize-copy-images', async (req, res) => {
         try {
             const sourceBucket = "flashbackusercollection";
-            const sourceFolder = "Venky_Spandana_Reception_06022022";
+            const sourceFolder = req.body.sourceFolder;
             const destinationBucket = "flashbackimagesthumbnail";
     
             let continuationToken = null;
             let allImageObjects = [];
+            logger.info("creating image thumbnails for the event :" +sourceFolder);
     
             do {
                 // List objects in the source subfolder
@@ -1991,7 +1998,7 @@ app.post('/downloadImage', async (req, res) => {
                 }
             }));
     
-            console.log("Images from subfolder resized and copied successfully.");
+            logger.info("Images from subfolder resized and copied successfully.");
             res.status(200).json({ message: 'Images from subfolder resized and copied successfully.' });
         } catch (error) {
             console.error('Error:', error);
