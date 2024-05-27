@@ -1,11 +1,10 @@
 // ForgotPassword.js
 import React, { useState } from 'react';
 import { useNavigate } from "react-router-dom";
-import API_UTIL from '../services/AuthIntereptor';
+import API_UTIL from '../../../services/AuthIntereptor';
 
 const ForgotPassword = () => {
 
-    const serverIP = process.env.REACT_APP_SERVER_IP;
     const [email, setEmail] = useState('');
     const [message, setMessage] = useState('');
     const [code, setCode] = useState('');
@@ -16,7 +15,7 @@ const ForgotPassword = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         // try {
-            const response = await API_UTIL.post(`${serverIP}/forgot-password`, { email });
+            const response = await API_UTIL.post(`/forgot-password`, { email });
             setMessage(response.data.message);
             setCodeSent(true);
         // } catch (error) {
@@ -27,7 +26,7 @@ const ForgotPassword = () => {
     const resetPassword = async (e) => {
         e.preventDefault();
         // try {
-            const response = await API_UTIL.post(`${serverIP}/reset-password`, { email,code,newPassword });
+            const response = await API_UTIL.post(`/reset-password`, { email,code,newPassword });
             setMessage(response.data.message);
             navigate("/login")
         // } catch (error) {

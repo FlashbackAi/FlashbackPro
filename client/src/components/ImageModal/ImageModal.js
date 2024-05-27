@@ -1,14 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import {
-  LazyLoadComponent,
-  LazyLoadImage,
-} from "react-lazy-load-image-component";
-import PlaceholderImage from "../Media/blurredLogo.png";
-import LoadingSpinner from "../pages/LoadingSpinner";
+import LoadingSpinner from "../Loader/LoadingSpinner";
 import { ArrowDownToLine, Heart } from "lucide-react";
-import API_UTIL from "../services/AuthIntereptor";
+import API_UTIL from "../../services/AuthIntereptor";
 
 const ImageModal = ({
   clickedImg,
@@ -19,7 +13,6 @@ const ImageModal = ({
   handleFavourite,
   clickedImgFavourite,
 }) => {
-  const serverIP = process.env.REACT_APP_SERVER_IP;
   const history = useNavigate();
   const handleClick = (e) => {
     if (e.target.classList.contains("dismiss")) {
@@ -42,7 +35,7 @@ const ImageModal = ({
 
     setIsDownloading(true);
     try {
-      const response = await API_UTIL.post(`${serverIP}/downloadImage`, {
+      const response = await API_UTIL.post(`/downloadImage`, {
         imageUrl: clickedUrl,
       });
       if (response.status === 200) {
@@ -71,7 +64,7 @@ const ImageModal = ({
     }
   };
 
-  const onLoad = (event) => {
+  const onLoad = () => {
     const lazySpan = document.querySelector(".lazyImage");
     const loader = document.querySelector(
       ".overlay.dismiss .loading-spinner-container"

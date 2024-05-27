@@ -2,11 +2,11 @@ import React, { useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 // import { AuthContext } from "../helpers/AuthContext";
 import Webcam from "react-webcam";
-import logo from "../Media/logoCropped.png";
+import logo from "../../../media/images/logoCropped.png";
 import { toast } from "react-toastify";
 import { useLocation, useParams } from "react-router-dom";
-import API_UTIL from "../services/AuthIntereptor";
-import CountryCodes from "../Media/CountryCodes.json";
+import API_UTIL from "../../../services/AuthIntereptor";
+import CountryCodes from "../../../media/json/CountryCodes.json";
 import Select, { components } from "react-select";
 
 const CustomOption = ({ children, ...props }) => {
@@ -43,7 +43,6 @@ const CustomControl = ({ children, ...props }) => {
 };
 
 function Login() {
-  const serverIP = process.env.REACT_APP_SERVER_IP;
   // const [username, setUsername] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -114,13 +113,13 @@ function Login() {
     setIsPhoneNumberValid(true);
     if (response.status === 201) {
       setIsNewUser(true);
-      toast("User created successfully please take a selfie");
+      toast("User created successfully please take a selfie",{position:"top-center"});
     } else if (response.status === 200) {
       //setIsNewUser(true);
       console.log(from);
       if(from.includes("pictures")){
         try{
-        const response = await API_UTIL.post(`${serverIP}/userIdPhoneNumberMapping`, {
+        const response = await API_UTIL.post(`/userIdPhoneNumberMapping`, {
           phoneNumber: fullPhoneNumber
         });
         if(response.status == 200)
@@ -134,7 +133,7 @@ function Login() {
     }
       navigate(from);
       toast(
-        `hey ${fullPhoneNumber}, you already exists. Have a great event ahead..`
+        `hey ${fullPhoneNumber}, you already exists. Have a great event ahead..`,{position:"top-center"}
       );
     }
   };
@@ -149,7 +148,7 @@ function Login() {
 
       try {
         await API_UTIL.post(
-          `${serverIP}/uploadUserPotrait`,
+          `/uploadUserPotrait`,
           formData,
           {
             headers: {
@@ -159,7 +158,7 @@ function Login() {
         );
         if(from.includes("pictures")){
           try{
-          const response = await API_UTIL.post(`${serverIP}/userIdPhoneNumberMapping`, {
+          const response = await API_UTIL.post(`userIdPhoneNumberMapping`, {
             phoneNumber: fullPhoneNumber
           });
           if(response.status == 200)

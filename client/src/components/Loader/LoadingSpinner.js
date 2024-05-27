@@ -1,6 +1,6 @@
 import React from "react";
-import loadingImage from "../Media/logoCropped.png"; 
-import "../LoadingSpinner.css";
+import loadingImage from "../../media/images/logoCropped.png"; 
+import "./LoadingSpinner.css";
 
 const LoadingSpinner = () => {
   return (

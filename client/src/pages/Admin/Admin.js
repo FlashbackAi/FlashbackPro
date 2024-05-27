@@ -4,13 +4,12 @@ import { saveAs } from 'file-saver';
 // import ImageComponent from "./ImageComponent";
 import { useGesture } from '@use-gesture/react';
 import { animated, useSpring } from '@react-spring/web';
-import '../Admin.css';
-import API_UTIL from '../services/AuthIntereptor';
+import './Admin.css';
+import API_UTIL from '../../services/AuthIntereptor';
 import { toast } from 'react-toastify';
 
 
 function App() {
-  const serverIP = process.env.REACT_APP_SERVER_IP;
   const [folders, setFolders] = useState([]);
   const [selectedValue, setSelectedValue] = useState('');
   const [message, setMessage] = useState('');
@@ -143,7 +142,7 @@ function App() {
 
     setIsProgressVisible(true);
     // Make API call to trigger-flashback with the selected event data
-    API_UTIL.post(`${serverIP}/trigger-flashback`, { eventName })
+    API_UTIL.post(`/trigger-flashback`, { eventName })
       .then(response => {
 
         const responseData = response.data;
@@ -213,7 +212,7 @@ function App() {
     let originalImages = null;
     
     // try{
-      const response = await API_UTIL.post(`${serverIP}/fetchOriginalImages`, imagesList);
+      const response = await API_UTIL.post(`/fetchOriginalImages`, imagesList);
       if(response.status !== 200)
       {
         throw new Error(response.data.message)
@@ -278,14 +277,14 @@ function App() {
   // };
 
   useEffect(() => {
-    API_UTIL.get(`${serverIP}/folders`)
+    API_UTIL.get(`/folders`)
       .then(response => {
         setFolders(response.data);
       })
   }, []);
 
   useEffect(() => {
-    API_UTIL.get(`${serverIP}/fetch-events`)
+    API_UTIL.get(`/fetch-events`)
       .then(response => {
         // Transform the data before setting the events state
         const transformedEvents = response.data.map((event, index) => ({
@@ -303,7 +302,7 @@ function App() {
     if(folderName){
         try {
         const fetchedImages = async () => {
-            const response = await fetch(`${serverIP}/images/${folderName}`);
+            const response = await API_UTIL.get(`/images/${folderName}`);
             console.log(response);
             const imageUrls = await response.json();
             setUploadedImages(imageUrls);
@@ -323,9 +322,7 @@ const downloadFolder = async () => {
     const folderName = selectedValue
   console.log(folderName)
   if(folderName){
-    fetch(`${serverIP}/downloadFolder/${folderName}`, {
-        method: 'GET'
-    })
+    API_UTIL.get(`/downloadFolder/${folderName}`)
     .then(response => {
         if (response.ok) return response.blob();
         throw new Error('Network response was not ok.');

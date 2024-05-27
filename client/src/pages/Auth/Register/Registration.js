@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import API_UTIL from "../services/AuthIntereptor";
+import API_UTIL from "../../../services/AuthIntereptor";
 
 function Registration() {
-  const serverIP = process.env.REACT_APP_SERVER_IP;
   const [message, setMessage] = useState("");
   const [isRegistered, setIsRegistered] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
@@ -36,7 +35,7 @@ function Registration() {
     //const fullPhoneNumber = `${countryCode}${phoneNumber}`
     // const data = new FormData(event.target);
 
-    API_UTIL.post(`${serverIP}/request-otp`, {
+    API_UTIL.post(`/request-otp`, {
       phoneNumber: fullPhoneNumber,
     }).then((response) => {
       //setMessage(response.data.message)
@@ -59,7 +58,7 @@ function Registration() {
   const handleVerification = () => {
     console.log(username);
     console.log(verificationCode);
-    API_UTIL.post(`${serverIP}/verify-otp`, {
+    API_UTIL.post(`/verify-otp`, {
       phoneNumber: fullPhoneNumber,
       otpCode: verificationCode,
     }).then((response) => {
@@ -77,7 +76,7 @@ function Registration() {
   };
 
   const resendVerfication = () => {
-    API_UTIL.post(`${serverIP}/resend-verification`, {
+    API_UTIL.post(`/resend-verification`, {
       username: username,
     }).then((response) => {
       console.log(response.data.status);
