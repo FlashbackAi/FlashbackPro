@@ -135,7 +135,9 @@ function Login() {
         console.log("error in mapping the userId and phone number");
       }
     }
+    else{
       navigate(from);
+    }
       toast(
         `hey ${fullPhoneNumber}, you already exists. Have a great event ahead..`,{position:"top-center"}
       );
@@ -178,7 +180,9 @@ function Login() {
           console.log("error in mapping the userId and phone number");
         }
         }
+        else{
         navigate(from);
+        }
       } catch (error) {
         console.error("Error uploading image:", error);
       }

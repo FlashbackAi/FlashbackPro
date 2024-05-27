@@ -27,7 +27,7 @@ function Pro() {
 
   const shareOnWhatsApp = (item) => {
     const userId = item.user_id;
-    const text = `*Greetings*,\nWe have discovered your images captured during the event *"${eventName}"*.\nKindly proceed to the provided URL to access and view your photographs:\nhttps://app.flashback.inc/pictures/${eventName}/${userId}\n\nCheers,\n*Flashback*`;
+    const text = `*Greetings*,\nWe have discovered your images captured during the event *"${eventName}"*.\nKindly proceed to the provided URL to access and view your photographs:\nhttps://app.flashback.inc/photos/${eventName}/${userId}\n\nCheers,\n*Flashback*`;
     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
     window.open(whatsappUrl, "_blank");
   };
