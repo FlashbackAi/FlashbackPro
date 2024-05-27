@@ -38,7 +38,7 @@ function ImagesPage() {
     setIsLoading(true);
     try {
       const response = await API_UTIL.post(
-        `/images-new/${eventName}/${userId}  `,
+        `/images-new/${eventName}/${userId}`,
         {
           isFavourites: true,
           isProUser:true,
@@ -58,12 +58,12 @@ function ImagesPage() {
         if (images.length >= totalImages) {
           setIsLoading(false); // Stop fetching more images when all images are fetched
         }
+        await fetchImages();
       } else {
         throw new Error("Failed to fetch images");
       }
     } catch (error) {
       if( error.response.status === 404 && error.response.data.message === "UserDoesnotExist"){;
-        console.log(location.pathname)
         history(`/login/${eventName}`, { state: { from: location.pathname } });
       }
       console.error("Error fetching images:", error);
@@ -109,8 +109,7 @@ function ImagesPage() {
   };
 
   const fetchAllImages = async () => {
-    await fetchFavouriteImages();
-    await fetchImages();
+    fetchFavouriteImages()
   };
 
   useEffect(() => {

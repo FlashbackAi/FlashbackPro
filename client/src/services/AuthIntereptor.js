@@ -22,27 +22,18 @@ API_UTIL.interceptors.response.use(
   },
   (error) => {
     // Process Errors
-    console.error(error);
-  //   if( error.status === 404 && error.message === "UserDoesnotExist")
-  //     {
-  //       toast.error(error.message, {
-  //         theme: "colored",
-  //         hideProgressBar: true,
-  //         icon: true,
-  //       });
-  //     }
-  //     else{
-  //   toast.error(error.message, {
-  //     theme: "colored",
-  //     hideProgressBar: true,
-  //     icon: true,
-  //   });
-  // }
-  toast.error(error.message, {
-        theme: "colored",
-        hideProgressBar: true,
-        icon: true,
-      });
+    console.error(error.status);
+    if( error.response.status === 404 && error?.response?.data?.message === "UserDoesnotExist")
+      {
+        toast("Uh Oh! You are not registered, please register to view photographs");
+      }
+      else{
+    toast.error(error.message, {
+      theme: "colored",
+      hideProgressBar: true,
+      icon: true
+    });
+  }
     return Promise.reject(error);
   }
 );

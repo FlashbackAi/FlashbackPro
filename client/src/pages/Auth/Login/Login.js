@@ -113,33 +113,34 @@ function Login() {
     setIsPhoneNumberValid(true);
     if (response.status === 201) {
       setIsNewUser(true);
-      toast("User created successfully please take a selfie",{position:"top-center"});
+      toast("User created successfully please take a selfie", {
+        position: "top-center",
+      });
     } else if (response.status === 200) {
       //setIsNewUser(true);
       console.log(from);
-      if(from.includes("photos")){
-        try{
-        const urlArray = from.split('/');
-        const response = await API_UTIL.post(`/userIdPhoneNumberMapping`, {
-          phoneNumber: fullPhoneNumber,
-          eventName:urlArray[urlArray.length-2],
-          userId:urlArray[urlArray.length-1]
-        });
-        if(response.status == 200)
-          {
+      if (from.includes("photos")) {
+        try {
+          const urlArray = from.split("/");
+          const response = await API_UTIL.post(`/userIdPhoneNumberMapping`, {
+            phoneNumber: fullPhoneNumber,
+            eventName: urlArray[urlArray.length - 2],
+            userId: urlArray[urlArray.length - 1],
+          });
+          if (response.status == 200) {
             console.log("Succesfully mapped the userId and phoneNumber");
             navigate(from);
           }
+        } catch (error) {
+          console.log("error in mapping the userId and phone number");
+          navigate(`${location.pathname}`, { state: { from } });
+        }
+      } else {
+        navigate(from);
       }
-      catch(error){
-        console.log("error in mapping the userId and phone number");
-      }
-    }
-    else{
-      navigate(from);
-    }
       toast(
-        `hey ${fullPhoneNumber}, you already exists. Have a great event ahead..`,{position:"top-center"}
+        `hey ${fullPhoneNumber}, you already exists. Have a great event ahead..`,
+        { position: "top-center" }
       );
     }
   };
@@ -153,35 +154,28 @@ function Login() {
       formData.append("username", fullPhoneNumber);
 
       try {
-        await API_UTIL.post(
-          `/uploadUserPotrait`,
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
-        if(from.includes("photos")){
-         try{
-        const urlArray = from.split('/');
-        const response = await API_UTIL.post(`/userIdPhoneNumberMapping`, {
-          phoneNumber: fullPhoneNumber,
-          eventName:urlArray[urlArray.length-2],
-          userId:urlArray[urlArray.length-1]
+        await API_UTIL.post(`/uploadUserPotrait`, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         });
-          if(response.status == 200)
-            {
+        if (from.includes("photos")) {
+          try {
+            const urlArray = from.split("/");
+            const response = await API_UTIL.post(`/userIdPhoneNumberMapping`, {
+              phoneNumber: fullPhoneNumber,
+              eventName: urlArray[urlArray.length - 2],
+              userId: urlArray[urlArray.length - 1],
+            });
+            if (response.status == 200) {
               console.log("Succesfully mapped the userId and phoneNumber");
               navigate(from);
             }
-        }
-        catch(error){
-          console.log("error in mapping the userId and phone number");
-        }
-        }
-        else{
-        navigate(from);
+          } catch (error) {
+            console.log("error in mapping the userId and phone number");
+          }
+        } else {
+          navigate(from);
         }
       } catch (error) {
         console.error("Error uploading image:", error);
