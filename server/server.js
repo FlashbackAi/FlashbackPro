@@ -1190,7 +1190,7 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
      if(!isUserRegistered)
       {
         logger.info("user doesnot exists... navigate to login page");
-          res.status(404).send({"message":"UserDoesnotExist"})
+          res.status(700).send({"message":"Oh! You are not registered, please register to view photographs"})
       }else{
       logger.info("user exists:"+userId);
      logger.info("Image are being fetched for event of pageNo -> "+eventName+"; userId -> "+userId +"; isFavourites -> "+isFavourites);
