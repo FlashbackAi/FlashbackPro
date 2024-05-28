@@ -87,7 +87,6 @@ function Login() {
     }
   };
   const capture = useCallback(async () => {
-    alert("hello")
     const imageSrc = webcamRef.current.getScreenshot();
     //const flag = await detectFaces();
     const flag = true;
@@ -148,7 +147,6 @@ function Login() {
   };
 
   const uploadPhoto = async (e) => {
-    alert("hi")
     if (termsAccepted) {
       // e.preventDefault();
       const fullPhoneNumber = countryCode + phoneNumber;
