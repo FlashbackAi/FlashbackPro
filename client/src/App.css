@@ -961,7 +961,7 @@ End of Sample */
 .wrapper-images {
   position: relative;
   width: 8em;
-  height: 8em;
+  height: auto;
   object-fit: cover;
 }
 
@@ -969,6 +969,12 @@ End of Sample */
   width: 7.5em;
   height: 8em;
   object-fit: cover;
+}
+
+.wrapper-images p {
+  margin: 0.5em 0 0; /* Add some margin above the text for spacing */
+  font-size: 0.5em; /* Adjust font size as needed */
+  color: #949494; /* Change text color if needed */
 }
 
 /* Media queries for responsiveness */
