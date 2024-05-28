@@ -11,7 +11,7 @@ body {
   scroll-behavior: smooth;
 }
 
-code {
+code,p {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
 }

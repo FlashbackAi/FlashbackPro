@@ -22,24 +22,23 @@ API_UTIL.interceptors.response.use(
   },
   (error) => {
     // Process Errors
-    console.error(error.status);
-    if( error.response.status === 404 && error?.response?.data?.message === "UserDoesnotExist")
-      {
-        toast("Uh Oh! You are not registered, please register to view photographs");
-      }
-      else{
-    toast.error(error.message, {
-      theme: "colored",
-      hideProgressBar: true,
-      icon: true
-    });
-  }
+    if (error?.response?.status === 700) {
+      toast(error?.response?.data?.message);
+    } else if (error?.response?.status === 600) {
+      toast.warn(error?.response?.data?.message, {
+        theme: "colored",
+        hideProgressBar: true,
+        icon: true,
+      });
+    } else {
+      toast.error(error?.response?.data?.message || error.message, {
+        theme: "colored",
+        hideProgressBar: true,
+        icon: true,
+      });
+    }
     return Promise.reject(error);
   }
 );
 
-//   return children;
-// }
-
 export default API_UTIL;
-// export { AUTHINTERCEPTOR };

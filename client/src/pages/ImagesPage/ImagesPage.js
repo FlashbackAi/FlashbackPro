@@ -62,7 +62,7 @@ function ImagesPage() {
         throw new Error("Failed to fetch images");
       }
     } catch (error) {
-      if( error.response.status === 404 && error.response.data.message === "UserDoesnotExist"){;
+      if( error?.response?.status === 404 && error?.response?.data?.message === "UserDoesnotExist"){;
         history(`/login/${eventName}`, { state: { from: location.pathname } });
       }
       console.error("Error fetching images:", error);

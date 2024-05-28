@@ -8,6 +8,7 @@ import { useLocation, useParams } from "react-router-dom";
 import API_UTIL from "../../../services/AuthIntereptor";
 import CountryCodes from "../../../media/json/CountryCodes.json";
 import Select, { components } from "react-select";
+import "./login.css"
 
 const CustomOption = ({ children, ...props }) => {
   console.log(`assets/CountryFlags/${props.data.code}.png`);
@@ -59,7 +60,7 @@ function Login() {
   // const [faceDetected, setFaceDetected] = useState(false);
   const webcamRef = useRef(null);
   const [imgSrc, setImgSrc] = useState(null);
-  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(true);
 
   const videoConstraints = {
     width: 350,
@@ -86,6 +87,7 @@ function Login() {
     }
   };
   const capture = useCallback(async () => {
+    alert("hello")
     const imageSrc = webcamRef.current.getScreenshot();
     //const flag = await detectFaces();
     const flag = true;
@@ -146,8 +148,9 @@ function Login() {
   };
 
   const uploadPhoto = async (e) => {
+    alert("hi")
     if (termsAccepted) {
-      e.preventDefault();
+      // e.preventDefault();
       const fullPhoneNumber = countryCode + phoneNumber;
       const formData = new FormData();
       formData.append("image", imgSrc);
@@ -186,6 +189,10 @@ function Login() {
   const handleVerification = () => {
     navigate(from);
     setIsNewUser(true);
+  };
+
+  const onChangeCountryCode = (event) => {
+    setCountryCode(event.label);
   };
 
   // const resendVerification = () => {};
@@ -227,6 +234,7 @@ function Login() {
                   className="countryCode"
                   classNamePrefix={"fb"}
                   options={CountryCodes}
+                  onChange={onChangeCountryCode}
                   defaultValue={{
                     name: "India",
                     dial_code: "+91",
@@ -294,6 +302,8 @@ function Login() {
           )}
           {isNewUser && (
             <div className="login-form-container">
+              <p className="caution">Hey, don't worry we won't save your image!!</p>
+
               {imgSrc ? (
                 <img src={imgSrc} alt="webcam" />
               ) : (
@@ -310,8 +320,8 @@ function Login() {
               <div className="btn-container">
                 {imgSrc ? (
                   <div className="login-form-container">
-                    <form className="login-form" onSubmit={uploadPhoto}>
-                      <button type="submit" className="submit submitPhoto">
+                    <form className="login-form">
+                      <button type="button" onClick={uploadPhoto} className="submit submitPhoto">
                         Submit photo
                       </button>
                       <button
@@ -327,6 +337,7 @@ function Login() {
                         <input
                           name="checkbox"
                           type="checkbox"
+                          defaultChecked
                           required
                           style={{ transform: "scale(1.1)" }}
                           onChange={(e) => setTermsAccepted(e.target.checked)}
