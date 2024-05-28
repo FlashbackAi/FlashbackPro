@@ -21,6 +21,8 @@ const ReactDOMServer = require('react-dom/server');
 const React = require('react');
 const { set } = require('lodash');
 //const App = require('..\\client');
+const oldEvents = ["Aarthi_Vinay_19122021","Convocation_PrathimaCollege","KSL_25042024","Jahnavi_Vaishnavi_SC_28042024","KSL_22052024","KSL_16052024","V20_BootCamp_2024","Neha_ShivaTeja_18042024"]
+
 
 app.use(cors()); // Allow cross-origin requests
 app.use(express.json());
@@ -38,11 +40,11 @@ app.get("/share/:eventName/:userId", async(req, res) => {
     const userId=req.params.userId
     const redirectTo=req.query.redirectTo
     let redirectUrl=""
-    if(!!redirectTo?.length){
-      redirectUrl=`photos/Aarthi_Vinay_19122021/+918978073062_Flash_401`
+    if(!!redirectTo?.length && redirectTo === "photos"){
+      redirectUrl=`photos/${eventName}/${userId}`
     }
     else{
-      redirectUrl = `photos/${eventName}/${userId}`
+      redirectUrl = `photos/${eventName}/${userId}`;
     } 
     const image = `https://rekognitionuserfaces.s3.amazonaws.com/thumbnails/${userId}.jpg`
     res.render("index",{eventName:req.params.eventName,userId:req.params.userId,image,redirectUrl}); // Assuming you have an "index.ejs" file in the "views" directory
@@ -652,7 +654,7 @@ async function searchUsersByImage(portraitS3Url, phoneNumber) {
         Bytes: Buffer.from(croppedBase64EncodedImage, 'base64') // Convert the base64-encoded image to a Buffer
       },
       MaxUsers: 2,
-      UserMatchThreshold: 95
+      UserMatchThreshold: 90
     };
 
     // Call the searchUsersByImage operation
@@ -681,7 +683,8 @@ async function searchUsersByImage(portraitS3Url, phoneNumber) {
   }
 }
 
-async function mapUserIdAndPhoneNumber(phoneNumber,imageUrl,eventName,userId){
+//async function mapUserIdAndPhoneNumber(phoneNumber,imageUrl,eventName,userId){
+  async function mapUserIdAndPhoneNumber(phoneNumber,imageUrl,eventName,userId){
     try {
       // Call searchUsersByImage API with portraitS3Url
       const result = await searchUsersByImage(imageUrl, phoneNumber);
@@ -1173,15 +1176,14 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
      const userId = req.params.userId;
      const isFavourites = req.body.isFavourites;
      const lastEvaluatedKey = req.body.lastEvaluatedKey;
-     const isProUser = req.body.isProUser;
      let isUserRegistered ;
-     if(isProUser)
+     if(!oldEvents.includes(eventName))
       {
         isUserRegistered = await checkIsUserRegistered(userId);
       }
       else{
         isUserRegistered =true;
-        logger.info("normal user");
+        logger.info("old event user");
       }
      // isUserRegistered = await checkIsUserRegistered(userId);
      logger.info("isUserRegistered: "+ isUserRegistered);
@@ -2005,7 +2007,107 @@ app.post('/downloadImage', async (req, res) => {
             res.status(500).json({ error: 'Internal server error.' });
         }
     });
+
+    app.post("/removeSpace",async(req,res)=>{
+
+     // const eventName = req.body.eventName;
+        const scanParams = {
+          TableName: 'indexed_data',
+          ProjectionExpression: 'image_id, user_id, folder_name', // Replace with your table's keys and foldername attribute
+          FilterExpression: 'folder_name = :folderName',
+          ExpressionAttributeValues: {
+            ':folderName': "Aarthi_SriCharan_Wedding_16122022 "
+          }
+        };
+      
+        try {
+          let allData = [];
+          let lastEvaluatedKey = null;
+          
+          do {
+            if (lastEvaluatedKey) {
+              scanParams.ExclusiveStartKey = lastEvaluatedKey;
+            }
+        
+            const data = await docClient.scan(scanParams).promise();
+            allData = allData.concat(data.Items);
+            lastEvaluatedKey = data.LastEvaluatedKey;
+        
+          } while (lastEvaluatedKey);
+
+          logger.info("Total items retrieved: " + allData.length);
+
+          for (const item of allData) {
+            if (item.folder_name && item.folder_name === "Aarthi_SriCharan_Wedding_16122022 ") { 
+              const trimmedFolderName = item.folder_name.trim();
+      
+              logger.info(item);
+              const updateParams = {
+                TableName: 'indexed_data',
+                Key: {
+                  'image_id': item.image_id, // Replace with your primary key
+                  'user_id': item.user_id // If you have a sort key
+                },
+                UpdateExpression: 'set folder_name = :newFolderName',
+                ExpressionAttributeValues: {
+                  ':newFolderName': trimmedFolderName
+                }
+              };
+      
+             const resl= await docClient.update(updateParams).promise();
+              console.log(`Updated foldername for item with primaryKey: ${item.primaryKey}`);
+            }
+          }
+          res.send("Successful");
+        } catch (err) {
+          res.status(500).send("error in flow");
+          console.error('Error updating foldernames:', err);
+        }
+    });
     
+
+    app.post("/generateUserIdsForExistingUsers",async(req,res)=>{
+
+         const scanParams = {
+           TableName: 'users',
+           ProjectionExpression: 'user_phone_number, potrait_s3_url',
+           FilterExpression: 'attribute_not_exists(user_id)'
+         };
+       
+         try {
+           let allData = [];
+           let lastEvaluatedKey = null;
+           
+           do {
+             if (lastEvaluatedKey) {
+               scanParams.ExclusiveStartKey = lastEvaluatedKey;
+             }
+         
+             const data = await docClient.scan(scanParams).promise();
+             allData = allData.concat(data.Items);
+             lastEvaluatedKey = data.LastEvaluatedKey;
+         
+           } while (lastEvaluatedKey);
+ 
+           logger.info("Total items retrieved: " + allData.length);
+ 
+           for (const item of allData) {
+            if(item.potrait_s3_url){
+            const mappedUser = await mapUserIdAndPhoneNumber(item.user_phone_number,item.potrait_s3_url,'');
+            logger.info("mapped for user: "+mappedUser);
+            }
+            else{
+              logger.info("url not found for user: "+item.user_phone_number+" url: "+item.potrait_s3_url)
+            }
+
+           }
+           res.send("Successful");
+         } catch (err) {
+           res.status(500).send("error in flow");
+           console.error('Error updating foldernames:', err);
+         }
+     });
+     
 
 
 const httpsServer = https.createServer(credentials, app);

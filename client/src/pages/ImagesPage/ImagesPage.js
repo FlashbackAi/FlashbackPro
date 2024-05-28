@@ -24,7 +24,7 @@ function ImagesPage() {
   const isFavouritesFetched = useRef(false);
   const history = useNavigate();
   const location = useLocation();
-
+ 
   const handleClick = (item, index) => {
     setClickedImg(item.original);
     setClickedImgIndex(index);
@@ -40,8 +40,7 @@ function ImagesPage() {
       const response = await API_UTIL.post(
         `/images-new/${eventName}/${userId}`,
         {
-          isFavourites: true,
-          isProUser:true,
+          isFavourites: true
         }
       );
       if (response.status === 200) {
@@ -79,8 +78,7 @@ function ImagesPage() {
         `/images-new/${eventName}/${userId}  `,
         {
           isFavourites: false,
-          lastEvaluatedKey: lastEvaluatedKey,
-          isProUser:true
+          lastEvaluatedKey: lastEvaluatedKey
         }
       );
       if (response.status === 200) {
