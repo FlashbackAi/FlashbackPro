@@ -1196,8 +1196,12 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
      logger.info("Image are being fetched for event of pageNo -> "+eventName+"; userId -> "+userId +"; isFavourites -> "+isFavourites);
 
     const result = await userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites);
+    
+    result.Items.sort((a, b) => a.faces_in_image - b.faces_in_image);
+    logger.info(result);
       const imagesPromises = result.Items.map(async file => {
         const base64ImageData =  {
+          "facesCount":file.faces_in_image,
           "thumbnailUrl":"https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/"+file.s3_url.split("amazonaws.com/")[1]
         }
          if(eventName === 'Convocation_PrathimaCollege'){
