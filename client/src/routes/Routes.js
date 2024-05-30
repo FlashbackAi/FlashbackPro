@@ -9,6 +9,7 @@ import Profile from "../pages/Profile/Profile";
 import ImagesPage from "../pages/ImagesPage/ImagesPage";
 import Flashs from "../pages/Flashs/Flashs";
 import Pro from "../pages/Pro/Pro";
+import AlbumSelection from "../pages/Pro/AlbumSelection";
 import TermsAndConditions from "../pages/TermsAndConditions/TermsAndConditions";
 
 const ROUTES=[
@@ -101,6 +102,12 @@ const ROUTES=[
         exact:false,
         protected:false,
         component:TermsAndConditions
+    },
+    {
+        path:"/AlbumSelection/:eventName",
+        exact:false,
+        protected:false,
+        component:AlbumSelection
     },
 ]
 

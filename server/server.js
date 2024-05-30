@@ -1198,7 +1198,6 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
     const result = await userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites);
     
     result.Items.sort((a, b) => a.faces_in_image - b.faces_in_image);
-    logger.info(result);
       const imagesPromises = result.Items.map(async file => {
         const base64ImageData =  {
           "facesCount":file.faces_in_image,
@@ -1291,16 +1290,15 @@ async function checkIsUserRegistered(userId){
 }
 
 app.get('/userThumbnails/:eventName', async (req, res) => {
+  
+  const eventName = req.params.eventName;
   try {
-   
-     const eventName = req.params.eventName;
-
      logger.info("Thumbnails are being fetched for even : " +eventName);
 
      const params = {
       TableName: indexedDataTableName,
       IndexName: 'folder_name-user_id-index', 
-      ProjectionExpression: 'user_id, image_id',
+      ProjectionExpression: 'user_id, image_id, Gender_Value',
       KeyConditionExpression: 'folder_name = :folderName',
       ExpressionAttributeValues: {
         ':folderName': eventName
@@ -1321,24 +1319,29 @@ app.get('/userThumbnails/:eventName', async (req, res) => {
 
     const userCountMap = new Map();
 
-    // Iterate over each item
     items.forEach(item => {
       const userId = item.user_id;
-      // If the userId is not in the map, initialize it with a Set
-     if (!userCountMap.has(userId)) {
-          userCountMap.set(userId, 0);
-        }
-        // Increment the count for this userId
-        userCountMap.set(userId, userCountMap.get(userId) + 1);
-       // logger.info(userCountMap.size)
-    }); 
-    logger.info("Total number of user userIds fetched : "+userCountMap.size)
+      const gender = item.Gender_Value;
+      if (!userCountMap.has(userId)) {
+        // Initialize the map with an object containing userId, count, and gender
+        userCountMap.set(userId, { userId, count: 0, gender });
+      }
+    
+      // Increment the count for this userId
+      const userInfo = userCountMap.get(userId);
+      userInfo.count += 1;
+    
+      // Update the map with the new object
+      userCountMap.set(userId, userInfo);
+    });
+    logger.info("Total number of user userIds fetched : "+userCountMap.length)
     const usersIds = Array.from(userCountMap.keys());
     const keys = usersIds.map(userId => ({ user_id: userId }));
 
     const thumbnailObject = await getThumbanailsForUserIds(keys);
     thumbnailObject.forEach( item=>{
-      item.count = userCountMap.get(item.user_id)
+      item.count = userCountMap.get(item.user_id).count;
+      item.gender = userCountMap.get(item.user_id).gender;
     })
      thumbnailObject.sort((a, b) => b.count - a.count);
    
@@ -1346,7 +1349,7 @@ app.get('/userThumbnails/:eventName', async (req, res) => {
      res.json(thumbnailObject);
   } catch (err) {
      logger.info("Error in S3 get", err);
-      res.status(500).send('Error getting images from S3');
+      res.status(500).send('Error getting thumbnails for the event: '+eventName);
   }
 });
 
