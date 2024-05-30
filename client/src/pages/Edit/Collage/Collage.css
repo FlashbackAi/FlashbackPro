@@ -1,0 +1,57 @@
+.fb_collage {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: grey;
+}
+
+.fb_collage {
+  /* background-image: url("/images/background.png"); */
+  position: relative;
+  width: 500px; /* Set to the desired width of your fb_collage */
+  height: 300px; /* Set to the desired height of your fb_collage */
+  touch-action: none;
+  overflow: hidden;
+}
+
+.fb_collage .background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%; /* Half the width of the collage container */
+  height: 50%; /* Half the height of the collage container */
+  object-fit: cover; /* This ensures the images cover their area without distorting */
+  z-index: 1; /* Background images are behind the foreground */
+  touch-action: none;
+  overflow: hidden;
+}
+
+.fb_collage .foreground {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%; /* Foreground image covers the entire fb_collage */
+    height: 100%;
+    z-index: 2; /* Ensures the foreground is on top */
+    pointer-events: none;
+  }
+  .background .image {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+  }
+
+/* .fb_fb_collage img {
+  width: 100vh;
+  height: 100vh;
+  z-index: 2;
+} */
+.fb_collage .on-top-div {
+  position: absolute;
+  width: 100vh;
+  height: 100vh;
+  background-color: red;
+  z-index: 1;
+}

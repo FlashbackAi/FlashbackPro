@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import LoadingSpinner from "../Loader/LoadingSpinner";
-import { ArrowDownToLine, Heart } from "lucide-react";
+import { ArrowDownToLine, Heart, Share2 } from "lucide-react";
 import API_UTIL from "../../services/AuthIntereptor";
+import { toast } from "react-toastify";
 
 const ImageModal = ({
   clickedImg,
@@ -81,6 +82,12 @@ const ImageModal = ({
     setIsFavourite((isFav) => !isFav);
   };
 
+  const share = () => {
+    const shareAbleUrl = `${process.env.REACT_APP_SERVER_IP}/share/${clickedUrl.split(".jpg")[0]}?redirectTo=singleImage`;
+    navigator.clipboard.writeText(shareAbleUrl);
+    toast("Copied link to clipboard!!");
+  };
+
   return (
     <>
       <div className="overlay dismiss" onClick={handleClick}>
@@ -101,7 +108,10 @@ const ImageModal = ({
                 {isDownloading ? "Downloading..." : "Download"}
               </button>
             )} */}
-            <div className="dFlex alignCenter cursor-pointer" onClick={addToFavourite}>
+            <div
+              className="dFlex alignCenter cursor-pointer"
+              onClick={addToFavourite}
+            >
               <Heart
                 className={"favourite " + (clickedImgFavourite && "bgRed")}
               />
@@ -121,6 +131,12 @@ const ImageModal = ({
                   Download
                 </>
               )}
+            </div>
+            <div className="dFlex alignCenter cursor-pointer" onClick={share}>
+              <Share2
+                className={"favourite " + (clickedImgFavourite && "bgRed")}
+              />
+              Share
             </div>
           </div>
           {/* <button

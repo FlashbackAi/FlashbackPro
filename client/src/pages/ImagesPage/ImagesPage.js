@@ -238,7 +238,7 @@ function ImagesPage() {
         <LoadingSpinner />
       ) : (
         <>
-          <Header />
+          <Header clientName={"Aarvi Media"} />
           {images.length > 0 ? (
             <div className="wrapper">
               {images.map((item, index) => (

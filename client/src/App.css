@@ -1178,7 +1178,7 @@ li {
 
 .imageToolBox > div {
   letter-spacing: 1px;
-  font-size: 1.1em;
+  font-size: 1em;
   font-weight: 600;
   color: black;
 }
@@ -1418,8 +1418,8 @@ li {
 
 .image_favourite_down{
   position: absolute;
-  bottom: 0.1em;
-  right: 0.5em;
+  bottom: 0.5em;
+  right: 0.6em;
   fill: red;
   color: transparent;
   width: 1em;

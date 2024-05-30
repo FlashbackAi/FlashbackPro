@@ -11,6 +11,7 @@ import Flashs from "../pages/Flashs/Flashs";
 import Pro from "../pages/Pro/Pro";
 import AlbumSelection from "../pages/Pro/AlbumSelection";
 import TermsAndConditions from "../pages/TermsAndConditions/TermsAndConditions";
+import Collage from "../pages/Edit/Collage/Collage";
 
 const ROUTES=[
     {
@@ -108,6 +109,12 @@ const ROUTES=[
         exact:false,
         protected:false,
         component:AlbumSelection
+    },
+    {
+        path:"/edit/collage",
+        exact:false,
+        protected:false,
+        component:Collage
     },
 ]
 

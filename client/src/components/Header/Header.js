@@ -1,10 +1,10 @@
 import React from "react";
 import logo from "../../media/images/logoCropped.png";
-import "./Header.css"
+import "./Header.css";
 
-const Header = (props) => {
+const Header = ({ clientName, stickToTop = true }) => {
   return (
-    <header>
+    <header className={clientName && "m_Bottom_Low " + (stickToTop && "stickToTop")}>
       <h2>
         FlashB
         <span>
@@ -12,6 +12,7 @@ const Header = (props) => {
         </span>
         ck
       </h2>
+      {clientName && <h3>An event by {clientName}</h3>}
     </header>
   );
 };
