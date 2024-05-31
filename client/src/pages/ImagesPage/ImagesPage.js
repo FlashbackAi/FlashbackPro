@@ -24,6 +24,7 @@ function ImagesPage() {
   const isFavouritesFetched = useRef(false);
   const history = useNavigate();
   const location = useLocation();
+  const [clientName, setClientName] = useState();
  
   const handleClick = (item, index) => {
     setClickedImg(item.original);
@@ -44,6 +45,7 @@ function ImagesPage() {
         }
       );
       if (response.status === 200) {
+        setClientName(response.data.clientName);
         const formattedImages = response.data.images.map((img) => ({
           original: img.url,
           thumbnail: img.thumbnailUrl,
@@ -238,7 +240,7 @@ function ImagesPage() {
         <LoadingSpinner />
       ) : (
         <>
-          <Header clientName={"Aarvi Media"} />
+          <Header clientName={clientName} />
           {images.length > 0 ? (
             <div className="wrapper">
               {images.map((item, index) => (

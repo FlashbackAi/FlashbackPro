@@ -10,7 +10,7 @@ const { AWS, AmazonCognitoIdentity, userPool } = require('./config', 'aws-sdk');
 const { CognitoUserPool, CognitoUserAttribute } = require('amazon-cognito-identity-js');
 const archiver = require('archiver');
 const https = require('https');
-const { fold } = require('prelude-ls');
+const { fold, last } = require('prelude-ls');
 const { func } = require('prop-types');
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -1177,6 +1177,7 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
      const isFavourites = req.body.isFavourites;
      const lastEvaluatedKey = req.body.lastEvaluatedKey;
      let isUserRegistered ;
+     let clientName;
      if(!oldEvents.includes(eventName))
       {
         isUserRegistered = await checkIsUserRegistered(userId);
@@ -1196,6 +1197,19 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
      logger.info("Image are being fetched for event of pageNo -> "+eventName+"; userId -> "+userId +"; isFavourites -> "+isFavourites);
 
     const result = await userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites);
+    if(!lastEvaluatedKey && isFavourites)
+      {
+        params = {
+          TableName: eventsTable,
+          KeyConditionExpression: 'event_name = :eventName',
+          ExpressionAttributeValues: {
+            ':eventName': eventName
+          },    
+        };
+        const res = await docClient.query(params).promise();
+        clientName = res.Items[0].client_name;
+      }
+       
     
     result.Items.sort((a, b) => a.faces_in_image - b.faces_in_image);
       const imagesPromises = result.Items.map(async file => {
@@ -1214,7 +1228,7 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
     });
       const images = await Promise.all(imagesPromises);
       logger.info('total images fetched for the user -> '+userId+'  in event -> '+eventName +"isFavourites -> "+isFavourites+' : '+result.Count);
-      res.json({"images":images, 'totalImages':result.Count,'lastEvaluatedKey':result.LastEvaluatedKey});
+      res.json({"images":images, 'totalImages':result.Count,'lastEvaluatedKey':result.LastEvaluatedKey,'clientName':clientName});
   }
   } catch (err) {
      logger.info("Error in S3 get", err);
