@@ -1312,7 +1312,7 @@ app.get('/userThumbnails/:eventName', async (req, res) => {
      const params = {
       TableName: indexedDataTableName,
       IndexName: 'folder_name-user_id-index', 
-      ProjectionExpression: 'user_id, image_id, Gender_Value',
+      ProjectionExpression: 'user_id, image_id, Gender_Value, AgeRange_Low, AgeRange_High',
       KeyConditionExpression: 'folder_name = :folderName',
       ExpressionAttributeValues: {
         ':folderName': eventName
@@ -1336,17 +1336,24 @@ app.get('/userThumbnails/:eventName', async (req, res) => {
     items.forEach(item => {
       const userId = item.user_id;
       const gender = item.Gender_Value;
+      const ageLow = item.AgeRange_Low;
+      const ageHigh = item.AgeRange_High;
       if (!userCountMap.has(userId)) {
         // Initialize the map with an object containing userId, count, and gender
-        userCountMap.set(userId, { userId, count: 0, gender });
+        userCountMap.set(userId, { userId, count: 0, gender, age:0 });
       }
     
       // Increment the count for this userId
       const userInfo = userCountMap.get(userId);
       userInfo.count += 1;
-    
+      //age average
+      if(ageLow && ageHigh){ 
+        userInfo.age  = (userCountMap.get(userId).age+((ageLow+ageHigh)/2))/2
+      
+      }
       // Update the map with the new object
       userCountMap.set(userId, userInfo);
+  
     });
     logger.info("Total number of user userIds fetched : "+userCountMap.length)
     const usersIds = Array.from(userCountMap.keys());
@@ -1356,6 +1363,7 @@ app.get('/userThumbnails/:eventName', async (req, res) => {
     thumbnailObject.forEach( item=>{
       item.count = userCountMap.get(item.user_id).count;
       item.gender = userCountMap.get(item.user_id).gender;
+      item.avgAge = userCountMap.get(item.user_id).age;
     })
      thumbnailObject.sort((a, b) => b.count - a.count);
    

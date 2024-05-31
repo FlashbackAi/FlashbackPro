@@ -18,11 +18,26 @@ const FamilyDetailsForm = () => {
     const [formData, setFormData] = useState({
     groom: '',
     groomFather: '',
-    groomMother: ''
+    groomMother: '',
+    'Level 1 Cousins': [],
+    'Level 2 Cousins': [],
+    Friends: [],
+    Uncles: [],
+    Aunts: [],
+    'Nephews & Nieces': []
   });
   const [males, setMales] = useState([]);
   const [females, setFemales] = useState([]);
   const [selectedValues, setSelectedValues] = useState(new Set());
+  const [kidsData, setKidsData] = useState([]);
+  const [selectedThumbnails, setSelectedThumbnails] = useState({
+    'Level 1 Cousins': [],
+    'Level 2 Cousins': [],
+    Friends: [],
+    Uncles: [],
+    Aunts: [],
+    'Nephews & Nieces': []
+  });
 
   const fetchThumbnails = async () => {
     if (userThumbnails.length === 0) setIsLoading(true);
@@ -36,9 +51,11 @@ const FamilyDetailsForm = () => {
         setUserThumbnails(response.data)
         const malesData = response.data.filter(item => item.gender === 'Male');
       const femalesData = response.data.filter(item => item.gender === 'Female');
+      const kidsData =  response.data.filter(item => item.avgAge <= 15);
 
       setMales(malesData);
       setFemales(femalesData);
+      setKidsData(kidsData);
 
       } else {
         throw new Error("Failed to fetch user thumbnails");
@@ -64,6 +81,28 @@ const FamilyDetailsForm = () => {
     });
     console.log(formData);
   };
+
+  // const handleThumbnailSelectChange = (group,thumbnail) =>{
+    
+  //   onSelectChange(group, thumbnail);
+  // };
+
+  const handleGroupSelectChange = (group, thumbnailUrl) => {
+    handleSelectChange(group, thumbnailUrl);
+    setSelectedThumbnails(prevState => {
+      const newSelectedThumbnails = prevState[group].includes(thumbnailUrl)
+        ? prevState[group].filter(url => url !== thumbnailUrl)
+        : [...prevState[group], thumbnailUrl];
+      return {
+        ...prevState,
+        [group]: newSelectedThumbnails
+      };
+    });
+    console.log(selectedThumbnails);
+  };
+
+
+
   const updateSelectedValues = (formData) => {
     const newSelectedValues = new Set(Object.values(formData));
     setSelectedValues(newSelectedValues);
@@ -106,6 +145,64 @@ const FamilyDetailsForm = () => {
 
         return siblings;
     };
+
+    const getThumbnailsForGroup = (group) => {
+      // switch (group) {
+      //   case 'Level 1 Cousins':
+      //     return filterOptions(userThumbnails.filter(item => item.avgAge >= 15 && item.avgAge <=40)).slice(5, 25).map(item => item.face_url);
+      //   case 'Level 2 Cousins':
+      //     return filterOptions(userThumbnails.filter(item => item.avgAge >= 15 && item.avgAge <=40)).slice(10, 20).map(item => item.face_url);
+      //   case 'Friends':
+      //     return filterOptions(userThumbnails.filter(item => item.avgAge >= 15 && item.avgAge <=40)) .slice(20, 40).map(item => item.face_url);
+      //   case 'Uncles':
+      //     return filterOptions(males).filter(item => item.avgAge >= 35 ).slice(0, 20).map(item => item.face_url);
+      //   case 'Aunts':
+      //     return filterOptions(females).filter(item => item.avgAge >= 35 ).slice(0, 20).map(item => item.face_url);
+      //   case 'Nephews & Nieces':
+      //     return filterOptions(kidsData).slice(0, 20).map(item => item.face_url);
+      //   default:
+      //     return [];
+      // }
+      switch (group) {
+        case 'Level 1 Cousins':
+          return userThumbnails.filter(item => item.avgAge >= 15 && item.avgAge <=40).slice(0, 20).map(item => item.face_url);
+        case 'Level 2 Cousins':
+          return userThumbnails.filter(item => item.avgAge >= 15 && item.avgAge <=40).slice(0, 20).map(item => item.face_url);
+        case 'Friends':
+          return userThumbnails.filter(item => item.avgAge >= 15 && item.avgAge <=40).slice(20, 40).map(item => item.face_url);
+        case 'Uncles':
+          return males.filter(item => item.avgAge >= 35 ).slice(0, 20).map(item => item.face_url);
+        case 'Aunts':
+          return females.filter(item => item.avgAge >= 35 ).slice(0, 20).map(item => item.face_url);
+        case 'Nephews & Nieces':
+          return kidsData.slice(0, 20).map(item => item.face_url);
+        default:
+          return [];
+      }
+     };
+
+    const ThumbnailSelection = ({ group, thumbnails, selectedThumbnails, onSelectChange }) => {
+      
+
+      return (
+        <div className="thumbnail-group">
+          <label>Select {group}:</label>
+          <div className="thumbnails-container">
+            {thumbnails.map((thumbnail, index) => (
+              <div
+                key={index}
+                className={`thumbnail ${selectedThumbnails?.includes(thumbnail) ? 'selected' : ''}`}
+                onClick={()  => handleGroupSelectChange(group,thumbnail)}
+              >
+                <img src={thumbnail} alt={`Option ${index + 1}`} />
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    };
+
+
 
     return (
         <div>
@@ -163,17 +260,17 @@ const FamilyDetailsForm = () => {
                     {generateSiblingSelects("female")}
                 </div>
 
-                {['Level 1 Cousins', 'Level 2 Cousins', 'Friends', 'Uncles', 'Aunts', 'Nephews & Nieces'].map(group => (
-                    <div className="checkbox-group" key={group}>
-                        <label>Select All {group}:</label>
-                        {Array.from({ length: 5 }, (_, i) => (
-                            <label key={i}>
-                                <input type="checkbox" name="group" value={`option${i + 1}`} />
-                                Option {i + 1}
-                            </label>
-                        ))}
-                    </div>
-                ))}
+                <div>
+                  {['Level 1 Cousins', 'Level 2 Cousins', 'Uncles', 'Aunts','Nephews & Nieces', 'Friends'].map(group => (
+                    <ThumbnailSelection
+                      key={group}
+                      group={group}
+                      thumbnails={getThumbnailsForGroup(group)}
+                      selectedThumbnails={selectedThumbnails[group]}
+                      onSelectChange={handleGroupSelectChange}
+                    />
+                  ))}
+                </div>
 
                 <button type="submit" className="submit-btn">Submit</button>
             </form>
