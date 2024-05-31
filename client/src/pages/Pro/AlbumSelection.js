@@ -73,13 +73,30 @@ const FamilyDetailsForm = () => {
     isDataFetched.current = true;
   }, []);
 
+  // const handleSelectChange = (question, selectedValue) => {
+  //   setFormData(prevState => {
+  //     const newFormData = { ...prevState, [question]: selectedValue };
+  //     updateSelectedValues(newFormData);
+  //     return newFormData;
+  //   });
+  //   console.log(formData);
+  // };
   const handleSelectChange = (question, selectedValue) => {
     setFormData(prevState => {
-      const newFormData = { ...prevState, [question]: selectedValue };
-      updateSelectedValues(newFormData);
-      return newFormData;
+      if (Array.isArray(prevState[question])) {
+        // Handle array updates
+        const newArray = prevState[question]?.includes(selectedValue)
+          ? prevState[question].filter(value => value !== selectedValue)
+          : [...prevState[question], selectedValue];
+          updateSelectedValues(newArray);
+        return { ...prevState, [question]: newArray };
+      } else {
+        // Handle single value updates
+        const newFormData = { ...prevState, [question]: selectedValue };
+            updateSelectedValues(newFormData);
+             return newFormData;
+      }
     });
-    console.log(formData);
   };
 
   // const handleThumbnailSelectChange = (group,thumbnail) =>{
@@ -100,6 +117,9 @@ const FamilyDetailsForm = () => {
     });
     console.log(selectedThumbnails);
   };
+  const handleSelctedThumbnailClick = (group,thumbnail) =>{
+
+  };
 
 
 
@@ -108,6 +128,7 @@ const FamilyDetailsForm = () => {
     setSelectedValues(newSelectedValues);
   };
   const filterOptions = (options) => {
+    console.log(selectedValues)
     return options.filter(option => !selectedValues.has(option.face_url));
   };
 
@@ -149,9 +170,9 @@ const FamilyDetailsForm = () => {
     const getThumbnailsForGroup = (group) => {
       // switch (group) {
       //   case 'Level 1 Cousins':
-      //     return filterOptions(userThumbnails.filter(item => item.avgAge >= 15 && item.avgAge <=40)).slice(5, 25).map(item => item.face_url);
+      //     return filterOptions(userThumbnails.filter(item => item.avgAge <=45)).slice(5, 25).map(item => item.face_url);
       //   case 'Level 2 Cousins':
-      //     return filterOptions(userThumbnails.filter(item => item.avgAge >= 15 && item.avgAge <=40)).slice(10, 20).map(item => item.face_url);
+      //     return filterOptions(userThumbnails.filter(item => item.avgAge <=45)).slice(10, 30).map(item => item.face_url);
       //   case 'Friends':
       //     return filterOptions(userThumbnails.filter(item => item.avgAge >= 15 && item.avgAge <=40)) .slice(20, 40).map(item => item.face_url);
       //   case 'Uncles':
@@ -165,9 +186,9 @@ const FamilyDetailsForm = () => {
       // }
       switch (group) {
         case 'Level 1 Cousins':
-          return userThumbnails.filter(item => item.avgAge >= 15 && item.avgAge <=40).slice(0, 20).map(item => item.face_url);
+          return userThumbnails.filter(item => item.avgAge >= 10 && item.avgAge <=40).slice(5, 25).map(item => item.face_url);
         case 'Level 2 Cousins':
-          return userThumbnails.filter(item => item.avgAge >= 15 && item.avgAge <=40).slice(0, 20).map(item => item.face_url);
+          return userThumbnails.filter(item => item.avgAge >= 10 && item.avgAge <=40).slice(10, 30).map(item => item.face_url);
         case 'Friends':
           return userThumbnails.filter(item => item.avgAge >= 15 && item.avgAge <=40).slice(20, 40).map(item => item.face_url);
         case 'Uncles':
@@ -187,6 +208,22 @@ const FamilyDetailsForm = () => {
       return (
         <div className="thumbnail-group">
           <label>Select {group}:</label>
+          {selectedThumbnails.length > 0 && (
+          <div className="selected-thumbnails-container">
+            <h4 style={{"color":"black"}}> Selected </h4>
+            <div className="thumbnails-container">
+              {selectedThumbnails.map((thumbnail, index) => (
+                <div
+                  key={index}
+                  className="thumbnail"
+                  onClick={() => handleSelctedThumbnailClick(group,thumbnail)}
+                >
+                  <img src={thumbnail} alt={`Selected Option ${index + 1}`} />
+                </div>
+              ))}
+            </div>
+          </div>
+      )}
           <div className="thumbnails-container">
             {thumbnails.map((thumbnail, index) => (
               <div
