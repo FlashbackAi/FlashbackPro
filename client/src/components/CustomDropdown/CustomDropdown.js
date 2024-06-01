@@ -4,6 +4,7 @@ import './CustomDropdown.css';
 const CustomDropdown = ({ question, options, selectedValue, onSelectChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const containerClassName = `custom-dropdown ${question}`
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -24,7 +25,7 @@ const CustomDropdown = ({ question, options, selectedValue, onSelectChange }) =>
   };
 
   return (
-    <div className="custom-dropdown" ref={dropdownRef}>
+    <div className={containerClassName} ref={dropdownRef}>
       <div className="custom-dropdown-selected" onClick={() => setIsOpen(!isOpen)}>
         {selectedValue ? <img src={selectedValue} alt="Selected" className="selected-image" /> : 'Select an image'}
       </div>

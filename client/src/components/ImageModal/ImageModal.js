@@ -13,6 +13,9 @@ const ImageModal = ({
   handleBackButton,
   handleFavourite,
   clickedImgFavourite,
+  favourite =true,
+  sharing = true,
+  close = true
 }) => {
   const history = useNavigate();
   const handleClick = (e) => {
@@ -84,8 +87,11 @@ const ImageModal = ({
 
   const share = () => {
     const shareAbleUrl = `${process.env.REACT_APP_SERVER_IP}/share/${clickedUrl.split(".jpg")[0]}?redirectTo=singleImage`;
-    navigator.clipboard.writeText(shareAbleUrl);
-    toast("Copied link to clipboard!!");
+    // navigator.clipboard.writeText(shareAbleUrl);
+    // toast("Copied link to clipboard!!");
+    const text = `${shareAbleUrl}\n Click and follow url to *View* and *Download Image*`;
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(whatsappUrl, "_blank");
   };
 
   return (
@@ -93,9 +99,10 @@ const ImageModal = ({
       <div className="overlay dismiss" onClick={handleClick}>
         <LoadingSpinner />
         <div className="modalOuter lazyImage hidden">
+          {close &&(
           <span className="dismiss" onClick={handleBackButton}>
             X
-          </span>
+          </span>)}
           <img onLoad={onLoad} src={clickedImg} alt="bigger pic" />
           <div className="imageToolBox">
             {/* {download && (
@@ -108,15 +115,18 @@ const ImageModal = ({
                 {isDownloading ? "Downloading..." : "Download"}
               </button>
             )} */}
+             {favourite && (
             <div
               className="dFlex alignCenter cursor-pointer"
               onClick={addToFavourite}
             >
+              
               <Heart
                 className={"favourite " + (clickedImgFavourite && "bgRed")}
               />
               Favourite
             </div>
+             )}
             <div
               className="dFlex alignCenter"
               onClick={downloadCurrentImage}
@@ -132,12 +142,14 @@ const ImageModal = ({
                 </>
               )}
             </div>
+            {sharing &&(
             <div className="dFlex alignCenter cursor-pointer" onClick={share}>
               <Share2
                 className={"favourite " + (clickedImgFavourite && "bgRed")}
               />
               Share
             </div>
+            )}
           </div>
           {/* <button
             onClick={downloadCurrentImage}

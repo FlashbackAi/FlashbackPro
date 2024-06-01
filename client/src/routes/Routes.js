@@ -12,6 +12,7 @@ import Pro from "../pages/Pro/Pro";
 import AlbumSelection from "../pages/Pro/AlbumSelection";
 import TermsAndConditions from "../pages/TermsAndConditions/TermsAndConditions";
 import Collage from "../pages/Edit/Collage/Collage";
+import SharedImage from "../pages/ImagesPage/SharedImage";
 
 const ROUTES=[
     {
@@ -115,6 +116,12 @@ const ROUTES=[
         exact:false,
         protected:false,
         component:Collage
+    },
+    {
+        path:"/SharedImage/:eventName/:userId",
+        exact:false,
+        protected:false,
+        component:SharedImage
     },
 ]
 

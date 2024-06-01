@@ -43,6 +43,9 @@ app.get("/share/:eventName/:userId", async(req, res) => {
     if(!!redirectTo?.length && redirectTo === "photos"){
       redirectUrl=`photos/${eventName}/${userId}`
     }
+    else if(!!redirectTo?.length && redirectTo === "singleImage"){
+      redirectUrl=`sharedImage/${eventName}/${userId}.jpg`
+    }
     else{
       redirectUrl = `photos/${eventName}/${userId}`;
     } 

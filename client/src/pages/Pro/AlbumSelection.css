@@ -1,131 +1,164 @@
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
- /* background-color: #f4f4f4; */
-}
-
 .container {
-    max-width: 600px;
-    margin: 50px auto;
+    max-width: 1200px;
+    margin: 0 auto;
     padding: 20px;
+    font-family: Arial, sans-serif;
     background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 h2 {
-    margin-top: 0;
     text-align: center;
+    color: #333;
+    margin-bottom: 20px;
 }
 
-label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-    color: #141414;
+h3 {
+    text-align: center;
+    color: #555;
+    margin-bottom: 10px;
 }
 
-select {
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 15px;
+.form-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-section {
     border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
+    border-radius: 5px;
+    overflow: hidden;
+    transition: all 0.3s ease-in-out;
+}
+
+.form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f5f5f5;
+    padding: 10px 20px;
+    cursor: pointer;
+}
+
+.form-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.form-header button {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.form-header button:hover {
+    background-color: #0056b3;
+}
+
+.form-content {
+    padding: 20px;
+    background-color: #fff;
+}
+
+.form-content form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.form-content label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #333;
 }
 
 .incrementor {
     display: flex;
     align-items: center;
-    margin-bottom: 15px;
-}
-
-.incrementor input[type="number"] {
-    flex: 1;
-    padding: 8px;
-    text-align: center;
-    margin-right: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
+    gap: 10px;
 }
 
 .incrementor button {
-    padding: 6px 10px;
-    cursor: pointer;
-    border: none;
-    border-radius: 4px;
     background-color: #007bff;
     color: #fff;
-    transition: background-color 0.3s ease;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
 }
 
 .incrementor button:hover {
     background-color: #0056b3;
 }
 
-.checkbox-group {
-    margin-bottom: 15px;
-}
-
-.checkbox-group label {
-    display: block;
-    margin-bottom: 5px;
-}
-
-.checkbox-group label input[type="checkbox"] {
-    margin-right: 5px;
+.incrementor input {
+    width: 50px;
+    text-align: center;
 }
 
 .submit-btn {
-    display: block;
-    width: 100%;
-    padding: 10px;
-    border: none;
-    border-radius: 4px;
-    background-color: #4caf50;
+    background-color: #28a745;
     color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 3px;
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    align-self: center;
 }
 
 .submit-btn:hover {
-    background-color: #45a049;
+    background-color: #218838;
 }
+
 .thumbnail-group {
-    margin-bottom: 20px;
-  }
-  
-  .thumbnails-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.thumbnail-group label {
+    font-weight: bold;
+    color: #333;
+}
+
+.thumbnails-container {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-  }
-  
-  .thumbnail {
+}
+
+.thumbnail {
     width: 60px;
     height: 60px;
-    cursor: pointer;
+    overflow: hidden;
     border: 2px solid transparent;
-    border-radius: 5px;
-  }
-  .selected-thumbnails-container{
-    border: 9px solid;
-    background-color: #e0e9d7;
-  }
-  .selected-thumbnails-container, .available-thumbnails-container {
-    margin-bottom: 20px;
-  }
-  
-  .thumbnail.selected {
-    border: 4px solid #007bff;
-  }
-  
-  .thumbnail img {
+    cursor: pointer;
+    transition: border 0.3s ease-in-out;
+}
+
+.thumbnail img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+.thumbnail.selected {
+    border-color: #007bff;
+}
+
+.selected-thumbnails-container {
+    margin-bottom: 10px;
+}
+
+.selected-thumbnails-container h4 {
+    margin: 0 0 5px 0;
+}
+
+.selected-thumbnails-container .thumbnails-container {
+    background-color: #f9f9f9;
+    padding: 10px;
     border-radius: 5px;
-  }
-  
+}
