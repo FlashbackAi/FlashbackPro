@@ -6,90 +6,43 @@ import API_UTIL from "../../services/AuthIntereptor";
 import './AlbumSelection.css'; // Assuming you have a CSS file for styles
 
 const FamilyDetailsForm = () => {
+    const [groomBrothersCount, setGroomBrothersCount] = useState(0);
+    const [groomSistersCount, setGroomSistersCount] = useState(0);
+    const [brideBrothersCount, setBrideBrothersCount] = useState(0);
+    const [brideSistersCount, setBrideSistersCount] = useState(0);
+    const [userThumbnails, setUserThumbnails] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const { eventName } = useParams();
     const isDataFetched = useRef(false);
-
-    const [userThumbnails, setUserThumbnails] = useState([]);
-    const [males, setMales] = useState([]);
-    const [females, setFemales] = useState([]);
-    const [kidsData, setKidsData] = useState([]);
-    const [selectedValues, setSelectedValues] = useState(new Set());
-
-    const [groomFormData, setGroomFormData] = useState({
+    const [formData, setFormData] = useState({
         groom: '',
         groomFather: '',
         groomMother: '',
-        'Level 1 Cousins': [],
-        'Level 2 Cousins': [],
-        Friends: [],
-        Uncles: [],
-        Aunts: [],
-        'Nephews & Nieces': [],
-        'Grand Parents': []
-    });
-    const [brideFormData, setBrideFormData] = useState({
         bride: '',
         brideFather: '',
         brideMother: '',
         'Level 1 Cousins': [],
         'Level 2 Cousins': [],
+        cousins:'',
         Friends: [],
         Uncles: [],
         Aunts: [],
         'Nephews & Nieces': [],
         'Grand Parents': []
     });
-
-    const [groomBrothersCount, setGroomBrothersCount] = useState(0);
-    const [groomSistersCount, setGroomSistersCount] = useState(0);
-    const [brideBrothersCount, setBrideBrothersCount] = useState(0);
-    const [brideSistersCount, setBrideSistersCount] = useState(0);
-
+    const [males, setMales] = useState([]);
+    const [females, setFemales] = useState([]);
+    const [selectedValues, setSelectedValues] = useState(new Set());
+    const [kidsData, setKidsData] = useState([]);
     const [selectedThumbnails, setSelectedThumbnails] = useState({
-        groom: {
-            'Level 1 Cousins': [],
-            'Level 2 Cousins': [],
-            Friends: [],
-            Uncles: [],
-            Aunts: [],
-            'Nephews & Nieces': [],
-            'Grand Parents': []
-        },
-        bride: {
-            'Level 1 Cousins': [],
-            'Level 2 Cousins': [],
-            Friends: [],
-            Uncles: [],
-            Aunts: [],
-            'Nephews & Nieces': [],
-            'Grand Parents': []
-        }
+        'Level 1 Cousins': [],
+        'Level 2 Cousins': [],
+        Friends: [],
+        Uncles: [],
+        Aunts: [],
+        'Nephews & Nieces': [],
+        'Grand Parents': []
     });
-
-  //   const [selectedBrideThumbnails, setSelectedBrideThumbnails] = useState({
-  //     groom: {
-  //         'Level 1 Cousins': [],
-  //         'Level 2 Cousins': [],
-  //         Friends: [],
-  //         Uncles: [],
-  //         Aunts: [],
-  //         'Nephews & Nieces': [],
-  //         'Grand Parents': []
-  //     },
-  //     bride: {
-  //         'Level 1 Cousins': [],
-  //         'Level 2 Cousins': [],
-  //         Friends: [],
-  //         Uncles: [],
-  //         Aunts: [],
-  //         'Nephews & Nieces': [],
-  //         'Grand Parents': []
-  //     }
-  // });
-
-    const [isGroomFormExpanded, setIsGroomFormExpanded] = useState(false);
-    const [isBrideFormExpanded, setIsBrideFormExpanded] = useState(false);
 
     const fetchThumbnails = async () => {
         if (userThumbnails.length === 0) setIsLoading(true);
@@ -121,10 +74,8 @@ const FamilyDetailsForm = () => {
         isDataFetched.current = true;
     }, []);
 
-    const handleSelectChange = (form, question, selectedValue) => {
-        const setFormData = form === 'groom' ? setGroomFormData : setBrideFormData;
-        const formData = form === 'groom' ? groomFormData : brideFormData;
-        
+    const handleSelectChange = (question, selectedValue) => {
+        console.log(question);
         setFormData(prevState => {
             if (Array.isArray(prevState[question])) {
                 const newArray = prevState[question]?.includes(selectedValue)
@@ -140,19 +91,15 @@ const FamilyDetailsForm = () => {
         });
     };
 
-    const handleGroupSelectChange = (form, group, thumbnailUrl) => {
-        handleSelectChange(form, group, thumbnailUrl);
-        //const setSelectedThumbnails = form === 'groom' ? setSelectedGroomThumbnails : setSelectedBrideThumbnails;
+    const handleGroupSelectChange = (group, thumbnailUrl) => {
+        handleSelectChange(group, thumbnailUrl);
         setSelectedThumbnails(prevState => {
-            const newSelectedThumbnails = prevState[form][group].includes(thumbnailUrl)
-                ? prevState[form][group].filter(url => url !== thumbnailUrl)
-                : [...prevState[form][group], thumbnailUrl];
+            const newSelectedThumbnails = prevState[group].includes(thumbnailUrl)
+                ? prevState[group].filter(url => url !== thumbnailUrl)
+                : [...prevState[group], thumbnailUrl];
             return {
                 ...prevState,
-                [form]: {
-                    ...prevState[form],
-                    [group]: newSelectedThumbnails
-                }
+                [group]: newSelectedThumbnails
             };
         });
     };
@@ -166,28 +113,53 @@ const FamilyDetailsForm = () => {
                 newSelectedValues.add(value);
             }
         });
-        newSelectedValues.forEach(value => selectedValues.add(value));
         setSelectedValues(newSelectedValues);
-        console.log(selectedValues);
     };
 
     const filterOptions = (options) => {
         return options.filter(option => !selectedValues.has(option.face_url));
     };
 
-    const handleSiblingChange = (setter, value) => {
+    const handleSiblingChange = (setter,sibling, value) => {
+       
+        if(value === -1){
+            let count;
+            console.log(value +" : "+sibling);
+          switch(sibling){
+            case 'groomMale': count = groomBrothersCount;
+                             break;
+            case 'groomFemale': count = groomSistersCount;
+                            break;
+            case 'brideMale': count = brideBrothersCount;
+                            break;
+            case 'brideFemale': count = brideSistersCount;
+                            break;
+            default : console.log(sibling)
+          }
+          const formKey = `${sibling}Sibling${count}`;
+          console.log(formKey)
+          setFormData(prevState => {
+            const newFormData = { ...prevState, [formKey]: '' };
+            updateSelectedValues(newFormData);
+            return newFormData;
+        });
+        }
+        console.log(formData)
         setter(prev => {
             const newValue = prev + value;
             return newValue >= 0 && newValue <= 10 ? newValue : prev;
         });
+       
+
+       
     };
 
     const generateSiblingSelects = (form, gender, count) => {
         const siblings = [];
-        const options = gender === "male" ? filterOptions(males) : filterOptions(females);
+        const options = gender === "Male" ? filterOptions(males) : filterOptions(females);
 
         for (let i = 1; i <= count; i++) {
-            const label = gender === "male" ? `Select your Sibling (Brother ${i})` : `Select your Sibling (Sister ${i})`;
+            const label = gender === "Male" ? `Select ${form} Sibling (Brother ${i})` : `Select your Sibling (Sister ${i})`;
             const sibling = `${form}${gender}Sibling${i}`;
 
             siblings.push(
@@ -196,8 +168,8 @@ const FamilyDetailsForm = () => {
                     <CustomDropdown
                         question={sibling}
                         options={options}
-                        selectedValue={form === 'groom' ? groomFormData[sibling] : brideFormData[sibling]}
-                        onSelectChange={(question, value) => handleSelectChange(form, question, value)}
+                        selectedValue={formData[sibling]}
+                        onSelectChange={(question, value) => handleSelectChange(question, value)}
                     />
                 </div>
             );
@@ -227,9 +199,10 @@ const FamilyDetailsForm = () => {
         }
     };
 
-    const ThumbnailSelection = ({ form, group }) => {
+    const ThumbnailSelection = ({ group }) => {
         const thumbnails = getThumbnailsForGroup(group);
-        const selectedGroupThumbnails = selectedThumbnails[form][group];
+        const selectedGroupThumbnails = selectedThumbnails[group];
+
         return (
             <div className="thumbnail-group">
                 <label>Select {group}:</label>
@@ -241,7 +214,7 @@ const FamilyDetailsForm = () => {
                                 <div
                                     key={index}
                                     className="thumbnail"
-                                    onClick={() => handleGroupSelectChange(form, group, thumbnail)}
+                                    onClick={() => handleGroupSelectChange(group, thumbnail)}
                                 >
                                     <img src={thumbnail} alt={`Selected Option ${index + 1}`} />
                                 </div>
@@ -253,8 +226,8 @@ const FamilyDetailsForm = () => {
                     {thumbnails.map((thumbnail, index) => (
                         <div
                             key={index}
-                            className='thumbnail'
-                            onClick={() => handleGroupSelectChange(form, group, thumbnail.face_url)}
+                            className={`thumbnail ${selectedGroupThumbnails?.includes(thumbnail.face_url) ? 'selected' : ''}`}
+                            onClick={() => handleGroupSelectChange(group, thumbnail.face_url)}
                         >
                             <img src={thumbnail.face_url} alt={`Option ${index + 1}`} />
                         </div>
@@ -271,146 +244,107 @@ const FamilyDetailsForm = () => {
             ) : (
                 <div className="container">
                     <h2>Flashback Pro</h2>
-                    <h3>Let's Select Family Details</h3>
-                    <div className="form-container">
-                        <div className="form-section">
-                            <div className="form-header" onClick={() => setIsGroomFormExpanded(!isGroomFormExpanded)}>
-                                <h3>Groom's Family</h3>
-                                <button type="button">{isGroomFormExpanded ? 'Collapse' : 'Expand'}</button>
-                            </div>
-                            {isGroomFormExpanded && (
-                                <div className="form-content">
-                                    <form action="#" method="post">
-                                        <label htmlFor="groom">Groom</label>
-                                        <CustomDropdown
-                                            question="groom"
-                                            options={filterOptions(males)}
-                                            selectedValue={groomFormData.groom}
-                                            onSelectChange={(question, value) => handleSelectChange('groom', question, value)}
-                                        />
+                    <h3>Lets Select Groom's Family</h3>
+                    <form action="#" method="post">
+                        <label htmlFor="groom">Groom</label>
+                        <CustomDropdown
+                            question="groom"
+                            options={filterOptions(males)}
+                            selectedValue={formData.groom}
+                            onSelectChange={handleSelectChange}
+                        />
+                        <label htmlFor="bride">Bride</label>
+                         <CustomDropdown
+                          question="bride"
+                          options={filterOptions(females)}
+                          selectedValue={formData.bride}
+                          onSelectChange={(question, value) => handleSelectChange(question, value)}
+                         />               
+                        
+                        <label htmlFor="groomMother">Groom's Mom</label>
+                        <CustomDropdown
+                            question="groomMother"
+                            options={filterOptions(females)}
+                            selectedValue={formData.groomMother}
+                            onSelectChange={handleSelectChange}
+                        />
 
-                                        <label htmlFor="groomMother">Groom's Mom</label>
-                                        <CustomDropdown
-                                            question="groomMother"
-                                            options={filterOptions(females)}
-                                            selectedValue={groomFormData.groomMother}
-                                            onSelectChange={(question, value) => handleSelectChange('groom', question, value)}
-                                        />
+                        <label htmlFor="groomFather">Groom's Dad</label>
+                        <CustomDropdown
+                            question="groomFather"
+                            options={filterOptions(males)}
+                            selectedValue={formData.groomFather}
+                            onSelectChange={handleSelectChange}
+                        />
+                        <label htmlFor="brideMother">Bride's Mom</label>
+                        <CustomDropdown
+                            question="brideMother"
+                            options={filterOptions(females)}
+                            selectedValue={formData.brideMother}
+                            onSelectChange={(question, value) => handleSelectChange(question, value)}
+                        />
 
-                                        <label htmlFor="groomFather">Groom's Dad</label>
-                                        <CustomDropdown
-                                            question="groomFather"
-                                            options={filterOptions(males)}
-                                            selectedValue={groomFormData.groomFather}
-                                            onSelectChange={(question, value) => handleSelectChange('groom', question, value)}
-                                        />
+                        <label htmlFor="brideFather">Bride's Dad</label>
+                        <CustomDropdown
+                            question="brideFather"
+                            options={filterOptions(males)}
+                            selectedValue={formData.brideFather}
+                            onSelectChange={(question, value) => handleSelectChange(question, value)}
+                        />
 
-                                        <div className="incrementor">
-                                            <label htmlFor="brothers">Number of Sibling Brothers (own brothers)</label>
-                                            <button type="button" onClick={() => handleSiblingChange(setGroomBrothersCount, -1)}>-</button>
-                                            <input type="number" name="brothers" id="brothers" value={groomBrothersCount} readOnly />
-                                            <button type="button" onClick={() => handleSiblingChange(setGroomBrothersCount, 1)}>+</button>
-                                        </div>
-
-                                        <div id="siblingsContainer">
-                                            {generateSiblingSelects('groom', 'male', groomBrothersCount)}
-                                        </div>
-                                        <div className="incrementor">
-                                            <label htmlFor="sisters">Number of Sibling Sisters (own sisters)</label>
-                                            <button type="button" onClick={() => handleSiblingChange(setGroomSistersCount, -1)}>-</button>
-                                            <input type="number" name="sisters" id="sisters" value={groomSistersCount} readOnly />
-                                            <button type="button" onClick={() => handleSiblingChange(setGroomSistersCount, 1)}>+</button>
-                                        </div>
-
-                                        <div id="siblingsContainer">
-                                            {generateSiblingSelects('groom', 'female', groomSistersCount)}
-                                        </div>
-
-                                        <div>
-                                            {['Level 1 Cousins', 'Level 2 Cousins', 'Uncles', 'Aunts', 'Nephews & Nieces', 'Friends', 'Grand Parents'].map(group => (
-                                                <ThumbnailSelection
-                                                    key={group}
-                                                    form="groom"
-                                                    group={group}
-                                                />
-                                            ))}
-                                        </div>
-
-                                        <button type="submit" className="submit-btn">Submit</button>
-                                    </form>
-                                </div>
-                            )}
+                        <div className="incrementor">
+                            <label htmlFor="brothers">Number of Groom Sibling Brothers (own brothers)</label>
+                            <button type="button" onClick={() => handleSiblingChange(setGroomBrothersCount,"groomMale", -1)}>-</button>
+                            <input type="number" name="brothers" id="brothers" value={groomBrothersCount} readOnly />
+                            <button type="button" onClick={() => handleSiblingChange(setGroomBrothersCount,"groomMale", 1)}>+</button>
                         </div>
 
-                        <div className="form-section">
-                            <div className="form-header" onClick={() => setIsBrideFormExpanded(!isBrideFormExpanded)}>
-                                <h3>Bride's Family</h3>
-                                <button type="button">{isBrideFormExpanded ? 'Collapse' : 'Expand'}</button>
-                            </div>
-                            {isBrideFormExpanded && (
-                                <div className="form-content">
-                                    <form action="#" method="post">
-                                        <label htmlFor="bride">Bride</label>
-                                        <CustomDropdown
-                                            question="bride"
-                                            options={filterOptions(females)}
-                                            selectedValue={brideFormData.bride}
-                                            onSelectChange={(question, value) => handleSelectChange('bride', question, value)}
-                                        />
-
-                                        <label htmlFor="brideMother">Bride's Mom</label>
-                                        <CustomDropdown
-                                            question="brideMother"
-                                            options={filterOptions(females)}
-                                            selectedValue={brideFormData.brideMother}
-                                            onSelectChange={(question, value) => handleSelectChange('bride', question, value)}
-                                        />
-
-                                        <label htmlFor="brideFather">Bride's Dad</label>
-                                        <CustomDropdown
-                                            question="brideFather"
-                                            options={filterOptions(males)}
-                                            selectedValue={brideFormData.brideFather}
-                                            onSelectChange={(question, value) => handleSelectChange('bride', question, value)}
-                                        />
-
-                                        <div className="incrementor">
-                                            <label htmlFor="brothers">Number of Sibling Brothers (own brothers)</label>
-                                            <button type="button" onClick={() => handleSiblingChange(setBrideBrothersCount, -1)}>-</button>
-                                            <input type="number" name="brothers" id="brothers" value={brideBrothersCount} readOnly />
-                                            <button type="button" onClick={() => handleSiblingChange(setBrideBrothersCount, 1)}>+</button>
-                                        </div>
-
-                                        <div id="siblingsContainer">
-                                            {generateSiblingSelects('bride', 'male', brideBrothersCount)}
-                                        </div>
-                                        <div className="incrementor">
-                                            <label htmlFor="sisters">Number of Sibling Sisters (own sisters)</label>
-                                            <button type="button" onClick={() => handleSiblingChange(setBrideSistersCount, -1)}>-</button>
-                                            <input type="number" name="sisters" id="sisters" value={brideSistersCount} readOnly />
-                                            <button type="button" onClick={() => handleSiblingChange(setBrideSistersCount, 1)}>+</button>
-                                        </div>
-
-                                        <div id="siblingsContainer">
-                                            {generateSiblingSelects('bride', 'female', brideSistersCount)}
-                                        </div>
-
-                                        <div>
-                                            {['Level 1 Cousins', 'Level 2 Cousins', 'Uncles', 'Aunts', 'Nephews & Nieces', 'Friends', 'Grand Parents'].map(group => (
-                                                <ThumbnailSelection
-                                                    key={group}
-                                                    form="bride"
-                                                    group={group}
-                                                />
-                                            ))}
-                                        </div>
-
-                                        <button type="submit" className="submit-btn">Submit</button>
-                                    </form>
-                                </div>
-                            )}
+                        <div id="siblingsContainer">
+                            {generateSiblingSelects('groom', 'Male', groomBrothersCount)}
                         </div>
-                    </div>
+                        <div className="incrementor">
+                            <label htmlFor="sisters">Number of Groom Sibling Sisters (own sisters)</label>
+                            <button type="button" onClick={() => handleSiblingChange(setGroomSistersCount,"groomFemale", -1)}>-</button>
+                            <input type="number" name="sisters" id="sisters" value={groomSistersCount} readOnly />
+                            <button type="button" onClick={() => handleSiblingChange(setGroomSistersCount,"groomFemale", 1)}>+</button>
+                        </div>
+
+                        <div id="siblingsContainer">
+                            {generateSiblingSelects('groom', 'Female', groomSistersCount)}
+                        </div>
+                        <div className="incrementor">
+                            <label htmlFor="brothers">Number of Bride Sibling Brothers (own brothers)</label>
+                            <button type="button" onClick={() => handleSiblingChange(setBrideBrothersCount,"groomFemale", -1)}>-</button>
+                            <input type="number" name="brothers" id="brothers" value={brideBrothersCount} readOnly />
+                            <button type="button" onClick={() => handleSiblingChange(setBrideBrothersCount,"groomFemale", 1)}>+</button>
+                        </div>
+
+                        <div id="siblingsContainer">
+                            {generateSiblingSelects('bride', 'Male', brideBrothersCount)}
+                        </div>
+                        <div className="incrementor">
+                            <label htmlFor="sisters">Number of Bride Sibling Sisters (own sisters)</label>
+                            <button type="button" onClick={() => handleSiblingChange(setBrideSistersCount,"groomMale", -1)}>-</button>
+                            <input type="number" name="sisters" id="sisters" value={brideSistersCount} readOnly />
+                            <button type="button" onClick={() => handleSiblingChange(setBrideSistersCount,"groomMale", 1)}>+</button>
+                        </div>                
+
+                        <div id="siblingsContainer">
+                            {generateSiblingSelects('bride', 'Female', brideSistersCount)}
+                        </div>
+                       
+
+                        <div>
+                            {['Level 1 Cousins', 'Level 2 Cousins', 'Uncles', 'Aunts', 'Nephews & Nieces', 'Friends', 'Grand Parents'].map(group => (
+                                <ThumbnailSelection
+                                    key={group}
+                                    group={group}
+                                />
+                            ))}
+                        </div>
+
+                        <button type="submit" className="submit-btn">Submit</button>
+                    </form>
                 </div>
             )}
         </div>

@@ -4,12 +4,14 @@
     padding: 20px;
     font-family: Arial, sans-serif;
     background-color: #fff;
+    color: #333;
 }
 
 h2 {
     text-align: center;
     color: #333;
     margin-bottom: 20px;
+    
 }
 
 h3 {
@@ -29,6 +31,7 @@ h3 {
     border-radius: 5px;
     overflow: hidden;
     transition: all 0.3s ease-in-out;
+    
 }
 
 .form-header {
