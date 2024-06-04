@@ -14,23 +14,41 @@ const FamilyDetailsForm = () => {
     const [isLoading, setIsLoading] = useState(true);
     const { eventName } = useParams();
     const isDataFetched = useRef(false);
-    const [formData, setFormData] = useState({
-        groom: '',
-        groomFather: '',
-        groomMother: '',
-        bride: '',
-        brideFather: '',
-        brideMother: '',
-        'Level 1 Cousins': [],
-        'Level 2 Cousins': [],
-        cousins:'',
-        Friends: [],
-        Uncles: [],
-        Aunts: [],
-        'Nephews & Nieces': [],
-        'Grand Parents': [],
-        'Other Important People' : []
-    });
+    // const [formData, setFormData] = useState({
+    //     groom: '',
+    //     groomFather: '',
+    //     groomMother: '',
+    //     bride: '',
+    //     brideFather: '',
+    //     brideMother: '',
+    //     'Level 1 Cousins': [],
+    //     'Level 2 Cousins': [],
+    //     cousins:'',
+    //     Friends: [],
+    //     Uncles: [],
+    //     Aunts: [],
+    //     'Nephews & Nieces': [],
+    //     'Grand Parents': [],
+    //     'Other Important People' : []
+    // });
+
+    const [formData, setFormData] = useState(() => {
+        // Initialize form data from localStorage if available
+        const savedFormData = localStorage.getItem('formData');
+        return savedFormData ? JSON.parse(savedFormData) : {
+          groom: '',
+          groomFather: '',
+          groomMother: '',
+          'Level 1 Cousins': [],
+          'Level 2 Cousins': [],
+          Friends: [],
+          Uncles: [],
+          Aunts: [],
+          'Nephews & Nieces': [],
+          'Other Important People' : []
+        };
+      });
+
     const [males, setMales] = useState([]);
     const [females, setFemales] = useState([]);
     const [selectedValues, setSelectedValues] = useState(new Set());
@@ -75,6 +93,11 @@ const FamilyDetailsForm = () => {
         fetchThumbnails();
         isDataFetched.current = true;
     }, []);
+
+    useEffect(() => {
+        // Save form data to localStorage whenever it changes
+        localStorage.setItem('formData', JSON.stringify(formData));
+      }, [formData]);
 
     const handleSelectChange = (question, selectedValue) => {
         console.log(question);
