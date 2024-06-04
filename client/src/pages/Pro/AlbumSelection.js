@@ -28,7 +28,8 @@ const FamilyDetailsForm = () => {
         Uncles: [],
         Aunts: [],
         'Nephews & Nieces': [],
-        'Grand Parents': []
+        'Grand Parents': [],
+        'Other Important People' : []
     });
     const [males, setMales] = useState([]);
     const [females, setFemales] = useState([]);
@@ -41,7 +42,8 @@ const FamilyDetailsForm = () => {
         Uncles: [],
         Aunts: [],
         'Nephews & Nieces': [],
-        'Grand Parents': []
+        'Grand Parents': [],
+        'Other Important People':[]
     });
 
     const fetchThumbnails = async () => {
@@ -194,6 +196,8 @@ const FamilyDetailsForm = () => {
                 return filterOptions(kidsData.slice(0, 20));
             case 'Grand Parents':
                 return filterOptions(userThumbnails.filter(item => item.avgAge >= 50).slice(0, 20));
+            case 'Other Important People':
+                 return filterOptions(userThumbnails);
             default:
                 return [];
         }
@@ -335,7 +339,7 @@ const FamilyDetailsForm = () => {
                        
 
                         <div>
-                            {['Level 1 Cousins', 'Level 2 Cousins', 'Uncles', 'Aunts', 'Nephews & Nieces', 'Friends', 'Grand Parents'].map(group => (
+                            {['Level 1 Cousins', 'Level 2 Cousins', 'Uncles', 'Aunts', 'Nephews & Nieces', 'Friends', 'Grand Parents', 'Other Important People'].map(group => (
                                 <ThumbnailSelection
                                     key={group}
                                     group={group}
