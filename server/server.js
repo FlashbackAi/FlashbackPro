@@ -697,7 +697,10 @@ async function searchUsersByImage(portraitS3Url, phoneNumber) {
       }
       const matchedUserId = result.matchedUserId[0];
       if(userId && matchedUserId != userId){
+
+
         logger.info(userId);
+        
         throw Error("UserId not matched")
       }
       console.log('Matched userId for the phoneNumber: '+phoneNumber+' and imageUrl: '+imageUrl+'is :', matchedUserId);
@@ -1895,7 +1898,7 @@ app.post('/downloadImage', async (req, res) => {
           // Check if the user already exists
           if(!eventName)
             {
-              eventName = 'Vpark_02062024'
+              eventName = 'Unnati_05062024'
             }
           const existingUser = await getUser(username);
           logger.info("existingUser"+ existingUser);
