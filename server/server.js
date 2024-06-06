@@ -103,6 +103,7 @@ const userEventTableName='user_event_mapping';
 const userOutputTable='user_outputs';
 const eventsTable = 'events';
 const indexedDataTableName = 'indexed_data'
+const formDataTableName = 'selectionFormData'; 
 
 
 const ClientId = '6goctqurrumilpurvtnh6s4fl1'
@@ -693,17 +694,36 @@ async function searchUsersByImage(portraitS3Url, phoneNumber) {
       const result = await searchUsersByImage(imageUrl, phoneNumber);
       if(!result){
         logger.info("matched user not found: "+phoneNumber);
+        logger.info("deleting the S3 url for unmacthed  userId->"+userId);
+        const userDeleteParams = {
+          TableName: userrecordstable, // Replace with your table name
+          Key: {
+              'user_phone_number': phoneNumber // Replace with your partition key name
+          },
+          UpdateExpression: 'REMOVE potrait_s3_url',
+          ReturnValues: 'UPDATED_NEW'
+      };
+  
+      const deltResult = docClient.update(userDeleteParams).promise();
+      logger.info("deleted the s3 url for userId ->"+userId);
         return;
       }
       const matchedUserId = result.matchedUserId[0];
       if(userId && matchedUserId != userId){
-
-
-        logger.info(userId);
-        
-        throw Error("UserId not matched")
+          logger.info("deleting the S3 url for unmacthed  userId->"+userId);
+            const userDeleteParams = {
+              TableName: userrecordstable, // Replace with your table name
+              Key: {
+                  'user_phone_number': phoneNumber // Replace with your partition key name
+              },
+              UpdateExpression: 'REMOVE potrait_s3_url',
+              ReturnValues: 'UPDATED_NEW'
+          };
+      
+          const deltResult = docClient.update(userDeleteParams).promise();
+          logger.info("deleted the s3 url for userId ->"+userId);
       }
-      console.log('Matched userId for the phoneNumber: '+phoneNumber+' and imageUrl: '+imageUrl+'is :', matchedUserId);
+      logger.info('Matched userId for the phoneNumber: '+phoneNumber+' and imageUrl: '+imageUrl+'is :', matchedUserId);
       const userUpdateParams = {
         TableName: userrecordstable, // Replace with your table name
         Key: {
@@ -1898,7 +1918,7 @@ app.post('/downloadImage', async (req, res) => {
           // Check if the user already exists
           if(!eventName)
             {
-              eventName = 'Unnati_05062024'
+              eventName = 'Vpark_02062024'
             }
           const existingUser = await getUser(username);
           logger.info("existingUser"+ existingUser);
@@ -2143,6 +2163,75 @@ app.post('/downloadImage', async (req, res) => {
          }
      });
      
+     app.post("/saveSelectionFormData",async(req,res)=>{
+
+        const item = req.body;
+        try{  
+
+              // Initialize UpdateExpression, ExpressionAttributeNames, and ExpressionAttributeValues
+              let updateExpression = 'SET ';
+              const expressionAttributeNames = {};
+              const expressionAttributeValues = {};
+              logger.info("Saving the formData withe event->"+item.event_name+" for the owner -> "+item.form_owner);
+              // Iterate over the keys of the item
+              for (const key in item) {
+                  if (key !== 'event_name' && key !== 'form_owner') {
+                      const attributeName = `#${key.replace(/\s+/g, '')}`;
+                      const attributeValue = `:${key.replace(/\s+/g, '')}`;
+                      
+                      updateExpression += `${attributeName} = ${attributeValue}, `;
+                      expressionAttributeNames[attributeName] = key;
+                      expressionAttributeValues[attributeValue] = item[key];
+                  }
+              }
+
+              // Remove the trailing comma and space from updateExpression
+              updateExpression = updateExpression.slice(0, -2);
+              const params = {
+                  TableName: formDataTableName,
+                  Key: {
+                      'event_name': item.event_name,
+                      'form_owner': item.form_owner
+                  },
+                  UpdateExpression: updateExpression,
+                  ExpressionAttributeNames: expressionAttributeNames,
+                  ExpressionAttributeValues: expressionAttributeValues,
+                  ReturnValues: 'UPDATED_NEW'
+              };
+                  const data = await docClient.update(params).promise();
+                  logger.info(`Successfully upserted item with event_name: ${item.event_name}`);
+                  res.send(data);
+        }
+        catch(error){
+          logger.info(error.message);
+          res.status(500).send(error.message);
+
+        }
+     });
+
+     app.get("/getSelectionFormData/:eventName/:formOwner",async(req,res)=>{
+
+      const event_name = req.params.eventName;
+      const form_owner = req.params.formOwner;
+      try{
+        logger.info("fetching form data for event name ->"+event_name +" form owner -> "+form_owner )  
+        const params = {
+          TableName: formDataTableName, 
+          Key:{
+            event_name: event_name,
+            form_owner: form_owner
+          }      
+        };  
+        const data = await docClient.get(params).promise();
+        logger.info("Successfully fetched form data for  event name ->"+event_name +" form owner -> "+form_owner );
+        res.send(data.Item);
+      }
+      catch(error){
+        logger.info(error.message);
+        res.status(500).send(error.message);
+
+      }
+   });
 
 
 const httpsServer = https.createServer(credentials, app);

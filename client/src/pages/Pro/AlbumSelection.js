@@ -14,28 +14,13 @@ const FamilyDetailsForm = () => {
     const [isLoading, setIsLoading] = useState(true);
     const { eventName } = useParams();
     const isDataFetched = useRef(false);
-    // const [formData, setFormData] = useState({
-    //     groom: '',
-    //     groomFather: '',
-    //     groomMother: '',
-    //     bride: '',
-    //     brideFather: '',
-    //     brideMother: '',
-    //     'Level 1 Cousins': [],
-    //     'Level 2 Cousins': [],
-    //     cousins:'',
-    //     Friends: [],
-    //     Uncles: [],
-    //     Aunts: [],
-    //     'Nephews & Nieces': [],
-    //     'Grand Parents': [],
-    //     'Other Important People' : []
-    // });
 
     const [formData, setFormData] = useState(() => {
         // Initialize form data from localStorage if available
         const savedFormData = localStorage.getItem('formData');
         return savedFormData ? JSON.parse(savedFormData) : {
+            event_name:eventName,
+            form_owner:'groom',
           groom: '',
           groomFather: '',
           groomMother: '',
@@ -44,7 +29,8 @@ const FamilyDetailsForm = () => {
           Friends: [],
           Uncles: [],
           Aunts: [],
-          'Nephews & Nieces': [],
+          'Nephews and Nieces': [],
+          'Grand Parents':[],
           'Other Important People' : []
         };
       });
@@ -59,7 +45,7 @@ const FamilyDetailsForm = () => {
         Friends: [],
         Uncles: [],
         Aunts: [],
-        'Nephews & Nieces': [],
+        'Nephews and Nieces': [],
         'Grand Parents': [],
         'Other Important People':[]
     });
@@ -95,9 +81,47 @@ const FamilyDetailsForm = () => {
     }, []);
 
     useEffect(() => {
+        const savedFormData = localStorage.getItem('formData');
+        if (savedFormData) {
+          setFormData(JSON.parse(savedFormData));
+          setIsLoading(false);
+        } else {
+          fetchFormData();
+        }
+      }, []);
+
+       // Fetch form data from backend
+    const fetchFormData = async () => {
+        try {
+        const response = await API_UTIL.get(`/getSelectionFormData/${eventName}/groom`);
+        if (response.data) {
+            setFormData(response.data);
+            localStorage.setItem('formData', JSON.stringify(response.data));
+        }
+        } catch (error) {
+        console.error('Error fetching form data:', error);
+        } finally {
+        setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
         // Save form data to localStorage whenever it changes
         localStorage.setItem('formData', JSON.stringify(formData));
-      }, [formData]);
+        //Save data to Backend
+        saveFormDataToBackend(formData);
+    }, [formData]);
+
+    const saveFormDataToBackend = async (formData) => {
+        try {
+        // Make a POST request to your backend API endpoint
+        const response = await API_UTIL.post(`/saveSelectionFormData`,formData);
+
+        console.log('Form data saved successfully to backend:', response.data);
+        } catch (error) {
+        console.error('Error saving form data to backend:', error);
+        }
+    };
 
     const handleSelectChange = (question, selectedValue) => {
         console.log(question);
@@ -114,6 +138,7 @@ const FamilyDetailsForm = () => {
                 return newFormData;
             }
         });
+        console.log(formData)
     };
 
     const handleGroupSelectChange = (group, thumbnailUrl) => {
@@ -215,7 +240,7 @@ const FamilyDetailsForm = () => {
                 return filterOptions(males.filter(item => item.avgAge >= 35).slice(0, 20));
             case 'Aunts':
                 return filterOptions(females.filter(item => item.avgAge >= 35).slice(0, 20));
-            case 'Nephews & Nieces':
+            case 'Nephews and Nieces':
                 return filterOptions(kidsData.slice(0, 20));
             case 'Grand Parents':
                 return filterOptions(userThumbnails.filter(item => item.avgAge >= 50).slice(0, 20));
@@ -362,7 +387,7 @@ const FamilyDetailsForm = () => {
                        
 
                         <div>
-                            {['Level 1 Cousins', 'Level 2 Cousins', 'Uncles', 'Aunts', 'Nephews & Nieces', 'Friends', 'Grand Parents', 'Other Important People'].map(group => (
+                            {['Level 1 Cousins', 'Level 2 Cousins', 'Uncles', 'Aunts', 'Nephews and Nieces', 'Friends', 'Grand Parents', 'Other Important People'].map(group => (
                                 <ThumbnailSelection
                                     key={group}
                                     group={group}
