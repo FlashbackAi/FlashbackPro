@@ -13,6 +13,7 @@ import AlbumSelection from "../pages/Pro/AlbumSelection/AlbumSelection";
 import TermsAndConditions from "../pages/TermsAndConditions/TermsAndConditions";
 import Collage from "../pages/Edit/Collage/Collage";
 import SharedImage from "../pages/ImagesPage/SharedImage";
+import AlbumSelectionForm from "../pages/Pro/AlbumSelectionForm/AlbumSelectionForm";
 
 const ROUTES=[
     {
