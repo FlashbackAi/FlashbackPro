@@ -9,7 +9,7 @@ import Profile from "../pages/Profile/Profile";
 import ImagesPage from "../pages/ImagesPage/ImagesPage";
 import Flashs from "../pages/Flashs/Flashs";
 import Pro from "../pages/Pro/Pro";
-import AlbumSelection from "../pages/Pro/AlbumSelection";
+import AlbumSelection from "../pages/Pro/AlbumSelection/AlbumSelection";
 import TermsAndConditions from "../pages/TermsAndConditions/TermsAndConditions";
 import Collage from "../pages/Edit/Collage/Collage";
 import SharedImage from "../pages/ImagesPage/SharedImage";
@@ -110,6 +110,12 @@ const ROUTES=[
         exact:false,
         protected:false,
         component:AlbumSelection
+    },
+    {
+        path:"/form/:eventName",
+        exact:false,
+        protected:false,
+        component:AlbumSelectionForm
     },
     {
         path:"/edit/collage",

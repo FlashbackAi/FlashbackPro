@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback } from "react";
+import React, { useRef, useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 // import { AuthContext } from "../helpers/AuthContext";
 import Webcam from "react-webcam";
@@ -61,6 +61,7 @@ function Login() {
   const webcamRef = useRef(null);
   const [imgSrc, setImgSrc] = useState(null);
   const [termsAccepted, setTermsAccepted] = useState(true);
+  const isToastDisp = useRef(false);
 
   const videoConstraints = {
     width: 350,
@@ -70,6 +71,15 @@ function Login() {
 
   let location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if(isToastDisp.current) return;
+    toast("Register to view pictures, provide accurate mobile number so we can share you the pictures",{
+      position: "top-center"
+    })
+    isToastDisp.current = true;
+  }, [])
+  
 
   const from = location.state?.from || "/home";
 
@@ -114,7 +124,7 @@ function Login() {
     setIsPhoneNumberValid(true);
     if (response.status === 201) {
       setIsNewUser(true);
-      toast("User created successfully please take a selfie", {
+      toast("Click a selfie to register, don't worry we won't save your selfie.", {
         position: "top-center",
       });
     } else if (response.status === 200) {
@@ -188,6 +198,10 @@ function Login() {
     navigate(from);
     setIsNewUser(true);
   };
+
+  useEffect(()=>{
+
+  },[])
 
   const onChangeCountryCode = (event) => {
     setCountryCode(event.label);
