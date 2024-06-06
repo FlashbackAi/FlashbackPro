@@ -204,7 +204,7 @@ const AlbumSelectionForm = (props) => {
     <>
       <section className="albumSelectionForm">
         {/* <h1>Flashback - Album Selection</h1> */}
-        {/* {!start && (
+        {!start && (
           <motion.div
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -219,10 +219,10 @@ const AlbumSelectionForm = (props) => {
             <h2>Let's Start with groom's family</h2>
             <button onClick={handleClick}>Start</button>
           </motion.div>
-        )} */}
-        {!!userThumbnails.length && true && (
+        )}
+        {!!userThumbnails.length && start && (
           <>
-            {/* <motion.div
+            <motion.div
               initial={{ opacity: 0, visibility: "hidden" }}
               whileInView={{ opacity: 1, visibility: "visible" }}
               transition={{
@@ -311,7 +311,7 @@ const AlbumSelectionForm = (props) => {
                 </div>
                 <button>Next</button>
               </div>
-            </motion.div> */}
+            </motion.div>
             <motion.div
               initial={{ opacity: 0, visibility: "hidden" }}
               whileInView={{ opacity: 1, visibility: "visible" }}

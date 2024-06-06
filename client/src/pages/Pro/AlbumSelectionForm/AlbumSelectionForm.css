@@ -4,7 +4,7 @@ html {
   -ms-scroll-snap-type: y mandatory;
   -webkit-scroll-snap-type: y mandatory;
   scroll-behavior: smooth;
-/* overflow: hidden; */
+  /* overflow: hidden; */
 }
 
 ::-webkit-scrollbar {
@@ -30,13 +30,12 @@ html::-webkit-scrollbar {
   /* flex: 1; */
 }
 
-.button_flex div{
+.button_flex div {
   background-color: #b48e75;
   padding: 0.4em 1em;
   /* height: 100%; */
   border-radius: 0.2em;
 }
-
 
 button {
   padding: 0.5em 2em;
@@ -65,7 +64,7 @@ button {
   align-items: center;
 }
 
-.intersect > *{
+.intersect > * {
   opacity: 0;
   /* transform: translateY(2vh); */
   /* display: none; */
@@ -168,12 +167,19 @@ button {
   height: 100%;
 }
 
-.number_input{
+.number_input {
   width: 60%;
   border: none;
   outline: none;
   background: transparent;
   border-bottom: 1px solid #b48e75;
+  color: #c1c1c1;
+  text-align: center;
+  font-size: 1em;
+}
+
+.number_input:nth-child(1){
+  margin-bottom: 1em;
 }
 
 @media screen and (max-width: 700px) {
@@ -189,8 +195,8 @@ button {
   .button_flex {
     width: 90%;
   }
-  
-  button{
+
+  button {
     width: 90%;
   }
 }
