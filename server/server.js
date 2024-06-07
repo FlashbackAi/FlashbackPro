@@ -2233,6 +2233,66 @@ app.post('/downloadImage', async (req, res) => {
       }
    });
 
+   app.get("/getUsersWithMultipleEvents", async(req,res)=>{
+    try{
+      const results = {};
+      const params = {
+        TableName: userrecordstable,       
+      };
+
+      logger.info("started fetching the user event details");
+      let items = [];
+      let lastEvaluatedKey = null;
+      do {
+        if (lastEvaluatedKey) {
+          params.ExclusiveStartKey = lastEvaluatedKey;
+        }
+
+        const data = await docClient.scan(params).promise();
+        items = items.concat(data.Items);
+        lastEvaluatedKey = data.LastEvaluatedKey;
+      } while (lastEvaluatedKey)
+       
+        for(const item of items){
+          try{
+            logger.info("fetching event details for user -> "+item.user_phone_number);
+            const eventParams = {
+              TableName: userEventTableName,
+              IndexName: 'user_event_mapping_GSI', // Specify the GSI name
+              KeyConditionExpression: 'user_phone_number = :partitionKey', // Specify the GSI partition and sort key
+              ExpressionAttributeValues: {
+                ':partitionKey': item.user_phone_number
+              }
+            };
+            //logger.info(eventParams);
+            const eventData = await docClient.query(eventParams).promise();
+            if (eventData) {
+              let userDetail ={};
+              const eventCount = eventData.Items.length;
+              if (!results[eventCount]) {
+                results[eventCount] = [];
+              }
+              userDetail[item.user_phone_number] = eventData.Items;
+              results[eventCount].push(userDetail);
+            }
+           
+
+          }
+          catch(err){
+            logger.info(err.message);
+            res.status(500).send("Issue");
+          }
+        }
+        logger.info("Succesfully fetched the user event details");
+        res.send(results);
+    }
+    catch(err){
+      logger.info(err.message)
+      res.status(500).send("Issue");
+    }
+    
+   });
+
 
 const httpsServer = https.createServer(credentials, app);
 
