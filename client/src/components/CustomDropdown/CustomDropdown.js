@@ -34,7 +34,7 @@ const CustomDropdown = ({ question, options, selectedValue, onSelectChange }) =>
           {options.map(option => (
             <div
               key={option.url}
-              className="custom-dropdown-option"
+              className="user_id"
               onClick={() => handleSelect(option.face_url)}
             >
               <img src={option.face_url} alt={option.description} className="option-image" />
