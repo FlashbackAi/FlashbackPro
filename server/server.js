@@ -20,6 +20,7 @@ const axios = require('axios');
 const ReactDOMServer = require('react-dom/server');
 const React = require('react');
 const { set } = require('lodash');
+const ExcelJS = require('exceljs');
 //const App = require('..\\client');
 const oldEvents = ["Aarthi_Vinay_19122021","Convocation_PrathimaCollege","KSL_25042024","Jahnavi_Vaishnavi_SC_28042024","KSL_22052024","KSL_16052024","V20_BootCamp_2024","Neha_ShivaTeja_18042024"]
 
@@ -2292,6 +2293,131 @@ app.post('/downloadImage', async (req, res) => {
     }
     
    });
+   app.get("/getUsersWithNoSelfie", async(req,res)=>{
+    try{
+      const results = {};
+      const params = {
+        TableName: userrecordstable, 
+        FilterExpression: 'attribute_not_exists(potrait_s3_url)'      
+      };
+
+      logger.info("started fetching the user event details");
+      let items = [];
+      let lastEvaluatedKey = null;
+      do {
+        if (lastEvaluatedKey) {
+          params.ExclusiveStartKey = lastEvaluatedKey;
+        }
+
+        const data = await docClient.scan(params).promise();
+        items = items.concat(data.Items);
+        lastEvaluatedKey = data.LastEvaluatedKey;
+      } while (lastEvaluatedKey)
+        let count = 0;
+        for(const item of items){
+          try{
+            logger.info("fetching event details for user with no selfie-> "+item.user_phone_number);
+            const eventParams = {
+              TableName: userEventTableName,
+              IndexName: 'user_event_mapping_GSI', // Specify the GSI name
+              KeyConditionExpression: 'user_phone_number = :partitionKey', // Specify the GSI partition and sort key
+              ExpressionAttributeValues: {
+                ':partitionKey': item.user_phone_number
+              }
+            };
+            //logger.info(eventParams);
+            const eventData = await docClient.query(eventParams).promise();
+            
+            if (eventData) {
+              let userDetail ={};
+              const event = eventData.Items[0].event_name;
+              if (!results[event]) {
+                results[event] = [];
+              }
+              userDetail[item.user_phone_number] = eventData.Items;
+              results[event].push(userDetail);
+              count++;
+            }
+
+          }
+          catch(err){
+            logger.info(err.message);
+            res.status(500).send("Issue");
+          }
+        }
+        logger.info("Succesfully fetched the user with no selfie event details " +count);
+
+        const workbook = new ExcelJS.Workbook();
+        for (const [eventName, eventData] of Object.entries(results)) {
+          const worksheet = workbook.addWorksheet(eventName);
+      
+          // Add headers
+          worksheet.columns = [
+            { header: 'Phone Number', key: 'user_phone_number', width: 20 },
+            { header: 'Created Date', key: 'created_date', width: 25 },
+            { header: 'Event Name', key: 'event_name', width: 30 }
+          ];
+      
+          // Iterate over each item and add rows to the worksheet
+          eventData.forEach(item => {
+            Object.values(item).forEach(events => {
+              events.forEach(event => {
+                worksheet.addRow(event);
+              });
+            });
+          });
+        }
+      
+        // Set the response headers
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename=events.xlsx');
+        // Write the workbook to the response
+        await workbook.xlsx.write(res);
+        res.end();
+    }
+    catch(err){
+      logger.info(err.message)
+      res.status(500).send("Issue");
+    }
+    
+   });
+
+   async function getImagesForUser(userId) {
+    logger.info("Fetching images of users ->"+userId);
+    const params = {
+        TableName: indexedDataTableName,
+        IndexName: 'user_id-index',  
+        KeyConditionExpression: 'user_id = :user_id',
+        ExpressionAttributeValues: {
+            ':user_id': userId
+        },
+        ProjectionExpression: 's3_url'
+    };
+
+    const result = await docClient.query(params).promise();
+    logger.info("Total images fetched for user->"+userId+" : "+result.Items.length);
+    return result.Items.map(item => item.s3_url);
+}
+   app.get("/getImagesWithUserIds/:userId1/:userId2",async(req,res)=>{
+
+    try{
+     
+      const userId1 = req.params.userId1;
+      const userId2 = req.params.userId2;
+      logger.info("Fetching common images of users ->"+userId1+" and "+userId2);
+      const imagesUser1 = await getImagesForUser(userId1);
+      const imagesUser2 = await getImagesForUser(userId2);
+      const commonImages = imagesUser1.filter(imageId => imagesUser2.includes(imageId));
+      logger.info("Total commons images fetched for users->"+userId1+" and "+userId2+" : "+commonImages.length);
+      res.send(commonImages);
+    }
+    catch(err)
+    {
+      logger.info("error->"+err.message);
+      res.status(500).send("Error in fetching Images for common users");
+    } });
+
+
 
 
 const httpsServer = https.createServer(credentials, app);
