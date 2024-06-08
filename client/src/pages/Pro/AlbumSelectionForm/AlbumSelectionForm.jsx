@@ -4,6 +4,8 @@ import Header from "../../../components/Header/Header";
 import {
   ArrowRight,
   ChevronLeft,
+  Minus,
+  Plus,
   SendToBack,
   SendToBackIcon,
 } from "lucide-react";
@@ -11,6 +13,7 @@ import { motion } from "framer-motion";
 import API_UTIL from "../../../services/AuthIntereptor";
 import { useParams } from "react-router";
 import { element } from "prop-types";
+import CustomFaceOption from "../../../components/CustomOption/CustomFaceOption";
 
 const AlbumSelectionForm = (props) => {
   const isDataFetched = useRef(false);
@@ -33,133 +36,33 @@ const AlbumSelectionForm = (props) => {
   const [selectedValues, setSelectedValues] = useState(new Set());
   var timer;
 
-  // TO DO
-  // use the below approach
-  // https://stackoverflow.com/questions/4620906/how-do-i-know-when-ive-stopped-scrolling
-  // function waitForScrollEnd() {
-  //   let last_changed_frame = 0;
-  //   let last_x = window.scrollX;
-  //   let last_y = window.scrollY;
+  const generateSiblingSelects = (count, gender, serialNoStart) => {
+    const siblings = [];
+    const options =
+      gender === "male" ? filterOptions(males) : filterOptions(females);
 
-  //   return new Promise((resolve) => {
-  //     function tick(frames) {
-  //       // We requestAnimationFrame either for 500 frames or until 20 frames with
-  //       // no change have been observed.
-  //       if (frames >= 500 || frames - last_changed_frame > 20) {
-  //         resolve();
-  //       } else {
-  //         if (window.scrollX != last_x || window.scrollY != last_y) {
-  //           last_changed_frame = frames;
-  //           last_x = window.scrollX;
-  //           last_y = window.scrollY;
-  //         }
-  //         requestAnimationFrame(tick.bind(null, frames + 1));
-  //       }
-  //     }
-  //     tick(0);
-  //   });
-  // }
+    [...Array(count).keys()].forEach((elm, index) => {
+      const title =
+        gender === "male"
+          ? `Select your Sibling (Brother ${index + 1})`
+          : `Select your Sibling (Sister ${index + 1})`;
 
-  // useEffect(() => {
-  //   const handleScroll = async (e) => {
-
-  //     e.preventDefault();
-
-  //     if (timer !== null) {
-  //       clearTimeout(timer);
-  //     }
-  //     timer = setTimeout(function () {
-  //       console.log(e);
-  //       if (lastIndex === 0) return;
-  //       // if (lastIndex < 3) {
-  //       if (e.deltaY > 0) {
-  //         console.log("scrolling down");
-  //         // document.getElementsByClassName(lastIndex)[0].classList.add("hide");
-
-  //         const doc = document.getElementsByClassName(lastIndex + 1)[0];
-  //         if (doc) {
-  //           window.scrollTo({ top: doc.offsetTop, behavior: "smooth" });
-  //           // doc.classList.add("show");
-  //         }
-  //         // doc.classList.remove("hide");
-  //         // doc.classList.add("show");
-
-  //         // console.log(lastIndex);
-  //         setLastIndex(lastIndex + 1);
-  //         // console.log(lastIndex);
-  //       }
-  //       // }
-  //       else if (e.deltaY <= -1) {
-  //         console.log("scrolling up ",lastIndex);
-  //         if (lastIndex != 0) {
-  //           // document.getElementsByClassName(lastIndex)[0].classList.add("hide");
-
-  //           const doc = document.getElementsByClassName(lastIndex - 1)[0];
-  //           if (doc) {
-  //             window.scrollTo({ top: doc.offsetTop, behavior: "smooth" });
-  //             // doc.classList.add("show");
-  //           }
-  //           //   doc.classList.remove("hide");
-  //           //   doc.classList.add("show");
-
-  //           setLastIndex(lastIndex - 1);
-  //         }
-  //       }
-  //     }, 100);
-  //   };
-
-  //   // document.addEventListener("scrollend", handleScroll, { passive: false });
-  //   // document.addEventListener("scroll", (e) => e.preventDefault(), { passive: false });
-  //   document.addEventListener("wheel", handleScroll, {
-  //     passive: false,
-  //   });
-  //   return () => {
-  //     // window.removeEventListener("scrollend", handleScroll);
-  //     // window.removeEventListener("scroll", (e) => e.preventDefault(), false);
-  //     window.removeEventListener("wheel", handleScroll, false);
-  //   };
-  // }, [lastIndex]);
-
-  // useEffect(() => {
-  //   const options = {
-  //     // root: document.getElementsByClassName("albumSelectionForm")[0],
-  //     threshold: 1,
-  //   };
-  //   const observer = new IntersectionObserver((entries) => {
-  //     entries.forEach((entry) => {
-  //       console.log(entry.target.offsetTop);
-  //       console.log(entry);
-  //       if (entry.isIntersecting) {
-  //         window.scrollTo({
-  //           top: entry.target.offsetTop,
-  //           behavior: "smooth",
-  //         });
-  //         // entry.target.scrollIntoView(
-  //         //   {
-  //         //   behavior:"smooth",
-  //         //   block:"center",
-  //         //   inline:"center"
-  //         // })
-  //         entry.target.classList.add("show");
-  //       } else {
-  //         entry.target.classList.remove("show");
-  //       }
-  //     }, options);
-  //   });
-  //   const forms = document.querySelectorAll(".question_answer");
-  //   forms.forEach((form) => {
-  //     observer.observe(form);
-  //   });
-  // }, [userThumbnails]);
+      siblings.push(
+        <CustomFaceOption
+          options={options}
+          serialNo={`${serialNoStart}.${index + 1}`}
+          title={title}
+          next={next}
+          prev={prev}
+          key={index}
+        />
+      );
+    });
+    return siblings;
+  };
 
   function handleClick(e) {
-    // window.scrollTo({
-    //   top: document.getElementsByClassName("1")[0].offsetTop,
-    //   behavior: "smooth",
-    // });
     setStart(true);
-    setLastIndex(lastIndex + 1);
-    // document.querySelector("html").animate({offset:document.getElementById("divs").offsetTop})
   }
 
   const fetchThumbnails = async () => {
@@ -196,21 +99,44 @@ const AlbumSelectionForm = (props) => {
     setIsLoading(false);
   }, [userThumbnails]);
 
+  const handleSiblingChange = (setter, value) => {
+    setter((prev) => {
+      const newValue = prev + value;
+      return newValue >= 0 && newValue <= 10 ? newValue : prev;
+    });
+  };
+
   const filterOptions = (options) => {
     return options.filter((option) => !selectedValues.has(option.face_url));
+  };
+
+  const next = (serialNo) => {
+    window.scrollTo({
+      top: document.getElementsByClassName(serialNo)[0].nextElementSibling.offsetTop,
+      behavior: "smooth",
+    });
+  };
+
+  const prev = (serialNo) => {
+    window.scrollTo({
+      top: document.getElementsByClassName(serialNo)[0].previousElementSibling.offsetTop,
+      behavior: "smooth",
+    });
+  };
+
+  const onSubmitForm = () => {
+    console.log("Form Submitted");
   };
 
   return (
     <>
       <section className="albumSelectionForm">
-        {/* <h1>Flashback - Album Selection</h1> */}
         {!start && (
           <motion.div
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{
               duration: 0.8,
-              // delay: 0.5,
               ease: [0, 0.71, 0.2, 1.01],
             }}
             className="entry"
@@ -222,96 +148,28 @@ const AlbumSelectionForm = (props) => {
         )}
         {!!userThumbnails.length && start && (
           <>
-            <motion.div
-              initial={{ opacity: 0, visibility: "hidden" }}
-              whileInView={{ opacity: 1, visibility: "visible" }}
-              transition={{
-                duration: 0.8,
-                ease: "easeIn",
-              }}
-              className="1 question_answer"
-            >
-              <div className="question-header">
-                <div className="icon">
-                  1 <ArrowRight className="arrow" />
-                </div>
-                <div className="question">Please select the groom's image</div>
-              </div>
-              <div className="img-options">
-                {filterOptions(males).map((male, index) => {
-                  return (
-                    <div className="img-outer" key={index}>
-                      <img src={male.face_url} alt={male.user_id} />
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="button-flex" />
-              <button>Next</button>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, visibility: "hidden" }}
-              whileInView={{ opacity: 1, visibility: "visible" }}
-              transition={{
-                duration: 0.8,
-                ease: "easeIn",
-              }}
-              className="2 question_answer"
-            >
-              <div className="question-header">
-                <div className="icon">
-                  2 <ArrowRight className="arrow" />
-                </div>
-                <div className="question">Please select the groom's mother</div>
-              </div>
-              <div className="img-options">
-                {filterOptions(females).map((male, index) => {
-                  return (
-                    <div className="img-outer" key={index}>
-                      <img src={male.face_url} alt={male.user_id} />
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="button_flex">
-                <div>
-                  <ChevronLeft />
-                </div>
-                <button>Next</button>
-              </div>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, visibility: "hidden" }}
-              whileInView={{ opacity: 1, visibility: "visible" }}
-              transition={{
-                duration: 0.8,
-                ease: "easeIn",
-              }}
-              className="3 question_answer"
-            >
-              <div className="question-header">
-                <div className="icon">
-                  3 <ArrowRight className="arrow" />
-                </div>
-                <div className="question">Please select the groom's father</div>
-              </div>
-              <div className="img-options">
-                {filterOptions(males).map((male, index) => {
-                  return (
-                    <div className="img-outer" key={index}>
-                      <img src={male.face_url} alt={male.user_id} />
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="button_flex">
-                <div>
-                  <ChevronLeft />
-                </div>
-                <button>Next</button>
-              </div>
-            </motion.div>
+            <CustomFaceOption
+              serialNo={1}
+              options={filterOptions(males)}
+              title="Please select the groom's image"
+              next={next}
+              prev={prev}
+              isFirst={true}
+            />
+            <CustomFaceOption
+              serialNo={2}
+              title="Please select the groom's mother"
+              next={next}
+              prev={prev}
+              options={filterOptions(females)}
+            />
+            <CustomFaceOption
+              serialNo={3}
+              title="Please select the groom's father"
+              next={next}
+              prev={prev}
+              options={filterOptions(males)}
+            />
             <motion.div
               initial={{ opacity: 0, visibility: "hidden" }}
               whileInView={{ opacity: 1, visibility: "visible" }}
@@ -323,23 +181,114 @@ const AlbumSelectionForm = (props) => {
             >
               <div className="question-header">
                 <div className="icon">
-                  3a <ArrowRight className="arrow" />
+                  <ArrowRight className="arrow" />
                 </div>
                 <div className="question">
                   Number of Sibling Brothers ( own brothers )
                 </div>
               </div>
-              <input className="number_input" type="number" />
+              <div className="input_container">
+                <div
+                  className="icon_container"
+                  onClick={() => handleSiblingChange(setBrothersCount, +1)}
+                >
+                  <Plus />
+                </div>
+                <input
+                  className="number_input"
+                  type="number"
+                  readOnly
+                  value={brothersCount}
+                />
+                <div
+                  className="icon_container"
+                  onClick={() => handleSiblingChange(setBrothersCount, -1)}
+                >
+                  <Minus />
+                </div>
+              </div>
               <div className="question-header">
                 <div className="icon">
-                  3b <ArrowRight className="arrow" />
+                  <ArrowRight className="arrow" />
                 </div>
                 <div className="question">
                   Number of Sibling Sisters ( own sisters )
                 </div>
               </div>
-              <input className="number_input" type="number" />
+              
+              <div className="input_container">
+                <div
+                  className="icon_container"
+                  onClick={() => handleSiblingChange(setSistersCount, +1)}
+                >
+                  <Plus />
+                </div>
+                <input
+                  className="number_input"
+                  readOnly
+                  type="number"
+                  value={sistersCount}
+                />
+                <div
+                  className="icon_container"
+                  onClick={() => handleSiblingChange(setSistersCount, -1)}
+                >
+                  <Minus />
+                </div>
+              </div>
+              <div className="button_flex">
+                  <div onClick={() => prev(4)}>
+                    <ChevronLeft />
+                  </div>
+                  <button onClick={() => next(4)}>Next</button>
+                </div>
             </motion.div>
+            <>{generateSiblingSelects(brothersCount, "male", 5)}</>
+            <>{generateSiblingSelects(sistersCount, "female", 6)}</>
+            <CustomFaceOption
+              serialNo={7}
+              title="Please select Level 1 Cousins"
+              next={next}
+              prev={prev}
+              options={filterOptions([...males, ...females])}
+            />
+            <CustomFaceOption
+              serialNo={8}
+              title="Please select Level 2 Cousins"
+              next={next}
+              prev={prev}
+              options={filterOptions([...males, ...females])}
+            />
+            <CustomFaceOption
+              serialNo={9}
+              title="Please select Friends"
+              next={next}
+              prev={prev}
+              options={filterOptions([...males, ...females])}
+            />
+            <CustomFaceOption
+              serialNo={10}
+              title="Please select Uncles"
+              next={next}
+              prev={prev}
+              options={filterOptions(males)}
+            />
+            <CustomFaceOption
+              serialNo={11}
+              title="Please select Aunts"
+              next={next}
+              prev={prev}
+              options={filterOptions(males)}
+            />
+            <CustomFaceOption
+              serialNo={12}
+              title="Please select Nephews & Nieces"
+              next={next}
+              prev={prev}
+              options={filterOptions([...males, ...females])}
+              isSubmit={true}
+              sendSubmitAction={onSubmitForm}
+            />
           </>
         )}
       </section>

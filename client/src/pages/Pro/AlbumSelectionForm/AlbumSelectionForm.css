@@ -176,10 +176,34 @@ button {
   color: #c1c1c1;
   text-align: center;
   font-size: 1em;
+  /* width: 2em; */
+  max-width: 100px;
 }
 
-.number_input:nth-child(1){
+.number_input:nth-child(1) {
   margin-bottom: 1em;
+}
+
+.number_input::-webkit-inner-spin-button,
+.number_input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+.input_container {
+  display: flex;
+  gap: 1em;
+}
+
+.icon_container {
+  display: flex;
+  align-items: center;
+  background-color: #b48e75;
+  padding: 2px;
+  border-radius: 2px;
+  cursor: pointer;
 }
 
 @media screen and (max-width: 700px) {
