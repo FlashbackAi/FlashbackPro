@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, ChevronLeft } from "lucide-react";
 
 const CustomFaceOption = ({
   options,
@@ -16,41 +16,22 @@ const CustomFaceOption = ({
   sendSelection,
 }) => {
   const [selection, setSelection] = useState([]);
-  const [selectedIndex, setSelectedIndex] = useState();
 
-  const handleClick = (e, index, value) => {
-    const checkSelection = document.getElementsByClassName(
-      serialNo + "_" + index + " selected"
-    );
-    console.log(checkSelection);
-    if (!!checkSelection.length) {
-      checkSelection[0].classList.remove("selected");
-      const selected = selection;
-      selected.splice(selected.indexOf(value), 1);
-      setSelection(selected);
+  const handleClick = (index, value) => {
+    if (selection.includes(value)) {
+      setSelection(selection.filter((item) => item !== value));
     } else {
       if (!multiple) {
-        setSelection([]);
-        const doc = document.getElementsByClassName(
-          serialNo + "_" + selectedIndex
-        );
-        if (!!doc.length) doc[0].classList.remove("selected");
+        setSelection([value]);
+      } else {
+        setSelection((prevSelection) => [...prevSelection, value]);
       }
-      setSelectedIndex(index);
-      setSelection((prevSelection) => [...prevSelection, value]);
-      e.target.classList.add("selected");
     }
   };
 
   useEffect(() => {
     sendSelection(question, multiple ? selection : selection[0]);
   }, [selection]);
-
-  const [selectedFace, setSelectedFace] = useState(null);
-
-  const handleSelect = (face) => {
-    setSelectedFace(face);
-  };
 
   return (
     <motion.div
@@ -68,45 +49,29 @@ const CustomFaceOption = ({
         </div>
         <div className="question">{title}</div>
       </div>
-      {selectedFace && (
-      <div className="img-options">
-      
-        <div className="selected-face">
-          <h3>Selected Face:</h3>
-          <img src={selectedFace.face_url} alt="Selected face" />
+      {selection.length > 0 && (
+        <div className="img-options">
+          <div className="selected-face">
+     
+          {selection.map((url, index) => (
+            <img key={index} src={url} alt={`selected ${index}`} className="selected-image" />
+          ))}
+          </div>
         </div>
-      
-        {options.map((option, index) => {
-          return (
-            <div
-              className="img-outer"
-              onClick={(e) => handleClick(e, index, option.face_url)}
-              key={index}
-            >
-              <img
-                className={serialNo + "_" + index}
-                src={option.face_url}
-                alt={option.user_id}
-              />
-              {/* <div className="backdrop-img"/> */}
-            </div>
-          );
-        })}
-      </div>
-      )}  
+      )}
       <div className="img-options">
         {options.map((option, index) => (
           <div
-            className={`img-outer ${selectedFace === option ? 'selected' : ''}`}
+            className={`img-outer ${
+              selection.includes(option.face_url) ? "selected" : ""
+            }`}
             key={index}
-            onClick={() => handleSelect(option)}
+            onClick={() => handleClick(index, option.face_url)}
           >
             <img src={option.face_url} alt={option.user_id} />
           </div>
         ))}
       </div>
-   
-     
       <div className="button_flex">
         {!isFirst && !isSubmit && (
           <div onClick={() => prev(serialNo)}>

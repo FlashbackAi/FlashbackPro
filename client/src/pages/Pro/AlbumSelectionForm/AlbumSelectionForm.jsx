@@ -6,6 +6,8 @@ import { motion } from "framer-motion";
 import API_UTIL from "../../../services/AuthIntereptor";
 import { useParams } from "react-router";
 import CustomFaceOption from "../../../components/CustomOption/CustomFaceOption";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const AlbumSelectionForm = () => {
   const isDataFetched = useRef(false);
@@ -20,17 +22,34 @@ const AlbumSelectionForm = () => {
   const [grooms, setGrooms] = useState([]);
   const [brides, setBrides] = useState([]);
   const [uncles, setUncles] = useState([]);
+  const [aunts, setAunts] = useState([]);
+  const [grandParents, setGrandParents] = useState([]);
   const [females, setFemales] = useState([]);
   const [kids, setKids] = useState([]);
   const [selectedValues, setSelectedValues] = useState(new Set());
-  const [formData, setFormData] = useState({
-    groom: "",
-    groomFather: "",
-    groomMother: "",
+  const [formData, setFormData] = useState(() => {
+    const savedFormData = localStorage.getItem("formData");
+    return savedFormData
+      ? JSON.parse(savedFormData)
+      : {
+          event_name: eventName,
+          form_owner: "groom",
+          groom: "",
+          groomFather: "",
+          groomMother: "",
+          "Level 1 Cousins": [],
+          "Level 2 Cousins": [],
+          Friends: [],
+          Uncles: [],
+          Aunts: [],
+          "Nephews and Nieces": [],
+          "Grand Parents": [],
+          "Other Important People": [],
+        };
   });
   const [showcase, setShowcase] = useState({});
   var timer;
-
+  const navigate = useNavigate();
   const generateSiblingSelects = (count, gender, serialNoStart) => {
     const siblings = [];
     const options =
@@ -70,17 +89,31 @@ const AlbumSelectionForm = () => {
       const response = await API_UTIL.get(`/userThumbnails/${eventName}`);
       if (response.status === 200) {
         setUserThumbnails(response.data);
-        const malesData = response.data.filter((item) => item.gender === "Male")
-        const groomData = response.data.filter((item) => item.gender === "Male" && item.avgAge >= 15 && item.avgAge <= 45);
-        const brideData = response.data.filter((item) => item.gender === "Female" && item.avgAge >= 15 && item.avgAge <= 45);
+        const malesData = response.data.filter((item) => item.gender === "Male");
+        const groomData = response.data.filter(
+          (item) => item.gender === "Male" && item.avgAge >= 15 && item.avgAge <= 45
+        );
+        const brideData = response.data.filter(
+          (item) => item.gender === "Female" && item.avgAge >= 15 && item.avgAge <= 45
+        );
         const femalesData = response.data.filter((item) => item.gender === "Female");
-        const kids = response.data.filter(item => item.avgAge <= 15);
+        const kids = response.data.filter((item) => item.avgAge <= 15);
+        const uncles = response.data.filter(
+          (item) => item.gender === "Male" && item.avgAge >= 30
+        );
+        const aunts = response.data.filter(
+          (item) => item.gender === "Female" && item.avgAge >= 30
+        ); // Fixed typo here
+        const grandParents = response.data.filter((item) => item.avgAge >= 40);
 
         setGrooms(groomData);
         setBrides(brideData);
         setMales(malesData);
         setFemales(femalesData);
         setKids(kids);
+        setUncles(uncles);
+        setAunts(aunts);
+        setGrandParents(grandParents);
       }
     } catch (error) {
       console.error("Error fetching user thumbnails:", error);
@@ -103,31 +136,29 @@ const AlbumSelectionForm = () => {
     });
   };
 
-  const filterOptions = (options) => {
-    return options.map((option) =>
-      selectedValues.has(option.face_url)
-        ? { ...option, disabled: true }
-        : option
-    );
+  const filterOptions = (options = []) => {
+    // const opt =  options.map((option) =>
+    //   selectedValues.has(option.face_url) ? { ...option, disabled: true } : option
+    // );
+    // return opt;
+    return options.filter(option => !selectedValues.has(option.face_url));
   };
 
   const next = (serialNo) => {
     window.scrollTo({
-      top: document.getElementsByClassName(serialNo)[0].nextElementSibling
-        .offsetTop,
+      top: document.getElementsByClassName(serialNo)[0].nextElementSibling.offsetTop,
       behavior: "smooth",
     });
   };
 
   const prev = (serialNo) => {
     window.scrollTo({
-      top: document.getElementsByClassName(serialNo)[0].previousElementSibling
-        .offsetTop,
+      top: document.getElementsByClassName(serialNo)[0].previousElementSibling.offsetTop,
       behavior: "smooth",
     });
   };
 
-  const handleSelectFace = (question,faceUrl) => {
+  const handleSelectFace = (question, faceUrl) => {
     setSelectedValues((prev) => new Set(prev).add(faceUrl));
   };
 
@@ -135,18 +166,26 @@ const AlbumSelectionForm = () => {
     setFormData((prevState) => {
       const newFormData = { ...prevState, [question]: selectedValue };
       updateSelectedValues(newFormData);
+      console.log(newFormData);
       return newFormData;
     });
-    console.log(formData);
   };
+
   const updateSelectedValues = (formData) => {
-    const newSelectedValues = new Set(Object.values(formData));
+    const newSelectedValues = new Set();
+    Object.values(formData).forEach((value) => {
+      if (Array.isArray(value)) {
+        value.forEach((val) => newSelectedValues.add(val));
+      } else {
+        newSelectedValues.add(value);
+      }
+    });
     setSelectedValues(newSelectedValues);
   };
 
   const onSubmitForm = () => {
-    console.log(formData);
-    console.log("Form Submitted");
+    toast("Selection has been saved Successfully");
+    navigate('https://flashback.inc/photos/Venky_Spandana_Reception_06022022/5fb8028c-d978-44');
   };
 
   return (
@@ -180,16 +219,18 @@ const AlbumSelectionForm = () => {
               isFirst={true}
               onSelect={handleSelectFace}
             />
-             <CustomFaceOption
-              serialNo={3}
+            <CustomFaceOption
+              serialNo={2}
               title="Please select the bride's image"
               next={next}
               prev={prev}
               options={filterOptions(brides)}
               onSelect={handleSelectFace}
+              question="bride"
+              sendSelection={handleSelectChange}
             />
             <CustomFaceOption
-              serialNo={2}
+              serialNo={3}
               title="Please select the groom's mother"
               next={next}
               prev={prev}
@@ -199,7 +240,7 @@ const AlbumSelectionForm = () => {
               onSelect={handleSelectFace}
             />
             <CustomFaceOption
-              serialNo={3}
+              serialNo={4}
               title="Please select the groom's father"
               next={next}
               prev={prev}
@@ -208,22 +249,25 @@ const AlbumSelectionForm = () => {
               options={filterOptions(males)}
               onSelect={handleSelectFace}
             />
-            
-             <CustomFaceOption
-              serialNo={3}
+            <CustomFaceOption
+              serialNo={5}
               title="Please select the bride's father"
               next={next}
               prev={prev}
               options={filterOptions(males)}
               onSelect={handleSelectFace}
+              question="brideFather"
+              sendSelection={handleSelectChange}
             />
-             <CustomFaceOption
-              serialNo={3}
+            <CustomFaceOption
+              serialNo={6}
               title="Please select the bride's mother"
               next={next}
               prev={prev}
               options={filterOptions(females)}
               onSelect={handleSelectFace}
+              question="brideMother"
+              sendSelection={handleSelectChange}
             />
             <motion.div
               initial={{ opacity: 0, visibility: "hidden" }}
@@ -239,26 +283,15 @@ const AlbumSelectionForm = () => {
                   <ArrowRight className="arrow" />
                 </div>
                 <div className="question">
-                  Number of Sibling Brothers ( own brothers )
+                  Number of Sibling Brothers (own brothers)
                 </div>
               </div>
               <div className="input_container">
-                <div
-                  className="icon_container"
-                  onClick={() => handleSiblingChange(setBrothersCount, +1)}
-                >
+                <div className="icon_container" onClick={() => handleSiblingChange(setBrothersCount, +1)}>
                   <Plus />
                 </div>
-                <input
-                  className="number_input"
-                  type="number"
-                  readOnly
-                  value={brothersCount}
-                />
-                <div
-                  className="icon_container"
-                  onClick={() => handleSiblingChange(setBrothersCount, -1)}
-                >
+                <input className="number_input" type="number" readOnly value={brothersCount} />
+                <div className="icon_container" onClick={() => handleSiblingChange(setBrothersCount, -1)}>
                   <Minus />
                 </div>
               </div>
@@ -267,41 +300,29 @@ const AlbumSelectionForm = () => {
                   <ArrowRight className="arrow" />
                 </div>
                 <div className="question">
-                  Number of Sibling Sisters ( own sisters )
+                  Number of Sibling Sisters (own sisters)
                 </div>
               </div>
-
               <div className="input_container">
-                <div
-                  className="icon_container"
-                  onClick={() => handleSiblingChange(setSistersCount, +1)}
-                >
+                <div className="icon_container" onClick={() => handleSiblingChange(setSistersCount, +1)}>
                   <Plus />
                 </div>
-                <input
-                  className="number_input"
-                  readOnly
-                  type="number"
-                  value={sistersCount}
-                />
-                <div
-                  className="icon_container"
-                  onClick={() => handleSiblingChange(setSistersCount, -1)}
-                >
+                <input className="number_input" readOnly type="number" value={sistersCount} />
+                <div className="icon_container" onClick={() => handleSiblingChange(setSistersCount, -1)}>
                   <Minus />
                 </div>
               </div>
               <div className="button_flex">
-                <div onClick={() => prev(4)}>
+                <div onClick={() => prev(6)}>
                   <ChevronLeft />
                 </div>
-                <button onClick={() => next(4)}>Next</button>
+                <button onClick={() => next(6)}>Next</button>
               </div>
             </motion.div>
             {generateSiblingSelects(brothersCount, "male", 5)}
             {generateSiblingSelects(sistersCount, "female", 6)}
             <CustomFaceOption
-              serialNo={7}
+              serialNo={9}
               title="Please select Level 1 Cousins"
               next={next}
               prev={prev}
@@ -312,7 +333,7 @@ const AlbumSelectionForm = () => {
               onSelect={handleSelectFace}
             />
             <CustomFaceOption
-              serialNo={8}
+              serialNo={10}
               title="Please select Level 2 Cousins"
               next={next}
               prev={prev}
@@ -323,7 +344,7 @@ const AlbumSelectionForm = () => {
               onSelect={handleSelectFace}
             />
             <CustomFaceOption
-              serialNo={9}
+              serialNo={11}
               title="Please select Friends"
               next={next}
               prev={prev}
@@ -334,36 +355,48 @@ const AlbumSelectionForm = () => {
               onSelect={handleSelectFace}
             />
             <CustomFaceOption
-              serialNo={10}
+              serialNo={12}
               title="Please select Uncles"
               next={next}
               prev={prev}
               question="uncles"
               multiple={true}
               sendSelection={handleSelectChange}
-              options={filterOptions(males)}
+              options={filterOptions(uncles)}
               onSelect={handleSelectFace}
             />
             <CustomFaceOption
-              serialNo={11}
+              serialNo={13}
               title="Please select Aunts"
               next={next}
               prev={prev}
-              options={filterOptions(females)}
+              options={filterOptions(aunts)}
               onSelect={handleSelectFace}
               question="aunts"
               multiple={true}
               sendSelection={handleSelectChange}
-
             />
             <CustomFaceOption
-              serialNo={12}
+              serialNo={14}
               title="Please select Nephews & Nieces"
               next={next}
               prev={prev}
               options={filterOptions(kids)}
               isSubmit={true}
               question="NephewsNieces"
+              multiple={true}
+              sendSelection={handleSelectChange}
+              sendSubmitAction={onSubmitForm}
+              onSelect={handleSelectFace}
+            />
+            <CustomFaceOption
+              serialNo={15}
+              title="Please select Grand Parents"
+              next={next}
+              prev={prev}
+              options={filterOptions(grandParents)}
+              isSubmit={true}
+              question="grandParents"
               multiple={true}
               sendSelection={handleSelectChange}
               sendSubmitAction={onSubmitForm}
