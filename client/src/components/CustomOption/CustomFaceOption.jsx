@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -10,8 +10,42 @@ const CustomFaceOption = ({
   isSubmit = false,
   sendSubmitAction,
   next,
-  prev
+  prev,
+  multiple = false,
+  question,
+  sendSelection,
 }) => {
+  const [selection, setSelection] = useState([]);
+  const [selectedIndex, setSelectedIndex] = useState();
+
+  const handleClick = (e, index, value) => {
+    const checkSelection = document.getElementsByClassName(
+      serialNo + "_" + index + " selected"
+    );
+    console.log(checkSelection);
+    if (!!checkSelection.length) {
+      checkSelection[0].classList.remove("selected");
+      const selected = selection;
+      selected.splice(selected.indexOf(value), 1);
+      setSelection(selected);
+    } else {
+      if (!multiple) {
+        setSelection([]);
+        const doc = document.getElementsByClassName(
+          serialNo + "_" + selectedIndex
+        );
+        if (!!doc.length) doc[0].classList.remove("selected");
+      }
+      setSelectedIndex(index);
+      setSelection((prevSelection) => [...prevSelection, value]);
+      e.target.classList.add("selected");
+    }
+  };
+
+  useEffect(() => {
+    sendSelection(question, multiple ? selection : selection[0]);
+  }, [selection]);
+
   const [selectedFace, setSelectedFace] = useState(null);
 
   const handleSelect = (face) => {
@@ -42,6 +76,22 @@ const CustomFaceOption = ({
           <img src={selectedFace.face_url} alt="Selected face" />
         </div>
       
+        {options.map((option, index) => {
+          return (
+            <div
+              className="img-outer"
+              onClick={(e) => handleClick(e, index, option.face_url)}
+              key={index}
+            >
+              <img
+                className={serialNo + "_" + index}
+                src={option.face_url}
+                alt={option.user_id}
+              />
+              {/* <div className="backdrop-img"/> */}
+            </div>
+          );
+        })}
       </div>
       )}  
       <div className="img-options">

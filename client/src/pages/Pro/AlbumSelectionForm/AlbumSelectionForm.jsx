@@ -7,7 +7,7 @@ import API_UTIL from "../../../services/AuthIntereptor";
 import { useParams } from "react-router";
 import CustomFaceOption from "../../../components/CustomOption/CustomFaceOption";
 
-const AlbumSelectionForm = (props) => {
+const AlbumSelectionForm = () => {
   const isDataFetched = useRef(false);
   const [lastIndex, setLastIndex] = useState(0);
   const [start, setStart] = useState(false);
@@ -23,6 +23,13 @@ const AlbumSelectionForm = (props) => {
   const [females, setFemales] = useState([]);
   const [kids, setKids] = useState([]);
   const [selectedValues, setSelectedValues] = useState(new Set());
+  const [formData, setFormData] = useState({
+    groom: "",
+    groomFather: "",
+    groomMother: "",
+  });
+  const [showcase, setShowcase] = useState({});
+  var timer;
 
   const generateSiblingSelects = (count, gender, serialNoStart) => {
     const siblings = [];
@@ -34,9 +41,10 @@ const AlbumSelectionForm = (props) => {
         gender === "male"
           ? `Select your Sibling (Brother ${index + 1})`
           : `Select your Sibling (Sister ${index + 1})`;
-
+      let sibling = `groom${gender}Sibling${index + 1}`;
       siblings.push(
         <CustomFaceOption
+          question={sibling}
           options={options}
           serialNo={`${serialNoStart}.${index + 1}`}
           title={title}
@@ -44,6 +52,7 @@ const AlbumSelectionForm = (props) => {
           prev={prev}
           key={index}
           onSelect={handleSelectFace}
+          sendSelection={handleSelectChange}
         />
       );
     });
@@ -95,19 +104,25 @@ const AlbumSelectionForm = (props) => {
   };
 
   const filterOptions = (options) => {
-    return options.filter((option) => !selectedValues.has(option.face_url));
+    return options.map((option) =>
+      selectedValues.has(option.face_url)
+        ? { ...option, disabled: true }
+        : option
+    );
   };
 
   const next = (serialNo) => {
     window.scrollTo({
-      top: document.getElementsByClassName(serialNo)[0].nextElementSibling.offsetTop,
+      top: document.getElementsByClassName(serialNo)[0].nextElementSibling
+        .offsetTop,
       behavior: "smooth",
     });
   };
 
   const prev = (serialNo) => {
     window.scrollTo({
-      top: document.getElementsByClassName(serialNo)[0].previousElementSibling.offsetTop,
+      top: document.getElementsByClassName(serialNo)[0].previousElementSibling
+        .offsetTop,
       behavior: "smooth",
     });
   };
@@ -116,7 +131,21 @@ const AlbumSelectionForm = (props) => {
     setSelectedValues((prev) => new Set(prev).add(faceUrl));
   };
 
+  const handleSelectChange = (question, selectedValue) => {
+    setFormData((prevState) => {
+      const newFormData = { ...prevState, [question]: selectedValue };
+      updateSelectedValues(newFormData);
+      return newFormData;
+    });
+    console.log(formData);
+  };
+  const updateSelectedValues = (formData) => {
+    const newSelectedValues = new Set(Object.values(formData));
+    setSelectedValues(newSelectedValues);
+  };
+
   const onSubmitForm = () => {
+    console.log(formData);
     console.log("Form Submitted");
   };
 
@@ -146,6 +175,8 @@ const AlbumSelectionForm = (props) => {
               title="Please select the groom's image"
               next={next}
               prev={prev}
+              question="groom"
+              sendSelection={handleSelectChange}
               isFirst={true}
               onSelect={handleSelectFace}
             />
@@ -162,6 +193,8 @@ const AlbumSelectionForm = (props) => {
               title="Please select the groom's mother"
               next={next}
               prev={prev}
+              question="groomMother"
+              sendSelection={handleSelectChange}
               options={filterOptions(females)}
               onSelect={handleSelectFace}
             />
@@ -170,6 +203,8 @@ const AlbumSelectionForm = (props) => {
               title="Please select the groom's father"
               next={next}
               prev={prev}
+              question="groomFather"
+              sendSelection={handleSelectChange}
               options={filterOptions(males)}
               onSelect={handleSelectFace}
             />
@@ -235,7 +270,7 @@ const AlbumSelectionForm = (props) => {
                   Number of Sibling Sisters ( own sisters )
                 </div>
               </div>
-              
+
               <div className="input_container">
                 <div
                   className="icon_container"
@@ -257,11 +292,11 @@ const AlbumSelectionForm = (props) => {
                 </div>
               </div>
               <div className="button_flex">
-                  <div onClick={() => prev(4)}>
-                    <ChevronLeft />
-                  </div>
-                  <button onClick={() => next(4)}>Next</button>
+                <div onClick={() => prev(4)}>
+                  <ChevronLeft />
                 </div>
+                <button onClick={() => next(4)}>Next</button>
+              </div>
             </motion.div>
             {generateSiblingSelects(brothersCount, "male", 5)}
             {generateSiblingSelects(sistersCount, "female", 6)}
@@ -270,6 +305,9 @@ const AlbumSelectionForm = (props) => {
               title="Please select Level 1 Cousins"
               next={next}
               prev={prev}
+              question="Level1Cousins"
+              multiple={true}
+              sendSelection={handleSelectChange}
               options={filterOptions([...males, ...females])}
               onSelect={handleSelectFace}
             />
@@ -278,6 +316,9 @@ const AlbumSelectionForm = (props) => {
               title="Please select Level 2 Cousins"
               next={next}
               prev={prev}
+              question="Level2Cousins"
+              multiple={true}
+              sendSelection={handleSelectChange}
               options={filterOptions([...males, ...females])}
               onSelect={handleSelectFace}
             />
@@ -286,6 +327,9 @@ const AlbumSelectionForm = (props) => {
               title="Please select Friends"
               next={next}
               prev={prev}
+              question="friends"
+              multiple={true}
+              sendSelection={handleSelectChange}
               options={filterOptions([...males, ...females])}
               onSelect={handleSelectFace}
             />
@@ -294,6 +338,9 @@ const AlbumSelectionForm = (props) => {
               title="Please select Uncles"
               next={next}
               prev={prev}
+              question="uncles"
+              multiple={true}
+              sendSelection={handleSelectChange}
               options={filterOptions(males)}
               onSelect={handleSelectFace}
             />
@@ -304,6 +351,10 @@ const AlbumSelectionForm = (props) => {
               prev={prev}
               options={filterOptions(females)}
               onSelect={handleSelectFace}
+              question="aunts"
+              multiple={true}
+              sendSelection={handleSelectChange}
+
             />
             <CustomFaceOption
               serialNo={12}
@@ -312,6 +363,9 @@ const AlbumSelectionForm = (props) => {
               prev={prev}
               options={filterOptions(kids)}
               isSubmit={true}
+              question="NephewsNieces"
+              multiple={true}
+              sendSelection={handleSelectChange}
               sendSubmitAction={onSubmitForm}
               onSelect={handleSelectFace}
             />
