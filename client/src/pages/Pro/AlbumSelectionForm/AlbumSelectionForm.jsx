@@ -276,7 +276,7 @@ const AlbumSelectionForm = () => {
                 duration: 0.8,
                 ease: "easeIn",
               }}
-              className="4 question_answer"
+              className="7 question_answer"
             >
               <div className="question-header">
                 <div className="icon">
@@ -313,14 +313,14 @@ const AlbumSelectionForm = () => {
                 </div>
               </div>
               <div className="button_flex">
-                <div onClick={() => prev(6)}>
+                <div onClick={() => prev(7)}>
                   <ChevronLeft />
                 </div>
-                <button onClick={() => next(6)}>Next</button>
+                <button onClick={() => next(7)}>Next</button>
               </div>
             </motion.div>
-            {generateSiblingSelects(brothersCount, "male", 5)}
-            {generateSiblingSelects(sistersCount, "female", 6)}
+            {generateSiblingSelects(brothersCount, "male", 7)}
+            {generateSiblingSelects(sistersCount, "female", 8)}
             <CustomFaceOption
               serialNo={9}
               title="Please select Level 1 Cousins"
