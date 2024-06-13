@@ -30,7 +30,7 @@ const CustomFaceOption = ({
   };
 
   useEffect(() => {
-    sendSelection(question, multiple ? selection : selection[0]);
+    sendSelection && sendSelection(question, multiple ? selection : selection[0]);
   }, [selection]);
 
   return (
