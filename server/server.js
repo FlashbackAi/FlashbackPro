@@ -1293,7 +1293,7 @@ async function userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites
           ':sortKey': eventName,
           ':isFav':  true// Specify the value for the sort key
         },
-        Limit : 20,        
+        Limit : 60,        
       };
       if(lastEvaluatedKey){
         params.ExclusiveStartKey = lastEvaluatedKey;
