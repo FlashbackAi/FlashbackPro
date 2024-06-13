@@ -116,10 +116,14 @@ function Login() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     const fullPhoneNumber = countryCode + phoneNumber; // Combine country code and phone number
-
+    let userSource = "flashback"
+    if (from.includes("photos")) {
+      userSource = "flashback-pro"
+    }
     const response = await API_UTIL.post(`/createUser`, {
       username: fullPhoneNumber,
       eventName: eventName,
+      userSource: userSource
     });
     setIsPhoneNumberValid(true);
     if (response.status === 201) {

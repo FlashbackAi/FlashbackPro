@@ -105,6 +105,7 @@ const userOutputTable='user_outputs';
 const eventsTable = 'events';
 const indexedDataTableName = 'indexed_data'
 const formDataTableName = 'selectionFormData'; 
+const recokgImages = 'RekognitionImageProperties';
 
 
 const ClientId = '6goctqurrumilpurvtnh6s4fl1'
@@ -1913,6 +1914,7 @@ app.post('/downloadImage', async (req, res) => {
       app.post('/createUser', async (req, res) => {
         const  username  = req.body.username;
         let eventName = req.body.eventName;
+        const userSource = req.body.userSource;
         logger.info("creating user "+username);
       
         try {
@@ -1939,7 +1941,7 @@ app.post('/downloadImage', async (req, res) => {
           }
       
           // Create a new user entry in DynamoDB
-          await createUser(username);
+          await createUser(username,userSource);
           console.log("created sucessfulyy ->"+username)
 
           const updateParamsUserEvent = {
@@ -1979,7 +1981,7 @@ app.post('/downloadImage', async (req, res) => {
   }
       
       // Function to create a new user in DynamoDB
-      async function createUser(username) {
+      async function createUser(username,userSource) {
         const unique_uid = `${username}_Flash_${Math.floor(Math.random() * 1000)}`;
         const params = {
           TableName: userrecordstable,
@@ -1987,7 +1989,8 @@ app.post('/downloadImage', async (req, res) => {
             user_phone_number: username,
             user_name: username,
             unique_uid: unique_uid,
-            created_date: new Date().toISOString()
+            created_date: new Date().toISOString(),
+            user_source:userSource
           }
         };
       
@@ -2416,6 +2419,71 @@ app.post('/downloadImage', async (req, res) => {
       logger.info("error->"+err.message);
       res.status(500).send("Error in fetching Images for common users");
     } });
+
+    app.post("/fillUserIdsforImageIds",async (req,res)=>{
+     
+      logger.info("started filling userids");
+      try{
+        const imageParams ={
+          TableName: recokgImages, 
+          ProjectionExpression: 'image_id',
+          FilterExpression: 'attribute_not_exists(user_ids)'      
+
+        }
+        let lastEvaluatedKey = null;
+        let images=[];
+        do {
+          if (lastEvaluatedKey) {
+            imageParams.ExclusiveStartKey = lastEvaluatedKey;
+          }
+          const imagesResult = await docClient.scan(imageParams).promise();
+          images = images.concat(imagesResult.Items);
+          lastEvaluatedKey = imagesResult.LastEvaluatedKey;
+        } while (lastEvaluatedKey);
+        // Iterate over each image and fetch corresponding user IDs
+        for (const image of images) {
+          const imageName = image.image_id;
+    
+          // Query users table to get list of user IDs for the image
+          const usersResult = await docClient.query({
+            TableName: indexedDataTableName,
+            // IndexName: 'user_id-index',
+            KeyConditionExpression: 'image_id = :image',
+            ProjectionExpression: 'user_id',
+            ExpressionAttributeValues: {
+              ':image': imageName
+            }
+          }).promise();
+    
+          const userIds = usersResult.Items.map(item => item.user_id);
+          const userIdsAsString = userIds.map(id => String(id));
+
+          logger.info(`Formatted user IDs for image ${imageName}: ${JSON.stringify(userIdsAsString)}`);
+          //Update images table with the list of user IDs
+          await docClient.update({
+            TableName: recokgImages,
+            Key: { image_id: imageName },
+            UpdateExpression: 'set user_ids = :userIds',
+            ExpressionAttributeValues: {
+              ':userIds': userIdsAsString
+            }
+          }).promise();
+        }
+    
+        console.log('Successfully updated images with user IDs');
+        res.send(images);
+
+    
+      }
+      catch(err){
+        logger.info(err.message);
+        res.status(500).send(err.message);
+      }
+    });
+
+    app.post()
+
+
 
 
 
