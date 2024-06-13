@@ -26,6 +26,8 @@ const AlbumSelectionForm = () => {
   const [grandParents, setGrandParents] = useState([]);
   const [females, setFemales] = useState([]);
   const [kids, setKids] = useState([]);
+  const [cousins, setCousins] = useState([]);
+  const [friends, setFriends] = useState([]);
   const [selectedValues, setSelectedValues] = useState(new Set());
   const [formData, setFormData] = useState(() => {
     const savedFormData = localStorage.getItem("formData");
@@ -106,6 +108,8 @@ const AlbumSelectionForm = () => {
         ); // Fixed typo here
         const grandParents = response.data.filter((item) => item.avgAge >= 40);
 
+        const cousins = response.data.filter((item) => item.avgAge >= 10 && item.avgAge <= 40);
+
         setGrooms(groomData);
         setBrides(brideData);
         setMales(malesData);
@@ -114,6 +118,7 @@ const AlbumSelectionForm = () => {
         setUncles(uncles);
         setAunts(aunts);
         setGrandParents(grandParents);
+        setCousins(cousins);
       }
     } catch (error) {
       console.error("Error fetching user thumbnails:", error);
@@ -185,7 +190,7 @@ const AlbumSelectionForm = () => {
 
   const onSubmitForm = () => {
     toast("Selection has been saved Successfully");
-    navigate('https://flashback.inc/photos/Venky_Spandana_Reception_06022022/5fb8028c-d978-44');
+    navigate('/photos/Venky_Spandana_Reception_06022022/5fb8028c-d978-44');
   };
 
   return (
@@ -329,7 +334,7 @@ const AlbumSelectionForm = () => {
               question="Level1Cousins"
               multiple={true}
               sendSelection={handleSelectChange}
-              options={filterOptions([...males, ...females])}
+              options={filterOptions(cousins)}
               onSelect={handleSelectFace}
             />
             <CustomFaceOption
@@ -340,7 +345,7 @@ const AlbumSelectionForm = () => {
               question="Level2Cousins"
               multiple={true}
               sendSelection={handleSelectChange}
-              options={filterOptions([...males, ...females])}
+              options={filterOptions(cousins)}
               onSelect={handleSelectFace}
             />
             <CustomFaceOption
@@ -351,7 +356,7 @@ const AlbumSelectionForm = () => {
               question="friends"
               multiple={true}
               sendSelection={handleSelectChange}
-              options={filterOptions([...males, ...females])}
+              options={filterOptions(cousins)}
               onSelect={handleSelectFace}
             />
             <CustomFaceOption
