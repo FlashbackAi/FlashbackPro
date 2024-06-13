@@ -70,13 +70,13 @@ const logger = winston.createLogger({
  });
 
 //  // *** Comment these certificates while testing changes in local developer machine. And, uncomment while pushing to mainline***
-const privateKey = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/privkey.pem', 'utf8');
-const certificate = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/fullchain.pem', 'utf8');
+// const privateKey = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/privkey.pem', 'utf8');
+// const certificate = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/fullchain.pem', 'utf8');
 
-const credentials = {
-  key: privateKey,
-  cert: certificate
-}
+// const credentials = {
+//   key: privateKey,
+//   cert: certificate
+// }
 
 // Set up AWS S3
 const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.js
@@ -1225,6 +1225,7 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
      logger.info("Image are being fetched for event of pageNo -> "+eventName+"; userId -> "+userId +"; isFavourites -> "+isFavourites);
 
     const result = await userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites);
+    logger.info("total"+result.Items.length)
     if(!lastEvaluatedKey && isFavourites)
       {
         params = {
@@ -1264,51 +1265,51 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
   }
 });
 
-async function userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites){
+// async function userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites){
     
-   logger.info(isFavourites)
-    try {
-    let params = {}
-    if(isFavourites === true){
-      params = {
-        TableName: userOutputTable,
-        IndexName: 'unique_uid-event_name-index', 
-        KeyConditionExpression: 'unique_uid = :partitionKey AND event_name = :sortKey',
-        FilterExpression : "is_favourite = :isFav",
-        ExpressionAttributeValues: {
-          ':partitionKey': userId, // Specify the value for the partition key
-          ':sortKey': eventName,
-          ':isFav':  true// Specify the value for the sort key
-        }        
-      };
-    }
-    else{
-      params = {
-        TableName: userOutputTable,
-        IndexName: 'unique_uid-event_name-index', 
-        KeyConditionExpression: 'unique_uid = :partitionKey AND event_name = :sortKey',
-        FilterExpression : "is_favourite <> :isFav",
-        ExpressionAttributeValues: {
-          ':partitionKey': userId, // Specify the value for the partition key
-          ':sortKey': eventName,
-          ':isFav':  true// Specify the value for the sort key
-        },
-        Limit : 100,        
-      };
-      if(lastEvaluatedKey){
-        params.ExclusiveStartKey = lastEvaluatedKey;
-      }
-    }
-      const result = await docClient.query(params).promise();
-
-      return result;
-    }
-    catch (err) {
-      logger.info(err)
-      return err;
-    }
+//    logger.info(isFavourites)
+//     try {
+//     let params = {}
+//     if(isFavourites === true){
+//       params = {
+//         TableName: userOutputTable,
+//         IndexName: 'unique_uid-event_name-index', 
+//         KeyConditionExpression: 'unique_uid = :partitionKey AND event_name = :sortKey',
+//         FilterExpression : "is_favourite = :isFav",
+//         ExpressionAttributeValues: {
+//           ':partitionKey': userId, // Specify the value for the partition key
+//           ':sortKey': eventName,
+//           ':isFav':  true// Specify the value for the sort key
+//         }        
+//       };
+//     }
+//     else{
+//       params = {
+//         TableName: userOutputTable,
+//         IndexName: 'unique_uid-event_name-index', 
+//         KeyConditionExpression: 'unique_uid = :partitionKey AND event_name = :sortKey',
+//         FilterExpression : "is_favourite <> :isFav",
+//         ExpressionAttributeValues: {
+//           ':partitionKey': userId, // Specify the value for the partition key
+//           ':sortKey': eventName,
+//           ':isFav':  true// Specify the value for the sort key
+//         },
+//         Limit : 100,        
+//       };
+//       if(lastEvaluatedKey){
+//         params.ExclusiveStartKey = lastEvaluatedKey;
+//       }
+//     }
+//       const result = await docClient.query(params).promise();
+//     logger.info(`Fetched ${result.Items.length} items.`)
+//       return result;
+//     }
+//     catch (err) {
+//       logger.info(err)
+//       return err;
+//     }
   
-}
+// }
 
 async function checkIsUserRegistered(userId){
 
@@ -2484,13 +2485,13 @@ app.post('/downloadImage', async (req, res) => {
 
 
 
-const httpsServer = https.createServer(credentials, app);
+// const httpsServer = https.createServer(credentials, app);
 
-httpsServer.listen(PORT, () => {
-  logger.info(`Server is running on https://localhost:${PORT}`);
-});
+// httpsServer.listen(PORT, () => {
+//   logger.info(`Server is running on https://localhost:${PORT}`);
+// });
 
 //**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
-// app.listen(PORT ,() => {
-//   logger.info(`Server started on http://localhost:${PORT}`);
-// });
+app.listen(PORT ,() => {
+  logger.info(`Server started on http://localhost:${PORT}`);
+});
