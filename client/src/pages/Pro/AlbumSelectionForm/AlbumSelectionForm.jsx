@@ -1,18 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./AlbumSelectionForm.css";
 import Header from "../../../components/Header/Header";
-import {
-  ArrowRight,
-  ChevronLeft,
-  Minus,
-  Plus,
-  SendToBack,
-  SendToBackIcon,
-} from "lucide-react";
+import { ArrowRight, ChevronLeft, Minus, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import API_UTIL from "../../../services/AuthIntereptor";
 import { useParams } from "react-router";
-import { element } from "prop-types";
 import CustomFaceOption from "../../../components/CustomOption/CustomFaceOption";
 
 const AlbumSelectionForm = (props) => {
@@ -23,18 +15,14 @@ const AlbumSelectionForm = (props) => {
   const [sistersCount, setSistersCount] = useState(0);
   const [userThumbnails, setUserThumbnails] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [fetchTimeout, setFetchTimeout] = useState(false);
   const { eventName } = useParams();
-  const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
-    groom: "",
-    groomFather: "",
-    groomMother: "",
-  });
   const [males, setMales] = useState([]);
+  const [grooms, setGrooms] = useState([]);
+  const [brides, setBrides] = useState([]);
+  const [uncles, setUncles] = useState([]);
   const [females, setFemales] = useState([]);
+  const [kids, setKids] = useState([]);
   const [selectedValues, setSelectedValues] = useState(new Set());
-  var timer;
 
   const generateSiblingSelects = (count, gender, serialNoStart) => {
     const siblings = [];
@@ -55,15 +43,16 @@ const AlbumSelectionForm = (props) => {
           next={next}
           prev={prev}
           key={index}
+          onSelect={handleSelectFace}
         />
       );
     });
     return siblings;
   };
 
-  function handleClick(e) {
+  const handleClick = () => {
     setStart(true);
-  }
+  };
 
   const fetchThumbnails = async () => {
     if (userThumbnails.length === 0) setIsLoading(true);
@@ -72,20 +61,23 @@ const AlbumSelectionForm = (props) => {
       const response = await API_UTIL.get(`/userThumbnails/${eventName}`);
       if (response.status === 200) {
         setUserThumbnails(response.data);
-        const malesData = response.data.filter(
-          (item) => item.gender === "Male"
-        );
-        const femalesData = response.data.filter(
-          (item) => item.gender === "Female"
-        );
+        const malesData = response.data.filter((item) => item.gender === "Male")
+        const groomData = response.data.filter((item) => item.gender === "Male" && item.avgAge >= 15 && item.avgAge <= 45);
+        const brideData = response.data.filter((item) => item.gender === "Female" && item.avgAge >= 15 && item.avgAge <= 45);
+        const femalesData = response.data.filter((item) => item.gender === "Female");
+        const kids = response.data.filter(item => item.avgAge <= 15);
 
+        setGrooms(groomData);
+        setBrides(brideData);
         setMales(malesData);
         setFemales(femalesData);
+        setKids(kids);
       }
     } catch (error) {
       console.error("Error fetching user thumbnails:", error);
       setIsLoading(false);
     } finally {
+      setIsLoading(false);
     }
   };
 
@@ -94,10 +86,6 @@ const AlbumSelectionForm = (props) => {
     fetchThumbnails();
     isDataFetched.current = true;
   }, []);
-
-  useEffect(() => {
-    setIsLoading(false);
-  }, [userThumbnails]);
 
   const handleSiblingChange = (setter, value) => {
     setter((prev) => {
@@ -122,6 +110,10 @@ const AlbumSelectionForm = (props) => {
       top: document.getElementsByClassName(serialNo)[0].previousElementSibling.offsetTop,
       behavior: "smooth",
     });
+  };
+
+  const handleSelectFace = (question,faceUrl) => {
+    setSelectedValues((prev) => new Set(prev).add(faceUrl));
   };
 
   const onSubmitForm = () => {
@@ -150,11 +142,20 @@ const AlbumSelectionForm = (props) => {
           <>
             <CustomFaceOption
               serialNo={1}
-              options={filterOptions(males)}
+              options={filterOptions(grooms)}
               title="Please select the groom's image"
               next={next}
               prev={prev}
               isFirst={true}
+              onSelect={handleSelectFace}
+            />
+             <CustomFaceOption
+              serialNo={3}
+              title="Please select the bride's image"
+              next={next}
+              prev={prev}
+              options={filterOptions(brides)}
+              onSelect={handleSelectFace}
             />
             <CustomFaceOption
               serialNo={2}
@@ -162,6 +163,7 @@ const AlbumSelectionForm = (props) => {
               next={next}
               prev={prev}
               options={filterOptions(females)}
+              onSelect={handleSelectFace}
             />
             <CustomFaceOption
               serialNo={3}
@@ -169,6 +171,24 @@ const AlbumSelectionForm = (props) => {
               next={next}
               prev={prev}
               options={filterOptions(males)}
+              onSelect={handleSelectFace}
+            />
+            
+             <CustomFaceOption
+              serialNo={3}
+              title="Please select the bride's father"
+              next={next}
+              prev={prev}
+              options={filterOptions(males)}
+              onSelect={handleSelectFace}
+            />
+             <CustomFaceOption
+              serialNo={3}
+              title="Please select the bride's mother"
+              next={next}
+              prev={prev}
+              options={filterOptions(females)}
+              onSelect={handleSelectFace}
             />
             <motion.div
               initial={{ opacity: 0, visibility: "hidden" }}
@@ -243,14 +263,15 @@ const AlbumSelectionForm = (props) => {
                   <button onClick={() => next(4)}>Next</button>
                 </div>
             </motion.div>
-            <>{generateSiblingSelects(brothersCount, "male", 5)}</>
-            <>{generateSiblingSelects(sistersCount, "female", 6)}</>
+            {generateSiblingSelects(brothersCount, "male", 5)}
+            {generateSiblingSelects(sistersCount, "female", 6)}
             <CustomFaceOption
               serialNo={7}
               title="Please select Level 1 Cousins"
               next={next}
               prev={prev}
               options={filterOptions([...males, ...females])}
+              onSelect={handleSelectFace}
             />
             <CustomFaceOption
               serialNo={8}
@@ -258,6 +279,7 @@ const AlbumSelectionForm = (props) => {
               next={next}
               prev={prev}
               options={filterOptions([...males, ...females])}
+              onSelect={handleSelectFace}
             />
             <CustomFaceOption
               serialNo={9}
@@ -265,6 +287,7 @@ const AlbumSelectionForm = (props) => {
               next={next}
               prev={prev}
               options={filterOptions([...males, ...females])}
+              onSelect={handleSelectFace}
             />
             <CustomFaceOption
               serialNo={10}
@@ -272,22 +295,25 @@ const AlbumSelectionForm = (props) => {
               next={next}
               prev={prev}
               options={filterOptions(males)}
+              onSelect={handleSelectFace}
             />
             <CustomFaceOption
               serialNo={11}
               title="Please select Aunts"
               next={next}
               prev={prev}
-              options={filterOptions(males)}
+              options={filterOptions(females)}
+              onSelect={handleSelectFace}
             />
             <CustomFaceOption
               serialNo={12}
               title="Please select Nephews & Nieces"
               next={next}
               prev={prev}
-              options={filterOptions([...males, ...females])}
+              options={filterOptions(kids)}
               isSubmit={true}
               sendSubmitAction={onSubmitForm}
+              onSelect={handleSelectFace}
             />
           </>
         )}
