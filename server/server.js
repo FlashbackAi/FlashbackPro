@@ -1524,7 +1524,7 @@ async function userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites
           ':sortKey': eventName,
           ':isFav':  true// Specify the value for the sort key
         },
-        Limit : 20,        
+        Limit : 100,        
       };
       if(lastEvaluatedKey){
         params.ExclusiveStartKey = lastEvaluatedKey;
