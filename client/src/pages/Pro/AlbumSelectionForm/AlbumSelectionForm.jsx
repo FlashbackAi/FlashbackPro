@@ -13,8 +13,10 @@ const AlbumSelectionForm = () => {
   const isDataFetched = useRef(false);
   const [lastIndex, setLastIndex] = useState(0);
   const [start, setStart] = useState(false);
-  const [brothersCount, setBrothersCount] = useState(0);
-  const [sistersCount, setSistersCount] = useState(0);
+  const [groomBrothersCount, setGroomBrothersCount] = useState(0);
+  const [groomSistersCount, setGroomSistersCount] = useState(0);
+  const [brideBrothersCount, setBrideBrothersCount] = useState(0);
+  const [brideSistersCount, setBrideSistersCount] = useState(0);
   const [userThumbnails, setUserThumbnails] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const { eventName } = useParams();
@@ -29,30 +31,29 @@ const AlbumSelectionForm = () => {
   const [cousins, setCousins] = useState([]);
   const [friends, setFriends] = useState([]);
   const [selectedValues, setSelectedValues] = useState(new Set());
-  const [formData, setFormData] = useState(() => {
-    const savedFormData = localStorage.getItem("formData");
-    return savedFormData
-      ? JSON.parse(savedFormData)
-      : {
+  const [formData, setFormData] = useState( {
           event_name: eventName,
           form_owner: "groom",
-          groom: "",
-          groomFather: "",
-          groomMother: "",
+          groom: null,
+          groomFather: null,
+          groomMother: null,
+          bride:null,
+          bridesMother:null,
           "Level 1 Cousins": [],
           "Level 2 Cousins": [],
           Friends: [],
           Uncles: [],
           Aunts: [],
-          "Nephews and Nieces": [],
+          Kids: [],
           "Grand Parents": [],
           "Other Important People": [],
-        };
-  });
+        }
+  );
   const [showcase, setShowcase] = useState({});
+  const [isFormDataUpdated,setIsFormDataUpdated] = useState(false);
   var timer;
   const navigate = useNavigate();
-  const generateSiblingSelects = (count, gender, serialNoStart) => {
+  const generateSiblingSelects = (count, char,gender, serialNoStart) => {
     const siblings = [];
     const options =
       gender === "male" ? filterOptions(males) : filterOptions(females);
@@ -60,9 +61,9 @@ const AlbumSelectionForm = () => {
     [...Array(count).keys()].forEach((elm, index) => {
       const title =
         gender === "male"
-          ? `Select your Sibling (Brother ${index + 1})`
-          : `Select your Sibling (Sister ${index + 1})`;
-      let sibling = `groom${gender}Sibling${index + 1}`;
+          ? `Select ${char} Sibling (Brother ${index + 1})`
+          : `Select ${char} Sibling (Sister ${index + 1})`;
+      let sibling = `${char}${gender}Sibling${index + 1}`;
       siblings.push(
         <CustomFaceOption
           question={sibling}
@@ -93,23 +94,24 @@ const AlbumSelectionForm = () => {
         setUserThumbnails(response.data);
         const malesData = response.data.filter((item) => item.gender === "Male");
         const groomData = response.data.filter(
-          (item) => item.gender === "Male" && item.avgAge >= 15 && item.avgAge <= 45
+          (item) => item.gender === "Male" && item.avgAge >= 15 && item.avgAge <= 40
         );
         const brideData = response.data.filter(
-          (item) => item.gender === "Female" && item.avgAge >= 15 && item.avgAge <= 45
+          (item) => item.gender === "Female" && item.avgAge >= 15 && item.avgAge <= 40
         );
         const femalesData = response.data.filter((item) => item.gender === "Female");
         const kids = response.data.filter((item) => item.avgAge <= 15);
         const uncles = response.data.filter(
-          (item) => item.gender === "Male" && item.avgAge >= 30
+          (item) => item.gender === "Male" && item.avgAge >= 40
         );
         const aunts = response.data.filter(
-          (item) => item.gender === "Female" && item.avgAge >= 30
+          (item) => item.gender === "Female" && item.avgAge >= 40
         ); // Fixed typo here
-        const grandParents = response.data.filter((item) => item.avgAge >= 40);
+        const grandParents = response.data.filter((item) => item.avgAge >= 50);
 
         const cousins = response.data.filter((item) => item.avgAge >= 10 && item.avgAge <= 40);
-
+        //siblings less than 40 , 
+        //
         setGrooms(groomData);
         setBrides(brideData);
         setMales(malesData);
@@ -131,21 +133,100 @@ const AlbumSelectionForm = () => {
   useEffect(() => {
     if (isDataFetched.current) return;
     fetchThumbnails();
+    fetchFormData();
     isDataFetched.current = true;
   }, []);
 
-  const handleSiblingChange = (setter, value) => {
-    setter((prev) => {
+  useEffect(() => {
+    // Save form data to localStorage whenever it changes
+    // localStorage.setItem('formData', JSON.stringify(formData));
+    //Save data to Backend\
+      if(isFormDataUpdated){
+      saveFormDataToBackend(formData);
+      }
+    
+}, [formData]);
+
+const saveFormDataToBackend = async (formData) => {
+    try {
+    // Make a POST request to your backend API endpoint
+    console.log(formData);
+    const response = await API_UTIL.post(`/saveSelectionFormData`,formData);
+
+    console.log('Form data saved successfully to backend:', response.data);
+    } catch (error) {
+    console.error('Error saving form data to backend:', error);
+    }
+};
+
+// useEffect(() => {
+
+//     fetchFormData();
+// }, []);
+
+ // Fetch form data from backend
+const fetchFormData = async () => {
+  try {
+  const response = await API_UTIL.get(`/getSelectionFormData/${eventName}/groom`);
+  if (response.data) {
+      setFormData(response.data);
+      updateSelectedValues(response.data);
+  }
+  } catch (error) {
+  console.error('Error fetching form data:', error);
+  } finally {
+  setIsLoading(false);
+  }
+};
+
+  const handleSiblingReset = (setter,sibling) =>{
+
+    for (let key in formData) {
+      if (key.startsWith(sibling)) {
+        delete formData[key];
+      }
+    }
+    setter(0);
+  }
+  const handleSiblingChange = (setter, sibling, value) => {
+    if (value === -1) {
+      let count;
+      switch (sibling) {
+        case 'groommale': count = groomBrothersCount; break;
+        case 'groomfemale': count = groomSistersCount; break;
+        case 'bridemale': count = brideBrothersCount; break;
+        case 'bridefemale': count = brideSistersCount; break;
+        default: console.log(sibling);
+      }
+      
+      const formKey = `${sibling}Sibling${count}`;
+      const countKey = `${sibling}SiblingCount`;
+      
+      setFormData(prevState => {
+        const newFormData = {
+          ...prevState,
+          [formKey]: '',
+          [countKey]: count - 1
+        };
+        updateSelectedValues(newFormData);
+        return newFormData;
+      });
+    }
+    
+    setter(prev => {
       const newValue = prev + value;
       return newValue >= 0 && newValue <= 10 ? newValue : prev;
     });
+  
+    // Update formData with the new count
+    setFormData(prevState => ({
+      ...prevState,
+      [`${sibling}SiblingCount`]: value === 1 ? prevState[`${sibling}SiblingCount`] + 1 : prevState[`${sibling}SiblingCount`] - 1,
+    }));
   };
+  
 
   const filterOptions = (options = []) => {
-    // const opt =  options.map((option) =>
-    //   selectedValues.has(option.face_url) ? { ...option, disabled: true } : option
-    // );
-    // return opt;
     return options.filter(option => !selectedValues.has(option.face_url));
   };
 
@@ -168,15 +249,16 @@ const AlbumSelectionForm = () => {
   };
 
   const handleSelectChange = (question, selectedValue) => {
+    setIsFormDataUpdated(true);
     setFormData((prevState) => {
       const newFormData = { ...prevState, [question]: selectedValue };
       updateSelectedValues(newFormData);
-      console.log(newFormData);
       return newFormData;
     });
   };
 
   const updateSelectedValues = (formData) => {
+    
     const newSelectedValues = new Set();
     Object.values(formData).forEach((value) => {
       if (Array.isArray(value)) {
@@ -223,6 +305,7 @@ const AlbumSelectionForm = () => {
               sendSelection={handleSelectChange}
               isFirst={true}
               onSelect={handleSelectFace}
+              selectedImage={[formData.groom]}
             />
             <CustomFaceOption
               serialNo={2}
@@ -233,6 +316,7 @@ const AlbumSelectionForm = () => {
               onSelect={handleSelectFace}
               question="bride"
               sendSelection={handleSelectChange}
+              selectedImage={[formData.bride]}
             />
             <CustomFaceOption
               serialNo={3}
@@ -241,8 +325,9 @@ const AlbumSelectionForm = () => {
               prev={prev}
               question="groomMother"
               sendSelection={handleSelectChange}
-              options={filterOptions(females)}
+              options={filterOptions(aunts)}
               onSelect={handleSelectFace}
+              selectedImage={[formData.groomMother]}
             />
             <CustomFaceOption
               serialNo={4}
@@ -251,28 +336,32 @@ const AlbumSelectionForm = () => {
               prev={prev}
               question="groomFather"
               sendSelection={handleSelectChange}
-              options={filterOptions(males)}
+              options={filterOptions(uncles)}
               onSelect={handleSelectFace}
+              selectedImage={[formData.groomFather]}
             />
+          
             <CustomFaceOption
               serialNo={5}
-              title="Please select the bride's father"
-              next={next}
-              prev={prev}
-              options={filterOptions(males)}
-              onSelect={handleSelectFace}
-              question="brideFather"
-              sendSelection={handleSelectChange}
-            />
-            <CustomFaceOption
-              serialNo={6}
               title="Please select the bride's mother"
               next={next}
               prev={prev}
-              options={filterOptions(females)}
+              options={filterOptions(aunts)}
               onSelect={handleSelectFace}
               question="brideMother"
               sendSelection={handleSelectChange}
+              selectedImage={[formData.brideMother]}
+            />
+              <CustomFaceOption
+              serialNo={6}
+              title="Please select the bride's father"
+              next={next}
+              prev={prev}
+              options={filterOptions(uncles)}
+              onSelect={handleSelectFace}
+              question="brideFather"
+              sendSelection={handleSelectChange}
+              selectedImage={[formData.brideFather]}
             />
             <motion.div
               initial={{ opacity: 0, visibility: "hidden" }}
@@ -288,16 +377,16 @@ const AlbumSelectionForm = () => {
                   <ArrowRight className="arrow" />
                 </div>
                 <div className="question">
-                  Number of Sibling Brothers (own brothers)
+                  Number of Groom Sibling Brothers (own brothers)
                 </div>
               </div>
               <div className="input_container">
-                <div className="icon_container" onClick={() => handleSiblingChange(setBrothersCount, +1)}>
-                  <Plus />
+                <div className="icon_container" onClick={() => handleSiblingReset(setGroomBrothersCount,"groommale" )}>
+                <label>Reset</label>
                 </div>
-                <input className="number_input" type="number" readOnly value={brothersCount} />
-                <div className="icon_container" onClick={() => handleSiblingChange(setBrothersCount, -1)}>
-                  <Minus />
+                <input className="number_input" type="number" readOnly value={groomBrothersCount} />
+                <div className="icon_container" onClick={() => handleSiblingChange(setGroomBrothersCount,"groommale", +1)}>
+                  <Plus />
                 </div>
               </div>
               <div className="question-header">
@@ -305,16 +394,50 @@ const AlbumSelectionForm = () => {
                   <ArrowRight className="arrow" />
                 </div>
                 <div className="question">
-                  Number of Sibling Sisters (own sisters)
+                  Number of Groom Sibling Sisters (own sisters)
                 </div>
               </div>
               <div className="input_container">
-                <div className="icon_container" onClick={() => handleSiblingChange(setSistersCount, +1)}>
+                <div className="icon_container" onClick={() => handleSiblingReset(setGroomSistersCount,"groomfemale" )}>
+                <label>Reset</label>
+                </div>
+                <input className="number_input" readOnly type="number" value={groomSistersCount} />
+                <div className="icon_container" onClick={() => handleSiblingChange(setGroomSistersCount,"groomfemale", +1)}>
                   <Plus />
                 </div>
-                <input className="number_input" readOnly type="number" value={sistersCount} />
-                <div className="icon_container" onClick={() => handleSiblingChange(setSistersCount, -1)}>
-                  <Minus />
+              </div>
+              <div className="question-header">
+                <div className="icon">
+                  <ArrowRight className="arrow" />
+                </div>
+                <div className="question">
+                  Number of Bride Sibling Brothers (own brothers)
+                </div>
+              </div>
+              <div className="input_container">
+                <div className="icon_container" onClick={() => handleSiblingReset(setBrideBrothersCount,"bridemale" )}>
+                 <label>Reset</label>
+                </div>
+                <input className="number_input" readOnly type="number" value={brideBrothersCount} />
+                <div className="icon_container" onClick={() => handleSiblingChange(setBrideBrothersCount,"bridemale", +1)}>
+                  <Plus />
+                </div>
+              </div>
+              <div className="question-header">
+                <div className="icon">
+                  <ArrowRight className="arrow" />
+                </div>
+                <div className="question">
+                  Number of Bride Sibling Sisters (own sisters)
+                </div>
+              </div>
+              <div className="input_container">
+                <div className="icon_container" onClick={() => handleSiblingReset(setBrideSistersCount,"bridefemale" )}>
+                <label>Reset</label>
+                </div>
+                <input className="number_input" readOnly type="number" value={brideSistersCount} />
+                <div className="icon_container" onClick={() => handleSiblingChange(setBrideSistersCount,"bridefemale", +1)}>
+                  <Plus />
                 </div>
               </div>
               <div className="button_flex">
@@ -324,51 +447,45 @@ const AlbumSelectionForm = () => {
                 <button onClick={() => next(7)}>Next</button>
               </div>
             </motion.div>
-            {generateSiblingSelects(brothersCount, "male", 7)}
-            {generateSiblingSelects(sistersCount, "female", 8)}
+            {generateSiblingSelects(groomBrothersCount,"groom", "male", 7)}
+            {generateSiblingSelects(groomSistersCount, "groom", "female", 8)}
+            {generateSiblingSelects(brideBrothersCount, "bride", "male", 9)}
+            {generateSiblingSelects(brideSistersCount, "bride", "female", 10)}
             <CustomFaceOption
               serialNo={9}
               title="Please select Level 1 Cousins"
               next={next}
               prev={prev}
-              question="Level1Cousins"
+              question="Level 1 Cousins"
               multiple={true}
               sendSelection={handleSelectChange}
               options={filterOptions(cousins)}
               onSelect={handleSelectFace}
+              selectedImage={formData["Level 1 Cousins"]}
             />
             <CustomFaceOption
               serialNo={10}
               title="Please select Level 2 Cousins"
               next={next}
               prev={prev}
-              question="Level2Cousins"
+              question="Level 2 Cousins"
               multiple={true}
               sendSelection={handleSelectChange}
               options={filterOptions(cousins)}
               onSelect={handleSelectFace}
-            />
-            <CustomFaceOption
-              serialNo={11}
-              title="Please select Friends"
-              next={next}
-              prev={prev}
-              question="friends"
-              multiple={true}
-              sendSelection={handleSelectChange}
-              options={filterOptions(cousins)}
-              onSelect={handleSelectFace}
+              selectedImage={formData["Level 2 Cousins"]}
             />
             <CustomFaceOption
               serialNo={12}
               title="Please select Uncles"
               next={next}
               prev={prev}
-              question="uncles"
+              question="Uncles"
               multiple={true}
               sendSelection={handleSelectChange}
               options={filterOptions(uncles)}
               onSelect={handleSelectFace}
+              selectedImage={formData.Uncles}
             />
             <CustomFaceOption
               serialNo={13}
@@ -377,22 +494,23 @@ const AlbumSelectionForm = () => {
               prev={prev}
               options={filterOptions(aunts)}
               onSelect={handleSelectFace}
-              question="aunts"
+              question="Aunts"
               multiple={true}
               sendSelection={handleSelectChange}
+              selectedImage={formData.Aunts}
             />
             <CustomFaceOption
               serialNo={14}
-              title="Please select Nephews & Nieces"
+              title="Please select Kids"
               next={next}
               prev={prev}
               options={filterOptions(kids)}
-              isSubmit={true}
-              question="NephewsNieces"
+              question="Kids"
               multiple={true}
               sendSelection={handleSelectChange}
               sendSubmitAction={onSubmitForm}
               onSelect={handleSelectFace}
+              selectedImage={formData.Kids}
             />
             <CustomFaceOption
               serialNo={15}
@@ -400,12 +518,38 @@ const AlbumSelectionForm = () => {
               next={next}
               prev={prev}
               options={filterOptions(grandParents)}
-              isSubmit={true}
-              question="grandParents"
+              question="Grand Parents"
               multiple={true}
               sendSelection={handleSelectChange}
               sendSubmitAction={onSubmitForm}
               onSelect={handleSelectFace}
+              selectedImage={formData["Grand Parents"]}
+            />
+            
+            <CustomFaceOption
+              serialNo={11}
+              title="Please select Friends"
+              next={next}
+              prev={prev}
+              question="Friends"
+              multiple={true}
+              sendSelection={handleSelectChange}
+              options={filterOptions(cousins)}
+              onSelect={handleSelectFace}
+              selectedImage={formData.Friends}
+            />
+            <CustomFaceOption
+              serialNo={11}
+              title="Please select Other Important People"
+              next={next}
+              isSubmit={true}
+              prev={prev}
+              question="Other Important People"
+              multiple={true}
+              sendSelection={handleSelectChange}
+              options={filterOptions(cousins)}
+              onSelect={handleSelectFace}
+              selectedImage={formData["Other Important People"]}
             />
           </>
         )}

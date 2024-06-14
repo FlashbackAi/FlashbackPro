@@ -14,9 +14,11 @@ const CustomFaceOption = ({
   multiple = false,
   question,
   sendSelection,
+  selectedImage,
 }) => {
-  const [selection, setSelection] = useState([]);
-
+  const abc = selectedImage?selectedImage:[];
+  const [selection, setSelection] = useState(abc)
+ console.log(selection);
   const handleClick = (index, value) => {
     if (selection.includes(value)) {
       setSelection(selection.filter((item) => item !== value));
@@ -49,7 +51,7 @@ const CustomFaceOption = ({
         </div>
         <div className="question">{title}</div>
       </div>
-      {selection.length > 0 && (
+      {selection  && (
         <div className="img-options">
           <div className="selected-face">
      
