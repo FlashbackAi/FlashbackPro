@@ -18,7 +18,7 @@ const CustomFaceOption = ({
 }) => {
   const abc = selectedImage?selectedImage:[];
   const [selection, setSelection] = useState(abc)
- console.log(selection);
+  console.log(selectedImage);
   const handleClick = (index, value) => {
     if (selection.includes(value)) {
       setSelection(selection.filter((item) => item !== value));
@@ -55,7 +55,7 @@ const CustomFaceOption = ({
         <div className="img-options">
           <div className="selected-face">
      
-          {selection.map((url, index) => (
+          {selection.filter(url => url !== null).map((url, index) => (
             <img key={index} src={url} alt={`selected ${index}`} className="selected-image" />
           ))}
           </div>

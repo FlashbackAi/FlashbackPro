@@ -35,10 +35,11 @@ const AlbumSelectionForm = () => {
           event_name: eventName,
           form_owner: "groom",
           groom: null,
-          groomFather: null,
-          groomMother: null,
+          groomsFather: null,
+          groomsMother: null,
           bride:null,
           bridesMother:null,
+          bridesFather:null,
           "Level 1 Cousins": [],
           "Level 2 Cousins": [],
           Friends: [],
@@ -47,6 +48,10 @@ const AlbumSelectionForm = () => {
           Kids: [],
           "Grand Parents": [],
           "Other Important People": [],
+          "groommaleSiblingCount":0,
+          "groomfemaleSiblingCount":0,
+          "bridemaleSiblingCount":0,
+          "bridefemaleSiblingCount":0
         }
   );
   const [showcase, setShowcase] = useState({});
@@ -180,12 +185,22 @@ const fetchFormData = async () => {
 };
 
   const handleSiblingReset = (setter,sibling) =>{
+    setFormData(prevState => {
+      const newFormData = { ...prevState };
 
-    for (let key in formData) {
-      if (key.startsWith(sibling)) {
-        delete formData[key];
+      for (let key in newFormData) {
+        if (key.startsWith(sibling)) {
+          if(key.includes("Count")){
+            newFormData[key] = 0;
+          }
+          else{
+          newFormData[key] = null; 
+          }
+        }
       }
-    }
+      console.log(newFormData);
+      return newFormData;
+    });
     setter(0);
   }
   const handleSiblingChange = (setter, sibling, value) => {
@@ -201,6 +216,7 @@ const fetchFormData = async () => {
       
       const formKey = `${sibling}Sibling${count}`;
       const countKey = `${sibling}SiblingCount`;
+      console.log(countKey);
       
       setFormData(prevState => {
         const newFormData = {
@@ -211,17 +227,26 @@ const fetchFormData = async () => {
         updateSelectedValues(newFormData);
         return newFormData;
       });
+      console.log(formData);
     }
-    
-    setter(prev => {
-      const newValue = prev + value;
-      return newValue >= 0 && newValue <= 10 ? newValue : prev;
-    });
+    const val =  formData[`${sibling}SiblingCount`]+value;
+    // setter(prev => {
+    //   newValue = prev + value;
+    //   return newValue >= 0 && newValue <= 10 ? newValue : prev;
+    // });
   
-    // Update formData with the new count
+    // // Update formData with the new count
+    // let count;
+    // switch (sibling) {
+    //   case 'groommale': count = groomBrothersCount; break;
+    //   case 'groomfemale': count = groomSistersCount; break;
+    //   case 'bridemale': count = brideBrothersCount; break;
+    //   case 'bridefemale': count = brideSistersCount; break;
+    //   default: console.log(sibling);
+    // }
     setFormData(prevState => ({
       ...prevState,
-      [`${sibling}SiblingCount`]: value === 1 ? prevState[`${sibling}SiblingCount`] + 1 : prevState[`${sibling}SiblingCount`] - 1,
+      [`${sibling}SiblingCount`]:val,
     }));
   };
   
@@ -323,22 +348,22 @@ const fetchFormData = async () => {
               title="Please select the groom's mother"
               next={next}
               prev={prev}
-              question="groomMother"
+              question="groomsMother"
               sendSelection={handleSelectChange}
               options={filterOptions(aunts)}
               onSelect={handleSelectFace}
-              selectedImage={[formData.groomMother]}
+              selectedImage={[formData.groomsMother]}
             />
             <CustomFaceOption
               serialNo={4}
               title="Please select the groom's father"
               next={next}
               prev={prev}
-              question="groomFather"
+              question="groomsFather"
               sendSelection={handleSelectChange}
               options={filterOptions(uncles)}
               onSelect={handleSelectFace}
-              selectedImage={[formData.groomFather]}
+              selectedImage={[formData.groomsFather]}
             />
           
             <CustomFaceOption
@@ -348,9 +373,9 @@ const fetchFormData = async () => {
               prev={prev}
               options={filterOptions(aunts)}
               onSelect={handleSelectFace}
-              question="brideMother"
+              question="bridesMother"
               sendSelection={handleSelectChange}
-              selectedImage={[formData.brideMother]}
+              selectedImage={[formData.bridesMother]}
             />
               <CustomFaceOption
               serialNo={6}
@@ -359,9 +384,9 @@ const fetchFormData = async () => {
               prev={prev}
               options={filterOptions(uncles)}
               onSelect={handleSelectFace}
-              question="brideFather"
+              question="bridesFather"
               sendSelection={handleSelectChange}
-              selectedImage={[formData.brideFather]}
+              selectedImage={[formData.bridesFather]}
             />
             <motion.div
               initial={{ opacity: 0, visibility: "hidden" }}
@@ -384,7 +409,7 @@ const fetchFormData = async () => {
                 <div className="icon_container" onClick={() => handleSiblingReset(setGroomBrothersCount,"groommale" )}>
                 <label>Reset</label>
                 </div>
-                <input className="number_input" type="number" readOnly value={groomBrothersCount} />
+                <input className="number_input" type="number" readOnly value={formData['groommaleSiblingCount']} />
                 <div className="icon_container" onClick={() => handleSiblingChange(setGroomBrothersCount,"groommale", +1)}>
                   <Plus />
                 </div>
@@ -401,7 +426,7 @@ const fetchFormData = async () => {
                 <div className="icon_container" onClick={() => handleSiblingReset(setGroomSistersCount,"groomfemale" )}>
                 <label>Reset</label>
                 </div>
-                <input className="number_input" readOnly type="number" value={groomSistersCount} />
+                <input className="number_input" readOnly type="number" value={formData['groomfemaleSiblingCount']} />
                 <div className="icon_container" onClick={() => handleSiblingChange(setGroomSistersCount,"groomfemale", +1)}>
                   <Plus />
                 </div>
@@ -418,7 +443,7 @@ const fetchFormData = async () => {
                 <div className="icon_container" onClick={() => handleSiblingReset(setBrideBrothersCount,"bridemale" )}>
                  <label>Reset</label>
                 </div>
-                <input className="number_input" readOnly type="number" value={brideBrothersCount} />
+                <input className="number_input" readOnly type="number" value={formData['bridemaleSiblingCount']} />
                 <div className="icon_container" onClick={() => handleSiblingChange(setBrideBrothersCount,"bridemale", +1)}>
                   <Plus />
                 </div>
@@ -435,7 +460,7 @@ const fetchFormData = async () => {
                 <div className="icon_container" onClick={() => handleSiblingReset(setBrideSistersCount,"bridefemale" )}>
                 <label>Reset</label>
                 </div>
-                <input className="number_input" readOnly type="number" value={brideSistersCount} />
+                <input className="number_input" readOnly type="number" value={formData['bridefemaleSiblingCount']} />
                 <div className="icon_container" onClick={() => handleSiblingChange(setBrideSistersCount,"bridefemale", +1)}>
                   <Plus />
                 </div>
@@ -447,10 +472,10 @@ const fetchFormData = async () => {
                 <button onClick={() => next(7)}>Next</button>
               </div>
             </motion.div>
-            {generateSiblingSelects(groomBrothersCount,"groom", "male", 7)}
-            {generateSiblingSelects(groomSistersCount, "groom", "female", 8)}
-            {generateSiblingSelects(brideBrothersCount, "bride", "male", 9)}
-            {generateSiblingSelects(brideSistersCount, "bride", "female", 10)}
+            {generateSiblingSelects(formData.groommaleSiblingCount,"groom", "male", 7)}
+            {generateSiblingSelects(formData.groomfemaleSiblingCount, "groom", "female", 8)}
+            {generateSiblingSelects(formData.bridemaleSiblingCount, "bride", "male", 9)}
+            {generateSiblingSelects(formData.bridefemaleSiblingCount, "bride", "female", 10)}
             <CustomFaceOption
               serialNo={9}
               title="Please select Level 1 Cousins"
