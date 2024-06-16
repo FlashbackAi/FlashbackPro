@@ -15,7 +15,8 @@ const ImageModal = ({
   clickedImgFavourite,
   favourite =true,
   sharing = true,
-  close = true
+  close = true,
+  selected = false,
 }) => {
   const history = useNavigate();
   const handleClick = (e) => {

@@ -16,9 +16,10 @@ const CustomFaceOption = ({
   sendSelection,
   selectedImage,
 }) => {
-  const abc = selectedImage?selectedImage:[];
-  const [selection, setSelection] = useState(abc)
-  console.log(selectedImage);
+  const abc = selectedImage ? selectedImage : [];
+  const [selection, setSelection] = useState(abc);
+  //console.log(selectedImage);
+
   const handleClick = (index, value) => {
     if (selection.includes(value)) {
       setSelection(selection.filter((item) => item !== value));
@@ -51,13 +52,12 @@ const CustomFaceOption = ({
         </div>
         <div className="question">{title}</div>
       </div>
-      {selection  && (
+      {selection && (
         <div className="img-options">
           <div className="selected-face">
-     
-          {selection.filter(url => url !== null).map((url, index) => (
-            <img key={index} src={url} alt={`selected ${index}`} className="selected-image" />
-          ))}
+            {selection.filter(url => url !== null).map((url, index) => (
+              <img key={index} src={url} alt={`selected ${index}`} className="selected-image" onClick={() => handleClick(index, url)} />
+            ))}
           </div>
         </div>
       )}

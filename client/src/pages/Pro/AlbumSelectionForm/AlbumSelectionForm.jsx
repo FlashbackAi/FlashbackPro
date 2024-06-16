@@ -31,6 +31,8 @@ const AlbumSelectionForm = () => {
   const [cousins, setCousins] = useState([]);
   const [friends, setFriends] = useState([]);
   const [selectedValues, setSelectedValues] = useState(new Set());
+  const [isFacesSelectionDone, setIsFacesSelectionDone] = useState(false);
+  const [isPhotosSelectionStarted, setIsPhotosSelectionStarted] = useState(false)
   const [formData, setFormData] = useState( {
           event_name: eventName,
           form_owner: "groom",
@@ -80,6 +82,7 @@ const AlbumSelectionForm = () => {
           key={index}
           onSelect={handleSelectFace}
           sendSelection={handleSelectChange}
+          selectedImage={[formData[sibling]]}
         />
       );
     });
@@ -89,6 +92,19 @@ const AlbumSelectionForm = () => {
   const handleClick = () => {
     setStart(true);
   };
+
+  const handlePhotoSelectionStart = async () =>{
+    setIsPhotosSelectionStarted(true);
+    try {
+      const response = await API_UTIL.get(`/userThumbnails/${eventName}`);
+      if (response.status === 200) {
+        setUserThumbnails(response.data);
+      }
+    }
+      catch(err){
+
+      }
+  }
 
   const fetchThumbnails = async () => {
     if (userThumbnails.length === 0) setIsLoading(true);
@@ -275,6 +291,7 @@ const fetchFormData = async () => {
 
   const handleSelectChange = (question, selectedValue) => {
     setIsFormDataUpdated(true);
+    console.log(question);
     setFormData((prevState) => {
       const newFormData = { ...prevState, [question]: selectedValue };
       updateSelectedValues(newFormData);
@@ -297,13 +314,13 @@ const fetchFormData = async () => {
 
   const onSubmitForm = () => {
     toast("Selection has been saved Successfully");
-    navigate('/photos/Venky_Spandana_Reception_06022022/5fb8028c-d978-44');
+    setIsFacesSelectionDone(true);
   };
 
   return (
     <>
       <section className="albumSelectionForm">
-        {!start && (
+        {!start  &&(
           <motion.div
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -318,7 +335,7 @@ const fetchFormData = async () => {
             <button onClick={handleClick}>Start</button>
           </motion.div>
         )}
-        {!!userThumbnails.length && start && (
+        {!!userThumbnails.length && start && !isFacesSelectionDone && (
           <>
             <CustomFaceOption
               serialNo={1}
@@ -533,7 +550,6 @@ const fetchFormData = async () => {
               question="Kids"
               multiple={true}
               sendSelection={handleSelectChange}
-              sendSubmitAction={onSubmitForm}
               onSelect={handleSelectFace}
               selectedImage={formData.Kids}
             />
@@ -546,7 +562,6 @@ const fetchFormData = async () => {
               question="Grand Parents"
               multiple={true}
               sendSelection={handleSelectChange}
-              sendSubmitAction={onSubmitForm}
               onSelect={handleSelectFace}
               selectedImage={formData["Grand Parents"]}
             />
@@ -574,10 +589,46 @@ const fetchFormData = async () => {
               sendSelection={handleSelectChange}
               options={filterOptions(cousins)}
               onSelect={handleSelectFace}
+              sendSubmitAction={onSubmitForm}
               selectedImage={formData["Other Important People"]}
             />
           </>
         )}
+      </section>
+      <section>
+      {isFacesSelectionDone && !isPhotosSelectionStarted && (
+            <>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{
+                duration: 0.8,
+                ease: [0, 0.71, 0.2, 1.01],
+              }}
+              className="entry"
+            >
+              <Header />
+              <h2>Let's Start with Photos selection Process</h2>
+              <button onClick={handlePhotoSelectionStart}>Start</button>
+            </motion.div>
+          </>
+            )}
+      {isFacesSelectionDone && isPhotosSelectionStarted &&(
+            <>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{
+                duration: 0.8,
+                ease: [0, 0.71, 0.2, 1.01],
+              }}
+              className="entry"
+            >
+              <h2>Let's Start Selecting Groom Photos</h2>
+              <></>
+            </motion.div>
+          </>
+            )}
       </section>
     </>
   );

@@ -2482,6 +2482,44 @@ app.post('/downloadImage', async (req, res) => {
       }
     });
 
+    app.get("/fetchSolosByUserId/:userId", async (req, res) => {
+    const userId = req.params.userId;
+    try {
+        const params = {
+          TableName: recokgImages,
+          FilterExpression: 'contains(#attr, :val)',
+          ExpressionAttributeNames: {
+            '#attr': 'user_ids',
+          },
+          ExpressionAttributeValues: {
+            ':val': userId, 
+          },
+           ProjectionExpression: 's3_url, user_ids'
+        };
+        let items = [];
+        let lastEvaluatedKey = null;
+        do {
+            if (lastEvaluatedKey) {
+                params.ExclusiveStartKey = lastEvaluatedKey;
+            }
+
+            const data = await docClient.scan(params).promise();
+            const strictlySingleUserItems = data.Items.filter(item => 
+              item.user_ids.length === 1 && item.user_ids.includes(userId)
+            );
+            items = items.concat(strictlySingleUserItems);
+            lastEvaluatedKey = data.LastEvaluatedKey;
+        } while (lastEvaluatedKey);
+
+        logger.info("Total Solos fetched for user->" + userId + " : " + items.length);
+        res.send(items);
+    } catch (err) {
+        logger.info(err.message);
+        res.status(500).send(err.message);
+    }
+});
+
+
 
 
 
