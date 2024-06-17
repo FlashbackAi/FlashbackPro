@@ -2402,24 +2402,76 @@ app.post('/downloadImage', async (req, res) => {
     logger.info("Total images fetched for user->"+userId+" : "+result.Items.length);
     return result.Items.map(item => item.s3_url);
 }
-   app.get("/getImagesWithUserIds/:userId1/:userId2",async(req,res)=>{
-
-    try{
-     
-      const userId1 = req.params.userId1;
-      const userId2 = req.params.userId2;
-      logger.info("Fetching common images of users ->"+userId1+" and "+userId2);
-      const imagesUser1 = await getImagesForUser(userId1);
-      const imagesUser2 = await getImagesForUser(userId2);
-      const commonImages = imagesUser1.filter(imageId => imagesUser2.includes(imageId));
-      logger.info("Total commons images fetched for users->"+userId1+" and "+userId2+" : "+commonImages.length);
-      res.send(commonImages);
-    }
-    catch(err)
-    {
-      logger.info("error->"+err.message);
-      res.status(500).send("Error in fetching Images for common users");
-    } });
+   app.post("/getImagesWithUserIds",async(req,res)=>{
+      const userIds = req.body.userIds;
+      const operation = req.body.operation;
+      const mode = req.body.mode;
+      try {
+        // Construct FilterExpression with dynamic userIds
+        logger.info(operation);
+        let filterExpressions;
+        if(operation === 'AND'){
+          filterExpressions=  userIds.map((_, index) => `contains(#attr, :val${index})`).join(' AND ');
+        }else{
+          filterExpressions=userIds.map((_, index) => `contains(#attr, :val${index})`).join(' OR ');
+          }
+       // const filterExpressions = userIds.map((_, index) => `contains(#attr, :val${index})`).join(' AND ');
+      logger.info(filterExpressions);
+        const expressionAttributeValues = userIds.reduce((acc, userId, index) => {
+          acc[`:val${index}`] = userId;
+          return acc;
+        }, {});
+      
+        const params = {
+          TableName: recokgImages,
+          FilterExpression: filterExpressions,
+          ExpressionAttributeNames: {
+            '#attr': 'user_ids',
+          },
+          ExpressionAttributeValues: expressionAttributeValues,
+          ProjectionExpression: 's3_url, user_ids, image_id, selected'
+        };
+      
+        let items = [];
+        let lastEvaluatedKey = null;
+      
+        do {
+          if (lastEvaluatedKey) {
+            params.ExclusiveStartKey = lastEvaluatedKey;
+          }
+      
+          const data = await docClient.scan(params).promise();
+      
+          // No need for extra filtering as the FilterExpression already ensures all userIds are included
+          let UserItems;
+          if(mode === 'Loose'){
+          UserItems = data.Items.map(item => ({
+              ...item,
+              thumbnailUrl: "https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/" + item.s3_url.split("amazonaws.com/")[1]
+          }));
+          }else{
+            UserItems = data.Items.filter(item => 
+                item.user_ids.length === userIds.length
+            ).map(item => ({
+                ...item,
+                thumbnailUrl: "https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/" + item.s3_url.split("amazonaws.com/")[1]
+            }));
+          }
+         
+      
+          items = items.concat(UserItems);
+          lastEvaluatedKey = data.LastEvaluatedKey;
+        } while (lastEvaluatedKey);
+      
+        logger.info("Fetching common images of users -> " + userIds);
+        logger.info("Total common images fetched for users-> " + userIds + " : " + items.length);
+        res.send(items);
+      } catch (error) {
+        logger.error("Error fetching images: " + error);
+        res.status(500).send("Error fetching images");
+      }
+      
+    });
 
     app.post("/fillUserIdsforImageIds",async (req,res)=>{
      
@@ -2484,6 +2536,7 @@ app.post('/downloadImage', async (req, res) => {
 
     app.get("/fetchSolosByUserId/:userId", async (req, res) => {
     const userId = req.params.userId;
+    
     try {
         const params = {
           TableName: recokgImages,
@@ -2494,7 +2547,7 @@ app.post('/downloadImage', async (req, res) => {
           ExpressionAttributeValues: {
             ':val': userId, 
           },
-           ProjectionExpression: 's3_url, user_ids'
+           ProjectionExpression: 's3_url, user_ids, image_id, selected'
         };
         let items = [];
         let lastEvaluatedKey = null;
@@ -2505,11 +2558,14 @@ app.post('/downloadImage', async (req, res) => {
 
             const data = await docClient.scan(params).promise();
             const strictlySingleUserItems = data.Items.filter(item => 
-              item.user_ids.length === 1 && item.user_ids.includes(userId)
-            );
+                item.user_ids.length === 1 && item.user_ids.includes(userId)
+            ).map(item => ({
+                ...item,
+                thumbnailUrl: "https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/" + item.s3_url.split("amazonaws.com/")[1]
+            }));
             items = items.concat(strictlySingleUserItems);
-            lastEvaluatedKey = data.LastEvaluatedKey;
-        } while (lastEvaluatedKey);
+          lastEvaluatedKey = data.LastEvaluatedKey;
+       } while (lastEvaluatedKey)
 
         logger.info("Total Solos fetched for user->" + userId + " : " + items.length);
         res.send(items);
@@ -2517,6 +2573,37 @@ app.post('/downloadImage', async (req, res) => {
         logger.info(err.message);
         res.status(500).send(err.message);
     }
+});
+
+
+app.post("/saveSelectedImage", async (req, res) => {
+  logger.info("Updating Selected Image");
+  const imageId  = req.body.imageId;
+  const value = req.body.value
+  logger.info("Updating Selected Image"+imageId+":"+value);
+  try {
+    const imageParams = {
+      TableName: recokgImages,
+      Key: {
+        image_id: imageId
+      },
+      UpdateExpression: "set #selected = :selected",
+      ExpressionAttributeNames: {
+        "#selected": "selected"
+      },
+      ExpressionAttributeValues: {
+        ":selected": value
+      },
+      ReturnValues: "UPDATED_NEW"
+    };
+
+    const result = await docClient.update(imageParams).promise();
+    logger.info(`Image ${imageId} updated successfully: ${JSON.stringify(result)}`);
+    res.status(200).send(result);
+  } catch (err) {
+    logger.info(err.message);
+    res.status(500).send(err.message);
+  }
 });
 
 

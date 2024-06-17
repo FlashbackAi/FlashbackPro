@@ -14,6 +14,8 @@ import TermsAndConditions from "../pages/TermsAndConditions/TermsAndConditions";
 import Collage from "../pages/Edit/Collage/Collage";
 import SharedImage from "../pages/ImagesPage/SharedImage";
 import AlbumSelectionForm from "../pages/Pro/AlbumSelectionForm/AlbumSelectionForm";
+import PhotoSelection from "../pages/Pro/PhotoSelection/PhotoSelection";
+
 
 const ROUTES=[
     {
@@ -117,6 +119,12 @@ const ROUTES=[
         exact:false,
         protected:false,
         component:AlbumSelectionForm
+    },
+    {
+        path:"/PhotoSelection",
+        exact:false,
+        protected:false,
+        component:PhotoSelection
     },
     {
         path:"/edit/collage",

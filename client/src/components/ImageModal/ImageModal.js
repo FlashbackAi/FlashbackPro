@@ -16,7 +16,7 @@ const ImageModal = ({
   favourite =true,
   sharing = true,
   close = true,
-  selected = false,
+  select = false,
 }) => {
   const history = useNavigate();
   const handleClick = (e) => {
@@ -26,6 +26,7 @@ const ImageModal = ({
     }
   };
 
+  console.log(clickedUrl);
   const galleryRef = useRef(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isFavourite, setIsFavourite] = useState(clickedImgFavourite);
@@ -82,6 +83,7 @@ const ImageModal = ({
     const fav = document.querySelector(".favourite");
     if (isFavourite) fav.classList.remove("bgRed");
     else fav.classList.add("bgRed");
+
     handleFavourite(clickedImgIndex, clickedImg, !isFavourite);
     setIsFavourite((isFav) => !isFav);
   };
@@ -126,6 +128,18 @@ const ImageModal = ({
                 className={"favourite " + (clickedImgFavourite && "bgRed")}
               />
               Favourite
+            </div>
+             )}
+             {select && (
+            <div
+              className="dFlex alignCenter cursor-pointer"
+              onClick={addToFavourite}
+            >
+              
+              <Heart
+                className={"favourite " + (clickedImgFavourite && "bgRed")}
+              />
+              Select
             </div>
              )}
             <div
