@@ -1157,7 +1157,7 @@ const AlbumSelectionForm = () => {
         </ul> */}
         <ul>
           {Object.keys(imagesData).map((key, index) => (
-            <li key={index} onClick={() =>handleClickTab(key)}>
+            <li key={index} onClick={() =>handleClickTab(key)} className={activeMainTab === key ? 'active' : ''}>
               {key}
             </li>
           ))}
