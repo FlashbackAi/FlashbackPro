@@ -55,11 +55,11 @@ const AlbumSelectionForm = () => {
     'Groom Family':[],
     'Bride Family':[],
     'Groom and Bride Family':[],
+    'Kids':[],
     'Level 1 Cousins':[],
     'Level 2 Cousins':[],
     'Uncles':[],
     'Aunts':[],
-    'Kids':[],
     'Grand Parents':[],
     'Other Important People':[]
 
@@ -333,7 +333,7 @@ const AlbumSelectionForm = () => {
           temp = formData.groom.split("/");
           userId = temp[temp.length - 1].split(".")[0];
           try {
-            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':[userId],'operation':'AND'});
+            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':[userId],'operation':'AND','eventName':eventName});
             if (response.status === 200) {
               setImagesData((prevState) => ({
                 ...prevState,
@@ -356,7 +356,7 @@ const AlbumSelectionForm = () => {
           temp = formData.bride.split("/");
           userId = temp[temp.length - 1].split(".")[0];
           try {
-            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':[userId],'operation':'AND'});
+            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':[userId],'operation':'AND','eventName':eventName});
             if (response.status === 200) {
               setImagesData((prevState) => ({
                 ...prevState,
@@ -379,7 +379,7 @@ const AlbumSelectionForm = () => {
           temp = formData.groom.split("/");
           const groomId =temp[temp.length - 1].split(".")[0];
           try {
-            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':[groomId,brideId],'operation':'AND'});
+            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':[groomId,brideId],'operation':'AND','eventName':eventName});
             if (response.status === 200) {
               setImagesData((prevState) => ({
                 ...prevState,
@@ -399,7 +399,7 @@ const AlbumSelectionForm = () => {
           temp = formData.groomsFather.split("/");
           const userId = temp[temp.length - 1].split(".")[0];
           try {
-            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':[userId],'operation':'AND'});
+            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':[userId],'operation':'AND','eventName':eventName});
             if (response.status === 200) {
               setImagesData((prevState) => ({
                 ...prevState,
@@ -419,7 +419,7 @@ const AlbumSelectionForm = () => {
           temp = formData.groomsMother.split("/");
           const userId = temp[temp.length - 1].split(".")[0];
           try {
-            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':[userId],'operation':'AND'});
+            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':[userId],'operation':'AND','eventName':eventName});
             if (response.status === 200) {
               setImagesData((prevState) => ({
                 ...prevState,
@@ -440,7 +440,7 @@ const AlbumSelectionForm = () => {
           temp = formData.bridesFather.split("/");
           const userId = temp[temp.length - 1].split(".")[0];
           try {
-            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':[userId],'operation':'AND'});
+            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':[userId],'operation':'AND','eventName':eventName});
             if (response.status === 200) {
               setImagesData((prevState) => ({
                 ...prevState,
@@ -460,7 +460,7 @@ const AlbumSelectionForm = () => {
           temp = formData.bridesMother.split("/");
           const userId = temp[temp.length - 1].split(".")[0];
           try {
-            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':[userId],'operation':'AND'});
+            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':[userId],'operation':'AND','eventName':eventName});
             if (response.status === 200) {
               setImagesData((prevState) => ({
                 ...prevState,
@@ -489,7 +489,7 @@ const AlbumSelectionForm = () => {
                   }
             })
           try {
-            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':userIds,'operation':'OR',mode:'Loose'});
+            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':userIds,'operation':'OR',mode:'Loose','eventName':eventName});
             if (response.status === 200) {
               setImagesData((prevState) => ({
                 ...prevState,
@@ -518,7 +518,7 @@ const AlbumSelectionForm = () => {
                   }
             })
           try {
-            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':userIds,'operation':'OR',mode:'Loose'});
+            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':userIds,'operation':'OR',mode:'Loose','eventName':eventName});
             if (response.status === 200) {
               setImagesData((prevState) => ({
                 ...prevState,
@@ -548,7 +548,7 @@ const AlbumSelectionForm = () => {
             })
 
           try {
-            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':userIds,'operation':'AND',mode:'Strict'});
+            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':userIds,'operation':'AND',mode:'Loose','eventName':eventName});
             if (response.status === 200) {
               setImagesData((prevState) => ({
                 ...prevState,
@@ -568,7 +568,7 @@ const AlbumSelectionForm = () => {
             let userIds=[];
             Object.keys(formData).forEach((key) => {
               //console.log(key);
-              if ((key.startsWith('bride')) && !key.includes("Count"))  {
+              if ((key.startsWith('bride')||key === 'groom') && !key.includes("Count"))  {
                 console.log(key);
                 console.log(formData[key]);
                     const temp = formData[key].split("/");
@@ -577,7 +577,7 @@ const AlbumSelectionForm = () => {
                   }
             })
           try {
-            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':userIds,'operation':'AND',mode:'Strict'});
+            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':userIds,'operation':'AND',mode:'Loose','eventName':eventName});
             if (response.status === 200) {
               setImagesData((prevState) => ({
                 ...prevState,
@@ -592,12 +592,22 @@ const AlbumSelectionForm = () => {
         }
         return;
         case "Groom and Bride Family":
+         
           if(imagesData[key].length==0){
             setIsLoading(true);
-          temp = formData.bridesMother.split("/");
-          const userId = temp[temp.length - 1].split(".")[0];
+            let userIds=[];
+            Object.keys(formData).forEach((key) => {;
+              if ((key.startsWith('bride')||key.startsWith('groom')) && !key.includes("Count"))  {
+                console.log(key);
+                console.log(formData[key]);
+                    const temp = formData[key].split("/");
+                    const userId = temp[temp.length - 1].split(".")[0];
+                    //console.log(userId);
+                    userIds.push(userId)
+                  }
+            })
           try {
-            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':[userId],'operation':'AND'});
+            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':userIds,'operation':'OR',mode:'Loose','eventName':eventName});
             if (response.status === 200) {
               setImagesData((prevState) => ({
                 ...prevState,
@@ -614,10 +624,15 @@ const AlbumSelectionForm = () => {
         case "Level 1 Cousins":
           if(imagesData[key].length==0){
             setIsLoading(true);
-          temp = formData.bridesMother.split("/");
-          const userId = temp[temp.length - 1].split(".")[0];
+            let userIds=[];
+          formData[key].forEach((key,idx)=>{
+            const temp = key.split("/");
+            const userId = temp[temp.length - 1].split(".")[0];
+            userIds.push(userId)
+            
+          })
           try {
-            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':[userId],'operation':'AND'});
+            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':userIds,'operation':'OR',mode:'Loose','eventName':eventName});
             if (response.status === 200) {
               setImagesData((prevState) => ({
                 ...prevState,
@@ -634,10 +649,15 @@ const AlbumSelectionForm = () => {
         case "Level 2 Cousins":
           if(imagesData[key].length==0){
             setIsLoading(true);
-          temp = formData.bridesMother.split("/");
-          const userId = temp[temp.length - 1].split(".")[0];
+            let userIds=[];
+          formData[key].forEach((key,idx)=>{
+            const temp = key.split("/");
+            const userId = temp[temp.length - 1].split(".")[0];
+            userIds.push(userId)
+            
+          })
           try {
-            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':[userId],'operation':'AND'});
+            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':userIds,'operation':'OR',mode:'Loose','eventName':eventName});
             if (response.status === 200) {
               setImagesData((prevState) => ({
                 ...prevState,
@@ -652,12 +672,17 @@ const AlbumSelectionForm = () => {
         }
         return;
         case "Uncles":
-          if(imagesData[key].length==0){
+                    if(imagesData[key].length==0){
             setIsLoading(true);
-          temp = formData.bridesMother.split("/");
-          const userId = temp[temp.length - 1].split(".")[0];
+            let userIds=[];
+          formData[key].forEach((key,idx)=>{
+            const temp = key.split("/");
+            const userId = temp[temp.length - 1].split(".")[0];
+            userIds.push(userId)
+            
+          })
           try {
-            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':[userId],'operation':'AND'});
+            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':userIds,'operation':'OR',mode:'Loose','eventName':eventName});
             if (response.status === 200) {
               setImagesData((prevState) => ({
                 ...prevState,
@@ -674,10 +699,15 @@ const AlbumSelectionForm = () => {
         case "Aunts":
           if(imagesData[key].length==0){
             setIsLoading(true);
-          temp = formData.bridesMother.split("/");
-          const userId = temp[temp.length - 1].split(".")[0];
+            let userIds=[];
+          formData[key].forEach((key,idx)=>{
+            const temp = key.split("/");
+            const userId = temp[temp.length - 1].split(".")[0];
+            userIds.push(userId)
+            
+          })
           try {
-            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':[userId],'operation':'AND'});
+            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':userIds,'operation':'OR',mode:'Loose','eventName':eventName});
             if (response.status === 200) {
               setImagesData((prevState) => ({
                 ...prevState,
@@ -694,10 +724,15 @@ const AlbumSelectionForm = () => {
         case "Kids":
           if(imagesData[key].length==0){
             setIsLoading(true);
-          temp = formData.bridesMother.split("/");
-          const userId = temp[temp.length - 1].split(".")[0];
+            let userIds=[];
+          formData[key].forEach((key,idx)=>{
+            const temp = key.split("/");
+            const userId = temp[temp.length - 1].split(".")[0];
+            userIds.push(userId)
+            
+          })
           try {
-            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':[userId],'operation':'AND'});
+            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':userIds,'operation':'OR',mode:'Loose','eventName':eventName});
             if (response.status === 200) {
               setImagesData((prevState) => ({
                 ...prevState,
@@ -714,10 +749,15 @@ const AlbumSelectionForm = () => {
         case "Grand Parents":
           if(imagesData[key].length==0){
             setIsLoading(true);
-          temp = formData.bridesMother.split("/");
-          const userId = temp[temp.length - 1].split(".")[0];
+            let userIds=[];
+          formData[key].forEach((key,idx)=>{
+            const temp = key.split("/");
+            const userId = temp[temp.length - 1].split(".")[0];
+            userIds.push(userId)
+            
+          })
           try {
-            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':[userId],'operation':'AND'});
+            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':userIds,'operation':'OR',mode:'Loose','eventName':eventName});
             if (response.status === 200) {
               setImagesData((prevState) => ({
                 ...prevState,
@@ -734,10 +774,15 @@ const AlbumSelectionForm = () => {
         case "Other Important People":
           if(imagesData[key].length==0){
             setIsLoading(true);
-          temp = formData.bridesMother.split("/");
-          const userId = temp[temp.length - 1].split(".")[0];
+            let userIds=[];
+          formData[key].forEach((key,idx)=>{
+            const temp = key.split("/");
+            const userId = temp[temp.length - 1].split(".")[0];
+            userIds.push(userId)
+            
+          })
           try {
-            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':[userId],'operation':'AND'});
+            const response = await API_UTIL.post(`/getImagesWithUserIds`,{'userIds':userIds,'operation':'OR',mode:'Loose','eventName':eventName});
             if (response.status === 200) {
               setImagesData((prevState) => ({
                 ...prevState,

@@ -69,7 +69,7 @@ const logger = winston.createLogger({
    ]
  });
 
-//  // *** Comment these certificates while testing changes in local developer machine. And, uncomment while pushing to mainline***
+ // *** Comment these certificates while testing changes in local developer machine. And, uncomment while pushing to mainline***
 const privateKey = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/privkey.pem', 'utf8');
 const certificate = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/fullchain.pem', 'utf8');
 
@@ -2406,21 +2406,28 @@ app.post('/downloadImage', async (req, res) => {
       const userIds = req.body.userIds;
       const operation = req.body.operation;
       const mode = req.body.mode;
+      const eventName = req.body.eventName;
       try {
         // Construct FilterExpression with dynamic userIds
         logger.info(operation);
         let filterExpressions;
-        if(operation === 'AND'){
-          filterExpressions=  userIds.map((_, index) => `contains(#attr, :val${index})`).join(' AND ');
-        }else{
-          filterExpressions=userIds.map((_, index) => `contains(#attr, :val${index})`).join(' OR ');
-          }
-       // const filterExpressions = userIds.map((_, index) => `contains(#attr, :val${index})`).join(' AND ');
+        const userConditions = userIds.map((_, index) => `contains(#attr, :val${index})`).join(operation === 'AND' ? ' AND ' : ' OR ');
+
+        // Add the new condition for s3_url containing eventName
+        const s3UrlCondition = `contains(s3_url, :eventName)`;
+
+        // Combine the userConditions and s3UrlCondition
+        if (userConditions) {
+          filterExpressions = `(${userConditions}) AND ${s3UrlCondition}`;
+        } else {
+          filterExpressions = s3UrlCondition;
+        }
       logger.info(filterExpressions);
         const expressionAttributeValues = userIds.reduce((acc, userId, index) => {
           acc[`:val${index}`] = userId;
           return acc;
         }, {});
+        expressionAttributeValues[`:eventName`] = eventName;
       
         const params = {
           TableName: recokgImages,
