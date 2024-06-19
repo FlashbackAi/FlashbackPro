@@ -5,3 +5,27 @@
     font-weight: 100;
     color: #f1f1f1;
 }
+
+ .contactUs {
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  /* background-color: rgba(0, 0, 0, 0.7); */
+  /* padding: 1px;
+  border-radius: 5px; */
+  /* z-index: 1000; */
+} 
+
+.contactUs a {
+  color: #e9f3e9; /* Change to a suitable color */
+  text-decoration: none;
+}
+
+.contactUs text {
+    color: #e9f3e9; /* Change to a suitable color */
+    text-decoration: none;
+  }
+  
+.contactUs a:hover {
+  text-decoration: underline;
+}
