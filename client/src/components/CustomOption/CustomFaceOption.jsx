@@ -4,6 +4,7 @@ import { ArrowRight, ChevronLeft } from "lucide-react";
 
 const CustomFaceOption = ({
   options,
+  others,
   serialNo,
   title,
   isFirst = false,
@@ -55,25 +56,53 @@ const CustomFaceOption = ({
       {selection && (
         <div className="img-options">
           <div className="selected-face">
-            {selection.filter(url => url != null || url!=undefined).map((url, index) => (
+            {selection.filter(url => url != null || url != undefined).map((url, index) => (
               <img key={index} src={url} alt={`selected ${index}`} className="selected-image" onClick={() => handleClick(index, url)} />
             ))}
           </div>
         </div>
       )}
       <div className="img-options">
-        {options.map((option, index) => (
-          <div
-            className={`img-outer ${
-              selection.includes(option.face_url) ? "selected" : ""
-            }`}
-            key={index}
-            onClick={() => handleClick(index, option.face_url)}
-          >
-            <img src={option.face_url} alt={option.user_id} />
-          </div>
-        ))}
+      <div className="separator">
+          <hr className="partition-style" />
+          <p>Suggested faces</p>
+          <hr className="partition-style" />
+        </div>
+        <div className="img-group">
+          {options.map((option, index) => (
+            <div
+              className={`img-outer ${
+                selection.includes(option.face_url) ? "selected" : ""
+              }`}
+              key={index}
+              onClick={() => handleClick(index, option.face_url)}
+            >
+              <img src={option.face_url} alt={option.user_id} />
+            </div>
+          ))}
+        </div>
+        
+        <div className="separator">
+          <hr className="partition-style" />
+          <p>Other faces</p>
+          <hr className="partition-style" />
+        </div>
+
+        <div className="img-group">
+          {others.map((other, index) => (
+            <div
+              className={`img-outer ${
+                selection.includes(other.face_url) ? "selected" : ""
+              }`}
+              key={index}
+              onClick={() => handleClick(index, other.face_url)}
+            >
+              <img src={other.face_url} alt={other.user_id} />
+            </div>
+          ))}
+        </div>
       </div>
+
       <div className="button_flex">
         {!isFirst && !isSubmit && (
           <div onClick={() => prev(serialNo)}>

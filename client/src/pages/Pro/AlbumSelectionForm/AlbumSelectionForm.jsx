@@ -112,7 +112,7 @@ const AlbumSelectionForm = () => {
 
   const generateSiblingSelects = (count, char, gender, serialNoStart) => {
     const siblings = [];
-    const options = gender === "male" ? filterOptions(males) : filterOptions(females);
+    const options = gender === "male" ? filterOptions(males).slice(0,10) : filterOptions(females).slice(0,10);
 
     [...Array(count).keys()].forEach((elm, index) => {
       const title = gender === "male" ? `Select ${char} Sibling (Brother ${index + 1})` : `Select ${char} Sibling (Sister ${index + 1})`;
@@ -121,6 +121,7 @@ const AlbumSelectionForm = () => {
         <CustomFaceOption
           question={sibling}
           options={options}
+          others={filterOptions(userThumbnails)}
           serialNo={`${serialNoStart}.${index + 1}`}
           title={title}
           next={next}
@@ -911,7 +912,8 @@ const AlbumSelectionForm = () => {
           <>
             <CustomFaceOption
               serialNo={1}
-              options={filterOptions(grooms)}
+              options={filterOptions(grooms).slice(0,10)}
+              others={filterOptions(userThumbnails)}
               title="Please select the groom's image"
               next={next}
               prev={prev}
@@ -926,7 +928,8 @@ const AlbumSelectionForm = () => {
               title="Please select the bride's image"
               next={next}
               prev={prev}
-              options={filterOptions(brides)}
+              options={filterOptions(brides).slice(0,10)}
+              others={filterOptions(userThumbnails)}
               onSelect={handleSelectFace}
               question="bride"
               sendSelection={handleSelectChange}
@@ -939,7 +942,8 @@ const AlbumSelectionForm = () => {
               prev={prev}
               question="groomsMother"
               sendSelection={handleSelectChange}
-              options={filterOptions(aunts)}
+              options={filterOptions(aunts).slice(0,10)}
+              others={filterOptions(userThumbnails)}
               onSelect={handleSelectFace}
               selectedImage={[formData.groomsMother]}
             />
@@ -950,7 +954,8 @@ const AlbumSelectionForm = () => {
               prev={prev}
               question="groomsFather"
               sendSelection={handleSelectChange}
-              options={filterOptions(uncles)}
+              options={filterOptions(uncles).slice(0,10)}
+              others={filterOptions(userThumbnails)}
               onSelect={handleSelectFace}
               selectedImage={[formData.groomsFather]}
             />
@@ -959,7 +964,8 @@ const AlbumSelectionForm = () => {
               title="Please select the bride's mother"
               next={next}
               prev={prev}
-              options={filterOptions(aunts)}
+              options={filterOptions(aunts).slice(0,10)}
+              others={filterOptions(userThumbnails)}
               onSelect={handleSelectFace}
               question="bridesMother"
               sendSelection={handleSelectChange}
@@ -970,7 +976,8 @@ const AlbumSelectionForm = () => {
               title="Please select the bride's father"
               next={next}
               prev={prev}
-              options={filterOptions(uncles)}
+              options={filterOptions(uncles).slice(0,10)}
+              others={filterOptions(userThumbnails)}
               onSelect={handleSelectFace}
               question="bridesFather"
               sendSelection={handleSelectChange}
@@ -1065,6 +1072,7 @@ const AlbumSelectionForm = () => {
               multiple={true}
               sendSelection={handleSelectChange}
               options={filterOptions(cousins)}
+              others={filterOptions(userThumbnails)}
               onSelect={handleSelectFace}
               selectedImage={formData["Level 1 Cousins"]}
             />
@@ -1077,6 +1085,7 @@ const AlbumSelectionForm = () => {
               multiple={true}
               sendSelection={handleSelectChange}
               options={filterOptions(cousins)}
+              others={filterOptions(userThumbnails)}
               onSelect={handleSelectFace}
               selectedImage={formData["Level 2 Cousins"]}
             />
@@ -1089,6 +1098,7 @@ const AlbumSelectionForm = () => {
               multiple={true}
               sendSelection={handleSelectChange}
               options={filterOptions(uncles)}
+              others={filterOptions(userThumbnails)}
               onSelect={handleSelectFace}
               selectedImage={formData.Uncles}
             />
@@ -1098,6 +1108,7 @@ const AlbumSelectionForm = () => {
               next={next}
               prev={prev}
               options={filterOptions(aunts)}
+              others={filterOptions(userThumbnails)}
               onSelect={handleSelectFace}
               question="Aunts"
               multiple={true}
@@ -1110,6 +1121,7 @@ const AlbumSelectionForm = () => {
               next={next}
               prev={prev}
               options={filterOptions(kids)}
+              others={filterOptions(userThumbnails)}
               question="Kids"
               multiple={true}
               sendSelection={handleSelectChange}
@@ -1122,6 +1134,7 @@ const AlbumSelectionForm = () => {
               next={next}
               prev={prev}
               options={filterOptions(grandParents)}
+              others={filterOptions(userThumbnails)}
               question="Grand Parents"
               multiple={true}
               sendSelection={handleSelectChange}
@@ -1136,6 +1149,7 @@ const AlbumSelectionForm = () => {
               question="Friends"
               multiple={true}
               sendSelection={handleSelectChange}
+              others={filterOptions(userThumbnails)}
               options={filterOptions(cousins)}
               onSelect={handleSelectFace}
               selectedImage={formData.Friends}
@@ -1149,6 +1163,7 @@ const AlbumSelectionForm = () => {
               question="Other Important People"
               multiple={true}
               sendSelection={handleSelectChange}
+              others={filterOptions(userThumbnails)}
               options={filterOptions(cousins)}
               onSelect={handleSelectFace}
               sendSubmitAction={onSubmitForm}
