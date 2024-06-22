@@ -1922,7 +1922,7 @@ app.post('/downloadImage', async (req, res) => {
           // Check if the user already exists
           if(!eventName)
             {
-              eventName = 'Flashback_Summit_2024'
+              eventName = 'SreeChaitanya_CSE_Freshers_2024'
             }
           const existingUser = await getUser(username);
           logger.info("existingUser"+ existingUser);
