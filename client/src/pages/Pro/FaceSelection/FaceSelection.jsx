@@ -1,13 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import "../AlbumSelectionForm/AlbumSelectionForm.css";
 import Header from "../../../components/Header/Header";
-import { ArrowRight, ChevronLeft, Images, Minus, Plus } from "lucide-react";
+import { ArrowRight, ChevronLeft, Minus, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import API_UTIL from "../../../services/AuthIntereptor";
-import { useParams } from "react-router";
+import { useParams, useNavigate } from "react-router";
 import CustomFaceOption from "../../../components/CustomOption/CustomFaceOption";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
 import LoadingSpinner from "../../../components/Loader/LoadingSpinner";
 
 const FaceSelection = () => {
@@ -32,16 +31,8 @@ const FaceSelection = () => {
   const [cousins, setCousins] = useState([]);
   const [friends, setFriends] = useState([]);
   const [selectedValues, setSelectedValues] = useState(new Set());
-  const [isFacesSelectionDone, setIsFacesSelectionDone] = useState(false);
-//   const [isPhotosSelectionStarted, setIsPhotosSelectionStarted] = useState(false);
-//   const [brideSolos, setBrideSolos] = useState([]);
-//   const [groomSolos, setGroomSolos] = useState([]);
-//   const [combinedPhotos,setCombinedPhotos] = useState([]);
-//   const [lastFavIndex, setLastFavIndex] = useState(-1);
-//   const [fetchTimeout, setFetchTimeout] = useState(false);
+  const [isFacesSelectionDone, setIsFacesSelectionDone] = useState();
 
-
-  
   const [formData, setFormData] = useState({
     event_name: eventName,
     form_owner: "groom",
@@ -64,18 +55,11 @@ const FaceSelection = () => {
     "groomfemaleSiblingCount": 0,
     "bridemaleSiblingCount": 0,
     "bridefemaleSiblingCount": 0,
-    isFacesSelectionDone: false
+    isFacesSelectionDone: null
   });
 
-  //const [clickedUrl, setClickedUrl] = useState(null);
- // const [clickedImgIndex, setClickedImgIndex] = useState(null);
-  //const [clickedImgFavourite, setClickedImgFavourite] = useState(null);
-  //const [clickedImg, setClickedImg] = useState(null);
-  //const [showcase, setShowcase] = useState({});
   const [isFormDataUpdated, setIsFormDataUpdated] = useState(false);
 
-
-  var timer;
   const navigate = useNavigate();
 
   const generateSiblingSelects = (count, char, gender, serialNoStart) => {
@@ -107,29 +91,6 @@ const FaceSelection = () => {
   const handleClick = () => {
     setStart(true);
   };
-
-
-//   const handleClickImage = (item, url) => {
-//     console.log("Image clicked:", item.s3_url);
-//     setClickedImg(item.s3_url);
-//     setClickedImgFavourite(item.selected);
-//     const imgName = item.s3_url.split("amazonaws.com/")[1];
-//     setClickedUrl(imgName);
-//     window.history.pushState({ id: 1 }, null, "?image=" + `${imgName}`);
-//   };
-  
-
-  // const hideFavIcon = (index) => {
-  //   console.log(index);
-  //   document.querySelector(`svg[data-key="${index}"]`).classList.add("hidden");
-  // };
-
-//   const handleBackButton = () => {
-//     // Check if the navigation was caused by the back button
-//     setClickedImg(null);
-//   };
-
-
 
   const fetchThumbnails = async () => {
     if (userThumbnails.length === 0) setIsLoading(true);
@@ -272,7 +233,6 @@ const FaceSelection = () => {
     setSelectedValues((prev) => new Set(prev).add(faceUrl));
   };
 
-
   const handleSelectChange = (question, selectedValue) => {
     setIsFormDataUpdated(true);
     setFormData((prevState) => {
@@ -281,9 +241,6 @@ const FaceSelection = () => {
       return newFormData;
     });
   };
-
-
-  
 
   const updateSelectedValues = (formData) => {
     const newSelectedValues = new Set();
@@ -297,19 +254,35 @@ const FaceSelection = () => {
     setSelectedValues(newSelectedValues);
   };
 
-  const onSubmitForm = () => {
-    toast("Selection has been saved Successfully");
-    setIsFacesSelectionDone(true);
-    setFormData((prevState) => ({
-      ...prevState,
-      isFacesSelectionDone: true,
-    }));
-    console.log("navigating to photo selection")
-    navigate(`/photoSelection/${eventName}`);
+  const onSubmitForm = async () => {
+    try {
+      // Assume you have an API function to update the form data in the database
+      const response = await API_UTIL.post(`/saveSelectionFormData`, {
+        ...formData,
+        isFacesSelectionDone: true,
+      });
+      console.log("response : "+response);
+      if (response.status === 200) {
+        toast("Selection has been saved Successfully");
+  
+        setFormData((prevState) => ({
+          ...prevState,
+          isFacesSelectionDone: true,
+        }));
+  
+        setIsFacesSelectionDone(true);
+  
+        console.log("Navigating to photo selection");
+        navigate(`/photoSelection/${eventName}`);
+      } else {
+        throw new Error("Failed to save the selection");
+      }
+    } catch (error) {
+      console.error("Error saving selection:", error);
+      toast.error("Failed to save the selection. Please try again.");
+    }
   };
-
-
-
+  
   return (
     <>
       <section className="albumSelectionForm">
@@ -328,7 +301,6 @@ const FaceSelection = () => {
             <button onClick={handleClick}>Start</button>
           </motion.div>
         )}
-        {/* {!!userThumbnails.length && start && !formData.isFacesSelectionDone && ( */}
         {!!userThumbnails.length && start && (
           <>
             <CustomFaceOption
