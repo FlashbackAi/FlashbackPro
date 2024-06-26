@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Heart, ArrowDownToLine, Share2 } from "lucide-react";
 import LoadingSpinner from "../Loader/LoadingSpinner"; // Ensure you have a LoadingSpinner component
 import API_UTIL from "../../services/AuthIntereptor";
@@ -18,6 +19,7 @@ const Modal = ({
   const [isDownloading, setIsDownloading] = useState(false);
   const [isFavourite, setIsFavourite] = useState(clickedImgFavourite);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const navigate = useNavigate();
 
   const downloadCurrentImage = async () => {
     if (!clickedImg) {
@@ -48,7 +50,7 @@ const Modal = ({
   };
 
   const addToFavourite = (e) => {
-    e.stopPropagation();  // Prevent modal from closing
+    e.stopPropagation(); // Prevent modal from closing
     const newFavState = !isFavourite;
     handleFavourite(clickedImg, newFavState);
     setIsFavourite(newFavState);
@@ -61,11 +63,16 @@ const Modal = ({
     window.open(whatsappUrl, "_blank");
   };
 
+  const handleModalClose = () => {
+    setClickedImg(null);
+    navigate(".", { replace: true }); // Remove the image parameter from the URL
+  };
+
   return (
-    <div className="overlay dismiss" onClick={handleBackButton}>
+    <div className="overlay dismiss" onClick={handleModalClose}>
       <div className="modalOuter lazyImage" onClick={(e) => e.stopPropagation()}>
         {close && (
-          <span className="dismiss" onClick={handleBackButton}>
+          <span className="dismiss" onClick={handleModalClose}>
             X
           </span>
         )}
