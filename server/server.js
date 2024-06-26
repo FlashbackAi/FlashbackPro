@@ -2489,6 +2489,7 @@ app.post('/downloadImage', async (req, res) => {
       
         logger.info("Fetching common images of users -> " + userIds);
         logger.info("Total common images fetched for users-> " + userIds + " : " + items.length);
+        items.sort((a, b) => a.user_ids.length - b.user_ids.length);
         res.send(items);
       } catch (error) {
         logger.error("Error fetching images: " + error);
@@ -2566,6 +2567,7 @@ app.post('/downloadImage', async (req, res) => {
         } while (lastEvaluatedKey);
     
         logger.info(`Total items fetched: ${items.length}`);
+        items.sort((a, b) => a.user_ids.length - b.user_ids.length);
         res.send(items);
       } catch (error) {
         logger.error("Error fetching images: " + error);

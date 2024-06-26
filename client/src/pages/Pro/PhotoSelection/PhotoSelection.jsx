@@ -30,13 +30,15 @@ const PhotoSelection = () => {
     'Groom Family':[],
     'Bride Family':[],
     'Groom and Bride Family':[],
-    'Kids':[],
-    'Level 1 Cousins':[],
-    'Level 2 Cousins':[],
-    'Uncles':[],
-    'Aunts':[],
-    'Grand Parents':[],
-    'Other Important People':[]
+    Kids: [],
+    "Level 1 Cousins": [],
+    "Level 2 Cousins": [],    
+    Uncles: [],
+    Aunts: [],
+    "Grand Parents": [],
+    "Other Important Relatives": [],
+    Friends: [],
+    "Other Important People":[],
 
   });
   
@@ -49,21 +51,21 @@ const PhotoSelection = () => {
     bride: null,
     bridesMother: null,
     bridesFather: null,
+    Kids: [],
     "Level 1 Cousins": [],
-    "Level 2 Cousins": [],
-    Friends: [],
+    "Level 2 Cousins": [],    
     Uncles: [],
     Aunts: [],
-    Kids: [],
     "Grand Parents": [],
-    "Other Important People": [],
+    "Other Important Relatives": [],
+    Friends: [],
+    "Other Important People":[],
     "groommaleSiblingCount": 0,
     "groomfemaleSiblingCount": 0,
     "bridemaleSiblingCount": 0,
     "bridefemaleSiblingCount": 0,
     isFacesSelectionDone: false
   });
-
   const [clickedUrl, setClickedUrl] = useState(null);
   const [clickedImgFavourite, setClickedImgFavourite] = useState(null);
   const [clickedImg, setClickedImg] = useState(null);
@@ -136,13 +138,15 @@ const PhotoSelection = () => {
       'Groom Family': [],
       'Bride Family': [],
       'Groom and Bride Family': [],
-      'Kids': [],
-      'Level 1 Cousins': [],
-      'Level 2 Cousins': [],
-      'Uncles': [],
-      'Aunts': [],
-      'Grand Parents': [],
-      'Other Important People': []
+      Kids: [],
+    "Level 1 Cousins": [],
+    "Level 2 Cousins": [],    
+    Uncles: [],
+    Aunts: [],
+    "Grand Parents": [],
+    "Other Important Relatives": [],
+    Friends: [],
+    "Other Important People":[],
     };
 
     const siblingKeys = [];
@@ -222,6 +226,34 @@ const PhotoSelection = () => {
     }
   };
 
+  const fetchCombinedImages = async () => {
+    const tempBride = formData.bride.split("/");
+    const brideId = tempBride[tempBride.length - 1].split(".")[0];
+    const tempGroom = formData.groom.split("/");
+    const groomId = tempGroom[tempGroom.length - 1].split(".")[0];
+    try {
+      const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': [groomId, brideId], 'operation': 'AND', 'eventName': eventName });
+      if (response.status === 200) {
+        return response.data;
+      }
+    } catch (err) {
+      console.log(err);
+    }
+    return [];
+  };
+  
+  const fetchFamilyImages = async (familyType, userIds) => {
+    try {
+      const response = await API_UTIL.post(`/getCombinationImagesWithUserIds`, { 'userIds': userIds, 'eventName': eventName });
+      if (response.status === 200) {
+        return response.data;
+      }
+    } catch (err) {
+      console.log(err);
+    }
+    return [];
+  };
+
   const handleSelectTab = async (key) => {
     let temp;
     let userId;
@@ -245,7 +277,7 @@ const PhotoSelection = () => {
             setIsLoading(false);
           }
         }
-        return;
+        break;
       case "Bride Solos":
         if (imagesData[key].length === 0) {
           setIsLoading(true);
@@ -265,7 +297,7 @@ const PhotoSelection = () => {
             setIsLoading(false);
           }
         }
-        return;
+        break;
       case "Combined":
         if (imagesData[key].length === 0) {
           setIsLoading(true);
@@ -274,20 +306,18 @@ const PhotoSelection = () => {
           temp = formData.groom.split("/");
           const groomId = temp[temp.length - 1].split(".")[0];
           try {
-            const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': [groomId, brideId], 'operation': 'AND', 'eventName': eventName });
-            if (response.status === 200) {
+            const combinedImages = await fetchCombinedImages();
               setImagesData((prevState) => ({
                 ...prevState,
-                [key]: response.data,
+                [key]: combinedImages,
               }));
               setIsLoading(false);
-            }
           } catch (err) {
             console.log(err);
             setIsLoading(false);
           }
         }
-        return;
+        break;
       case "Groom Father":
         if (imagesData[key].length === 0) {
           setIsLoading(true);
@@ -307,7 +337,7 @@ const PhotoSelection = () => {
             setIsLoading(false);
           }
         }
-        return;
+        break;
       case "Groom Mother":
         if (imagesData[key].length === 0) {
           setIsLoading(true);
@@ -327,7 +357,7 @@ const PhotoSelection = () => {
             setIsLoading(false);
           }
         }
-        return;
+        break;
       case "Bride Father":
         if (imagesData[key].length === 0) {
           setIsLoading(true);
@@ -347,7 +377,7 @@ const PhotoSelection = () => {
             setIsLoading(false);
           }
         }
-        return;
+        break;
       case "Bride Mother":
         if (imagesData[key].length === 0) {
           setIsLoading(true);
@@ -367,7 +397,7 @@ const PhotoSelection = () => {
             setIsLoading(false);
           }
         }
-        return;
+        break;
         
       // case "Groom Siblings":
       //   if (imagesData[key].length === 0) {
@@ -424,6 +454,7 @@ const PhotoSelection = () => {
       case "Groom Family":
       if (imagesData[key].length === 0) {
         setIsLoading(true);
+        const combinedImages = imagesData["Combined"].length === 0 ? await fetchCombinedImages() : imagesData["Combined"];
         let userIds = [];
         Object.keys(formData).forEach((key) => {
           if ((key.startsWith('groom') || key === 'bride') && !key.includes("Count")) {
@@ -432,52 +463,43 @@ const PhotoSelection = () => {
             userIds.push(userId);
           }
         });
-        try {
-          const response = await API_UTIL.post(`/getCombinationImagesWithUserIds`, { 'userIds': userIds, 'eventName': eventName });
-          if (response.status === 200) {
-            const filteredData = response.data.filter(img => !imagesData["Combined"].some(combinedImg => combinedImg.image_id === img.image_id));
-            setImagesData((prevState) => ({
-              ...prevState,
-              [key]: filteredData,
-            }));
-            setIsLoading(false);
-          }
-        } catch (err) {
-          console.log(err);
-          setIsLoading(false);
-        }
+        const familyImages = await fetchFamilyImages(key, userIds);
+        const filteredData = familyImages.filter(img => !combinedImages.some(combinedImg => combinedImg.image_id === img.image_id));
+        setImagesData((prevState) => ({
+          ...prevState,
+          [key]: filteredData,
+        }));
+        setIsLoading(false);
       }
-      return;
-      case "Bride Family":
-        if (imagesData[key].length === 0) {
-          setIsLoading(true);
-          let userIds = [];
-          Object.keys(formData).forEach((key) => {
-            if ((key.startsWith('bride') || key === 'groom') && !key.includes("Count")) {
-              const temp = formData[key].split("/");
-              const userId = temp[temp.length - 1].split(".")[0];
-              userIds.push(userId);
-            }
-          });
-          try {
-            const response = await API_UTIL.post(`/getCombinationImagesWithUserIds`, { 'userIds': userIds, 'eventName': eventName });
-            if (response.status === 200) {
-              const filteredData = response.data.filter(img => !imagesData["Combined"].some(combinedImg => combinedImg.image_id === img.image_id));
-              setImagesData((prevState) => ({
-                ...prevState,
-                [key]: filteredData,
-              }));
-              setIsLoading(false);
-            }
-          } catch (err) {
-            console.log(err);
-            setIsLoading(false);
-          }
-        }
-        return;
-      case "Groom and Bride Family":
+      break;
+    case "Bride Family":
       if (imagesData[key].length === 0) {
         setIsLoading(true);
+        const combinedImages = imagesData["Combined"].length === 0 ? await fetchCombinedImages() : imagesData["Combined"];
+        let userIds = [];
+        Object.keys(formData).forEach((key) => {
+          if ((key.startsWith('bride') || key === 'groom') && !key.includes("Count")) {
+            const temp = formData[key].split("/");
+            const userId = temp[temp.length - 1].split(".")[0];
+            userIds.push(userId);
+          }
+        });
+        const familyImages = await fetchFamilyImages(key, userIds);
+        const filteredData = familyImages.filter(img => !combinedImages.some(combinedImg => combinedImg.image_id === img.image_id));
+        setImagesData((prevState) => ({
+          ...prevState,
+          [key]: filteredData,
+        }));
+        setIsLoading(false);
+      }
+      break;
+    case "Groom and Bride Family":
+      if (imagesData[key].length === 0) {
+        setIsLoading(true);
+        const combinedImages = imagesData["Combined"].length === 0 ? await fetchCombinedImages() : imagesData["Combined"];
+        const brideFamilyImages = imagesData["Bride Family"].length === 0 ? await fetchFamilyImages("Bride Family", Object.keys(formData).filter(key => key.startsWith('bride') && !key.includes("Count")).map(key => formData[key].split("/").pop().split(".")[0])) : imagesData["Bride Family"];
+        const groomFamilyImages = imagesData["Groom Family"].length === 0 ? await fetchFamilyImages("Groom Family", Object.keys(formData).filter(key => key.startsWith('groom') && !key.includes("Count")).map(key => formData[key].split("/").pop().split(".")[0])) : imagesData["Groom Family"];
+        
         let userIds = [];
         Object.keys(formData).forEach((key) => {
           if ((key.startsWith('bride') || key.startsWith('groom')) && !key.includes("Count")) {
@@ -486,27 +508,20 @@ const PhotoSelection = () => {
             userIds.push(userId);
           }
         });
-        try {
-          const response = await API_UTIL.post(`/getCombinationImagesWithUserIds`, { 'userIds': userIds, 'eventName': eventName });
-          if (response.status === 200) {
-            const filteredData = response.data.filter(img => 
-              !imagesData["Combined"].some(combinedImg => combinedImg.image_id === img.image_id) &&
-              !imagesData["Bride Family"].some(brideImg => brideImg.image_id === img.image_id) &&
-              !imagesData["Groom Family"].some(groomImg => groomImg.image_id === img.image_id)
-            );
-            setImagesData((prevState) => ({
-              ...prevState,
-              [key]: filteredData,
-            }));
-            setIsLoading(false);
-          }
-        } catch (err) {
-          console.log(err);
-          setIsLoading(false);
-        }
+        const familyImages = await fetchFamilyImages(key, userIds);
+        const filteredData = familyImages.filter(img => 
+          !combinedImages.some(combinedImg => combinedImg.image_id === img.image_id) &&
+          !brideFamilyImages.some(brideImg => brideImg.image_id === img.image_id) &&
+          !groomFamilyImages.some(groomImg => groomImg.image_id === img.image_id)
+        );
+        setImagesData((prevState) => ({
+          ...prevState,
+          [key]: filteredData,
+        }));
+        setIsLoading(false);
       }
-      return;
-        case "Level 1 Cousins":
+      break;
+      case "Level 1 Cousins":
         if (imagesData[key].length === 0) {
           setIsLoading(true);
           let userIds = [];
@@ -529,7 +544,7 @@ const PhotoSelection = () => {
             setIsLoading(false);
           }
         }
-        return;
+        break;
       case "Level 2 Cousins":
         if (imagesData[key].length === 0) {
           setIsLoading(true);
@@ -553,7 +568,7 @@ const PhotoSelection = () => {
             setIsLoading(false);
           }
         }
-        return;
+        break;
       case "Uncles":
         if (imagesData[key].length === 0) {
           setIsLoading(true);
@@ -577,7 +592,7 @@ const PhotoSelection = () => {
             setIsLoading(false);
           }
         }
-        return;
+        break;
       case "Aunts":
         if (imagesData[key].length === 0) {
           setIsLoading(true);
@@ -601,7 +616,7 @@ const PhotoSelection = () => {
             setIsLoading(false);
           }
         }
-        return;
+        break;
       case "Kids":
         if (imagesData[key].length === 0) {
           setIsLoading(true);
@@ -625,7 +640,7 @@ const PhotoSelection = () => {
             setIsLoading(false);
           }
         }
-        return;
+        break;
       case "Grand Parents":
         if (imagesData[key].length === 0) {
           setIsLoading(true);
@@ -649,7 +664,7 @@ const PhotoSelection = () => {
             setIsLoading(false);
           }
         }
-        return;
+        break;
       case "Other Important People":
         if (imagesData[key].length === 0) {
           setIsLoading(true);
@@ -674,7 +689,7 @@ const PhotoSelection = () => {
             setIsLoading(false);
           }
         }
-        return;
+        break;
       default:
         if (key.match(/Sibling\d+$/)) {
           if (imagesData[key].length === 0) {
@@ -698,6 +713,8 @@ const PhotoSelection = () => {
           console.log("Unknown key:", key);
       }
     }
+    console.log(imagesData[key].length)
+    imagesData[key].length === 0 ?setFetchTimeout(true):console.log("Images fetched for : "+key);
   };
 
   return (
