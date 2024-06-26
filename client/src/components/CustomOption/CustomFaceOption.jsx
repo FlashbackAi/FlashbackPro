@@ -19,7 +19,7 @@ const CustomFaceOption = ({
 }) => {
   const abc = selectedImage ? selectedImage : [];
   const [selection, setSelection] = useState(abc);
-  console.log(selectedImage);
+  // console.log(selectedImage);
 
   const handleClick = (index, value) => {
     if (selection.includes(value)) {
@@ -65,7 +65,7 @@ const CustomFaceOption = ({
       <div className="img-options">
       <div className="separator">
           <hr className="partition-style" />
-          <p>Suggested faces</p>
+          <p>Suggested People</p>
           <hr className="partition-style" />
         </div>
         <div className="img-group">
@@ -84,7 +84,7 @@ const CustomFaceOption = ({
         
         <div className="separator">
           <hr className="partition-style" />
-          <p>Other faces</p>
+          <p>All Other People</p>
           <hr className="partition-style" />
         </div>
 

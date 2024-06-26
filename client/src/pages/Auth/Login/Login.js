@@ -82,6 +82,7 @@ function Login() {
   
 
   const from = location.state?.from || "/home";
+  console.log(from);
 
   const handlePhoneNumberChange = (e) => {
     const value = e.target.value;
@@ -123,7 +124,8 @@ function Login() {
     const response = await API_UTIL.post(`/createUser`, {
       username: fullPhoneNumber,
       eventName: eventName,
-      userSource: userSource
+      userSource: userSource,
+      role:"user"
     });
     setIsPhoneNumberValid(true);
     if (response.status === 201) {

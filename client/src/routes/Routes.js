@@ -1,4 +1,5 @@
 import Login from "../pages/Auth/Login/Login";
+import CreatorLogin from "../pages/Auth/Login/CreatorLogin";
 import ForgotPassword from "../pages/Auth/ForgotPassword/ForgotPassword";
 import Registration from "../pages/Auth/Register/Registration";
 import Admin from "../pages/Admin/Admin";
@@ -15,6 +16,8 @@ import Collage from "../pages/Edit/Collage/Collage";
 import SharedImage from "../pages/ImagesPage/SharedImage";
 import AlbumSelectionForm from "../pages/Pro/AlbumSelectionForm/AlbumSelectionForm";
 import PhotoSelection from "../pages/Pro/PhotoSelection/PhotoSelection";
+import FaceSelection from "../pages/Pro/FaceSelection/FaceSelection";
+import Event from "../pages/Event/Event";
 
 
 const ROUTES=[
@@ -121,7 +124,13 @@ const ROUTES=[
         component:AlbumSelectionForm
     },
     {
-        path:"/PhotoSelection",
+        path:"/faceSelection/:eventName",
+        exact:false,
+        protected:false,
+        component:FaceSelection
+    },
+    {
+        path:"/photoSelection/:eventName",
         exact:false,
         protected:false,
         component:PhotoSelection
@@ -138,6 +147,19 @@ const ROUTES=[
         protected:false,
         component:SharedImage
     },
+    {
+        path:"/creatorLogin",
+        exact:false,
+        protected:false,
+        component:CreatorLogin
+    },
+    {
+        path:"/event",
+        exact:false,
+        protected:false,
+        component:Event
+    }
+
 ]
 
 export default ROUTES

@@ -1916,6 +1916,7 @@ app.post('/downloadImage', async (req, res) => {
         const  username  = req.body.username;
         let eventName = req.body.eventName;
         const userSource = req.body.userSource;
+        const role = req.body.role;
         logger.info("creating user "+username);
       
         try {
@@ -1942,7 +1943,7 @@ app.post('/downloadImage', async (req, res) => {
           }
       
           // Create a new user entry in DynamoDB
-          await createUser(username,userSource);
+          await createUser(username,userSource,role);
           console.log("created sucessfulyy ->"+username)
 
           const updateParamsUserEvent = {
@@ -1982,7 +1983,7 @@ app.post('/downloadImage', async (req, res) => {
   }
       
       // Function to create a new user in DynamoDB
-      async function createUser(username,userSource) {
+      async function createUser(username,userSource,role) {
         const unique_uid = `${username}_Flash_${Math.floor(Math.random() * 1000)}`;
         const params = {
           TableName: userrecordstable,
@@ -1991,7 +1992,8 @@ app.post('/downloadImage', async (req, res) => {
             user_name: username,
             unique_uid: unique_uid,
             created_date: new Date().toISOString(),
-            user_source:userSource
+            user_source:userSource,
+            role:role
           }
         };
       
@@ -2127,11 +2129,14 @@ app.post('/downloadImage', async (req, res) => {
     
 
     app.post("/generateUserIdsForExistingUsers",async(req,res)=>{
-
+        const eventName = req.body.eventName;
          const scanParams = {
-           TableName: 'users',
+           TableName: userEventTableName,
            ProjectionExpression: 'user_phone_number, potrait_s3_url',
-           FilterExpression: 'attribute_not_exists(user_id)'
+           FilterExpression: 'attribute_not_exists(user_id) and event_name = :eventName',
+           ExpressionAttributeValues: {
+            ":eventName": eventName
+          }
          };
        
          try {
@@ -2152,8 +2157,20 @@ app.post('/downloadImage', async (req, res) => {
            logger.info("Total items retrieved: " + allData.length);
  
            for (const item of allData) {
-            if(item.potrait_s3_url){
-            const mappedUser = await mapUserIdAndPhoneNumber(item.user_phone_number,item.potrait_s3_url,'');
+
+            const userParams = {
+              TableName: userrecordstable,
+              ProjectionExpression: 'user_phone_number, potrait_s3_url',
+              FilterExpression: 'user_phone_number = :userPhoneNumber',
+              ExpressionAttributeValues: {
+               ":userPhoneNumber": item.user_phone_number
+             }
+            }
+            const userData = await docClient.scan(userParams).promise();
+            logger.info(item)
+            console.log(userData);
+            if(userData.Items[0].potrait_s3_url){
+            const mappedUser = await mapUserIdAndPhoneNumber(item.user_phone_number,userData.Items[0].potrait_s3_url,eventName,'');
             logger.info("mapped for user: "+mappedUser);
             }
             else{
@@ -2480,6 +2497,83 @@ app.post('/downloadImage', async (req, res) => {
       
     });
 
+    app.post("/getCombinationImagesWithUserIds", async (req, res) => {
+      const userIds = req.body.userIds;
+      const eventName = req.body.eventName;
+      const minUserCount = 2;  // Minimum number of user IDs that must be present in each image
+    
+      try {
+        // Construct FilterExpression with dynamic userIds
+        let filterExpressions = [];
+        
+        // Map userIds to contains conditions
+        userIds.forEach((_, index) => {
+          filterExpressions.push(`contains(#attr, :val${index})`);
+        });
+    
+        // Add the new condition for s3_url containing eventName
+        const s3UrlCondition = `contains(s3_url, :eventName)`;
+    
+        // Combine the userConditions and s3UrlCondition
+        const combinedUserConditions = filterExpressions.join(" OR ");
+        const finalFilterExpression = `(${combinedUserConditions}) AND ${s3UrlCondition}`;
+    
+        const expressionAttributeValues = userIds.reduce((acc, userId, index) => {
+          acc[`:val${index}`] = userId;
+          return acc;
+        }, {});
+        expressionAttributeValues[`:eventName`] = eventName;
+    
+        const params = {
+          TableName: recokgImages,
+          FilterExpression: finalFilterExpression,
+          ExpressionAttributeNames: {
+            '#attr': 'user_ids',
+          },
+          ExpressionAttributeValues: expressionAttributeValues,
+          ProjectionExpression: 's3_url, user_ids, image_id, selected'
+        };
+    
+        let items = [];
+        let lastEvaluatedKey = null;
+    
+        logger.info("Starting scan for images with parameters: ", params);
+    
+        do {
+          if (lastEvaluatedKey) {
+            params.ExclusiveStartKey = lastEvaluatedKey;
+          }
+    
+          const data = await docClient.scan(params).promise();
+    
+          logger.info(`Scanned ${data.Items.length} items from DynamoDB`);
+    
+          // Filter items to ensure they meet the criteria:
+          // 1. Contain at least two user IDs.
+          // 2. All user IDs in each image are from the provided list of user IDs.
+          const filteredItems = data.Items.filter(item => {
+            const matchingUserIds = item.user_ids.filter(userId => userIds.includes(userId));
+            return matchingUserIds.length >= minUserCount && matchingUserIds.length === item.user_ids.length;
+          }).map(item => ({
+            ...item,
+            thumbnailUrl: "https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/" + item.s3_url.split("amazonaws.com/")[1]
+          }));
+    
+          logger.info(`Filtered ${filteredItems.length} items after applying criteria`);
+    
+          items = items.concat(filteredItems);
+          lastEvaluatedKey = data.LastEvaluatedKey;
+        } while (lastEvaluatedKey);
+    
+        logger.info(`Total items fetched: ${items.length}`);
+        res.send(items);
+      } catch (error) {
+        logger.error("Error fetching images: " + error);
+        res.status(500).send("Error fetching images");
+      }
+    });
+    
+
     app.post("/fillUserIdsforImageIds",async (req,res)=>{
      
       logger.info("started filling userids");
@@ -2614,8 +2708,112 @@ app.post("/saveSelectedImage", async (req, res) => {
 });
 
 
+app.post("/saveEventDetails", async (req, res) => {
+ 
+  const eventName  = req.body.eventName;
+  const eventDate = req.body.eventDate;
+  const clientName = req.body.clientName;
+  const street = req.body.street;
+  const city = req.body.city;
+  const state = req.body.state;
+  const pinCode = req.body.pinCode;
+  const invitationNote = req.body.invitationNote;
+  const invitationUrl=req.body.invitationUrl;
+  logger.info("Creating Event :"+eventName);
+  try {
+    const eventParams = {
+      TableName: eventsTable,
+      Item: {
+        event_name: eventName,
+        client_name: clientName,
+        event_date: eventDate,
+        street:street,
+        city:city,
+        state:state,
+        pin_code:pinCode,
+        invitation_note:invitationNote,
+        invitation_url:invitationUrl
+      }
+    };
+    const putResult = await docClient.put(eventParams).promise()
+    logger.info("Event Created Successfully :"+eventName);
+    //logger.info(`Evenr created successfully: ${JSON.stringify(putResult)}`);
+    res.status(200).send({"message":"Event Created Successfully"});
+  } catch (err) {
+    logger.info(err.message);
+    res.status(500).send(err.message);
+  }
+});
 
+app.post("/deleteEvent", async (req, res) => {
+  const eventName = req.body.eventName;
+  const eventDate = req.body.eventDate;
+  logger.info("Deleting Event: " + eventName);
+  try {
+    const eventParams = {
+      TableName: eventsTable,
+      Key: {
+        event_name: eventName,
+        event_date:eventDate
+      }
+    };
+    const deleteResult = await docClient.delete(eventParams).promise();
+    logger.info("Event Deleted Successfully: " + eventName);
+    res.status(200).send({"message": "Event Deleted Successfully"});
+  } catch (err) {
+    logger.info(err.message);
+    res.status(500).send(err.message);
+  }
+});
 
+app.post("/updateStatus", async (req, res) => {
+  const { eventName, newStatus } = req.body;
+  logger.info("Fetching User IDs for Event: " + eventName);
+
+  try {
+    // Step 1: Scan to get all user_ids with the given event_name and flashback_status = 'triggered'
+    const scanParams = {
+      TableName: userEventTableName,
+      FilterExpression: "event_name = :eventName and flashback_status = :status",
+      ExpressionAttributeValues: {
+        ":eventName": eventName,
+        ":status": "triggered"
+      }
+    };
+    const scanResult = await docClient.scan(scanParams).promise();
+
+    if (scanResult.Items.length === 0) {
+      logger.info("No users with 'triggered' status found for Event: " + eventName);
+      return res.status(404).send({"message": "No users with 'triggered' status found for the given event"});
+    }
+    logger.info("Users with 'triggered' status found for Event: " + scanResult.Items.length);
+    // Step 2: Update flashback_status for each user_id
+    const updatePromises = scanResult.Items.map(item => {
+      const updateParams = {
+        TableName: userEventTableName,
+        Key: {
+          event_name: item.event_name,
+          user_phone_number: item.user_phone_number
+        },
+        UpdateExpression: "set flashback_status = :status",
+        ExpressionAttributeValues: {
+          ":status": newStatus
+        },
+        ReturnValues: "UPDATED_NEW"
+      };
+      return docClient.update(updateParams).promise();
+    });
+
+    // Execute all update promises
+    await Promise.all(updatePromises);
+    
+    logger.info("Status Updated Successfully for Event: " + eventName);
+    res.status(200).send({"message": "Status Updated Successfully for all users of the event"});
+  } catch (err) {
+    logger.info(err.message);
+    res.status(500).send(err.message);
+  }
+});
 
 const httpsServer = https.createServer(credentials, app);
 

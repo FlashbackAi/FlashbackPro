@@ -1,38 +1,25 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import LoadingSpinner from "../Loader/LoadingSpinner";
-import { ArrowDownToLine, Heart, Share2 } from "lucide-react";
+import React, { useState } from "react";
+import { Heart, ArrowDownToLine, Share2 } from "lucide-react";
+import LoadingSpinner from "../Loader/LoadingSpinner"; // Ensure you have a LoadingSpinner component
 import API_UTIL from "../../services/AuthIntereptor";
-import { toast } from "react-toastify";
 
-const ImageModal = ({
+const Modal = ({
   clickedImg,
-  clickedImgIndex,
+  clickedImgFavourite,
   setClickedImg,
   clickedUrl,
   handleBackButton,
   handleFavourite,
-  clickedImgFavourite,
-  favourite =true,
+  favourite = true,
   sharing = true,
   close = true,
   select = false,
 }) => {
-  const history = useNavigate();
-  const handleClick = (e) => {
-    if (e.target.classList.contains("dismiss")) {
-      setClickedImg(null);
-      history(-1);
-    }
-  };
-
-  const galleryRef = useRef(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isFavourite, setIsFavourite] = useState(clickedImgFavourite);
-  const downloadCurrentImage = async () => {
-    // const currentIndex = galleryRef.current.getCurrentIndex();
-    // const currentImage = images[currentIndex];
+  const [imageLoaded, setImageLoaded] = useState(false);
 
+  const downloadCurrentImage = async () => {
     if (!clickedImg) {
       console.error("No current image found");
       return;
@@ -44,102 +31,62 @@ const ImageModal = ({
         imageUrl: clickedUrl,
       });
       if (response.status === 200) {
-        console.log(response);
         const link = document.createElement("a");
         link.href = response.data;
         link.download = clickedUrl;
-        document.body.appendChild(link); // Required for FF
+        document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
       } else {
         throw new Error("Failed to fetch images");
       }
-
-      // const response = await axios.get(clickedImg);
-      // const url = window.URL.createObjectURL(new Blob([response.data]));
-      // const link = document.createElement('a');
-      // link.href = url;
-      // link.setAttribute('download', clickedUrl);
-      // document.body.appendChild(link);
-      // link.click();
     } catch (error) {
       console.error("Error fetching images:", error);
     } finally {
-      setIsDownloading(false); // End downloading
+      setIsDownloading(false);
     }
   };
 
-  const onLoad = () => {
-    const lazySpan = document.querySelector(".lazyImage");
-    const loader = document.querySelector(
-      ".overlay.dismiss .loading-spinner-container"
-    );
-    loader && loader.remove();
-    lazySpan && lazySpan.classList.add("visible");
-  };
-
-  const addToFavourite = () => {
-    const fav = document.querySelector(".favourite");
-    if (isFavourite) fav.classList.remove("bgRed");
-    else fav.classList.add("bgRed");
-    handleFavourite(clickedImg, !isFavourite);
-    setIsFavourite((isFav) => !isFav);
+  const addToFavourite = (e) => {
+    e.stopPropagation();  // Prevent modal from closing
+    const newFavState = !isFavourite;
+    handleFavourite(clickedImg, newFavState);
+    setIsFavourite(newFavState);
   };
 
   const share = () => {
     const shareAbleUrl = `${process.env.REACT_APP_SERVER_IP}/share/${clickedUrl.split(".jpg")[0]}?redirectTo=singleImage`;
-    // navigator.clipboard.writeText(shareAbleUrl);
-    // toast("Copied link to clipboard!!");
     const text = `${shareAbleUrl}\n Click and follow url to *View* and *Download Image*`;
     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
     window.open(whatsappUrl, "_blank");
   };
 
   return (
-    <>
-      <div className="overlay dismiss" onClick={handleClick}>
-        <LoadingSpinner />
-        <div className="modalOuter lazyImage hidden">
-          {close &&(
+    <div className="overlay dismiss" onClick={handleBackButton}>
+      <div className="modalOuter lazyImage" onClick={(e) => e.stopPropagation()}>
+        {close && (
           <span className="dismiss" onClick={handleBackButton}>
             X
-          </span>)}
-          <img onLoad={onLoad} src={clickedImg} alt="bigger pic" />
+          </span>
+        )}
+        {!imageLoaded && <LoadingSpinner />} {/* Show spinner while image is loading */}
+        <img
+          src={clickedImg}
+          alt="bigger pic"
+          onLoad={() => setImageLoaded(true)} // Set imageLoaded to true when image is loaded
+          style={{ display: imageLoaded ? 'block' : 'none' }} // Hide image until it's loaded
+        />
+        {imageLoaded && ( // Only show the toolbox if the image is loaded
           <div className="imageToolBox">
-            {/* {download && (
-              <button
-                onClick={downloadCurrentImage}
-                disabled={isDownloading}
-                className="downloadButton"
-                id="download"
+            {(favourite || select) && (
+              <div
+                className="dFlex alignCenter cursor-pointer"
+                onClick={addToFavourite}
               >
-                {isDownloading ? "Downloading..." : "Download"}
-              </button>
-            )} */}
-             {favourite && (
-            <div
-              className="dFlex alignCenter cursor-pointer"
-              onClick={addToFavourite}
-            >
-              
-              <Heart
-                className={"favourite " + (clickedImgFavourite && "bgRed")}
-              />
-              Favourite
-            </div>
-             )}
-             {select && (
-            <div
-              className="dFlex alignCenter cursor-pointer"
-              onClick={addToFavourite}
-            >
-              
-              <Heart
-                className={"favourite " + (clickedImgFavourite && "bgRed")}
-              />
-              Select
-            </div>
-             )}
+                <Heart className={"favourite " + (isFavourite ? "bgRed" : "")} />
+                {isFavourite ? "Unselect" : "Select"}
+              </div>
+            )}
             <div
               className="dFlex alignCenter"
               onClick={downloadCurrentImage}
@@ -155,26 +102,17 @@ const ImageModal = ({
                 </>
               )}
             </div>
-            {sharing &&(
-            <div className="dFlex alignCenter cursor-pointer" onClick={share}>
-              <Share2
-                className={"favourite " + (clickedImgFavourite && "bgRed")}
-              />
-              Share
-            </div>
+            {sharing && (
+              <div className="dFlex alignCenter cursor-pointer" onClick={share}>
+                <Share2 className={"favourite " + (isFavourite ? "bgRed" : "")} />
+                Share
+              </div>
             )}
           </div>
-          {/* <button
-            onClick={downloadCurrentImage}
-            disabled={isDownloading}
-            className="downloadButton"
-          >
-            {isDownloading ? "Downloading..." : "Download"}
-          </button> */}
-        </div>
+        )}
       </div>
-    </>
+    </div>
   );
 };
 
-export default ImageModal;
+export default Modal;

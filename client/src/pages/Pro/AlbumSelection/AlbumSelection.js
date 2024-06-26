@@ -62,7 +62,7 @@ const FamilyDetailsForm = () => {
       updateSelectedValues(newFormData);
       return newFormData;
     });
-    console.log(formData);
+    // console.log(formData);
   };
   const updateSelectedValues = (formData) => {
     const newSelectedValues = new Set(Object.values(formData));

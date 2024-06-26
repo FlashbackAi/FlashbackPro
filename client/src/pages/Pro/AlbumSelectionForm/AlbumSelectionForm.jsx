@@ -159,12 +159,14 @@ const AlbumSelectionForm = () => {
   };
 
   const handleClickImage = (item, url) => {
+    console.log("Image clicked:", item.s3_url);
     setClickedImg(item.s3_url);
     setClickedImgFavourite(item.selected);
     const imgName = item.s3_url.split("amazonaws.com/")[1];
     setClickedUrl(imgName);
     window.history.pushState({ id: 1 }, null, "?image=" + `${imgName}`);
   };
+  
 
   // const hideFavIcon = (index) => {
   //   console.log(index);

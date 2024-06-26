@@ -1,4 +1,4 @@
-import React from 'react';
+import {useEffect,React} from 'react';
 import { LazyLoadImage } from 'react-lazy-load-image-component';
 import { Heart } from 'lucide-react';
 
@@ -6,6 +6,19 @@ import Modal from "../../../components/ImageModal/ImageModalNew";
 import LoadingSpinner from "../../../components/Loader/LoadingSpinner"; 
 
 const ImagesSection = ({ images, fetchTimeout, clickedImg, handleClickImage, clickedImgFavourite, setClickedImg, clickedUrl, handleBackButton, handleFavourite, isLoading, tabKey, displayFavIcon }) => {
+
+  useEffect(() => {
+    console.log("ImagesSection mounted with props:", {
+      images,
+      fetchTimeout,
+      clickedImg,
+      handleClickImage,
+      clickedImgFavourite,
+      clickedUrl,
+      isLoading,
+      tabKey,
+    });
+  }, []);
 
   const handleFav = async (imageUrl, isFav) => {
     console.log(isFav)
