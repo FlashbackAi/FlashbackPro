@@ -325,13 +325,23 @@ const PhotoSelection = () => {
           userId = temp[temp.length - 1].split(".")[0];
           try {
             const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': [userId], 'operation': 'AND', 'eventName': eventName });
-            if (response.status === 200) {
+            if (response.status === 200 && response.data.length < 5) {
+              // If less than 5, make another API call with mode as loose
+              const looseResponse = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': [userId], 'operation': 'AND', 'mode': 'Loose', 'eventName': eventName });
+              
+              if (looseResponse.status === 200) {
+                  setImagesData((prevState) => ({
+                      ...prevState,
+                      [key]: looseResponse.data,
+                  }));
+              }
+          } else {
               setImagesData((prevState) => ({
-                ...prevState,
-                [key]: response.data,
+                  ...prevState,
+                  [key]: response.data,
               }));
-              setIsLoading(false);
-            }
+          }
+          setIsLoading(false);
           } catch (err) {
             console.log(err);
             setIsLoading(false);
@@ -345,13 +355,23 @@ const PhotoSelection = () => {
           userId = temp[temp.length - 1].split(".")[0];
           try {
             const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': [userId], 'operation': 'AND', 'eventName': eventName });
-            if (response.status === 200) {
+            if (response.status === 200 && response.data.length < 5) {
+              // If less than 5, make another API call with mode as loose
+              const looseResponse = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': [userId], 'operation': 'AND', 'mode': 'Loose', 'eventName': eventName });
+              
+              if (looseResponse.status === 200) {
+                  setImagesData((prevState) => ({
+                      ...prevState,
+                      [key]: looseResponse.data,
+                  }));
+              }
+          } else {
               setImagesData((prevState) => ({
-                ...prevState,
-                [key]: response.data,
+                  ...prevState,
+                  [key]: response.data,
               }));
-              setIsLoading(false);
-            }
+          }
+          setIsLoading(false);
           } catch (err) {
             console.log(err);
             setIsLoading(false);
@@ -365,13 +385,23 @@ const PhotoSelection = () => {
           userId = temp[temp.length - 1].split(".")[0];
           try {
             const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': [userId], 'operation': 'AND', 'eventName': eventName });
-            if (response.status === 200) {
+            if (response.status === 200 && response.data.length < 5) {
+              // If less than 5, make another API call with mode as loose
+              const looseResponse = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': [userId], 'operation': 'AND', 'mode': 'Loose', 'eventName': eventName });
+              
+              if (looseResponse.status === 200) {
+                  setImagesData((prevState) => ({
+                      ...prevState,
+                      [key]: looseResponse.data,
+                  }));
+              }
+          } else {
               setImagesData((prevState) => ({
-                ...prevState,
-                [key]: response.data,
+                  ...prevState,
+                  [key]: response.data,
               }));
-              setIsLoading(false);
-            }
+          }
+          setIsLoading(false);
           } catch (err) {
             console.log(err);
             setIsLoading(false);
@@ -385,13 +415,23 @@ const PhotoSelection = () => {
           userId = temp[temp.length - 1].split(".")[0];
           try {
             const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': [userId], 'operation': 'AND', 'eventName': eventName });
-            if (response.status === 200) {
+            if (response.status === 200 && response.data.length < 5) {
+              // If less than 5, make another API call with mode as loose
+              const looseResponse = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': [userId], 'operation': 'AND', 'mode': 'Loose', 'eventName': eventName });
+              
+              if (looseResponse.status === 200) {
+                  setImagesData((prevState) => ({
+                      ...prevState,
+                      [key]: looseResponse.data,
+                  }));
+              }
+          } else {
               setImagesData((prevState) => ({
-                ...prevState,
-                [key]: response.data,
+                  ...prevState,
+                  [key]: response.data,
               }));
-              setIsLoading(false);
-            }
+          }
+          setIsLoading(false);
           } catch (err) {
             console.log(err);
             setIsLoading(false);
