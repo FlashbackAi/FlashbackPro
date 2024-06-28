@@ -1,3 +1,24 @@
 header{
     font-size: 1em ;
 }
+
+.sidebar{
+    width:8em;
+}
+
+.content{
+    padding:1px;
+}
+
+.wrapper-images img {
+     padding: 0em;
+}
+
+.content h2{
+    margin:0.5em;
+}
+
+
+.loading-spinner img{
+    margin-left: 5em ;
+}
