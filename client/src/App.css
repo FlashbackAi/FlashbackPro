@@ -472,7 +472,7 @@ input:checked + .slider:before {
 }
 
 .submitPhoto {
-  background-color: #42b72a !important;
+  background-color: #64a856 !important;
 }
 
 .takePhoto {
@@ -567,9 +567,10 @@ input:checked + .slider:before {
 }
 
 .login-form a {
-  color: #1877f2;
+  color: #ffffff;
   text-decoration: none;
   font-size: 1em;
+  font-weight: 1000;
 }
 
 p {
@@ -585,7 +586,7 @@ p {
 
 .loginLogoBox {
   padding: 0.8em 2rem;
-  margin-top: 7em;
+  margin-top: 0.1em;
   margin-bottom: 1em;
   display: flex;
   justify-content: center;
@@ -1070,7 +1071,8 @@ End of Sample */
   z-index: 999;
 } */
 .terms-container {
-  max-width: 800px;
+  max-width: 100%;
+  height: 100%;
   margin: 0 auto;
   padding: 20px;
   background-color: #f9f9f9;
@@ -1430,4 +1432,8 @@ li {
   cursor: pointer;
 }
 
-
+.Toastify__toast-container{
+  margin-top: 45em;
+  padding-left: 1em;
+  padding-right: 1em;
+}

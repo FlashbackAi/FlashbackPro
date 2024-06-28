@@ -138,11 +138,11 @@ function Home () {
           </h2>
         </div>
     {/* <p className="loginLogo">Flashback<p className="logoCaption">Create & share memories</p></p> */}
-    <p className="Congrats"> Congratulations!! </p>
+    <p className="Congrats"> Congratulations!! <br/><br/>You are successfully registered for the event!  </p>
+        <p> </p>
     <p className="CongratsMessage"> 
     {/* style={{ textAlign: 'center', paddingTop: '50px', fontSize: '30px', color: 'green' }}> */}
-         
-           You are successfully registered for the event
+        Standby for a message from us on Whatsapp with your Pictures.
     </p>
     </div>
     </div>

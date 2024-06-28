@@ -279,6 +279,10 @@ function Login() {
                   // value={phone}
                   // onChange={(phone) => setPhone(phone)}
                 /> */}
+
+              </div>
+              <div className="privacyNotice">
+                <p>By Submitting your phone number, you confirm you've read this <a href="/TermsAndConditions" target="_blank">Privacy Notice</a></p>
               </div>
               {phoneNumberError && (
                 <p
@@ -320,7 +324,7 @@ function Login() {
           )}
           {isNewUser && (
             <div className="login-form-container">
-              <p className="caution">Hey, don't worry we won't save your image!!</p>
+              <p className="caution">Hey, don't worry we won't see your image :)</p>
 
               {imgSrc ? (
                 <img src={imgSrc} alt="webcam" />

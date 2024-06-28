@@ -29,3 +29,12 @@
 .contactUs a:hover {
   text-decoration: underline;
 }
+
+.privacyNotice p{
+    text-align: left;
+}
+
+.privacyNotice a{
+    display: contents;
+}
+

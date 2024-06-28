@@ -15,7 +15,7 @@ const TermsAndConditions = () => {
         <div className="section">
           <h3>1. Consent</h3>
           <ul>
-            <li>By using [Your Application Name], you consent to the following terms and conditions. If you do not agree, please do not proceed.</li>
+            <li>By using Flashback, you consent to the following terms and conditions. If you do not agree, please do not proceed.</li>
           </ul>
         </div>
         <div className="section">
@@ -45,7 +45,7 @@ const TermsAndConditions = () => {
         <div className="section">
           <h3>8. Contact Us</h3>
           <ul>
-            <li>If you have any questions or concerns about these terms and conditions, please contact us at <b>9090401234</b>.</li>
+            <li>If you have any questions or concerns about these terms and conditions, please contact us at <b>+91 9090401234</b>.</li>
           </ul>
         </div>
       </div>
