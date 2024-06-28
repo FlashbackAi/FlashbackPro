@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import "../AlbumSelectionForm/AlbumSelectionForm.css";
+import "./PhotoSelection.css";
 import Header from "../../../components/Header/Header";
 import { motion } from "framer-motion";
 import API_UTIL from "../../../services/AuthIntereptor";

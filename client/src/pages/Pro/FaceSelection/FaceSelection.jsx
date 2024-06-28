@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import "../AlbumSelectionForm/AlbumSelectionForm.css";
+import "./FaceSelection.css";
 import Header from "../../../components/Header/Header";
 import { ArrowRight, ChevronLeft, Minus, Plus } from "lucide-react";
 import { motion } from "framer-motion";
@@ -296,7 +297,7 @@ const FaceSelection = () => {
             }}
             className="entry"
           >
-            <Header />
+            <Header/>
             <h2>Let's Start with Selecting Faces</h2>
             <button onClick={handleClick}>Start</button>
           </motion.div>
