@@ -33,10 +33,11 @@ const FaceSelection = () => {
   const [friends, setFriends] = useState([]);
   const [selectedValues, setSelectedValues] = useState(new Set());
   const [isFacesSelectionDone, setIsFacesSelectionDone] = useState();
+  const [isCharacterSelected, setIsCharacterSelected] = useState(false);
 
   const [formData, setFormData] = useState({
     event_name: eventName,
-    form_owner: "groom",
+    form_owner: null,
     groom: null,
     groomsFather: null,
     groomsMother: null,
@@ -91,6 +92,7 @@ const FaceSelection = () => {
 
   const handleClick = () => {
     setStart(true);
+    fetchFormData();
   };
 
   const fetchThumbnails = async () => {
@@ -131,7 +133,7 @@ const FaceSelection = () => {
   useEffect(() => {
     if (isDataFetched.current) return;
     fetchThumbnails();
-    fetchFormData();
+    //fetchFormData();
     isDataFetched.current = true;
   }, []);
 
@@ -152,7 +154,8 @@ const FaceSelection = () => {
 
   const fetchFormData = async () => {
     try {
-      const response = await API_UTIL.get(`/getSelectionFormData/${eventName}/groom`);
+      const formOwner = formData['form_owner'];
+      const response = await API_UTIL.get(`/getSelectionFormData/${eventName}/${formOwner}`);
       if (response.data) {
         setFormData(response.data);
         updateSelectedValues(response.data);
@@ -283,11 +286,55 @@ const FaceSelection = () => {
       toast.error("Failed to save the selection. Please try again.");
     }
   };
+
+  const handleSelectCharacter = (character) => {
+    
+   
+    handleSelectChange("form_owner",character);
+    console.log(`Selected character: ${character}`);
+  }; 
+  const checkCharacterSelected = ()=>{
+    console.log(formData['form_owner']);
+    if(formData['form_owner'] != null){
+      setIsCharacterSelected(true);
+    }
+  }
   
   return (
     <>
       <section className="albumSelectionForm">
-        {!start && (
+      {!isCharacterSelected && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{
+            duration: 0.8,
+            ease: [0, 0.71, 0.2, 1.01],
+          }}
+          className="entry"
+        >
+          <Header />
+          <h2>Are you a Groom or Bride</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-around' }}>
+            <div
+              onClick={() => handleSelectCharacter("Groom")}
+              className={`card ${formData['form_owner'] === "Groom" ? "selected" : ""}`}
+            >
+              <img src = 'assets/groom_icon.png'/>
+            </div>
+            <div
+              onClick={() => handleSelectCharacter("Bride")}
+              className={`card ${formData['form_owner'] === "Bride" ? "selected" : ""}`}
+            >
+             <img src = 'assets/bride_icon.png'/>
+            </div>
+          </div>
+          <button onClick={checkCharacterSelected}>Next</button>
+        </motion.div>
+      )}
+
+
+        {isCharacterSelected && !start && (
           <motion.div
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}

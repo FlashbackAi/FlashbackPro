@@ -1,3 +1,23 @@
 header{
     font-size: 2em ;
 }
+.card {
+    cursor: pointer;
+    padding: 20px;
+    border: 1px solid black;
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  
+  .card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  }
+  
+  .card.selected {
+    background-color: #d1e7dd;
+    border-color: #0f5132;
+    color: #0f5132;
+    transform: scale(1.1);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+  }
+  
