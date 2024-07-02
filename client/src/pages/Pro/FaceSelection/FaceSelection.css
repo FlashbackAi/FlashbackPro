@@ -20,4 +20,79 @@ header{
     transform: scale(1.1);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
   }
+
+  .sibling-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  
+  .marital-status {
+    flex: 0 0 250px; /* Fixed width for the marital status section */
+  }
+  
+  .centered-selection {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+  }
+  
+  .marital-status label {
+    font-weight: bold;
+    color: white; /* Make the label text color white */
+  }
+  
+  .radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .radio-group label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: white; /* Make the radio button label text color white */
+  }
+  
+  .radio-group input[type="radio"] {
+    cursor: pointer;
+  }
+  
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+  
+  .question-header .question {
+    font-size: 1.4em;
+    letter-spacing: 0.04em;
+    white-space: nowrap; /* Ensure the text doesn't wrap */
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .question-answer {
+    min-height: 100vh;
+  }
+  
+  .button_flex {
+    display: flex;
+    justify-content: center;
+    gap: 1em;
+  }
+  
+  button {
+    padding: 0.5em 2em;
+    border-radius: 0.2em;
+    font-size: 1.2em;
+    color: white;
+    background: #b48e75;
+    outline: none;
+    border: none;
+  }
+  
   

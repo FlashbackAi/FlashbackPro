@@ -16,6 +16,7 @@ const CustomFaceOption = ({
   question,
   sendSelection,
   selectedImage,
+  isInternal = false
 }) => {
   const abc = selectedImage ? selectedImage : [];
   const [selection, setSelection] = useState(abc);
@@ -104,14 +105,16 @@ const CustomFaceOption = ({
       </div>
 
       <div className="button_flex">
-        {!isFirst && !isSubmit && (
+        {!isFirst && !isSubmit && !isInternal && (
           <div onClick={() => prev(serialNo)}>
             <ChevronLeft />
           </div>
         )}
+        {!isInternal &&(
         <button onClick={isSubmit ? sendSubmitAction : () => next(serialNo)}>
           {isSubmit ? "Submit" : "Next"}
         </button>
+        )}
       </div>
     </motion.div>
   );

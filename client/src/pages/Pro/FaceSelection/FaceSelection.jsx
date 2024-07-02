@@ -9,6 +9,7 @@ import { useParams, useNavigate } from "react-router";
 import CustomFaceOption from "../../../components/CustomOption/CustomFaceOption";
 import { toast } from "react-toastify";
 import LoadingSpinner from "../../../components/Loader/LoadingSpinner";
+import Switch from "react-switch";
 
 const FaceSelection = () => {
   const isDataFetched = useRef(false);
@@ -64,32 +65,137 @@ const FaceSelection = () => {
 
   const navigate = useNavigate();
 
+  // const generateSiblingSelects = (count, char, gender, serialNoStart) => {
+  //   const siblings = [];
+  //   const options = gender === "male" ? filterOptions(males).slice(0,10) : filterOptions(females).slice(0,10);
+
+  //   [...Array(count).keys()].forEach((elm, index) => {
+  //     const title = gender === "male" ? `Select ${char} Sibling (Brother ${index + 1})` : `Select ${char} Sibling (Sister ${index + 1})`;
+  //     let sibling = `${char}${gender}Sibling${index + 1}`;
+  //     siblings.push(
+  //       <CustomFaceOption
+  //         question={sibling}
+  //         options={options}
+  //         others={filterOptions(userThumbnails)}
+  //         serialNo={`${serialNoStart}.${index + 1}`}
+  //         title={title}
+  //         next={next}
+  //         prev={prev}
+  //         key={index}
+  //         onSelect={handleSelectFace}
+  //         sendSelection={handleSelectChange}
+  //         selectedImage={[formData[sibling]]}
+  //       />
+  //     );
+  //   });
+  //   return siblings;
+  // };
+
   const generateSiblingSelects = (count, char, gender, serialNoStart) => {
     const siblings = [];
-    const options = gender === "male" ? filterOptions(males).slice(0,10) : filterOptions(females).slice(0,10);
-
+    const options = gender === "male" ? filterOptions(males).slice(0, 10) : filterOptions(females).slice(0, 10);
+  
     [...Array(count).keys()].forEach((elm, index) => {
       const title = gender === "male" ? `Select ${char} Sibling (Brother ${index + 1})` : `Select ${char} Sibling (Sister ${index + 1})`;
-      let sibling = `${char}${gender}Sibling${index + 1}`;
+      const sibling = `${char}${gender}Sibling${index + 1}`;
       siblings.push(
-        <CustomFaceOption
-          question={sibling}
-          options={options}
-          others={filterOptions(userThumbnails)}
-          serialNo={`${serialNoStart}.${index + 1}`}
-          title={title}
-          next={next}
-          prev={prev}
-          key={index}
-          onSelect={handleSelectFace}
-          sendSelection={handleSelectChange}
-          selectedImage={[formData[sibling]]}
-        />
+        <motion.div key={index} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className="sibling-container">
+          <div className="marital-status">
+            <br/><br/>
+            <label>{title} Marital Status:</label>
+            <div className="radio-group">
+              <label>
+                <input
+                  type="radio"
+                  name={`${sibling}MaritalStatus`}
+                  value="unmarried"
+                  checked={formData[`${sibling}MaritalStatus`] === "unmarried"}
+                  onChange={(e) => handleSelectChange(`${sibling}MaritalStatus`, e.target.value)}
+                />
+                Unmarried
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name={`${sibling}MaritalStatus`}
+                  value="married"
+                  checked={formData[`${sibling}MaritalStatus`] === "married"}
+                  onChange={(e) => handleSelectChange(`${sibling}MaritalStatus`, e.target.value)}
+                />
+                Married
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name={`${sibling}MaritalStatus`}
+                  value="marriedWithKids"
+                  checked={formData[`${sibling}MaritalStatus`] === "marriedWithKids"}
+                  onChange={(e) => handleSelectChange(`${sibling}MaritalStatus`, e.target.value)}
+                />
+                Married with Kids
+              </label>
+            </div>
+          </div>
+          <div className="centered-selection">
+            <CustomFaceOption
+              question={sibling}
+              options={options}
+              others={filterOptions(userThumbnails)}
+              serialNo={`${serialNoStart}.${index + 1}`}
+              title={title}
+              next={next}
+              prev={prev}
+              onSelect={handleSelectFace}
+              sendSelection={handleSelectChange}
+              selectedImage={[formData[sibling]]}
+            />
+          </div>
+          {formData[`${sibling}MaritalStatus`] === "married" && (
+            <CustomFaceOption
+              question={`${sibling}Spouse`}
+              options={gender === "male" ? filterOptions(females) : filterOptions(males)}
+              others={filterOptions(userThumbnails)}
+              serialNo={`${serialNoStart}.${index + 1}.1`}
+              title={`Select ${char} Sibling's Spouse`}
+              onSelect={handleSelectFace}
+              sendSelection={handleSelectChange}
+              selectedImage={[formData[`${sibling}Spouse`]]}
+              isInternal = {true}
+            />
+          )}
+          {formData[`${sibling}MaritalStatus`] === "marriedWithKids" && (
+            <>
+              <CustomFaceOption
+                question={`${sibling}Spouse`}
+                options={gender === "male" ? filterOptions(females) : filterOptions(males)}
+                others={filterOptions(userThumbnails)}
+                serialNo={`${serialNoStart}.${index + 1}.1`}
+                title={`Select ${char} Sibling's Spouse`}
+                onSelect={handleSelectFace}
+                sendSelection={handleSelectChange}
+                selectedImage={[formData[`${sibling}Spouse`]]}
+                isInternal = {true}
+              />
+              <CustomFaceOption
+                question={`${sibling}Children`}
+                options={filterOptions(kids)}
+                others={filterOptions(userThumbnails)}
+                serialNo={`${serialNoStart}.${index + 1}.2`}
+                title={`Select ${char} Sibling's Children`}
+                multiple={true}
+                isInternal = {true}
+                onSelect={handleSelectFace}
+                sendSelection={handleSelectChange}
+                selectedImage={formData[`${sibling}Children`] || []}
+              />
+            </>
+          )}
+        </motion.div>
       );
     });
     return siblings;
   };
-
+  
   const handleClick = () => {
     setStart(true);
     fetchFormData();
