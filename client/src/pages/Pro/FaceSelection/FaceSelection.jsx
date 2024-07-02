@@ -287,10 +287,22 @@ const FaceSelection = () => {
     }
   };
 
-  const handleSelectCharacter = (character) => {
+  const handleSelectCharacter = async (character) => {
     
-   
+    try {
+     
+      const response = await API_UTIL.get(`/getSelectionFormData/${eventName}/${character}`);
+      if (response.data) {
+        setFormData(response.data);
+        updateSelectedValues(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching form data:', error);
+    } finally {
+      setIsLoading(false);
+    }
     handleSelectChange("form_owner",character);
+    
     console.log(`Selected character: ${character}`);
   }; 
   const checkCharacterSelected = ()=>{
@@ -317,14 +329,14 @@ const FaceSelection = () => {
           <h2>Are you a Groom or Bride</h2>
           <div style={{ display: 'flex', justifyContent: 'space-around' }}>
             <div
-              onClick={() => handleSelectCharacter("Groom")}
-              className={`card ${formData['form_owner'] === "Groom" ? "selected" : ""}`}
+              onClick={() => handleSelectCharacter("groom")}
+              className={`card ${formData['form_owner'] === "groom" ? "selected" : ""}`}
             >
               <img src = 'assets/groom_icon.png'/>
             </div>
             <div
-              onClick={() => handleSelectCharacter("Bride")}
-              className={`card ${formData['form_owner'] === "Bride" ? "selected" : ""}`}
+              onClick={() => handleSelectCharacter("bride")}
+              className={`card ${formData['form_owner'] === "bride" ? "selected" : ""}`}
             >
              <img src = 'assets/bride_icon.png'/>
             </div>
