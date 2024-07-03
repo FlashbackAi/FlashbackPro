@@ -9,7 +9,6 @@ import { useParams, useNavigate } from "react-router";
 import CustomFaceOption from "../../../components/CustomOption/CustomFaceOption";
 import { toast } from "react-toastify";
 import LoadingSpinner from "../../../components/Loader/LoadingSpinner";
-import Switch from "react-switch";
 
 const FaceSelection = () => {
   const isDataFetched = useRef(false);
