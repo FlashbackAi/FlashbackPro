@@ -458,19 +458,19 @@ const FaceSelection = () => {
               onClick={() => handleSelectCharacter("couple")}
               className={`card ${formData['form_owner'] === "couple" ? "selected" : ""}`}
             >
-              <img src = 'couple_icon.png'/>
+              <img src = 'assets/couple_icon.png'/>
             </div>
             <div
               onClick={() => handleSelectCharacter("groom")}
               className={`card ${formData['form_owner'] === "groom" ? "selected" : ""}`}
             >
-              <img src = 'groom_icon.png'/>
+              <img src = 'assets/groom_icon.png'/>
             </div>
             <div
               onClick={() => handleSelectCharacter("bride")}
               className={`card ${formData['form_owner'] === "bride" ? "selected" : ""}`}
             >
-             <img src = 'bride_icon.png'/>
+             <img src = 'assets/bride_icon.png'/>
             </div>
           </div>
           <button onClick={checkCharacterSelected}>Next</button>
