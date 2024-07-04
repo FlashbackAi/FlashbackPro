@@ -42,6 +42,7 @@ header{
   .marital-status label {
     font-weight: bold;
     color: white; /* Make the label text color white */
+    font-family: 'source-code-pro', Menlo, Monaco, Consolas, 'Courier New', monospace;
   }
   
   .radio-group {
@@ -94,5 +95,4 @@ header{
     outline: none;
     border: none;
   }
-  
   

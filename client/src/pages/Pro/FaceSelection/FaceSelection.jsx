@@ -97,10 +97,11 @@ const FaceSelection = () => {
     [...Array(count).keys()].forEach((elm, index) => {
       const title = gender === "male" ? `Select ${char} Sibling (Brother ${index + 1})` : `Select ${char} Sibling (Sister ${index + 1})`;
       const sibling = `${char}${gender}Sibling${index + 1}`;
+  
       siblings.push(
-        <motion.div key={index} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className="sibling-container">
+        <div className="sibling-container" key={`${serialNoStart}.${index + 1}`}>
           <div className="marital-status">
-            <br/><br/>
+            <br /><br />
             <label>{title} Marital Status:</label>
             <div className="radio-group">
               <label>
@@ -148,22 +149,7 @@ const FaceSelection = () => {
               sendSelection={handleSelectChange}
               selectedImage={[formData[sibling]]}
             />
-          </div>
-          {formData[`${sibling}MaritalStatus`] === "married" && (
-            <CustomFaceOption
-              question={`${sibling}Spouse`}
-              options={gender === "male" ? filterOptions(females) : filterOptions(males)}
-              others={filterOptions(userThumbnails)}
-              serialNo={`${serialNoStart}.${index + 1}.1`}
-              title={`Select ${char} Sibling's Spouse`}
-              onSelect={handleSelectFace}
-              sendSelection={handleSelectChange}
-              selectedImage={[formData[`${sibling}Spouse`]]}
-              isInternal = {true}
-            />
-          )}
-          {formData[`${sibling}MaritalStatus`] === "marriedWithKids" && (
-            <>
+            {(formData[`${sibling}MaritalStatus`] === "married" || formData[`${sibling}MaritalStatus`] === "marriedWithKids") && (
               <CustomFaceOption
                 question={`${sibling}Spouse`}
                 options={gender === "male" ? filterOptions(females) : filterOptions(males)}
@@ -173,8 +159,12 @@ const FaceSelection = () => {
                 onSelect={handleSelectFace}
                 sendSelection={handleSelectChange}
                 selectedImage={[formData[`${sibling}Spouse`]]}
-                isInternal = {true}
+                next={next}
+                prev={prev}
+                isInternal={true}
               />
+            )}
+            {formData[`${sibling}MaritalStatus`] === "marriedWithKids" && (
               <CustomFaceOption
                 question={`${sibling}Children`}
                 options={filterOptions(kids)}
@@ -182,18 +172,22 @@ const FaceSelection = () => {
                 serialNo={`${serialNoStart}.${index + 1}.2`}
                 title={`Select ${char} Sibling's Children`}
                 multiple={true}
-                isInternal = {true}
+                isInternal={true}
+                next={next}
+                prev={prev}
                 onSelect={handleSelectFace}
                 sendSelection={handleSelectChange}
                 selectedImage={formData[`${sibling}Children`] || []}
               />
-            </>
-          )}
-        </motion.div>
+            )}
+          </div>
+        </div>
       );
     });
+  
     return siblings;
   };
+  
   
   const handleClick = () => {
     setStart(true);
@@ -324,18 +318,89 @@ const FaceSelection = () => {
     return options.filter((option) => !selectedValues.has(option.face_url));
   };
 
+
   const next = (serialNo) => {
-    window.scrollTo({
-      top: document.getElementsByClassName(serialNo)[0].nextElementSibling.offsetTop,
-      behavior: "smooth",
-    });
+    const getNextElement = (currentSerial) => {
+      if(currentSerial.toString().length ===1 ){
+        let nextElement = document.getElementsByClassName(currentSerial+1)[0];
+        if (nextElement) return nextElement;
+        else{
+          let nextSerial =  ((currentSerial.toString().split('.').map(Number))[0]+1).toString()+'.1'
+          return document.getElementsByClassName(nextSerial)[0];
+        }
+      }else{
+        let parts = currentSerial.toString().split('.').map(Number);
+        parts[parts.length - 1] += 1;
+        let nextSerial = parts.join('.');
+        let nextElement = document.getElementsByClassName(nextSerial)[0];
+        if (nextElement) return nextElement;
+        else{
+          let nextSerial = (parts[0]+1)
+          
+          let nextElement = document.getElementsByClassName(nextSerial)[0];
+          if (nextElement) return nextElement;
+           nextSerial = (parts[0]+1).toString()+'.1';
+          nextElement = document.getElementsByClassName(nextSerial)[0];
+          if (nextElement) return nextElement;
+        }
+      }
+    };
+  
+    let nextElement;
+    do {
+      nextElement = getNextElement(serialNo);
+      if (nextElement) {
+        window.scrollTo({
+          top: nextElement.offsetTop,
+          behavior: "smooth",
+        });
+        break;
+      } else {
+        serialNo = (parseInt(serialNo.toString().split('.')[0]) + 1).toString();
+      }
+    } while (!nextElement);
   };
 
   const prev = (serialNo) => {
-    window.scrollTo({
-      top: document.getElementsByClassName(serialNo)[0].previousElementSibling.offsetTop,
-      behavior: "smooth",
-    });
+    const getNextElement = (currentSerial) => {
+      if(currentSerial.toString().length ===1 ){
+        let nextElement = document.getElementsByClassName(currentSerial-1)[0];
+        if (nextElement) return nextElement;
+        else{
+          let nextSerial =  ((currentSerial.toString().split('.').map(Number))[0]-1).toString()+'.1'
+          return document.getElementsByClassName(nextSerial)[0];
+        }
+      }else{
+        let parts = currentSerial.toString().split('.').map(Number);
+        parts[parts.length - 1] -= 1;
+        let nextSerial = parts.join('.');
+        let nextElement = document.getElementsByClassName(nextSerial)[0];
+        if (nextElement) return nextElement;
+        else{
+          let nextSerial = (parts[0]-1)
+          
+          let nextElement = document.getElementsByClassName(nextSerial)[0];
+          if (nextElement) return nextElement;
+           nextSerial = (parts[0]-1).toString()+'.1';
+          nextElement = document.getElementsByClassName(nextSerial)[0];
+          if (nextElement) return nextElement;
+        }
+      }
+    };
+  
+    let nextElement;
+    do {
+      nextElement = getNextElement(serialNo);
+      if (nextElement) {
+        window.scrollTo({
+          top: nextElement.offsetTop,
+          behavior: "smooth",
+        });
+        break;
+      } else {
+        serialNo = (parseInt(serialNo.toString().split('.')[0]) - 1).toString();
+      }
+    } while (!nextElement);
   };
 
   const handleSelectFace = async (question, faceUrl) => {
@@ -431,19 +496,25 @@ const FaceSelection = () => {
           className="entry"
         >
           <Header />
-          <h2>Are you a Groom or Bride</h2>
+          <h2>Are you a Couple, Groom or Bride</h2>
           <div style={{ display: 'flex', justifyContent: 'space-around' }}>
+            <div
+              onClick={() => handleSelectCharacter("couple")}
+              className={`card ${formData['form_owner'] === "couple" ? "selected" : ""}`}
+            >
+              <img src = 'couple_icon.png'/>
+            </div>
             <div
               onClick={() => handleSelectCharacter("groom")}
               className={`card ${formData['form_owner'] === "groom" ? "selected" : ""}`}
             >
-              <img src = 'assets/groom_icon.png'/>
+              <img src = 'groom_icon.png'/>
             </div>
             <div
               onClick={() => handleSelectCharacter("bride")}
               className={`card ${formData['form_owner'] === "bride" ? "selected" : ""}`}
             >
-             <img src = 'assets/bride_icon.png'/>
+             <img src = 'bride_icon.png'/>
             </div>
           </div>
           <button onClick={checkCharacterSelected}>Next</button>
@@ -617,12 +688,12 @@ const FaceSelection = () => {
                 <button onClick={() => next(7)}>Next</button>
               </div>
             </motion.div>
-            {generateSiblingSelects(formData.groommaleSiblingCount, "groom", "male", 7)}
-            {generateSiblingSelects(formData.groomfemaleSiblingCount, "groom", "female", 8)}
-            {generateSiblingSelects(formData.bridemaleSiblingCount, "bride", "male", 9)}
-            {generateSiblingSelects(formData.bridefemaleSiblingCount, "bride", "female", 10)}
+            {generateSiblingSelects(formData.groommaleSiblingCount, "groom", "male", 8)}
+            {generateSiblingSelects(formData.groomfemaleSiblingCount, "groom", "female", 9)}
+            {generateSiblingSelects(formData.bridemaleSiblingCount, "bride", "male", 10)}
+            {generateSiblingSelects(formData.bridefemaleSiblingCount, "bride", "female", 11)}
             <CustomFaceOption
-              serialNo={9}
+              serialNo={12}
               title="Please select Kids"
               next={next}
               prev={prev}
@@ -635,7 +706,7 @@ const FaceSelection = () => {
               selectedImage={formData.Kids}
             />
             <CustomFaceOption
-              serialNo={10}
+              serialNo={13}
               title="Please select Level 1 Cousins"
               next={next}
               prev={prev}
@@ -648,7 +719,7 @@ const FaceSelection = () => {
               selectedImage={formData["Level 1 Cousins"]}
             />
             <CustomFaceOption
-              serialNo={11}
+              serialNo={14}
               title="Please select Level 2 Cousins"
               next={next}
               prev={prev}
@@ -661,7 +732,7 @@ const FaceSelection = () => {
               selectedImage={formData["Level 2 Cousins"]}
             />
             <CustomFaceOption
-              serialNo={12}
+              serialNo={15}
               title="Please select Uncles"
               next={next}
               prev={prev}
@@ -674,7 +745,7 @@ const FaceSelection = () => {
               selectedImage={formData.Uncles}
             />
             <CustomFaceOption
-              serialNo={13}
+              serialNo={16}
               title="Please select Aunts"
               next={next}
               prev={prev}
@@ -688,7 +759,7 @@ const FaceSelection = () => {
             />
            
             <CustomFaceOption
-              serialNo={15}
+              serialNo={17}
               title="Please select Grand Parents"
               next={next}
               prev={prev}
@@ -701,7 +772,7 @@ const FaceSelection = () => {
               selectedImage={formData["Grand Parents"]}
             />
              <CustomFaceOption
-              serialNo={16}
+              serialNo={18}
               title="Please select Other Important Relatives"
               next={next}
               prev={prev}
@@ -714,8 +785,8 @@ const FaceSelection = () => {
               selectedImage={formData["Other Important Relatives"]}
             />
             <CustomFaceOption
-              serialNo={17}
-              title="Please select Friends"
+              serialNo={19}
+              title="Plese select Friends"
               next={next}
               prev={prev}
               question="Friends"
@@ -727,7 +798,7 @@ const FaceSelection = () => {
               selectedImage={formData.Friends}
             />
             <CustomFaceOption
-              serialNo={18}
+              serialNo={20}
               title="Please select Other Important People"
               next={next}
               isSubmit={true}
