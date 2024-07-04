@@ -9,6 +9,7 @@ import { useParams, useNavigate } from "react-router";
 import CustomFaceOption from "../../../components/CustomOption/CustomFaceOption";
 import { toast } from "react-toastify";
 import LoadingSpinner from "../../../components/Loader/LoadingSpinner";
+import Modal from '../../../components/Modal/Modal';
 
 const FaceSelection = () => {
   const isDataFetched = useRef(false);
@@ -34,6 +35,8 @@ const FaceSelection = () => {
   const [selectedValues, setSelectedValues] = useState(new Set());
   const [isFacesSelectionDone, setIsFacesSelectionDone] = useState();
   const [isCharacterSelected, setIsCharacterSelected] = useState(false);
+  const [showMaritalStatusModal, setShowMaritalStatusModal] = useState(false);
+  const [currentSibling, setCurrentSibling] = useState('');
 
   const [formData, setFormData] = useState({
     event_name: eventName,
@@ -46,13 +49,13 @@ const FaceSelection = () => {
     bridesFather: null,
     Kids: [],
     "Level 1 Cousins": [],
-    "Level 2 Cousins": [],    
+    "Level 2 Cousins": [],
     Uncles: [],
     Aunts: [],
     "Grand Parents": [],
     "Other Important Relatives": [],
     Friends: [],
-    "Other Important People":[],
+    "Other Important People": [],
     "groommaleSiblingCount": 0,
     "groomfemaleSiblingCount": 0,
     "bridemaleSiblingCount": 0,
@@ -64,78 +67,31 @@ const FaceSelection = () => {
 
   const navigate = useNavigate();
 
-  // const generateSiblingSelects = (count, char, gender, serialNoStart) => {
-  //   const siblings = [];
-  //   const options = gender === "male" ? filterOptions(males).slice(0,10) : filterOptions(females).slice(0,10);
+  const handleOpenMaritalStatusModal = (sibling) => {
+    setCurrentSibling(sibling);
+    setShowMaritalStatusModal(true);
+  };
 
-  //   [...Array(count).keys()].forEach((elm, index) => {
-  //     const title = gender === "male" ? `Select ${char} Sibling (Brother ${index + 1})` : `Select ${char} Sibling (Sister ${index + 1})`;
-  //     let sibling = `${char}${gender}Sibling${index + 1}`;
-  //     siblings.push(
-  //       <CustomFaceOption
-  //         question={sibling}
-  //         options={options}
-  //         others={filterOptions(userThumbnails)}
-  //         serialNo={`${serialNoStart}.${index + 1}`}
-  //         title={title}
-  //         next={next}
-  //         prev={prev}
-  //         key={index}
-  //         onSelect={handleSelectFace}
-  //         sendSelection={handleSelectChange}
-  //         selectedImage={[formData[sibling]]}
-  //       />
-  //     );
-  //   });
-  //   return siblings;
-  // };
+  const handleCloseMaritalStatusModal = () => {
+    setShowMaritalStatusModal(false);
+    setCurrentSibling('');
+  };
+
+  const handleMaritalStatusChange = (status) => {
+    handleSelectChange(`${currentSibling}MaritalStatus`, status);
+    handleCloseMaritalStatusModal();
+  };
 
   const generateSiblingSelects = (count, char, gender, serialNoStart) => {
     const siblings = [];
     const options = gender === "male" ? filterOptions(males).slice(0, 10) : filterOptions(females).slice(0, 10);
-  
+
     [...Array(count).keys()].forEach((elm, index) => {
       const title = gender === "male" ? `Select ${char} Sibling (Brother ${index + 1})` : `Select ${char} Sibling (Sister ${index + 1})`;
       const sibling = `${char}${gender}Sibling${index + 1}`;
-  
+
       siblings.push(
         <div className="sibling-container" key={`${serialNoStart}.${index + 1}`}>
-          <div className="marital-status">
-            <br /><br />
-            <label>{title} Marital Status:</label>
-            <div className="radio-group">
-              <label>
-                <input
-                  type="radio"
-                  name={`${sibling}MaritalStatus`}
-                  value="unmarried"
-                  checked={formData[`${sibling}MaritalStatus`] === "unmarried"}
-                  onChange={(e) => handleSelectChange(`${sibling}MaritalStatus`, e.target.value)}
-                />
-                Unmarried
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name={`${sibling}MaritalStatus`}
-                  value="married"
-                  checked={formData[`${sibling}MaritalStatus`] === "married"}
-                  onChange={(e) => handleSelectChange(`${sibling}MaritalStatus`, e.target.value)}
-                />
-                Married
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name={`${sibling}MaritalStatus`}
-                  value="marriedWithKids"
-                  checked={formData[`${sibling}MaritalStatus`] === "marriedWithKids"}
-                  onChange={(e) => handleSelectChange(`${sibling}MaritalStatus`, e.target.value)}
-                />
-                Married with Kids
-              </label>
-            </div>
-          </div>
           <div className="centered-selection">
             <CustomFaceOption
               question={sibling}
@@ -143,6 +99,8 @@ const FaceSelection = () => {
               others={filterOptions(userThumbnails)}
               serialNo={`${serialNoStart}.${index + 1}`}
               title={title}
+              isSibling = {true}
+              maritalStatus = {() => handleOpenMaritalStatusModal(sibling)}
               next={next}
               prev={prev}
               onSelect={handleSelectFace}
@@ -184,11 +142,10 @@ const FaceSelection = () => {
         </div>
       );
     });
-  
+
     return siblings;
   };
-  
-  
+
   const handleClick = () => {
     setStart(true);
     fetchFormData();
@@ -317,7 +274,6 @@ const FaceSelection = () => {
   const filterOptions = (options = []) => {
     return options.filter((option) => !selectedValues.has(option.face_url));
   };
-
 
   const next = (serialNo) => {
     const getNextElement = (currentSerial) => {
@@ -815,6 +771,45 @@ const FaceSelection = () => {
           </>
         )}
       </section>
+
+      <Modal isOpen={showMaritalStatusModal} onClose={handleCloseMaritalStatusModal}>
+        <div className="marital-status">
+          <br /><br />
+          <label>Marital Status:</label>
+          <div className="radio-group">
+            <label>
+              <input
+                type="radio"
+                name="maritalStatus"
+                value="unmarried"
+                checked={formData[`${currentSibling}MaritalStatus`] === "unmarried"}
+                onChange={() => handleMaritalStatusChange("unmarried")}
+              />
+              Unmarried
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="maritalStatus"
+                value="married"
+                checked={formData[`${currentSibling}MaritalStatus`] === "married"}
+                onChange={() => handleMaritalStatusChange("married")}
+              />
+              Married
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="maritalStatus"
+                value="marriedWithKids"
+                checked={formData[`${currentSibling}MaritalStatus`] === "marriedWithKids"}
+                onChange={() => handleMaritalStatusChange("marriedWithKids")}
+              />
+              Married with Kids
+            </label>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 };

@@ -16,7 +16,9 @@ const CustomFaceOption = ({
   question,
   sendSelection,
   selectedImage,
-  isInternal = false
+  isInternal = false,
+  maritalStatus,
+  isSibling = false
 }) => {
   const abc = selectedImage ? selectedImage : [];
   const [selection, setSelection] = useState(abc);
@@ -110,6 +112,11 @@ const CustomFaceOption = ({
             {isSubmit ? "Submit" : "Next"}
           </button>
         )}
+        {isSibling && (
+          <button onClick={() => maritalStatus()}>Marital Status</button>
+        )
+
+        }
       </div>
     </motion.div>
   );
