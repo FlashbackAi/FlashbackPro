@@ -437,7 +437,7 @@ const FaceSelection = () => {
               onClick={() => handleSelectCharacter("groom")}
               className={`card ${formData['form_owner'] === "groom" ? "selected" : ""}`}
             >
-              <img src = 'assets/groom_icon.png'/>
+              <img src = 'assets/groom_icon.png '/>
             </div>
             <div
               onClick={() => handleSelectCharacter("bride")}

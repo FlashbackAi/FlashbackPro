@@ -70,13 +70,13 @@ const logger = winston.createLogger({
  });
 
  // *** Comment these certificates while testing changes in local developer machine. And, uncomment while pushing to mainline***
-const privateKey = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/privkey.pem', 'utf8');
-const certificate = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/fullchain.pem', 'utf8');
+// const privateKey = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/privkey.pem', 'utf8');
+// const certificate = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/fullchain.pem', 'utf8');
 
-const credentials = {
-  key: privateKey,
-  cert: certificate
-}
+// const credentials = {
+//   key: privateKey,
+//   cert: certificate
+// }
 
 // Set up AWS S3
 const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.js
@@ -1912,6 +1912,28 @@ app.post('/downloadImage', async (req, res) => {
         }
       });
 
+      // app.post('/uploadEventImage', upload.single('image'), async (req, res) => {
+      //   const file = req.file;
+      //   const clientName = req.body.clientName;
+      //   const eventName = req.body.eventName;
+      //   const fileKey = clientName+eventName +".jpg";
+      //   logger.info(fileKey);
+      //   const params = {
+      //     Bucket: "flashbackeventthumbnail",
+      //     Key: fileKey,
+      //     Body: file.buffer,
+      //     ContentType: file.mimetype,
+      //   };
+      
+      //   try {
+      //     const data = await s3.upload(params).promise();
+      //     res.json({ imageUrl: data.Location });
+      //   } catch (error) {
+      //     console.error('Error uploading image:', error);
+      //     res.status(500).json({ error: 'Error uploading image' });
+      //   }
+      // });
+
       app.post('/createUser', async (req, res) => {
         const  username  = req.body.username;
         let eventName = req.body.eventName;
@@ -2709,41 +2731,134 @@ app.post("/saveSelectedImage", async (req, res) => {
   }
 });
 
+app.post('/saveEventDetails', upload.single('image'), async (req, res) => {
+  const file = req.file;
+  logger.info(file);
+  const {
+    eventName,
+    eventDate,
+    clientName,
+    eventLocation,
+    street,
+    city,
+    state,
+    pinCode,
+    invitationNote,
+    invitation_url
+  } = req.body;
 
-app.post("/saveEventDetails", async (req, res) => {
- 
-  const eventName  = req.body.eventName;
-  const eventDate = req.body.eventDate;
-  const clientName = req.body.clientName;
-  const street = req.body.street;
-  const city = req.body.city;
-  const state = req.body.state;
-  const pinCode = req.body.pinCode;
-  const invitationNote = req.body.invitationNote;
-  const invitationUrl=req.body.invitationUrl;
-  logger.info("Creating Event :"+eventName);
+  logger.info('Event Location:', eventLocation); 
+
+  const fileKey = `${clientName}-${eventName}.jpg`;
+
+  const params = {
+    Bucket: "flashbackeventthumbnail",
+    Key: fileKey,
+    Body: file.buffer,
+    ContentType: file.mimetype,
+  };
+
   try {
+    // Upload image to S3
+    const data = await s3.upload(params).promise();
+    const imageUrl = data.Location;
+
+    // Save event details to DynamoDB
     const eventParams = {
       TableName: eventsTable,
       Item: {
         event_name: eventName,
         client_name: clientName,
         event_date: eventDate,
-        street:street,
-        city:city,
-        state:state,
-        pin_code:pinCode,
-        invitation_note:invitationNote,
-        invitation_url:invitationUrl
-      }
+        event_location: eventLocation,
+        street,
+        city,
+        state,
+        pin_code: pinCode,
+        invitation_note: invitationNote,
+        invitation_url: invitation_url,
+        event_image: imageUrl,
+      },
     };
-    const putResult = await docClient.put(eventParams).promise()
-    logger.info("Event Created Successfully :"+eventName);
-    //logger.info(`Evenr created successfully: ${JSON.stringify(putResult)}`);
-    res.status(200).send({"message":"Event Created Successfully"});
+
+    const putResult = await docClient.put(eventParams).promise();
+    logger.info('Event Created Successfully: ' + eventName);
+    res.status(200).send({ message: 'Event Created Successfully', eventImage: imageUrl });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Error creating event' });
+  }
+});
+
+// Endpoint to update an event
+app.put('/updateEvent/:eventName/:eventDate', async (req, res) => {
+  const { eventName, eventDate } = req.params;
+  const {
+    eventName: newEventName,
+    eventDate: newEventDate,
+    invitationNote,
+    eventLocation,
+    street,
+    city,
+    state: newState,
+    pinCode,
+    invitation_url
+  } = req.body;
+
+  const updateParams = {
+    TableName: eventsTable,
+    Key: {
+      event_name: eventName,
+      event_date: eventDate,
+    },
+    UpdateExpression: "set event_name = :newEventName, event_date = :newEventDate, event_location = :eventLocation,invitation_note = :invitationNote, street = :street, city = :city, #st = :state, pin_code = :pinCode, invitation_url = :invitation_url",
+    ExpressionAttributeNames: {
+      "#st": "state",
+    },
+    ExpressionAttributeValues: {
+      ":newEventName": newEventName,
+      ":newEventDate": newEventDate,
+      ":eventLocation": eventLocation,
+      ":invitationNote": invitationNote, 
+      ":street": street,
+      ":city": city,
+      ":state": newState,
+      ":pinCode": pinCode,
+      ":invitation_url": invitation_url,
+    },
+    ReturnValues: "ALL_NEW",
+  };
+
+  try {
+    const result = await docClient.update(updateParams).promise();
+    logger.info(`Updated event: ${eventName} on ${eventDate}`);
+    res.status(200).send(result.Attributes);
   } catch (err) {
     logger.info(err.message);
-    res.status(500).send(err.message);
+    res.status(500).send({ error: 'Failed to update the event' });
+  }
+});
+
+
+// API endpoint to delete an event
+app.delete('/deleteEvent/:eventName/:eventDate', async (req, res) => {
+  const { eventName, eventDate } = req.params;
+
+  const params = {
+    TableName: eventsTable,
+    Key: {
+      event_name: eventName,
+      event_date: eventDate,
+    }
+  };
+  logger.info(params.Key)
+  logger.info("Deletion Started");
+  try {
+    const result = await docClient.delete(params).promise();
+    res.status(200).json({ message: 'Event deleted successfully', result });
+    logger.info("Deletion");
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting event', error: error.message });
   }
 });
 
@@ -2767,6 +2882,37 @@ app.post("/deleteEvent", async (req, res) => {
     res.status(500).send(err.message);
   }
 });
+
+app.get("/getClientEventDetails/:clientName", async (req, res) => {
+  
+  const clientName = req.params.clientName; // Adjust based on your token payload
+  logger.info(`Fetching event details for ${clientName}`)
+  try {
+    const eventParams = {
+      TableName: eventsTable,
+      FilterExpression: "client_name = :clientName",
+      ExpressionAttributeValues: {
+        ":clientName": clientName
+      }
+
+    };
+
+
+    const result = await docClient.scan(eventParams).promise();
+
+    if (result.Items && result.Items.length > 0) {
+      logger.info(`Fetched event details for ${clientName}`)
+      res.status(200).send(result.Items);
+    } else {
+      res.status(404).send({ message: "No events found for this client" });
+    }
+  } catch (err) {
+    logger.info(err.message);
+    res.status(500).send(err.message);
+  }
+});
+
+
 
 app.post("/updateStatus", async (req, res) => {
   const { eventName, newStatus } = req.body;
@@ -2817,13 +2963,13 @@ app.post("/updateStatus", async (req, res) => {
   }
 });
 
-const httpsServer = https.createServer(credentials, app);
+// const httpsServer = https.createServer(credentials, app);
 
-httpsServer.listen(PORT, () => {
-  logger.info(`Server is running on https://localhost:${PORT}`);
-});
+// httpsServer.listen(PORT, () => {
+//   logger.info(`Server is running on https://localhost:${PORT}`);
+// });
 
 //**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
-// app.listen(PORT ,() => {
-//   logger.info(`Server started on http://localhost:${PORT}`);
-// });
+ app.listen(PORT ,() => {
+ logger.info(`Server started on http://localhost:${PORT}`);
+ });

@@ -18,6 +18,7 @@ import AlbumSelectionForm from "../pages/Pro/AlbumSelectionForm/AlbumSelectionFo
 import PhotoSelection from "../pages/Pro/PhotoSelection/PhotoSelection";
 import FaceSelection from "../pages/Pro/FaceSelection/FaceSelection";
 import Event from "../pages/Event/Event";
+import CreateEventForm from "../pages/CreateEvent/CreateEvent";
 
 
 const ROUTES=[
@@ -154,10 +155,16 @@ const ROUTES=[
         component:CreatorLogin
     },
     {
-        path:"/event",
+        path:"/CreateEvent",
         exact:false,
         protected:false,
-        component:Event
+        component:CreateEventForm
+    },
+    {
+        path:"/Event",
+        exact:false,
+        protected:false,
+        component:Event,
     }
 
 ]
