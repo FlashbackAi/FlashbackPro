@@ -152,7 +152,9 @@ const PhotoSelection = () => {
 
     const siblingKeys = [];
     Object.keys(formData).forEach(key => {
-      if (key.match(/Sibling\d+$/) && !key.includes('Count')) {
+      console.log(key)
+      if ((key.match(/ Sister \d+$/) || key.match(/ Brother \d+$/)) && !key.includes('Count')) {
+        console.log("---- ",key)
         siblingKeys.push(key);
       }
     });
@@ -732,7 +734,7 @@ const PhotoSelection = () => {
         }
         break;
       default:
-        if (key.match(/Sibling\d+$/)) {
+        if (key.match(/ Brother \d+$/) || key.match(/ Sister \d+$/)) {
           if (imagesData[key].length === 0) {
               setIsLoading(true);
               userId = formData[key].split("/").pop().split(".")[0];
