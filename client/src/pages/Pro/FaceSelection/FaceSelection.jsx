@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import "../AlbumSelectionForm/AlbumSelectionForm.css";
 import "./FaceSelection.css";
 import Header from "../../../components/Header/Header";
-import { ArrowRight, ChevronLeft, Minus, Plus } from "lucide-react";
+import { ArrowRight, ChevronLeft, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import API_UTIL from "../../../services/AuthIntereptor";
 import { useParams, useNavigate } from "react-router";
@@ -99,9 +99,15 @@ const FaceSelection = () => {
               others={filterOptions(userThumbnails)}
               serialNo={`${serialNoStart}.${index + 1}`}
               title={title}
-              isSibling = {true}
-              maritalStatus = {() => handleOpenMaritalStatusModal(sibling)}
-              next={next}
+              isSibling={true}
+              maritalStatus={() => handleOpenMaritalStatusModal(sibling)}
+              next={() => {
+                if (!formData[`${sibling}MaritalStatus`]) {
+                  handleOpenMaritalStatusModal(sibling);
+                } else {
+                  next(`${serialNoStart}.${index + 1}`);
+                }
+              }}
               prev={prev}
               onSelect={handleSelectFace}
               sendSelection={handleSelectChange}
@@ -277,31 +283,31 @@ const FaceSelection = () => {
 
   const next = (serialNo) => {
     const getNextElement = (currentSerial) => {
-      if(currentSerial.toString().length ===1 ){
-        let nextElement = document.getElementsByClassName(currentSerial+1)[0];
+      if (currentSerial.toString().length === 1) {
+        let nextElement = document.getElementsByClassName(currentSerial + 1)[0];
         if (nextElement) return nextElement;
-        else{
-          let nextSerial =  ((currentSerial.toString().split('.').map(Number))[0]+1).toString()+'.1'
+        else {
+          let nextSerial = ((currentSerial.toString().split('.').map(Number))[0] + 1).toString() + '.1'
           return document.getElementsByClassName(nextSerial)[0];
         }
-      }else{
+      } else {
         let parts = currentSerial.toString().split('.').map(Number);
         parts[parts.length - 1] += 1;
         let nextSerial = parts.join('.');
         let nextElement = document.getElementsByClassName(nextSerial)[0];
         if (nextElement) return nextElement;
-        else{
-          let nextSerial = (parts[0]+1)
-          
+        else {
+          let nextSerial = (parts[0] + 1)
+
           let nextElement = document.getElementsByClassName(nextSerial)[0];
           if (nextElement) return nextElement;
-           nextSerial = (parts[0]+1).toString()+'.1';
+          nextSerial = (parts[0] + 1).toString() + '.1';
           nextElement = document.getElementsByClassName(nextSerial)[0];
           if (nextElement) return nextElement;
         }
       }
     };
-  
+
     let nextElement;
     do {
       nextElement = getNextElement(serialNo);
@@ -319,31 +325,31 @@ const FaceSelection = () => {
 
   const prev = (serialNo) => {
     const getNextElement = (currentSerial) => {
-      if(currentSerial.toString().length ===1 ){
-        let nextElement = document.getElementsByClassName(currentSerial-1)[0];
+      if (currentSerial.toString().length === 1) {
+        let nextElement = document.getElementsByClassName(currentSerial - 1)[0];
         if (nextElement) return nextElement;
-        else{
-          let nextSerial =  ((currentSerial.toString().split('.').map(Number))[0]-1).toString()+'.1'
+        else {
+          let nextSerial = ((currentSerial.toString().split('.').map(Number))[0] - 1).toString() + '.1'
           return document.getElementsByClassName(nextSerial)[0];
         }
-      }else{
+      } else {
         let parts = currentSerial.toString().split('.').map(Number);
         parts[parts.length - 1] -= 1;
         let nextSerial = parts.join('.');
         let nextElement = document.getElementsByClassName(nextSerial)[0];
         if (nextElement) return nextElement;
-        else{
-          let nextSerial = (parts[0]-1)
-          
+        else {
+          let nextSerial = (parts[0] - 1)
+
           let nextElement = document.getElementsByClassName(nextSerial)[0];
           if (nextElement) return nextElement;
-           nextSerial = (parts[0]-1).toString()+'.1';
+          nextSerial = (parts[0] - 1).toString() + '.1';
           nextElement = document.getElementsByClassName(nextSerial)[0];
           if (nextElement) return nextElement;
         }
       }
     };
-  
+
     let nextElement;
     do {
       nextElement = getNextElement(serialNo);
@@ -391,17 +397,17 @@ const FaceSelection = () => {
         ...formData,
         isFacesSelectionDone: true,
       });
-      console.log("response : "+response);
+      console.log("response : " + response);
       if (response.status === 200) {
         toast("Selection has been saved Successfully");
-  
+
         setFormData((prevState) => ({
           ...prevState,
           isFacesSelectionDone: true,
         }));
-  
+
         setIsFacesSelectionDone(true);
-  
+
         console.log("Navigating to photo selection");
         navigate(`/photoSelection/${eventName}`);
       } else {
@@ -414,9 +420,9 @@ const FaceSelection = () => {
   };
 
   const handleSelectCharacter = async (character) => {
-    
+
     try {
-     
+
       const response = await API_UTIL.get(`/getSelectionFormData/${eventName}/${character}`);
       if (response.data) {
         setFormData(response.data);
@@ -427,55 +433,55 @@ const FaceSelection = () => {
     } finally {
       setIsLoading(false);
     }
-    handleSelectChange("form_owner",character);
-    
+    handleSelectChange("form_owner", character);
+
     console.log(`Selected character: ${character}`);
-  }; 
-  const checkCharacterSelected = ()=>{
+  };
+  const checkCharacterSelected = () => {
     console.log(formData['form_owner']);
-    if(formData['form_owner'] != null){
+    if (formData['form_owner'] != null) {
       setIsCharacterSelected(true);
     }
   }
-  
+
   return (
     <>
       <section className="albumSelectionForm">
-      {!isCharacterSelected && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{
-            duration: 0.8,
-            ease: [0, 0.71, 0.2, 1.01],
-          }}
-          className="entry"
-        >
-          <Header />
-          <h2>Are you a Couple, Groom or Bride</h2>
-          <div style={{ display: 'flex', justifyContent: 'space-around' }}>
-            <div
-              onClick={() => handleSelectCharacter("couple")}
-              className={`card ${formData['form_owner'] === "couple" ? "selected" : ""}`}
-            >
-              <img src = 'assets/couple_icon.png'/>
+        {!isCharacterSelected && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{
+              duration: 0.8,
+              ease: [0, 0.71, 0.2, 1.01],
+            }}
+            className="entry"
+          >
+            <Header />
+            <h2>Are you a Couple, Groom or Bride</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-around' }}>
+              <div
+                onClick={() => handleSelectCharacter("couple")}
+                className={`card ${formData['form_owner'] === "couple" ? "selected" : ""}`}
+              >
+                <img src='assets/couple_icon.png' />
+              </div>
+              <div
+                onClick={() => handleSelectCharacter("groom")}
+                className={`card ${formData['form_owner'] === "groom" ? "selected" : ""}`}
+              >
+                <img src='assets/groom_icon.png' />
+              </div>
+              <div
+                onClick={() => handleSelectCharacter("bride")}
+                className={`card ${formData['form_owner'] === "bride" ? "selected" : ""}`}
+              >
+                <img src='assets/bride_icon.png' />
+              </div>
             </div>
-            <div
-              onClick={() => handleSelectCharacter("groom")}
-              className={`card ${formData['form_owner'] === "groom" ? "selected" : ""}`}
-            >
-              <img src = 'assets/groom_icon.png'/>
-            </div>
-            <div
-              onClick={() => handleSelectCharacter("bride")}
-              className={`card ${formData['form_owner'] === "bride" ? "selected" : ""}`}
-            >
-             <img src = 'assets/bride_icon.png'/>
-            </div>
-          </div>
-          <button onClick={checkCharacterSelected}>Next</button>
-        </motion.div>
-      )}
+            <button onClick={checkCharacterSelected}>Next</button>
+          </motion.div>
+        )}
 
 
         {isCharacterSelected && !start && (
@@ -488,7 +494,7 @@ const FaceSelection = () => {
             }}
             className="entry"
           >
-            <Header/>
+            <Header />
             <h2>Let's Start with Selecting Faces</h2>
             <button onClick={handleClick}>Start</button>
           </motion.div>
@@ -497,7 +503,7 @@ const FaceSelection = () => {
           <>
             <CustomFaceOption
               serialNo={1}
-              options={filterOptions(grooms).slice(0,10)}
+              options={filterOptions(grooms).slice(0, 10)}
               others={filterOptions(userThumbnails)}
               title="Please select the groom's image"
               next={next}
@@ -513,7 +519,7 @@ const FaceSelection = () => {
               title="Please select the bride's image"
               next={next}
               prev={prev}
-              options={filterOptions(brides).slice(0,10)}
+              options={filterOptions(brides).slice(0, 10)}
               others={filterOptions(userThumbnails)}
               onSelect={handleSelectFace}
               question="bride"
@@ -527,7 +533,7 @@ const FaceSelection = () => {
               prev={prev}
               question="groomsMother"
               sendSelection={handleSelectChange}
-              options={filterOptions(aunts).slice(0,10)}
+              options={filterOptions(aunts).slice(0, 10)}
               others={filterOptions(userThumbnails)}
               onSelect={handleSelectFace}
               selectedImage={[formData.groomsMother]}
@@ -539,7 +545,7 @@ const FaceSelection = () => {
               prev={prev}
               question="groomsFather"
               sendSelection={handleSelectChange}
-              options={filterOptions(uncles).slice(0,10)}
+              options={filterOptions(uncles).slice(0, 10)}
               others={filterOptions(userThumbnails)}
               onSelect={handleSelectFace}
               selectedImage={[formData.groomsFather]}
@@ -549,7 +555,7 @@ const FaceSelection = () => {
               title="Please select the bride's mother"
               next={next}
               prev={prev}
-              options={filterOptions(aunts).slice(0,10)}
+              options={filterOptions(aunts).slice(0, 10)}
               others={filterOptions(userThumbnails)}
               onSelect={handleSelectFace}
               question="bridesMother"
@@ -561,7 +567,7 @@ const FaceSelection = () => {
               title="Please select the bride's father"
               next={next}
               prev={prev}
-              options={filterOptions(uncles).slice(0,10)}
+              options={filterOptions(uncles).slice(0, 10)}
               others={filterOptions(userThumbnails)}
               onSelect={handleSelectFace}
               question="bridesFather"
@@ -713,7 +719,7 @@ const FaceSelection = () => {
               sendSelection={handleSelectChange}
               selectedImage={formData.Aunts}
             />
-           
+
             <CustomFaceOption
               serialNo={17}
               title="Please select Grand Parents"
@@ -727,7 +733,7 @@ const FaceSelection = () => {
               onSelect={handleSelectFace}
               selectedImage={formData["Grand Parents"]}
             />
-             <CustomFaceOption
+            <CustomFaceOption
               serialNo={18}
               title="Please select Other Important Relatives"
               next={next}
