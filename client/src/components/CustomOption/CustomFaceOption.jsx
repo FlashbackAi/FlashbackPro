@@ -16,11 +16,12 @@ const CustomFaceOption = ({
   question,
   sendSelection,
   selectedImage,
-  isInternal = false
+  isInternal = false,
+  maritalStatus,
+  isSibling = false
 }) => {
   const abc = selectedImage ? selectedImage : [];
   const [selection, setSelection] = useState(abc);
-  // console.log(selectedImage);
 
   const handleClick = (index, value) => {
     if (selection.includes(value)) {
@@ -64,7 +65,7 @@ const CustomFaceOption = ({
         </div>
       )}
       <div className="img-options">
-      <div className="separator">
+        <div className="separator">
           <hr className="partition-style" />
           <p>Suggested People</p>
           <hr className="partition-style" />
@@ -72,9 +73,7 @@ const CustomFaceOption = ({
         <div className="img-group">
           {options.map((option, index) => (
             <div
-              className={`img-outer ${
-                selection.includes(option.face_url) ? "selected" : ""
-              }`}
+              className={`img-outer ${selection.includes(option.face_url) ? "selected" : ""}`}
               key={index}
               onClick={() => handleClick(index, option.face_url)}
             >
@@ -92,9 +91,7 @@ const CustomFaceOption = ({
         <div className="img-group">
           {others.map((other, index) => (
             <div
-              className={`img-outer ${
-                selection.includes(other.face_url) ? "selected" : ""
-              }`}
+              className={`img-outer ${selection.includes(other.face_url) ? "selected" : ""}`}
               key={index}
               onClick={() => handleClick(index, other.face_url)}
             >
@@ -110,14 +107,19 @@ const CustomFaceOption = ({
             <ChevronLeft />
           </div>
         )}
-        {!isInternal &&(
-        <button onClick={isSubmit ? sendSubmitAction : () => next(serialNo)}>
-          {isSubmit ? "Submit" : "Next"}
-        </button>
+        {!isInternal && (
+          <button onClick={isSubmit ? sendSubmitAction : () => next(serialNo)}>
+            {isSubmit ? "Submit" : "Next"}
+          </button>
         )}
+        {isSibling && (
+          <button onClick={() => maritalStatus()}>Marital Status</button>
+        )
+
+        }
       </div>
     </motion.div>
   );
 };
 
-export default CustomFaceOption;
+export default CustomFaceOption
