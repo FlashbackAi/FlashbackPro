@@ -70,13 +70,13 @@ const logger = winston.createLogger({
  });
 
  // *** Comment these certificates while testing changes in local developer machine. And, uncomment while pushing to mainline***
-// const privateKey = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/privkey.pem', 'utf8');
-// const certificate = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/fullchain.pem', 'utf8');
+const privateKey = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/privkey.pem', 'utf8');
+const certificate = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/fullchain.pem', 'utf8');
 
-// const credentials = {
-//   key: privateKey,
-//   cert: certificate
-// }
+const credentials = {
+  key: privateKey,
+  cert: certificate
+}
 
 // Set up AWS S3
 const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.js
@@ -2791,11 +2791,57 @@ app.post('/saveEventDetails', upload.single('image'), async (req, res) => {
 });
 
 // Endpoint to update an event
+// app.put('/updateEvent/:eventName/:eventDate', async (req, res) => {
+//   const { eventName, eventDate } = req.params;
+//   const {
+//     eventName: newEventName,
+//     eventDate: newEventDate,
+//     invitationNote,
+//     eventLocation,
+//     street,
+//     city,
+//     state: newState,
+//     pinCode,
+//     invitation_url
+//   } = req.body;
+
+//   const updateParams = {
+//     TableName: eventsTable,
+//     Key: {
+//       event_name: eventName,
+//       event_date: eventDate,
+//     },
+//     UpdateExpression: "set event_name = :newEventName, event_date = :newEventDate, event_location = :eventLocation,invitation_note = :invitationNote, street = :street, city = :city, #st = :state, pin_code = :pinCode, invitation_url = :invitation_url",
+//     ExpressionAttributeNames: {
+//       "#st": "state",
+//     },
+//     ExpressionAttributeValues: {
+//       ":newEventName": newEventName,
+//       ":newEventDate": newEventDate,
+//       ":eventLocation": eventLocation,
+//       ":invitationNote": invitationNote, 
+//       ":street": street,
+//       ":city": city,
+//       ":state": newState,
+//       ":pinCode": pinCode,
+//       ":invitation_url": invitation_url,
+//     },
+//     ReturnValues: "ALL_NEW",
+//   };
+
+//   try {
+//     const result = await docClient.update(updateParams).promise();
+//     logger.info(`Updated event: ${eventName} on ${eventDate}`);
+//     res.status(200).send(result.Attributes);
+//   } catch (err) {
+//     logger.info(err.message);
+//     res.status(500).send({ error: 'Failed to update the event' });
+//   }
+// });
+
 app.put('/updateEvent/:eventName/:eventDate', async (req, res) => {
   const { eventName, eventDate } = req.params;
   const {
-    eventName: newEventName,
-    eventDate: newEventDate,
     invitationNote,
     eventLocation,
     street,
@@ -2811,15 +2857,13 @@ app.put('/updateEvent/:eventName/:eventDate', async (req, res) => {
       event_name: eventName,
       event_date: eventDate,
     },
-    UpdateExpression: "set event_name = :newEventName, event_date = :newEventDate, event_location = :eventLocation,invitation_note = :invitationNote, street = :street, city = :city, #st = :state, pin_code = :pinCode, invitation_url = :invitation_url",
+    UpdateExpression: "set event_location = :eventLocation, invitation_note = :invitationNote, street = :street, city = :city, #st = :state, pin_code = :pinCode, invitation_url = :invitation_url",
     ExpressionAttributeNames: {
       "#st": "state",
     },
     ExpressionAttributeValues: {
-      ":newEventName": newEventName,
-      ":newEventDate": newEventDate,
       ":eventLocation": eventLocation,
-      ":invitationNote": invitationNote, 
+      ":invitationNote": invitationNote,
       ":street": street,
       ":city": city,
       ":state": newState,
@@ -2838,6 +2882,7 @@ app.put('/updateEvent/:eventName/:eventDate', async (req, res) => {
     res.status(500).send({ error: 'Failed to update the event' });
   }
 });
+
 
 
 // API endpoint to delete an event
@@ -2963,13 +3008,13 @@ app.post("/updateStatus", async (req, res) => {
   }
 });
 
-// const httpsServer = https.createServer(credentials, app);
+const httpsServer = https.createServer(credentials, app);
 
-// httpsServer.listen(PORT, () => {
-//   logger.info(`Server is running on https://localhost:${PORT}`);
-// });
+httpsServer.listen(PORT, () => {
+  logger.info(`Server is running on https://localhost:${PORT}`);
+});
 
-//**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
- app.listen(PORT ,() => {
- logger.info(`Server started on http://localhost:${PORT}`);
- });
+// //**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
+//  app.listen(PORT ,() => {
+//  logger.info(`Server started on http://localhost:${PORT}`);
+//  });
