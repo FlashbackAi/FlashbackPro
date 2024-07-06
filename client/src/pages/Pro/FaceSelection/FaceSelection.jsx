@@ -82,7 +82,7 @@ const FaceSelection = () => {
     handleCloseMaritalStatusModal();
   };
 
-  const generateParentSiblingSelects = (siblings, parent) => {
+  const generateParentSiblingSelects = (siblings, parent, srNo) => {
     if (!siblings || siblings.length === 0) return null;
 
     return siblings.map((sibling, index) => (
@@ -92,7 +92,7 @@ const FaceSelection = () => {
           question={`${parent} Sibling ${index + 1}`}
           options={filterOptions(userThumbnails)}
           others={filterOptions(userThumbnails)}
-          serialNo={`${parent.replace(" ", "")}Sibling${index + 1}`}
+          serialNo={`${srNo}.${index + 2}`}
           title={`Select ${parent} Sibling ${index + 1}`}
           onSelect={handleSelectFace}
           sendSelection={handleSelectChange}
@@ -384,6 +384,7 @@ const FaceSelection = () => {
 
   const next = (serialNo) => {
     const getNextElement = (currentSerial) => {
+      console.log(currentSerial)
       if (currentSerial.toString().length === 1) {
         let nextElement = document.getElementsByClassName(currentSerial + 1)[0];
         if (nextElement) return nextElement;
@@ -628,7 +629,7 @@ const FaceSelection = () => {
             <div className="groom-mother-container" key={`Groom Mother`}>
               <div className="centered-selection">
                 <CustomFaceOption
-                  serialNo={3}
+                  serialNo={3.1}
                   title="Please select the groom's mother"
                   next={next}
                   prev={prev}
@@ -673,11 +674,11 @@ const FaceSelection = () => {
                 )}
               </div>
             </div>
-            {generateParentSiblingSelects(formData['Groom Mother Siblings'], "Groom Mother")}
+            {generateParentSiblingSelects(formData['Groom Mother Siblings'], "Groom Mother",'3')}
             <div className="groom-father-container" key={`Groom Father`}>
               <div className="centered-selection">
                 <CustomFaceOption
-                  serialNo={4}
+                  serialNo={4.1}
                   title="Please select the groom's father"
                   next={next}
                   prev={prev}
@@ -721,11 +722,11 @@ const FaceSelection = () => {
                 )}
               </div>
             </div>
-             {generateParentSiblingSelects(formData['Groom Father Siblings'], "Groom Father")}
+             {generateParentSiblingSelects(formData['Groom Father Siblings'], "Groom Father",'4')}
             <div className="bride-mother-container" key={`Bride Mother`}>
               <div className="centered-selection">
                 <CustomFaceOption
-                  serialNo={5}
+                  serialNo={5.1}
                   title="Please select the bride's mother"
                   next={next}
                   prev={prev}
@@ -765,15 +766,16 @@ const FaceSelection = () => {
                       isInternal={true}
                       multiple={true}
                     />
-                    {generateParentSiblingSelects(formData['Bride Mother Siblings'], "Bride Mother")}
+                  
                   </>
                 )}
               </div>
             </div>
+            {generateParentSiblingSelects(formData['Bride Mother Siblings'], "Bride Mother",'5')}
             <div className="bride-father-container" key={`Bride Father`}>
               <div className="centered-selection">
                 <CustomFaceOption
-                  serialNo={6}
+                  serialNo={6.1}
                   title="Please select the bride's father"
                   next={next}
                   prev={prev}
@@ -813,11 +815,12 @@ const FaceSelection = () => {
                       isInternal={true}
                       multiple={true}
                     />
-                    {generateParentSiblingSelects(formData['Bride Father Siblings'], "Bride Father")}
                   </>
                 )}
               </div>
             </div>
+            
+            {generateParentSiblingSelects(formData['Bride Father Siblings'], "Bride Father",'6')}
             <motion.div
               initial={{ opacity: 0, visibility: "hidden" }}
               whileInView={{ opacity: 1, visibility: "visible" }}

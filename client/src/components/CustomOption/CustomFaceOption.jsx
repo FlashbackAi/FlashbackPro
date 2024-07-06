@@ -15,13 +15,14 @@ const CustomFaceOption = ({
   multiple = false,
   question,
   sendSelection,
-  selectedImage,
+  selectedImage = [],
   isInternal = false,
   maritalStatus,
   isSibling = false
 }) => {
-  const abc = selectedImage ? selectedImage : [];
-  const [selection, setSelection] = useState(abc);
+  const [selection, setSelection] = useState(
+    Array.isArray(selectedImage) ? selectedImage : [selectedImage]
+  );
 
   const handleClick = (index, value) => {
     if (selection.includes(value)) {
@@ -58,7 +59,7 @@ const CustomFaceOption = ({
       {selection && (
         <div className="img-options">
           <div className="selected-face">
-            {selection.filter(url => url != null || url != undefined).map((url, index) => (
+            {selection.filter(url => url != null).map((url, index) => (
               <img key={index} src={url} alt={`selected ${index}`} className="selected-image" onClick={() => handleClick(index, url)} />
             ))}
           </div>
@@ -114,12 +115,10 @@ const CustomFaceOption = ({
         )}
         {isSibling && (
           <button onClick={() => maritalStatus()}>Marital Status</button>
-        )
-
-        }
+        )}
       </div>
     </motion.div>
   );
 };
 
-export default CustomFaceOption
+export default CustomFaceOption;
