@@ -1,11 +1,13 @@
 /** @type {import('tailwindcss').Config} */
-export const content = ["./src/**/*.{js,jsx,ts,tsx}",];
-export const theme = {
-  extend: {
-    fontFamily: {
-      'code': ['source-code-pro', 'Menlo', 'Monaco', 'Consolas', 'Courier New', 'monospace'],
+module.exports = {
+  content: ["./src/**/*.{js,jsx,ts,tsx}"],
+  theme: {
+    extend: {
+      fontFamily: {
+        'code': ['source-code-pro', 'Menlo', 'Monaco', 'Consolas', 'Courier New', 'monospace'],
+      },
     },
   },
+  prefix: 'tw-', // Add a prefix to avoid conflicts
+  plugins: [],
 };
-export const plugins = [];
-
