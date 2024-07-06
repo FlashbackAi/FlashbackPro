@@ -2733,7 +2733,7 @@ app.post("/saveSelectedImage", async (req, res) => {
 
 app.post('/saveEventDetails', upload.single('image'), async (req, res) => {
   const file = req.file;
-  logger.info(file);
+  //  logger.info(file);
   const {
     eventName,
     eventDate,
