@@ -695,6 +695,7 @@ async function searchUsersByImage(portraitS3Url, phoneNumber) {
       // Call searchUsersByImage API with portraitS3Url
       const result = await searchUsersByImage(imageUrl, phoneNumber);
       if(!result){
+        
         logger.info("matched user not found: "+phoneNumber);
         logger.info("deleting the S3 url for unmacthed  userId->"+userId);
         const userDeleteParams = {
