@@ -82,6 +82,107 @@ const FaceSelection = () => {
     handleCloseMaritalStatusModal();
   };
 
+  const generateParentSiblingSelects = (siblings, parent) => {
+    if (!siblings || siblings.length === 0) return null;
+
+    return siblings.map((sibling, index) => (
+      <div className="parent-sibling-container" key={`${parent} Sibling ${index + 1}`}>
+        <div className="centered-selection">
+        <CustomFaceOption
+          question={`${parent} Sibling ${index + 1}`}
+          options={filterOptions(userThumbnails)}
+          others={filterOptions(userThumbnails)}
+          serialNo={`${parent.replace(" ", "")}Sibling${index + 1}`}
+          title={`Select ${parent} Sibling ${index + 1}`}
+          onSelect={handleSelectFace}
+          sendSelection={handleSelectChange}
+          selectedImage={[sibling]}
+          next={next}
+          prev={prev}
+        />
+        <CustomFaceOption
+          question={`${parent} Sibling ${index + 1} Spouse`}
+          options={filterOptions(userThumbnails)}
+          others={filterOptions(userThumbnails)}
+          serialNo={`${parent.replace(" ", "")}Sibling${index + 1}.1`}
+          title={`Select ${parent} Sibling ${index + 1} Spouse`}
+          onSelect={handleSelectFace}
+          sendSelection={handleSelectChange}
+          selectedImage={formData[`${parent} Sibling ${index + 1} Spouse`] || []}
+          next={next}
+          prev={prev}
+          isInternal={true}
+        />
+        <CustomFaceOption
+          question={`${parent} Sibling ${index + 1} Children`}
+          options={filterOptions(userThumbnails)}
+          others={filterOptions(userThumbnails)}
+          serialNo={`${parent.replace(" ", "")}Sibling${index + 1}.2`}
+          title={`Select ${parent} Sibling ${index + 1} Children`}
+          multiple={true}
+          isInternal={true}
+          next={next}
+          prev={prev}
+          onSelect={handleSelectFace}
+          sendSelection={handleSelectChange}
+          selectedImage={formData[`${parent} Sibling ${index + 1} Children`] || []}
+        />
+      </div>
+      </div>
+    ));
+  };
+
+  const generateCousinMarital = (siblings, parent) => {
+    if (!siblings || siblings.length === 0) return null;
+
+    return siblings.map((sibling, index) => (
+      <div className="parent-sibling-container" key={`${parent} Sibling ${index + 1}`}>
+        <div className="centered-selection">
+        <CustomFaceOption
+          question={`${parent} Sibling ${index + 1}`}
+          options={filterOptions(userThumbnails)}
+          others={filterOptions(userThumbnails)}
+          serialNo={`${parent.replace(" ", "")}Sibling${index + 1}`}
+          title={`Select ${parent} Sibling ${index + 1}`}
+          onSelect={handleSelectFace}
+          sendSelection={handleSelectChange}
+          selectedImage={[sibling]}
+          next={next}
+          prev={prev}
+        />
+        <CustomFaceOption
+          question={`${parent} Sibling ${index + 1} Spouse`}
+          options={filterOptions(userThumbnails)}
+          others={filterOptions(userThumbnails)}
+          serialNo={`${parent.replace(" ", "")}Sibling${index + 1}.1`}
+          title={`Select ${parent} Sibling ${index + 1} Spouse`}
+          onSelect={handleSelectFace}
+          sendSelection={handleSelectChange}
+          selectedImage={formData[`${parent} Sibling ${index + 1} Spouse`] || []}
+          next={next}
+          prev={prev}
+          isInternal={true}
+        />
+        <CustomFaceOption
+          question={`${parent} Sibling ${index + 1} Children`}
+          options={filterOptions(userThumbnails)}
+          others={filterOptions(userThumbnails)}
+          serialNo={`${parent.replace(" ", "")}Sibling${index + 1}.2`}
+          title={`Select ${parent} Sibling ${index + 1} Children`}
+          multiple={true}
+          isInternal={true}
+          next={next}
+          prev={prev}
+          onSelect={handleSelectFace}
+          sendSelection={handleSelectChange}
+          selectedImage={formData[`${parent} Sibling ${index + 1} Children`] || []}
+        />
+      </div>
+      </div>
+    ));
+  };
+
+
   const generateSiblingSelects = (count, char, gender, serialNoStart) => {
     const siblings = [];
     const options = gender === "male" ? filterOptions(males).slice(0, 10) : filterOptions(females).slice(0, 10);
@@ -524,18 +625,6 @@ const FaceSelection = () => {
               sendSelection={handleSelectChange}
               selectedImage={[formData.bride]}
             />
-            {/* <CustomFaceOption
-              serialNo={3}
-              title="Please select the groom's mother"
-              next={next}
-              prev={prev}
-              question="groomsMother"
-              sendSelection={handleSelectChange}
-              options={filterOptions(aunts).slice(0, 10)}
-              others={filterOptions(userThumbnails)}
-              onSelect={handleSelectFace}
-              selectedImage={[formData.groomsMother]}
-            /> */}
             <div className="groom-mother-container" key={`Groom Mother`}>
               <div className="centered-selection">
                 <CustomFaceOption
@@ -550,176 +639,181 @@ const FaceSelection = () => {
                   onSelect={handleSelectFace}
                   selectedImage={[formData.groomsMother]}
                 />
-                { (formData['form_owner'] === 'groom' || formData['form_owner'] === 'couple')&& (
+                {(formData['form_owner'] === 'groom' || formData['form_owner'] === 'couple') && (
                   <>
-                <CustomFaceOption
-                    question={`Groom Mother Parents`}
-                    options={filterOptions(grandParents)}
-                    others={filterOptions(userThumbnails)}
-                    title={`Select Groom Mother Parents`}
-                    onSelect={handleSelectFace}
-                    sendSelection={handleSelectChange}
-                    selectedImage={formData['Groom Mother Parents'] || []}
-                    next={next}
-                    prev={prev}
-                    isInternal={true}
-                    multiple={true}
-                  />
-               
-               <CustomFaceOption
-                    question={`Groom Mother Siblings`}
-                    options={filterOptions(userThumbnails)}
-                    others={filterOptions(userThumbnails)}
-                    title={`Select Groom Mother Siblings`}
-                    onSelect={handleSelectFace}
-                    sendSelection={handleSelectChange}
-                    selectedImage={formData['Groom Mother Siblings'] || []}
-                    next={next}
-                    prev={prev}
-                    isInternal={true}
-                    multiple={true}
-                  />
+                    <CustomFaceOption
+                      question={`Groom Mother Parents`}
+                      options={filterOptions(grandParents)}
+                      others={filterOptions(userThumbnails)}
+                      title={`Select Groom Mother Parents`}
+                      onSelect={handleSelectFace}
+                      sendSelection={handleSelectChange}
+                      selectedImage={formData['Groom Mother Parents'] || []}
+                      next={next}
+                      prev={prev}
+                      isInternal={true}
+                      multiple={true}
+                    />
+
+                    <CustomFaceOption
+                      question={`Groom Mother Siblings`}
+                      options={filterOptions(userThumbnails)}
+                      others={filterOptions(userThumbnails)}
+                      title={`Select Groom Mother Siblings`}
+                      onSelect={handleSelectFace}
+                      sendSelection={handleSelectChange}
+                      selectedImage={formData['Groom Mother Siblings'] || []}
+                      next={next}
+                      prev={prev}
+                      isInternal={true}
+                      multiple={true}
+                    />
+                    
                   </>
                 )}
               </div>
             </div>
+            {generateParentSiblingSelects(formData['Groom Mother Siblings'], "Groom Mother")}
             <div className="groom-father-container" key={`Groom Father`}>
               <div className="centered-selection">
-              <CustomFaceOption
-              serialNo={4}
-              title="Please select the groom's father"
-              next={next}
-              prev={prev}
-              question="groomsFather"
-              sendSelection={handleSelectChange}
-              options={filterOptions(uncles).slice(0, 10)}
-              others={filterOptions(userThumbnails)}
-              onSelect={handleSelectFace}
-              selectedImage={[formData.groomsFather]}
-            />
-                { (formData['form_owner'] === 'groom' || formData['form_owner'] === 'couple')&& (
-                  <>
                 <CustomFaceOption
-                    question={`Groom Father Parents`}
-                    options={filterOptions(grandParents)}
-                    others={filterOptions(userThumbnails)}
-                    title={`Select Groom Father Parents`}
-                    onSelect={handleSelectFace}
-                    sendSelection={handleSelectChange}
-                    selectedImage={formData['Groom Father Parents'] || []}
-                    next={next}
-                    prev={prev}
-                    isInternal={true}
-                    multiple={true}
-                  />
-               
-               <CustomFaceOption
-                    question={`Groom Father Siblings`}
-                    options={filterOptions(userThumbnails)}
-                    others={filterOptions(userThumbnails)}
-                    title={`Select Groom Father Siblings`}
-                    onSelect={handleSelectFace}
-                    sendSelection={handleSelectChange}
-                    selectedImage={formData['Groom Father Siblings'] || []}
-                    next={next}
-                    prev={prev}
-                    isInternal={true}
-                    multiple={true}
-                  />
+                  serialNo={4}
+                  title="Please select the groom's father"
+                  next={next}
+                  prev={prev}
+                  question="groomsFather"
+                  sendSelection={handleSelectChange}
+                  options={filterOptions(uncles).slice(0, 10)}
+                  others={filterOptions(userThumbnails)}
+                  onSelect={handleSelectFace}
+                  selectedImage={[formData.groomsFather]}
+                />
+                {(formData['form_owner'] === 'groom' || formData['form_owner'] === 'couple') && (
+                  <>
+                    <CustomFaceOption
+                      question={`Groom Father Parents`}
+                      options={filterOptions(grandParents)}
+                      others={filterOptions(userThumbnails)}
+                      title={`Select Groom Father Parents`}
+                      onSelect={handleSelectFace}
+                      sendSelection={handleSelectChange}
+                      selectedImage={formData['Groom Father Parents'] || []}
+                      next={next}
+                      prev={prev}
+                      isInternal={true}
+                      multiple={true}
+                    />
+
+                    <CustomFaceOption
+                      question={`Groom Father Siblings`}
+                      options={filterOptions(userThumbnails)}
+                      others={filterOptions(userThumbnails)}
+                      title={`Select Groom Father Siblings`}
+                      onSelect={handleSelectFace}
+                      sendSelection={handleSelectChange}
+                      selectedImage={formData['Groom Father Siblings'] || []}
+                      next={next}
+                      prev={prev}
+                      isInternal={true}
+                      multiple={true}
+                    />
                   </>
                 )}
               </div>
             </div>
-          <div className="bride-mother-container" key={`Bride Mother`}>
-            <div className="centered-selection">
-            <CustomFaceOption
-              serialNo={5}
-              title="Please select the bride's mother"
-              next={next}
-              prev={prev}
-              options={filterOptions(aunts).slice(0, 10)}
-              others={filterOptions(userThumbnails)}
-              onSelect={handleSelectFace}
-              question="bridesMother"
-              sendSelection={handleSelectChange}
-              selectedImage={[formData.bridesMother]}
-            />
-             { (formData['form_owner'] === 'bride' || formData['form_owner'] === 'couple')&& (
-                  <>
+             {generateParentSiblingSelects(formData['Groom Father Siblings'], "Groom Father")}
+            <div className="bride-mother-container" key={`Bride Mother`}>
+              <div className="centered-selection">
                 <CustomFaceOption
-                    question={`Bride Mother Parents`}
-                    options={filterOptions(grandParents)}
-                    others={filterOptions(userThumbnails)}
-                    title={`Select Bride Mother Parents`}
-                    onSelect={handleSelectFace}
-                    sendSelection={handleSelectChange}
-                    selectedImage={formData['Bride Mother Parents'] || []}
-                    next={next}
-                    prev={prev}
-                    isInternal={true}
-                    multiple={true}
-                  />
-               
-               <CustomFaceOption
-                    question={`Bride Mother Siblings`}
-                    options={filterOptions(userThumbnails)}
-                    others={filterOptions(userThumbnails)}
-                    title={`Select Bride Mother Siblings`}
-                    onSelect={handleSelectFace}
-                    sendSelection={handleSelectChange}
-                    selectedImage={formData['Bride Mother Siblings'] || []}
-                    next={next}
-                    prev={prev}
-                    isInternal={true}
-                    multiple={true}
-                  />
+                  serialNo={5}
+                  title="Please select the bride's mother"
+                  next={next}
+                  prev={prev}
+                  options={filterOptions(aunts).slice(0, 10)}
+                  others={filterOptions(userThumbnails)}
+                  onSelect={handleSelectFace}
+                  question="bridesMother"
+                  sendSelection={handleSelectChange}
+                  selectedImage={[formData.bridesMother]}
+                />
+                {(formData['form_owner'] === 'bride' || formData['form_owner'] === 'couple') && (
+                  <>
+                    <CustomFaceOption
+                      question={`Bride Mother Parents`}
+                      options={filterOptions(grandParents)}
+                      others={filterOptions(userThumbnails)}
+                      title={`Select Bride Mother Parents`}
+                      onSelect={handleSelectFace}
+                      sendSelection={handleSelectChange}
+                      selectedImage={formData['Bride Mother Parents'] || []}
+                      next={next}
+                      prev={prev}
+                      isInternal={true}
+                      multiple={true}
+                    />
+
+                    <CustomFaceOption
+                      question={`Bride Mother Siblings`}
+                      options={filterOptions(userThumbnails)}
+                      others={filterOptions(userThumbnails)}
+                      title={`Select Bride Mother Siblings`}
+                      onSelect={handleSelectFace}
+                      sendSelection={handleSelectChange}
+                      selectedImage={formData['Bride Mother Siblings'] || []}
+                      next={next}
+                      prev={prev}
+                      isInternal={true}
+                      multiple={true}
+                    />
+                    {generateParentSiblingSelects(formData['Bride Mother Siblings'], "Bride Mother")}
                   </>
                 )}
               </div>
             </div>
-          <div className="bride-father-container" key={`Bride Father`}>
-            <div className="centered-selection">
-            <CustomFaceOption
-              serialNo={6}
-              title="Please select the bride's father"
-              next={next}
-              prev={prev}
-              options={filterOptions(uncles).slice(0, 10)}
-              others={filterOptions(userThumbnails)}
-              onSelect={handleSelectFace}
-              question="bridesFather"
-              sendSelection={handleSelectChange}
-              selectedImage={[formData.bridesFather]}
-            />
-             { (formData['form_owner'] === 'bride' || formData['form_owner'] === 'couple')&& (
-                  <>
+            <div className="bride-father-container" key={`Bride Father`}>
+              <div className="centered-selection">
                 <CustomFaceOption
-                    question={`Bride Father Parents`}
-                    options={filterOptions(grandParents)}
-                    others={filterOptions(userThumbnails)}
-                    title={`Select Bride Father Parents`}
-                    onSelect={handleSelectFace}
-                    sendSelection={handleSelectChange}
-                    selectedImage={formData['Bride Father Parents'] || []}
-                    next={next}
-                    prev={prev}
-                    isInternal={true}
-                    multiple={true}
-                  />
-               
-               <CustomFaceOption
-                    question={`Bride Father Siblings`}
-                    options={filterOptions(userThumbnails)}
-                    others={filterOptions(userThumbnails)}
-                    title={`Select Bride Father Siblings`}
-                    onSelect={handleSelectFace}
-                    sendSelection={handleSelectChange}
-                    selectedImage={formData['Bride Father Siblings'] || []}
-                    next={next}
-                    prev={prev}
-                    isInternal={true}
-                    multiple={true}
-                  />
+                  serialNo={6}
+                  title="Please select the bride's father"
+                  next={next}
+                  prev={prev}
+                  options={filterOptions(uncles).slice(0, 10)}
+                  others={filterOptions(userThumbnails)}
+                  onSelect={handleSelectFace}
+                  question="bridesFather"
+                  sendSelection={handleSelectChange}
+                  selectedImage={[formData.bridesFather]}
+                />
+                {(formData['form_owner'] === 'bride' || formData['form_owner'] === 'couple') && (
+                  <>
+                    <CustomFaceOption
+                      question={`Bride Father Parents`}
+                      options={filterOptions(grandParents)}
+                      others={filterOptions(userThumbnails)}
+                      title={`Select Bride Father Parents`}
+                      onSelect={handleSelectFace}
+                      sendSelection={handleSelectChange}
+                      selectedImage={formData['Bride Father Parents'] || []}
+                      next={next}
+                      prev={prev}
+                      isInternal={true}
+                      multiple={true}
+                    />
+
+                    <CustomFaceOption
+                      question={`Bride Father Siblings`}
+                      options={filterOptions(userThumbnails)}
+                      others={filterOptions(userThumbnails)}
+                      title={`Select Bride Father Siblings`}
+                      onSelect={handleSelectFace}
+                      sendSelection={handleSelectChange}
+                      selectedImage={formData['Bride Father Siblings'] || []}
+                      next={next}
+                      prev={prev}
+                      isInternal={true}
+                      multiple={true}
+                    />
+                    {generateParentSiblingSelects(formData['Bride Father Siblings'], "Bride Father")}
                   </>
                 )}
               </div>
