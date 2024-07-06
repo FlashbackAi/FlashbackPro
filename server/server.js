@@ -3008,13 +3008,13 @@ app.post("/updateStatus", async (req, res) => {
   }
 });
 
-// const httpsServer = https.createServer(credentials, app);
+const httpsServer = https.createServer(credentials, app);
 
-// httpsServer.listen(PORT, () => {
-//   logger.info(`Server is running on https://localhost:${PORT}`);
-// });
+httpsServer.listen(PORT, () => {
+  logger.info(`Server is running on https://localhost:${PORT}`);
+});
 
 // //**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
- app.listen(PORT ,() => {
- logger.info(`Server started on http://localhost:${PORT}`);
- });
+//  app.listen(PORT ,() => {
+//  logger.info(`Server started on http://localhost:${PORT}`);
+//  });
