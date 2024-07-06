@@ -695,7 +695,6 @@ async function searchUsersByImage(portraitS3Url, phoneNumber) {
       // Call searchUsersByImage API with portraitS3Url
       const result = await searchUsersByImage(imageUrl, phoneNumber);
       if(!result){
-        
         logger.info("matched user not found: "+phoneNumber);
         logger.info("deleting the S3 url for unmacthed  userId->"+userId);
         const userDeleteParams = {
@@ -2792,11 +2791,57 @@ app.post('/saveEventDetails', upload.single('image'), async (req, res) => {
 });
 
 // Endpoint to update an event
+// app.put('/updateEvent/:eventName/:eventDate', async (req, res) => {
+//   const { eventName, eventDate } = req.params;
+//   const {
+//     eventName: newEventName,
+//     eventDate: newEventDate,
+//     invitationNote,
+//     eventLocation,
+//     street,
+//     city,
+//     state: newState,
+//     pinCode,
+//     invitation_url
+//   } = req.body;
+
+//   const updateParams = {
+//     TableName: eventsTable,
+//     Key: {
+//       event_name: eventName,
+//       event_date: eventDate,
+//     },
+//     UpdateExpression: "set event_name = :newEventName, event_date = :newEventDate, event_location = :eventLocation,invitation_note = :invitationNote, street = :street, city = :city, #st = :state, pin_code = :pinCode, invitation_url = :invitation_url",
+//     ExpressionAttributeNames: {
+//       "#st": "state",
+//     },
+//     ExpressionAttributeValues: {
+//       ":newEventName": newEventName,
+//       ":newEventDate": newEventDate,
+//       ":eventLocation": eventLocation,
+//       ":invitationNote": invitationNote, 
+//       ":street": street,
+//       ":city": city,
+//       ":state": newState,
+//       ":pinCode": pinCode,
+//       ":invitation_url": invitation_url,
+//     },
+//     ReturnValues: "ALL_NEW",
+//   };
+
+//   try {
+//     const result = await docClient.update(updateParams).promise();
+//     logger.info(`Updated event: ${eventName} on ${eventDate}`);
+//     res.status(200).send(result.Attributes);
+//   } catch (err) {
+//     logger.info(err.message);
+//     res.status(500).send({ error: 'Failed to update the event' });
+//   }
+// });
+
 app.put('/updateEvent/:eventName/:eventDate', async (req, res) => {
   const { eventName, eventDate } = req.params;
   const {
-    eventName: newEventName,
-    eventDate: newEventDate,
     invitationNote,
     eventLocation,
     street,
@@ -2812,15 +2857,13 @@ app.put('/updateEvent/:eventName/:eventDate', async (req, res) => {
       event_name: eventName,
       event_date: eventDate,
     },
-    UpdateExpression: "set event_name = :newEventName, event_date = :newEventDate, event_location = :eventLocation,invitation_note = :invitationNote, street = :street, city = :city, #st = :state, pin_code = :pinCode, invitation_url = :invitation_url",
+    UpdateExpression: "set event_location = :eventLocation, invitation_note = :invitationNote, street = :street, city = :city, #st = :state, pin_code = :pinCode, invitation_url = :invitation_url",
     ExpressionAttributeNames: {
       "#st": "state",
     },
     ExpressionAttributeValues: {
-      ":newEventName": newEventName,
-      ":newEventDate": newEventDate,
       ":eventLocation": eventLocation,
-      ":invitationNote": invitationNote, 
+      ":invitationNote": invitationNote,
       ":street": street,
       ":city": city,
       ":state": newState,
@@ -2839,6 +2882,7 @@ app.put('/updateEvent/:eventName/:eventDate', async (req, res) => {
     res.status(500).send({ error: 'Failed to update the event' });
   }
 });
+
 
 
 // API endpoint to delete an event
@@ -2970,7 +3014,7 @@ httpsServer.listen(PORT, () => {
   logger.info(`Server is running on https://localhost:${PORT}`);
 });
 
-//**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
+// //**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
 //  app.listen(PORT ,() => {
 //  logger.info(`Server started on http://localhost:${PORT}`);
 //  });
