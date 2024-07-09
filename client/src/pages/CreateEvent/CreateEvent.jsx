@@ -326,6 +326,7 @@ const CreateEventForm = () => {
   const [eventTime, setEventTime] = useState('');
   const [imageFile, setImageFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [isEventTitleChanged, setIsEventTitleChanged] = useState(false)
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -349,7 +350,10 @@ const CreateEventForm = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    if(name === 'eventName' && value !== ''){
+      setIsEventTitleChanged(true);
+    }
+    setFormData({ ...formData, [name]: value});
   };
 
   const handleTimeChange = (e) => {
@@ -384,12 +388,13 @@ const CreateEventForm = () => {
     }
 
     const combinedDateTime = `${formData.eventDate}T${hours}:${minutes}:00`;
+    const eventNameWithUnderscores = formData.eventName.replace(/\s+/g, '_');
     formData.eventDate = combinedDateTime;
 
     setUploading(true);
     const formDataToSend = new FormData();
     formDataToSend.append('image', imageFile);
-    formDataToSend.append('eventName', formData.eventName);
+    formDataToSend.append('eventName', eventNameWithUnderscores);
     formDataToSend.append('eventDate', formData.eventDate);
     formDataToSend.append('clientName', formData.clientName);
     formDataToSend.append('eventLocation', formData.eventLocation);
@@ -448,6 +453,7 @@ const CreateEventForm = () => {
             onChange={handleInputChange}
             required
           />
+          {isEventTitleChanged && <p className='warning-text'>*Event Title cannot be updated further.</p>}
         </div>
         <div className="form-row">
           <div className="form-group">
@@ -526,14 +532,16 @@ const CreateEventForm = () => {
             />
           </div>
           <div className="form-group">
-            <label htmlFor="event-zip">Zip:</label>
+            <label htmlFor="event-zip">Pin Code:</label>
             <input
               type="text"
               id="event-zip"
               name="pinCode"
-              placeholder="Zip"
+              placeholder="Pin code"
               value={formData.pinCode}
               onChange={handleInputChange}
+              pattern="^\d{6}$"
+              title="Please enter a valid 6-digit PIN code"
               required
             />
           </div>
@@ -550,7 +558,7 @@ const CreateEventForm = () => {
           ></textarea>
         </div>
         <button className="submit-button" type="submit" disabled={uploading}>
-          {uploading ? 'Creating...' : 'Create Invitation'}
+          {uploading ? 'Creating...' : 'Create'}
         </button>
       </form>
     </div>

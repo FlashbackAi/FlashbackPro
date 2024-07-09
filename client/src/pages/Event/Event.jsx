@@ -525,6 +525,8 @@ const Event = () => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editData, setEditData] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [eventToDelete, setEventToDelete] = useState(null);
 
   const clientName = "DummyClient";
 
@@ -542,12 +544,23 @@ const Event = () => {
     };
 
     fetchEventData();
-  }, [clientName]);
+  }, [clientName,editData]);
+
+  const openDeleteModal = (event) => {
+    setEventToDelete(event);
+    setIsDeleteModalOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setEventToDelete(null);
+  };
 
   const deleteEvent = async (eventName, eventDate) => {
     try {
       await API_UTIL.delete(`/deleteEvent/${eventName}/${eventDate}`);
       setEvents(events.filter(event => !(event.event_name === eventName && event.event_date === eventDate)));
+      setIsDeleteModalOpen(false)
       toast.success('Event deleted successfully');
     } catch (error) {
       console.error("Error deleting event:", error);
@@ -614,6 +627,28 @@ const Event = () => {
     }
   };
 
+  const formatEventName = (name) => {
+    return name.replace(/_/g, ' ');
+  };
+
+  function getFormattedDate(datetime) {
+    const date = new Date(datetime);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  }
+
+  function getFormattedTime(datetime) {
+    const date = new Date(datetime);
+    let hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? String(hours).padStart(2, '0') : '12'; // the hour '0' should be '12'
+    return `${hours}:${minutes} ${ampm}`;
+  }
+  
   if (loading) return <div className="loading-screen">Loading...</div>;
   if (error) return <div className="loading-screen">Error: {error}</div>;
 
@@ -629,13 +664,13 @@ const Event = () => {
                   <img
                     src="https://img.icons8.com/BB271A/m_rounded/2x/filled-trash.png"
                     className="delete-icon"
-                    onClick={(e) => { e.stopPropagation(); deleteEvent(event.event_name, event.event_date); }}
+                    onClick={(e) => { e.stopPropagation(); openDeleteModal(event) }}
                     alt="Delete"
                   />
                 </div>
                 <img src={event.event_image} alt="Image" className="event-image" />
                 <div className="event-card-footer">
-                  <h2 className="event-name">{event.event_name}</h2>
+                  <h2 className="event-name">{formatEventName(event?.event_name)}</h2>
                 </div>
               </div>
               {event.invitation_url && (
@@ -666,8 +701,8 @@ const Event = () => {
         {selectedEvent && (
           <div>
             <div className="modal-header">
-              <h2 className="modal-title">{selectedEvent.event_name}</h2>
-              <button className="close-button" onClick={closeModal}>Close</button>
+              <h2 className="modal-title">{formatEventName(selectedEvent?.event_name)}</h2>
+              <button className="close-button" onClick={closeModal}>x</button>
             </div>
             <div className="modal-body">
               <img 
@@ -685,10 +720,10 @@ const Event = () => {
             {editData ? (
               <form onSubmit={handleFormSubmit} className="edit-form">
                 <div className="form-group">
-                  <p className="form-label">Event Name: {editData.eventName}</p>
+                  <p className="form-label">Event Name: {formatEventName(editData?.eventName)}</p>
                   <div className="form-group">
                     <label className="form-label">Date:</label>
-                    <p className="form-value">{editData.eventDate}</p>
+                    <p className="form-value">{getFormattedDate(editData.eventDate)}</p>
                   </div>
                   <label className="form-label">Invitation Note:</label>
                   <textarea 
@@ -736,6 +771,9 @@ const Event = () => {
                     value={editData.pinCode} 
                     onChange={handleInputChange} 
                     className="form-input"
+                    pattern="^\d{6}$"
+                    title="Please enter a valid 6-digit PIN code"
+                    required
                   />
                   <label className="form-label">Invitation URL:</label>
                   <input 
@@ -750,10 +788,10 @@ const Event = () => {
               </form>
             ) : (
               <div className="form-group">
-                <p className="form-value">Date: {selectedEvent.event_date.split(' ')[0]}</p>
-                <p className="form-value">Time: {selectedEvent.event_date.split(' ')[1]}</p>
-                <p className="form-value">Invitation Note: {selectedEvent.invitationNote}</p>
-                <p className="form-value">Location: {selectedEvent.eventLocation}</p>
+                <p className="form-value">Date: {getFormattedDate(selectedEvent.event_date)}</p>
+                <p className="form-value">Time: {getFormattedTime(selectedEvent.event_date)}</p>
+                <p className="form-value">Invitation Note: {selectedEvent.invitation_note}</p>
+                <p className="form-value">Location: {selectedEvent.event_location}</p>
                 <div className="form-group">
                   <p className="form-value">Street: {selectedEvent.street},</p>
                   <p className="form-value">City: {selectedEvent.city},</p>
@@ -770,6 +808,24 @@ const Event = () => {
           </div>
         )}
       </Modal>
+
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onRequestClose={closeDeleteModal}
+        contentLabel="Delete Confirmation"
+        className="delete-modal-content"
+        overlayClassName="modal-overlay"
+      >
+        <div className='delete-modal-bg'>
+          <h2 className="modal-title">Confirm Delete</h2>
+          <p className="modal-body">Do you want to delete this event?</p>
+          <div className="modal-footer">
+            <button className="delete-button" onClick={()=> deleteEvent(eventToDelete.event_name,eventToDelete.event_date)}>Confirm</button>
+            <button className="cancel-button" onClick={closeDeleteModal}>Cancel</button>
+          </div>
+        </div>
+      </Modal>
+
     </div>
   );
 };
