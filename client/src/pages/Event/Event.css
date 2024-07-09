@@ -551,4 +551,68 @@
   background-color: #cc1f1a;
 }
 
+.footer-buttons {
+  padding: 1rem;
+  margin: 0.5rem;
+}
+
+.qr-modal-content {
+  width: 30%;
+  height: 60%;
+  background-color: #1e293b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.qr-modal-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.qr-footer-buttons {
+  background-color: #4caf50;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+.qr-footer-buttons:hover {
+  background-color: #45a049;
+}
+
+.uploadfiles-modal-content {
+  width: 30%;
+  height: 30%;
+  background-color: #1e293b;
+  color: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.uploadfiles-modal-header {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.uploadfiles-modal-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #d1d5db;
+}
+
 
