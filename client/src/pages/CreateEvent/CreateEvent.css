@@ -1,79 +1,4 @@
-/* body {
-    font-family: Arial, sans-serif;
-    background-color: #f9f9f9;
-    color: #333;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
-}
-
-.container {
-    background-color: black;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-h1 {
-    margin-bottom: 20px;
-    font-size: 24px;
-    text-align: center;
-    color: #4A4A4A;
-}
-
-.form-group {
-    margin-bottom: 15px;
-}
-
-label {
-    display: block;
-    margin-bottom: 5px;
-    color: #555;
-}
-
-input, select, textarea {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
-    cursor: pointer;
-}
-
-button {
-    width: 100%;
-    padding: 10px;
-    background-color: #5cb85c;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    font-size: 16px;
-    cursor: pointer;
-}
-
-button:hover {
-    background-color: #4cae4c;
-} 
-
-.heading {
-    margin-left : auto;
-    margin-right: auto;
-}
-
-.invitation-form{
-    background-color: black;
-}
- */
-/* @tailwind base;
-@tailwind components;
-@tailwind utilities; */
-
-.create-event-container {
+/* .create-event-container {
     margin: 0 auto;
     padding: 0.3rem;
     background-color: #1c1c1c;
@@ -153,4 +78,146 @@ button:hover {
   .input-upload{
     color: #1c1c1c;
   }
-  
+   */
+
+/* Base styles */
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: #1c1c1c;
+  color: #333;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+
+.create-event-container {
+  margin: 0 auto;
+  padding: 1rem;
+  background-color: #1c1c1c;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  color: white;
+  font-family: Arial, sans-serif;
+  width: 90%;
+}
+
+.form-title {
+  font-size: 2rem;
+  font-weight: bold;
+  margin: 2rem 0;
+  text-align: center;
+}
+
+.invitation-form {
+  width: 100%;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #d1d1d1;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #d1d1d1;
+  border-radius: 0.25rem;
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.form-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.submit-button {
+  width: 100%;
+  margin: 1rem 0;
+  padding: 0.75rem;
+  background-color: #b48e75;
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+}
+
+.submit-button:hover {
+  background-color: #956f55;
+}
+
+.submit-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.input-upload {
+  color: #1c1c1c;
+}
+
+/* Tablet and mobile responsiveness */
+@media (max-width: 1024px) {
+  .create-event-container {
+      width: 70%;
+      padding: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .create-event-container {
+      width: 90%;
+      padding: 1rem;
+  }
+
+  .form-row {
+      flex-direction: column;
+  }
+
+  .form-row .form-group {
+      width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .create-event-container {
+      width: 95%;
+      padding: 0.5rem;
+  }
+
+  .form-title {
+      font-size: 1.5rem;
+  }
+
+  .submit-button {
+      width: 100%;
+      margin: 1rem 0;
+  }
+}
+
+.warning-text {
+  color: #b48e75;
+  font-size: x-small;
+  padding : 0.025rem;
+  text-align: justify;
+}
