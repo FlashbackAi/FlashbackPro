@@ -25,7 +25,7 @@ const CustomFaceOption = ({
   );
 
   const handleClick = (index, value) => {
-    if (selection.includes(value)) {
+    if (selection.includes(value) && !value.includes('missing.jpg')) {
       setSelection(selection.filter((item) => item !== value));
     } else {
       if (!multiple) {
@@ -35,6 +35,20 @@ const CustomFaceOption = ({
       }
     }
   };
+
+  const handleClickSelected = (index, value) => {
+    console.log(value);
+    if (value.includes('missing.jpg')) {
+        setSelection(selection.filter((_, i) => i !== index));
+    } else {
+        if (selection.includes(value)) {
+            setSelection(selection.filter((item) => item !== value));
+        } else {
+            setSelection((prevSelection) => [...prevSelection, value]);
+        }
+    }
+};
+
 
   useEffect(() => {
     sendSelection && sendSelection(question, multiple ? selection : selection[0]);
@@ -60,7 +74,7 @@ const CustomFaceOption = ({
         <div className="img-options">
           <div className="selected-face">
             {selection.filter(url => url != null).map((url, index) => (
-              <img key={index} src={url} alt={`selected ${index}`} className="selected-image" onClick={() => handleClick(index, url)} />
+              <img key={index} src={url} alt={`selected ${index}`} className="selected-image" onClick={() => handleClickSelected(index, url)} />
             ))}
           </div>
         </div>
