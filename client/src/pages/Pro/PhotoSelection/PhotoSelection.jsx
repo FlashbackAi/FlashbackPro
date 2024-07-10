@@ -185,7 +185,7 @@ const PhotoSelection = () => {
 
   const fetchFormData = async () => {
     try {
-      const response = await API_UTIL.get(`/getSelectionFormData/${eventName}/groom`);
+      const response = await API_UTIL.get(`/getSelectionFormData/${eventName}/Groom`);
       if (response.data) {
         setFormData(response.data);
         initializeImagesData(response.data)
