@@ -264,7 +264,7 @@ const PhotoSelection = () => {
       case "Groom Solos":
         if (imagesData[key].length === 0) {
           setIsLoading(true);
-          temp = formData.groom.split("/");
+          temp = formData.groom.image.split("/");
           userId = temp[temp.length - 1].split(".")[0];
           try {
             const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': [userId], 'operation': 'AND', 'eventName': eventName });
@@ -284,7 +284,7 @@ const PhotoSelection = () => {
       case "Bride Solos":
         if (imagesData[key].length === 0) {
           setIsLoading(true);
-          temp = formData.bride.split("/");
+          temp = formData.bride.image.split("/");
           userId = temp[temp.length - 1].split(".")[0];
           try {
             const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': [userId], 'operation': 'AND', 'eventName': eventName });
