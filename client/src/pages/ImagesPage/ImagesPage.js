@@ -8,6 +8,7 @@ import PlaceholderImage from "../../media/images/blurredLogo.png";
 import Header from "../../components/Header/Header";
 import API_UTIL from "../../services/AuthIntereptor";
 import { Heart } from "lucide-react";
+import Footer from "../../components/Footer/Footer";
 
 function ImagesPage() {
   const [lastEvaluatedKey, setLastEvaluatedKey] = useState(undefined);
@@ -279,6 +280,7 @@ function ImagesPage() {
           ) : (
             <p>Failed to load images</p> // Message shown if images fetch fails for other reasons
           )}
+          <Footer />
         </>
       )}
     </div>

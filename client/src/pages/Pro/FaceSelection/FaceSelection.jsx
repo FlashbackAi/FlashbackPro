@@ -10,6 +10,7 @@ import CustomFaceOption from "../../../components/CustomOption/CustomFaceOption"
 import { toast } from "react-toastify";
 import LoadingSpinner from "../../../components/Loader/LoadingSpinner";
 import Modal from '../../../components/Modal/Modal';
+import Footer from "../../../components/Footer/Footer";
 
 const FaceSelection = () => {
   const isDataFetched = useRef(false);
@@ -857,6 +858,7 @@ const FaceSelection = () => {
         )}
         {!!userThumbnails.length && start && (
           <>
+            <Header/>
             <div className="couple-container" key={`Couple`}>
               <div className="centered-selection">
                 <CustomFaceOption
@@ -1021,6 +1023,8 @@ const FaceSelection = () => {
           </>
         )}
       </section>
+
+      <Footer/>
 
       <Modal isOpen={showMaritalStatusModal} onClose={handleCloseMaritalStatusModal}>
         <div className="marital-status">

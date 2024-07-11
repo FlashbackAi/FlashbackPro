@@ -29,7 +29,6 @@ const ProtectedRoute = ({ children }) => {
 function RenderRoutes({ isLoading = false }) {
   return (
     <>
-    <Header/>
       {isLoading ? (
         <div>
           <LoadingSpinner />

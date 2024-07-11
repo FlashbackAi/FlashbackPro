@@ -64,7 +64,7 @@ header .container {
 }
 
 .photo-album-container{
-    width: 70%;
+    width: 90%;
     /* margin-left: 10px; */
     margin: auto auto !important;
     display: flex;
@@ -81,6 +81,7 @@ header .container {
     margin-bottom: 10px;
     color: #1c1c1c;
 }
+
 
 .header-p {
     font-size: 18px;
@@ -103,7 +104,7 @@ header .container {
 .cta-button:hover {
     background: #b48e75;
     color: white;
-    transform: scale(1.05);
+    transform: scale(1.03);
 }
 
 section {
@@ -153,6 +154,13 @@ footer {
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     text-align: center;
     /* background-color: #1e293b; */
+}
+
+.arrow-image{
+    width: 5%;
+    margin: 3px;
+    margin-top: 9em;
+    padding: 3px !important;
 }
 
 @media (max-width: 768px) {
@@ -212,4 +220,6 @@ footer {
     font-size: 24px;
     cursor: pointer;
   }
+
+  
   

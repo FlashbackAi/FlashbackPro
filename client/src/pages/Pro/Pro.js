@@ -8,6 +8,7 @@ import PlaceholderImage from "../../media/images/blurredLogo.png";
 import Header from "../../components/Header/Header";
 import { set } from "internal-slot";
 import API_UTIL from "../../services/AuthIntereptor";
+import Footer from "../../components/Footer/Footer";
 
 function Pro() {
   const { eventName} = useParams();
@@ -94,6 +95,7 @@ function Pro() {
           )}
         </>
       )}
+      <Footer />
     </div>
   );
 }
