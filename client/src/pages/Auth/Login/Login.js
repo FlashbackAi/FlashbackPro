@@ -280,15 +280,6 @@ function Login() {
   return (
     <div className="loginBody">
       <div className="loginLeft">
-        <div className="loginLogoBox">
-          <h2>
-            FlashB
-            <span>
-              <img src={logo} />
-            </span>
-            ck
-          </h2>
-        </div>
         <div className="login-form-container">
           {!isPhoneNumberValid && (
             <form onSubmit={handleSubmit} className="login-form">

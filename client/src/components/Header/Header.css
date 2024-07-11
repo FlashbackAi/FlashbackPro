@@ -1,5 +1,5 @@
 header {
-  padding: 0.8em 2rem;
+  padding: 0.4em 1rem;
   font-size: 1em;
   margin-bottom: 1em;
   display: flex;
@@ -28,7 +28,7 @@ header h2 {
   justify-content: center;
   gap: 0.1em;
   color: #bbb6b6;
-  font-size: 2em;
+  font-size: 1.5em;
   position: relative;
   width: fit-content;
 }

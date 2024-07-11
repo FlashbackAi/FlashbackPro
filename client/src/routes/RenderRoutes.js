@@ -4,6 +4,7 @@ import { jwtDecode } from "jwt-decode";
 import LoadingSpinner from "../components/Loader/LoadingSpinner";
 import ROUTES from "./Routes";
 import Header from "../components/Header/Header";
+import Footer from "../components/Footer/Footer";
 
 const isTokenExpired = (token) => {
   const decodedToken = jwtDecode(token);
@@ -28,6 +29,7 @@ const ProtectedRoute = ({ children }) => {
 function RenderRoutes({ isLoading = false }) {
   return (
     <>
+    <Header/>
       {isLoading ? (
         <div>
           <LoadingSpinner />
