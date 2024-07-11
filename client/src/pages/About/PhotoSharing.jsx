@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Carousel } from 'react-responsive-carousel';
 import 'react-responsive-carousel/lib/styles/carousel.min.css';
 import './Card.css';
+import { color } from 'framer-motion';
 
 const PhotoSharing = () => {
   const [isHovered, setIsHovered] = useState(false);
@@ -20,8 +21,7 @@ const PhotoSharing = () => {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <h3 className='card-h3'>Photo Sharing</h3>
-      <p className="card-p">Share your photos with friends and family.</p>
+      <h3 className='card-h3-card1'>Wedding Photo Labelling</h3>
       <Carousel
         showThumbs={false}
         infiniteLoop={true}
@@ -29,6 +29,7 @@ const PhotoSharing = () => {
         autoPlay={isHovered}
         interval={3000}
         stopOnHover={true}
+        showIndicators={false}
       >
         <div>
           <img src="https://via.placeholder.com/600x400.png?text=Photo+1" alt="Photo 1" />

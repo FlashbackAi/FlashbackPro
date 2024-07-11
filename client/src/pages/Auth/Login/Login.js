@@ -9,6 +9,7 @@ import CountryCodes from "../../../media/json/CountryCodes.json";
 import Select, { components } from "react-select";
 import "./login.css";
 import * as faceapi from 'face-api.js';
+import Header from "../../../components/Header/Header";
 
 const CustomOption = ({ children, ...props }) => {
   return (
@@ -278,7 +279,9 @@ function Login() {
   };
 
   return (
-    <div className="loginBody">
+    <div>
+      <Header/>
+      <div className="loginBody">
       <div className="loginLeft">
         <div className="login-form-container">
           {!isPhoneNumberValid && (
@@ -359,6 +362,7 @@ function Login() {
         </div>
         )} */}
       </div>
+    </div>
     </div>
   );
 }

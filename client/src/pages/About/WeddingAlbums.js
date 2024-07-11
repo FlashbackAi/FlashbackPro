@@ -3,7 +3,7 @@ import { Carousel } from 'react-responsive-carousel';
 import 'react-responsive-carousel/lib/styles/carousel.min.css';
 import './Card.css';
 
-const AlbumSelection = () => {
+const WeddingAlbums = () => {
   const [isHovered, setIsHovered] = useState(false);
 
   const handleMouseEnter = () => {
@@ -20,8 +20,8 @@ const AlbumSelection = () => {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <h3 className='card-h3'>Instant & Secure Photo Sharing</h3>
-      <p className='card-p'>By Image & Face Recognition</p>
+      <h3 className='card-h3'>Semi-Automated Wedding Albums</h3>
+      <p className='card-p'>By Relationship & Moment Recognition</p>
       <Carousel
         showThumbs={false}
         infiniteLoop={true}
@@ -32,17 +32,17 @@ const AlbumSelection = () => {
         showIndicators={false}
       >
         <div>
-          <img src="https://via.placeholder.com/600x400.png?text=Album+1" alt="Album 1" />
+          <img src="https://via.placeholder.com/600x400.png?text=Photo+1" alt="Photo 1" />
         </div>
         <div>
-          <img src="https://via.placeholder.com/600x400.png?text=Album+2" alt="Album 2" />
+          <img src="https://via.placeholder.com/600x400.png?text=Photo+2" alt="Photo 2" />
         </div>
         <div>
-          <img src="https://via.placeholder.com/600x400.png?text=Album+3" alt="Album 3" />
+          <img src="https://via.placeholder.com/600x400.png?text=Photo+3" alt="Photo 3" />
         </div>
       </Carousel>
     </div>
   );
 };
 
-export default AlbumSelection;
+export default WeddingAlbums;
