@@ -1,0 +1,46 @@
+/* Footer.css */
+
+.footer {
+  background: #5a5959;
+  color: white;
+  text-align: center;
+  padding: 5px 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  bottom: 0;
+  width: 100%;
+}
+
+.contact-container {
+  display: flex;
+  align-items: center;
+}
+
+.social-container {
+  display: flex;
+  align-items: center;
+}
+
+.footer p {
+  margin: 2px 0;
+}
+
+.footer a {
+  color: white;
+  text-decoration: none;
+}
+
+.social-media-links {
+  margin-top: 5px;
+}
+
+.social-media-links a {
+  margin: 0 5px;
+}
+
+.social-container img {
+  width: 15px;
+  height: 15px;
+}
