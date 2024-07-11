@@ -69,7 +69,6 @@
 import React from 'react';
 import PhotoSharing from './PhotoSharing';
 import AlbumSelection from './AlbumSelection';
-import CreateEvents from './CreateEvents';
 import Login from "../Auth/Login/Login";
 import './About.css';
 import backgroundVideo from './Flashback logo spinning loop.mp4'; // Ensure you provide the correct path to your video file
