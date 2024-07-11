@@ -361,12 +361,12 @@ function Login() {
             </div>
           )}
         </div>
-        {!isPhoneNumberValid && (
-          <div className="contactUs">
-            <p>Contact Us: <a href="tel:+919090301234">+919090301234 | +919090401234</a></p>
-            <p>Write to Us: <text>team@flashback.inc</text></p>
-          </div>
-        )}
+        {/* {!isPhoneNumberValid &&(
+        <div className="contactUs">
+          <p>Contact Us: <a href="tel:+919090301234">+919090301234 | +919090401234</a></p>
+          <p>Write to Us: <text>team@flashback.inc</text></p>
+        </div>
+        )} */}
       </div>
     </div>
   );

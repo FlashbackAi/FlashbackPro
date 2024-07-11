@@ -633,12 +633,12 @@ p {
 .logoCaption {
   font-size: 0.5em;
   /* color: #1c1e21; */
-  font-family: monospace;
+  font-family: Arial, sans-serif;
   letter-spacing: 0.05em;
 }
 
 .Congrats {
-  font-family: monospace; /* This is a placeholder; you'd need the actual font used by Facebook */
+  font-family: Arial, sans-serif; /* This is a placeholder; you'd need the actual font used by Facebook */
 
   font-size: 2em; /* Adjust the size as needed */
   font-weight: 700; /* Facebook's logo is bold */
@@ -649,7 +649,7 @@ p {
 }
 
 .CongratsMessage {
-  font-family: monospace; /* This is a placeholder; you'd need the actual font used by Facebook */
+  font-family: Arial, sans-serif; /* This is a placeholder; you'd need the actual font used by Facebook */
 
   font-size: 1em; /* Adjust the size as needed */
   font-weight: 700; /* Facebook's logo is bold */

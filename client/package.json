@@ -30,6 +30,7 @@
     "react-map-interaction": "^2.1.0",
     "react-modal": "^3.16.1",
     "react-quick-pinch-zoom": "^5.1.0",
+    "react-responsive-carousel": "^3.2.23",
     "react-router-dom": "^6.23.0",
     "react-scripts": "5.0.1",
     "react-select": "^5.8.0",

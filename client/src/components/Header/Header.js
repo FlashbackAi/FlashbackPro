@@ -6,11 +6,7 @@ const Header = ({ clientName, stickToTop = true }) => {
   return (
     <header className={clientName && "m_Bottom_Low " + (stickToTop && "stickToTop")}>
       <h2>
-        FlashB
-        <span>
-          <img src={logo} />
-        </span>
-        ck
+        FlashBack
       </h2>
       {clientName && <h3>An event by {clientName}</h3>}
     </header>
