@@ -3,6 +3,7 @@ import { jwtDecode } from "jwt-decode";
 
 import LoadingSpinner from "../components/Loader/LoadingSpinner";
 import ROUTES from "./Routes";
+import Header from "../components/Header/Header";
 
 const isTokenExpired = (token) => {
   const decodedToken = jwtDecode(token);

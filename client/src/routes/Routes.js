@@ -20,6 +20,7 @@ import FaceSelection from "../pages/Pro/FaceSelection/FaceSelection";
 import Event from "../pages/Event/Event";
 import CreateEventForm from "../pages/CreateEvent/CreateEvent";
 import { LoginEvent } from "../pages/LoginEvent/LoginEvent";
+import About from "../pages/About/About";
 
 
 const ROUTES=[
@@ -27,7 +28,7 @@ const ROUTES=[
         path:"/",
         exact:false,
         protected:false,
-        component:Login
+        component:About
     },
     {
         path:"/login",
@@ -167,7 +168,13 @@ const ROUTES=[
         exact:false,
         protected:false,
         component:Event,
-    }
+    },
+    {
+        path:"/about",
+        exact:false,
+        protected:false,
+        component:About,
+    },
 
 ]
 
