@@ -816,46 +816,51 @@ const FaceSelection = () => {
             className="entry"
           >
             <Header />
-            <h2>Are you a Couple, Groom or Bride</h2>
+            <h2>Please Select the Album type</h2>
             <div style={{ display: 'flex', justifyContent: 'space-around' }}>
-              <div
-                onClick={() => handleSelectCharacter("Couple")}
-                className={`card ${formData['form_owner'] === "Couple" ? "selected" : ""}`}
-              >
-                <img src='assets/couple_icon.png' />
-              </div>
+              
               <div
                 onClick={() => handleSelectCharacter("Groom")}
                 className={`card ${formData['form_owner'] === "Groom" ? "selected" : ""}`}
               >
-                <img src='assets/groom_icon.png' />
+                <img src='assets/groom_icon.png' alt="Groom Icon" />
+                <div className="icon-text">Groom Side</div>
               </div>
               <div
                 onClick={() => handleSelectCharacter("Bride")}
                 className={`card ${formData['form_owner'] === "Bride" ? "selected" : ""}`}
               >
-                <img src='assets/bride_icon.png' />
+                <img src='assets/bride_icon.png' alt="Bride Icon" />
+                <div className="icon-text">Bride Side</div>
+              </div>
+              <div
+                onClick={() => handleSelectCharacter("Couple")}
+                className={`card ${formData['form_owner'] === "Couple" ? "selected" : ""}`}
+              >
+                <img src='assets/couple_icon.png' alt="Couple Icon" />
+                <div className="icon-text">Bride and Groom Side</div>
               </div>
             </div>
+
             <button onClick={checkCharacterSelected}>Next</button>
           </motion.div>
         )}
 
-        {isCharacterSelected && !start && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{
-              duration: 0.8,
-              ease: [0, 0.71, 0.2, 1.01],
-            }}
-            className="entry"
-          >
-            <Header />
-            <h2>Let's Start with Selecting Faces</h2>
-            <button onClick={handleClick}>Start</button>
-          </motion.div>
-        )}
+          {isCharacterSelected && !start && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{
+                duration: 0.8,
+                ease: [0, 0.71, 0.2, 1.01],
+              }}
+              className="entry"
+            >
+              <Header />
+              <h2>Let's Start with Selecting Faces</h2>
+              <button onClick={handleClick}>Start</button>
+            </motion.div>
+          )}
         {!!userThumbnails.length && start && (
           <>
             <Header/>
