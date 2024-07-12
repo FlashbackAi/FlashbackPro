@@ -12,15 +12,6 @@ header{
 
 .wrapper-images img {
      padding: 0em;
-     border-radius: 5%;
-     margin: 1em;
-}
-
-.wrapper-images :hover{
-    transform: scale(1.05);
-}
-.wrapper-images {
-    margin: 0 1em;
 }
 
 .content h2{
@@ -30,4 +21,41 @@ header{
 
 .loading-spinner img{
     margin-left: 5em ;
+}
+
+.wrapper-images-pro{
+  position: relative;
+  width: 7em;
+  height: auto;
+  object-fit: cover;
+  margin: 0.1em;
+}
+
+.wrapper-images-pro :hover{
+    transform: scale(1.05);
+}
+
+.wrapper-images-pro img{
+  width: 6em;
+  height: 7em;
+  object-fit: cover;
+  border-radius: 20%;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border: 2px solid gray;
+}
+
+.wrapper-pro{
+    display: grid;
+    grid-template-columns: repeat(
+      auto-fill,
+      minmax(6.9em, 1fr)
+    ); /* Three images per row, each with a minimum width of 300px */
+    gap: 0.65em; /*Gap between grid items */
+    background-size: 8em;
+    width: calc(100% - 1.4em);
+    margin-left: 0.5em;
+}
+
+.wrapper-pro p{
+    margin: 0;
 }

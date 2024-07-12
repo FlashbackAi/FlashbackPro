@@ -20,7 +20,6 @@ const About = () => {
   const closeModal = () => {
     setIsModalOpen(false);
   };
-
   return (
     <>
       <header className='header-background'>
