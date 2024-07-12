@@ -288,7 +288,7 @@ function Login() {
             <form onSubmit={handleSubmit} className="login-form">
               <div className={"phoneOuter " + (phoneNumberError && "error")} style={{ position: "relative" }}>
                 <Select
-                  className="countryCode"
+                  className="country-code"
                   classNamePrefix={"fb"}
                   options={CountryCodes}
                   onChange={onChangeCountryCode}

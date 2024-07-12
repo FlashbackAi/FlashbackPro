@@ -219,6 +219,7 @@ footer {
     max-width: 500px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     z-index: 1000;
+    overflow: hidden; /* Ensure the modal does not overflow */
   }
   
   .overlay {
@@ -241,4 +242,13 @@ footer {
     cursor: pointer;
   }
 
+  @media (max-width: 768px) {
+    .close-modal-button {
+      top: 5px;
+      right: 5px;
+      font-size: 20px;
+      padding: 0.1em 0.1em;
+      width: 10%;
+    }
+  }
   
