@@ -1,5 +1,4 @@
 /* Footer.css */
-
 .footer {
   background: #5a5959;
   color: white;
@@ -9,7 +8,6 @@
   justify-content: space-between;
   align-items: center;
   position: relative;
-  bottom: 0;
   width: 100%;
 }
 
@@ -43,4 +41,15 @@
 .social-container img {
   width: 15px;
   height: 15px;
+}
+
+/* New CSS to ensure the footer is always at the bottom */
+.page-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.content-wrap {
+  flex: 1;
 }

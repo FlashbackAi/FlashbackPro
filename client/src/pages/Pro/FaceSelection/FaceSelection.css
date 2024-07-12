@@ -6,7 +6,6 @@ header{
   padding: 20px;
   border: 1px solid black;
   transition: transform 0.3s, box-shadow 0.3s;
-  text-align: center; /* Center the text */
 }
 
 .card:hover {
@@ -21,13 +20,6 @@ header{
   transform: scale(1.1);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
 }
-
-.icon-text {
-  margin-top: 10px; /* Space between the image and the text */
-  font-size: 1em;
-  font-weight: bold;
-}
-
 
 .sibling-container {
   display: flex;

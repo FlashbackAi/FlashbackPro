@@ -11,6 +11,7 @@ import { toast } from "react-toastify";
 import LoadingSpinner from "../../../components/Loader/LoadingSpinner";
 import Modal from '../../../components/Modal/Modal';
 import Footer from "../../../components/Footer/Footer";
+import "../../../components/Footer/Footer.css";
 
 const FaceSelection = () => {
   const isDataFetched = useRef(false);
@@ -771,7 +772,7 @@ const FaceSelection = () => {
         setIsFacesSelectionDone(true);
 
         console.log("Navigating to photo selection");
-        navigate(`/photoSelection/${eventName}`);
+        navigate(`/photoSelection/${eventName}/${formData['form_owner']}`);
       } else {
         throw new Error("Failed to save the selection");
       }
@@ -870,7 +871,7 @@ const FaceSelection = () => {
                   serialNo={1}
                   options={filterOptions(grooms).slice(0, 10)}
                   others={filterOptions(userThumbnails)}
-                  title="Please select the groom's image"
+                  title="Please select the Groom's image"
                   next={next}
                   prev={prev}
                   question="groom.image"
@@ -882,7 +883,7 @@ const FaceSelection = () => {
                   maritalStatus={() => handleOpenMaritalStatusModal('groom')}
                 />
                 <CustomFaceOption
-                  title="Please select the bride's image"
+                  title="Please select the Bride's image"
                   next={next}
                   prev={prev}
                   options={filterOptions(brides).slice(0, 10)}
