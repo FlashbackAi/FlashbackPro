@@ -953,7 +953,7 @@ End of Sample */
     auto-fill,
     minmax(6.9em, 1fr)
   ); /* Three images per row, each with a minimum width of 300px */
-  gap: 0.65em; /*Gap between grid items */
+  gap: 0.85em; /*Gap between grid items */
   background-size: 8em;
   width: calc(100% - 1.4em);
   margin-left: 0.5em;
@@ -961,7 +961,7 @@ End of Sample */
 
 .wrapper-images {
   position: relative;
-  width: 8em;
+  width: 7em;
   height: auto;
   object-fit: cover;
 }
@@ -971,6 +971,7 @@ End of Sample */
   padding: 0.5em;
   height: 8em;
   object-fit: cover;
+  border: 2px solid grey;
 }
 
 .wrapper-images p {

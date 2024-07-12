@@ -10,7 +10,7 @@ import WeddingAlbums from './WeddingAlbums';
 
 Modal.setAppElement('#root'); // Set the app root element for accessibility
 
-const App = () => {
+const About = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const openModal = () => {
@@ -22,7 +22,7 @@ const App = () => {
   };
 
   return (
-    <div>
+    <>
       <header className='header-background'>
         <div className="video-container">
           <video className="background-video" src={backgroundVideo} autoPlay loop muted />
@@ -62,9 +62,9 @@ const App = () => {
         <button onClick={closeModal} className="close-modal-button">&times;</button>
         <div className='login-container'><Login /></div>
       </Modal>
-    </div>
+    </>
   );
 };
 
-export default App;
+export default About;
 

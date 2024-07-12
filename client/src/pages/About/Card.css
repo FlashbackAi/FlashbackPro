@@ -6,7 +6,6 @@
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     text-align: center;
-    /* background-color: #1e293b; */
   }
   
   .card-h3 {
@@ -16,6 +15,7 @@
     color: #bbb6b6;
     text-align: left;
     padding-left: 20px;
+    background:#2c2b2b;
   }
 
   .card-h3-card1 {
@@ -24,12 +24,13 @@
     color: #bbb6b6;
     text-align: left;
     padding-left: 20px;
+    background:#2c2b2b;
 
   }
   
   .card-p {
     margin: 0;
-    font-size: 1em;
+    font-size: 0.8em;
     color: #bbb6b6;
     text-align: left;
     padding-left: 20px;

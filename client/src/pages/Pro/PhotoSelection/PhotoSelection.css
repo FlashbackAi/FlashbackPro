@@ -12,6 +12,15 @@ header{
 
 .wrapper-images img {
      padding: 0em;
+     border-radius: 5%;
+     margin: 1em;
+}
+
+.wrapper-images :hover{
+    transform: scale(1.05);
+}
+.wrapper-images {
+    margin: 0 1em;
 }
 
 .content h2{
