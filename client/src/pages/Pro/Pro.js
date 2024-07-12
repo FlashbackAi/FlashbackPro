@@ -6,12 +6,12 @@ import { useNavigate } from "react-router-dom";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import PlaceholderImage from "../../media/images/blurredLogo.png";
 import Header from "../../components/Header/Header";
-import { set } from "internal-slot";
 import API_UTIL from "../../services/AuthIntereptor";
 import Footer from "../../components/Footer/Footer";
+import "../../components/Footer/Footer.css"; // Import your CSS file
 
 function Pro() {
-  const { eventName} = useParams();
+  const { eventName } = useParams();
   const [userThumbnails, setUserThumbnails] = useState([]);
   const username = sessionStorage.getItem("username");
   const [isLoading, setIsLoading] = useState(true);
@@ -20,8 +20,6 @@ function Pro() {
   const history = useNavigate();
   const [clickedImg, setClickedImg] = useState(null);
   const serverIp = process.env.REACT_APP_SERVER_IP;
-
-
 
   const handleClick = (item) => {
     shareOnWhatsApp(item);
@@ -35,18 +33,14 @@ function Pro() {
     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
     window.open(whatsappUrl, "_blank");
   };
-  
+
   const fetchThumbnails = async () => {
     if (userThumbnails.length === 0) setIsLoading(true);
 
     try {
-      const response = await API_UTIL.get(
-        `/userThumbnails/${eventName}`
-      );
+      const response = await API_UTIL.get(`/userThumbnails/${eventName}`);
       if (response.status === 200) {
-        
-        setUserThumbnails(response.data)
-
+        setUserThumbnails(response.data);
       } else {
         throw new Error("Failed to fetch user thumbnails");
       }
@@ -63,39 +57,38 @@ function Pro() {
     isDataFetched.current = true;
   }, []);
 
-
   return (
-    <div>
+    <div className="page-container">
       {isLoading ? (
         <LoadingSpinner /> // You can replace this with a spinner or loader component
       ) : (
         <>
           <Header />
-          {userThumbnails.length > 0 ? (
-            <div className="wrapper">
-              {userThumbnails.map((item, index) => (
-                <div key={index} className="wrapper-images">
-                  <LazyLoadImage
-                    src={item.face_url}
-                    onClick={() => handleClick(item)}
-                  />
-                  <p>{item.count}</p>
+          <div className="content-wrap">
+            {userThumbnails.length > 0 ? (
+              <div className="wrapper">
+                {userThumbnails.map((item, index) => (
+                  <div key={index} className="wrapper-images">
+                    <LazyLoadImage
+                      src={item.face_url}
+                      onClick={() => handleClick(item)}
+                    />
+                    <p>{item.count}</p>
+                  </div>
+                ))}
+                <div>
+                  {clickedImg && <></>}
                 </div>
-              ))}
-              <div>
-                {clickedImg && (
-                  <></>
-                )}
               </div>
-            </div>
-          ) : fetchTimeout ? (
-            <p>No images to display</p> // Message shown if fetch timeout is reached
-          ) : (
-            <p>Failed to load images</p> // Message shown if images fetch fails for other reasons
-          )}
+            ) : fetchTimeout ? (
+              <p>No images to display</p> // Message shown if fetch timeout is reached
+            ) : (
+              <p>Failed to load images</p> // Message shown if images fetch fails for other reasons
+            )}
+          </div>
+          <Footer />
         </>
       )}
-      <Footer />
     </div>
   );
 }

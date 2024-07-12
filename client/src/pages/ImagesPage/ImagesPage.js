@@ -2,13 +2,14 @@ import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import LoadingSpinner from "../../components/Loader/LoadingSpinner";
 import Modal from "../../components/ImageModal/ImageModal";
-import { useNavigate,useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import PlaceholderImage from "../../media/images/blurredLogo.png";
 import Header from "../../components/Header/Header";
 import API_UTIL from "../../services/AuthIntereptor";
 import { Heart } from "lucide-react";
 import Footer from "../../components/Footer/Footer";
+import "../../components/Footer/Footer.css"; // Import the updated CSS
 
 function ImagesPage() {
   const [lastEvaluatedKey, setLastEvaluatedKey] = useState(undefined);
@@ -26,7 +27,7 @@ function ImagesPage() {
   const history = useNavigate();
   const location = useLocation();
   const [clientName, setClientName] = useState();
- 
+
   const handleClick = (item, index) => {
     setClickedImg(item.original);
     setClickedImgIndex(index);
@@ -236,51 +237,53 @@ function ImagesPage() {
   };
 
   return (
-    <div>
+    <div className="page-container">
       {isLoading ? (
         <LoadingSpinner />
       ) : (
         <>
           <Header clientName={clientName} />
-          {images.length > 0 ? (
-            <div className="wrapper">
-              {images.map((item, index) => (
-                <div key={index} className="wrapper-images">
-                  <LazyLoadImage
-                    src={item.thumbnail}
-                    placeholderSrc={PlaceholderImage}
-                    effect="blur"
-                    onLoad={() => item.isFavourites && displayFavIcon(index)}
-                    onClick={() => handleClick(item, index)}
-                  />
-                  {/* {item.isFavourites && ( */}
-                  <Heart
-                    data-key={index}
-                    className="image_favourite_down hidden"
-                  />
-                  {/* )} */}
+          <div className="content-wrap">
+            {images.length > 0 ? (
+              <div className="wrapper">
+                {images.map((item, index) => (
+                  <div key={index} className="wrapper-images">
+                    <LazyLoadImage
+                      src={item.thumbnail}
+                      placeholderSrc={PlaceholderImage}
+                      effect="blur"
+                      onLoad={() => item.isFavourites && displayFavIcon(index)}
+                      onClick={() => handleClick(item, index)}
+                    />
+                    {/* {item.isFavourites && ( */}
+                    <Heart
+                      data-key={index}
+                      className="image_favourite_down hidden"
+                    />
+                    {/* )} */}
+                  </div>
+                ))}
+                <div>
+                  {clickedImg && (
+                    <Modal
+                      clickedImg={clickedImg}
+                      clickedImgIndex={clickedImgIndex}
+                      clickedImgFavourite={clickedImgFavourite}
+                      setClickedImg={setClickedImg}
+                      clickedUrl={clickedUrl}
+                      handleBackButton={handleBackButton}
+                      handleFavourite={handleFavourite}
+                    />
+                  )}
                 </div>
-              ))}
-              <div>
-                {clickedImg && (
-                  <Modal
-                    clickedImg={clickedImg}
-                    clickedImgIndex={clickedImgIndex}
-                    clickedImgFavourite={clickedImgFavourite}
-                    setClickedImg={setClickedImg}
-                    clickedUrl={clickedUrl}
-                    handleBackButton={handleBackButton}
-                    handleFavourite={handleFavourite}
-                  />
-                )}
               </div>
-            </div>
-          ) : fetchTimeout ? (
-            <p>No images to display</p> // Message shown if fetch timeout is reached
-          ) : (
-            <p>Failed to load images</p> // Message shown if images fetch fails for other reasons
-          )}
-          <Footer />
+            ) : fetchTimeout ? (
+              <p>No images to display</p> // Message shown if fetch timeout is reached
+            ) : (
+              <p>Failed to load images</p> // Message shown if images fetch fails for other reasons
+            )}
+          </div>
+          <Footer />  
         </>
       )}
     </div>

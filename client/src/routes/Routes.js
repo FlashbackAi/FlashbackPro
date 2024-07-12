@@ -140,6 +140,12 @@ const ROUTES=[
         component:PhotoSelection
     },
     {
+        path:"/photoSelection/:eventName/:form_owner",
+        exact:false,
+        protected:false,
+        component:PhotoSelection
+    },
+    {
         path:"/edit/collage",
         exact:false,
         protected:false,

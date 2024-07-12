@@ -15,7 +15,7 @@ import Modal from "../../../components/ImageModal/ImageModalNew";
 const PhotoSelection = () => {
   const isDataFetched = useRef(false);
   const [isLoading, setIsLoading] = useState(true);
-  const { eventName } = useParams();
+  const { eventName, form_owner } = useParams();
   const [isPhotosSelectionStarted, setIsPhotosSelectionStarted] = useState(false);
   const [imagesData, setImagesData] = useState({
     
@@ -45,7 +45,7 @@ const PhotoSelection = () => {
   
   const [formData, setFormData] = useState({
     event_name: eventName,
-    form_owner: "groom",
+    form_owner: form_owner,
     groom: null,
     groomsFather: null,
     groomsMother: null,
@@ -185,7 +185,7 @@ const PhotoSelection = () => {
 
   const fetchFormData = async () => {
     try {
-      const response = await API_UTIL.get(`/getSelectionFormData/${eventName}/Couple`);
+      const response = await API_UTIL.get(`/getSelectionFormData/${eventName}/${form_owner}`);
       if (response.data) {
         setFormData(response.data);
         initializeImagesData(response.data)
