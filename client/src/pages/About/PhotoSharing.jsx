@@ -32,13 +32,13 @@ const PhotoSharing = () => {
         showIndicators={false}
       >
         <div>
-          <img src="https://via.placeholder.com/600x400.png?text=Photo+1" alt="Photo 1" />
+          <img src="/assets/1.1.jpg" alt="Photo 1" />
         </div>
         <div>
-          <img src="https://via.placeholder.com/600x400.png?text=Photo+2" alt="Photo 2" />
+          <img src="/assets/1.2.jpg" alt="Photo 2" />
         </div>
         <div>
-          <img src="https://via.placeholder.com/600x400.png?text=Photo+3" alt="Photo 3" />
+          <img src="/assets/1.3.jpg" alt="Photo 3" />
         </div>
       </Carousel>
     </div>

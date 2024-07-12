@@ -32,13 +32,13 @@ const AlbumSelection = () => {
         showIndicators={false}
       >
         <div>
-          <img src="https://via.placeholder.com/600x400.png?text=Album+1" alt="Album 1" />
+          <img src="/assets/2.1.jpg" alt="Album 1" />
         </div>
         <div>
-          <img src="https://via.placeholder.com/600x400.png?text=Album+2" alt="Album 2" />
+          <img src="/assets/2.2.jpg" alt="Album 2" />
         </div>
         <div>
-          <img src="https://via.placeholder.com/600x400.png?text=Album+3" alt="Album 3" />
+          <img src="/assets/2.3.jpg" alt="Album 3" />
         </div>
       </Carousel>
     </div>
