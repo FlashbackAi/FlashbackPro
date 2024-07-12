@@ -66,9 +66,9 @@ function Pro() {
           <Header />
           <div className="content-wrap">
             {userThumbnails.length > 0 ? (
-              <div className="wrapper">
+              <div className="wrapper-pro">
                 {userThumbnails.map((item, index) => (
-                  <div key={index} className="wrapper-images">
+                  <div key={index} className="wrapper-images-pro">
                     <LazyLoadImage
                       src={item.face_url}
                       onClick={() => handleClick(item)}
