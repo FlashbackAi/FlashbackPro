@@ -12,7 +12,7 @@
 } */
 
 /* header {
-    background: #1c1c1c;
+    background: #cccccc;
     color: white;
     padding: 100px 0;
     text-align: center;
@@ -117,6 +117,8 @@ header .container {
     border-radius: 5px;
     transition: background 0.3s, color 0.3s, transform 0.3s;
     margin-top: 20px;
+    font-size: 0.7em;
+    font-weight: bold;
 }
 
 .cta-button:hover {

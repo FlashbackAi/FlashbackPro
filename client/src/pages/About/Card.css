@@ -6,14 +6,16 @@
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     text-align: center;
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
   }
   
   .card-h3 {
     margin-bottom: 5px;
-    font-size: 1.2em;
+    font-size: 1.5em;
     font-weight: bold !important;
     color: #b48e75;
-    text-align: left;
+    text-align: center;
     padding-left: 20px;
   }
 
@@ -21,7 +23,7 @@
     margin-bottom: 20px;
     font-size: 1.5em;
     color: #b48e75;
-    text-align: left;
+    text-align: center;
     padding-left: 20px;
     background:#2c2b2b;
 
@@ -64,3 +66,8 @@
     margin: 0 5px; /* Adjust the spacing */
     border-radius: 10%; /* Ensure the dots are circular */
   }
+
+.carousel.carousel-slider .control-arrow {
+  font-size: 1em;
+  width: 1.5em;
+}

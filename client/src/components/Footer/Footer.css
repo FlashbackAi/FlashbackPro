@@ -15,11 +15,13 @@
 .contact-container {
   display: flex;
   align-items: center;
+  width: 9em;
 }
 
 .social-container {
   display: flex;
   align-items: center;
+  max-width: 6em;
 }
 
 .footer p {
@@ -53,4 +55,13 @@
 
 .content-wrap {
   flex: 1;
+}
+
+.contactus p{
+  display: contents;
+}
+
+.contactus{
+  width: 8em;
+  display: grid;
 }
