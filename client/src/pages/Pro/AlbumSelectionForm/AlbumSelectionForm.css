@@ -90,8 +90,8 @@ button {
 
 .entry h2 {
   color: #c1c1c1;
-  font-weight: 100;
-  font-size: 1.4em;
+  /* font-weight: 100; */
+  /* font-size: 1.4em; */
   letter-spacing: 0.04em;
 }
 
