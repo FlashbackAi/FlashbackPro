@@ -32,18 +32,13 @@ const About = () => {
           <button onClick={openModal} className="cta-button">Get Your Photos</button>
         </div>
       </header>
-
+      <div className='OurProducts'>
+      <h2 className='OurProducts-h2'>Our Products</h2> {/* Small header added here */}
+      </div>
       <section id="how-it-works" className="about-container">
         <div className="steps">
           <div className='photo-album-container'>
-            <PhotoSharing />
-            <div className='arrow-image'>
-              <img src="https://img.icons8.com/B48E75/glyph-neue/2x/arrow.png" alt="arrow"/>
-            </div>
             <AlbumSelection />
-            <div className='arrow-image'>
-              <img src="https://img.icons8.com/B48E75/glyph-neue/2x/arrow.png" alt="arrow"/>
-            </div>
             <WeddingAlbums/>
           </div>
         </div>

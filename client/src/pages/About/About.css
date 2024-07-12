@@ -176,12 +176,12 @@ footer {
     /* background-color: #1e293b; */
 }
 
-.arrow-image{
+/* .arrow-image{
     width: 5%;
     margin: 3px;
     margin-top: 9em;
     padding: 3px !important;
-}
+} */
 
 @media (max-width: 768px) {
     .steps {
@@ -251,4 +251,15 @@ footer {
       width: 10%;
     }
   }
+
+
+  .OurProducts-h2 {
+    color: #aaa7a7; /* Example: white color */
+    font-size: 2rem; /* Example: 1.5 rem font size */
+    text-align: center; /* Centered text */
+    margin-top: 20px;
+    margin-bottom:20px; /* Space from the button above */
+  }
+
+
   

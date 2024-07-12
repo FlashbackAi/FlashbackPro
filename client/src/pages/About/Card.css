@@ -1,5 +1,5 @@
 .card {
-    flex: 0 1 29%;
+    flex: 0 1 40%;
     box-sizing: border-box;
     padding: 10px;
     /* margin: 10px; */
@@ -15,7 +15,6 @@
     color: #b48e75;
     text-align: left;
     padding-left: 20px;
-    background:#2c2b2b;
   }
 
   .card-h3-card1 {

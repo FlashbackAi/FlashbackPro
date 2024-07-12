@@ -21,7 +21,6 @@ const AlbumSelection = () => {
       onMouseLeave={handleMouseLeave}
     >
       <h3 className='card-h3'>Instant & Secure Photo Sharing</h3>
-      <p className='card-p'>By Image & Face Recognition</p>
       <Carousel
         showThumbs={false}
         infiniteLoop={true}

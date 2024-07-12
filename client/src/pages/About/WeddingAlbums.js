@@ -21,7 +21,6 @@ const WeddingAlbums = () => {
       onMouseLeave={handleMouseLeave}
     >
       <h3 className='card-h3'>Semi-Automated Wedding Albums</h3>
-      <p className='card-p'>- By Relationship & Moment Recognition</p>
       <Carousel
         showThumbs={false}
         infiniteLoop={true}
