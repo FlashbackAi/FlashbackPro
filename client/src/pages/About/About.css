@@ -1,12 +1,15 @@
-body {
+/* body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: 100% !important;
     overflow-x: hidden;
     background-color: #1c1c1c;
     color: white;
-}
+} */
 
 /* header {
     background: #1c1c1c;
@@ -15,6 +18,17 @@ body {
     text-align: center;
     position: relative;
 } */
+ 
+
+/* #root {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+} */
+
+main {
+    flex: 1;
+}
 
 header .container {
     animation: fadeIn 1s ease-in-out;
@@ -22,6 +36,10 @@ header .container {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+}
+
+.fullbody {
+    height: 100%;
 }
 
 .header-background {
@@ -143,6 +161,8 @@ footer {
     color: white;
     text-align: center;
     padding: 20px 0;
+    margin-top: auto;
+    padding: 20px 0;
 }
 
 .login-container {
@@ -221,5 +241,4 @@ footer {
     cursor: pointer;
   }
 
-  
   

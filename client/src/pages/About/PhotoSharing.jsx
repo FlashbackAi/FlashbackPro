@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Carousel } from 'react-responsive-carousel';
 import 'react-responsive-carousel/lib/styles/carousel.min.css';
 import './Card.css';
-import { color } from 'framer-motion';
 
 const PhotoSharing = () => {
   const [isHovered, setIsHovered] = useState(false);
@@ -27,10 +26,12 @@ const PhotoSharing = () => {
         infiniteLoop={true}
         showStatus={false}
         autoPlay={isHovered}
-        interval={3000}
+        interval={2000}
         stopOnHover={true}
         showIndicators={false}
-      >
+        swipeable={true}
+        dynamicHeight={true}
+        >
         <div>
           <img src="/assets/1.1.jpg" alt="Photo 1" />
         </div>
