@@ -31,13 +31,13 @@ const AlbumSelection = () => {
         showIndicators={false}
       >
         <div>
-          <img src="/assets/2.1.jpg" alt="Album 1" />
+          <img src="/assets/1.1.jpg" alt="Album 1" />
         </div>
         <div>
-          <img src="/assets/2.2.jpg" alt="Album 2" />
+          <img src="/assets/1.2.jpg" alt="Album 2" />
         </div>
         <div>
-          <img src="/assets/2.3.jpg" alt="Album 3" />
+          <img src="/assets/1.3.jpg" alt="Album 3" />
         </div>
       </Carousel>
     </div>

@@ -31,13 +31,13 @@ const WeddingAlbums = () => {
         showIndicators={false}
       >
         <div>
-          <img src="/assets/3.1.jpg" alt="Photo 1" />
+          <img src="/assets/2.1.jpg" alt="Photo 1" />
         </div>
         <div>
-          <img src="/assets/3.2.jpg" alt="Photo 2" />
+          <img src="/assets/2.2.jpg" alt="Photo 2" />
         </div>
         <div>
-          <img src="/assets/3.3.jpg" alt="Photo 3" />
+          <img src="/assets/2.3.jpg" alt="Photo 3" />
         </div>
       </Carousel>
     </div>

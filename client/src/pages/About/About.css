@@ -257,8 +257,8 @@ footer {
     color: #aaa7a7; /* Example: white color */
     font-size: 2rem; /* Example: 1.5 rem font size */
     text-align: center; /* Centered text */
-    margin-top: 20px;
-    margin-bottom:20px; /* Space from the button above */
+    /* margin-top: 10px; */
+    margin-bottom:10px; /* Space from the button above */
   }
 
 
