@@ -321,7 +321,7 @@ function Login() {
           )}
           {isNewUser && (
             <div className="login-form-container">
-              <p className="caution">Hey, don't worry we won't see your image :)</p>
+              {/*<p className="caution">Hey, don't worry we won't see your image :)</p>*/}
               <p className={`instructions ${step === 0 ? 'rotate' : step === 1 ? 'blink' : ''}`}>
                <span className="instructionSpan">{step === 0 ? " Please move your head left or right  to verify." : step === 1 ? " Please blink  to verify." : "Capture your Selfie"}</span>
               </p>
