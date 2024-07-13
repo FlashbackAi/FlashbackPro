@@ -1,3 +1,16 @@
+/* Flashback Font */
+@import url('https://fonts.googleapis.com/css2?family=Advent+Pro:ital,wght@0,100..900;1,100..900&display=swap');
+body{
+  font-family: "Advent Pro" !important;
+  font-optical-sizing: auto;
+  font-weight: 600;
+  font-style: normal;
+  font-variation-settings:
+          "wdth" 100;
+}
+
+
+
 /* Toast Start */
 
 .Toastify__close-button {
@@ -51,6 +64,8 @@ button {
   border-radius: 10px;
   display: flex;
   flex-direction: column;
+
+
   margin-top: 50px;
   border: 1px solid lightgray;
   font-family: Arial, Helvetica, sans-serif;
@@ -1014,6 +1029,7 @@ End of Sample */
   transform: translateX(-50%);
   width: 4em;
   height: 4em;
+  margin-top: 35em;
   background-color: #ff6347; /* Tomato color */
   border: none;
   border-radius: 50%;
