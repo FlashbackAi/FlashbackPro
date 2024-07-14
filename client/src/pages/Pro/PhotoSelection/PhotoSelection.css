@@ -2,6 +2,9 @@ header{
     font-size: 1em ;
 }
 
+.container {
+    display: flex;
+}
 .sidebar{
     width:8em;
 }

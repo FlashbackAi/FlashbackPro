@@ -1,10 +1,8 @@
-html {
-  /* scrollbar-width: none; */
+/* html {
   scroll-snap-type: y mandatory;
   -ms-scroll-snap-type: y mandatory;
   -webkit-scroll-snap-type: y mandatory;
   scroll-behavior: smooth;
-  /* overflow: hidden; */
 }
 
 ::-webkit-scrollbar {
@@ -18,7 +16,6 @@ html::-webkit-scrollbar {
 .albumSelectionForm {
   display: flex;
   flex-direction: column;
-  /* height: 99vh; */
   justify-content: center;
   align-items: center;
 }
@@ -27,13 +24,11 @@ html::-webkit-scrollbar {
   display: flex;
   align-items: center;
   gap: 1em;
-  /* flex: 1; */
 }
 
 .button_flex div {
   background-color: #b48e75;
   padding: 0.4em 1em;
-  /* height: 100%; */
   border-radius: 0.2em;
 }
 
@@ -54,7 +49,6 @@ button {
 
 .entry {
   min-height: 100dvh;
-  /* scroll-snap-align: c; */
   scroll-snap-stop: always;
   flex: 1 1 auto;
   display: flex;
@@ -66,32 +60,25 @@ button {
 
 .intersect > * {
   opacity: 0;
-  /* transform: translateY(2vh); */
-  /* display: none; */
   visibility: hidden !important;
 }
 
 .show > * {
   visibility: visible !important;
   animation: entry 0.2s ease-in forwards;
-  /* animation-delay: 0.4s; */
 }
 
 @keyframes entry {
   from {
     opacity: 0;
-    /* transform: translateY(2vh); */
   }
   to {
     opacity: 1;
-    /* transform: translateY(0); */
   }
 }
 
 .entry h2 {
   color: #c1c1c1;
-  /* font-weight: 100; */
-  /* font-size: 1.4em; */
   letter-spacing: 0.04em;
 }
 
@@ -244,7 +231,6 @@ button {
   color: #c1c1c1;
   text-align: center;
   font-size: 1em;
-  /* width: 2em; */
   max-width: 100px;
 }
 
@@ -326,7 +312,6 @@ button {
   display: flex;
   align-items: center;
   gap: 10px;
-  /* margin-top: 20px; */
 }
 
 .selected-face h3 {
@@ -418,7 +403,7 @@ button {
 
 .tabcontent.active {
   display: block;
-}  */
+}  */ */
 
 
 .container {
