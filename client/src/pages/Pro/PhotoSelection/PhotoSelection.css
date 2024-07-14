@@ -22,9 +22,6 @@ header{
 }
 
 
-.loading-spinner img{
-    margin-left: 5em ;
-}
 
 .wrapper-images-pro{
   position: relative;
@@ -61,4 +58,8 @@ header{
 
 .wrapper-pro p{
     margin: 0;
+}
+
+.loading-spinner img {
+     margin-left: 0em !important;
 }
