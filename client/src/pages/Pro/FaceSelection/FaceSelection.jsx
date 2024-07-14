@@ -123,7 +123,9 @@ const FaceSelection = () => {
   };
   
   const getNestedProperty = (obj, path) => {
-    return path.split('.').reduce((acc, part) => acc && acc[part], obj);
+  
+    const p = path.split('.').reduce((acc, part) => acc && acc[part], obj);
+    return p;
   };
   
   const generateFamilySection = (char, srNoStart) => {
@@ -378,6 +380,7 @@ const FaceSelection = () => {
       }
   
     return siblings.map((sibling, index) => (
+    <>
       <div className={`${char.toLowerCase()}-${parentKey.toLowerCase()}-sibling-family-container`} key={`${char} ${parentKey} Sibling ${index + 1}`}>
         <div className="centered-selection">
           <div className="sibling-image-container">
@@ -418,6 +421,12 @@ const FaceSelection = () => {
           />
         </div>
       </div>
+      
+      {/* {(parentKey === "father" || parentKey === "mother") && (getNestedProperty(formData, `${ques}.${index + 1}.children`)) && (
+          generateCousinSections1(getNestedProperty(formData, `${ques}.${index + 1}`), `${ques}.${index + 1}`, srNoStart)
+        )} */}
+        </>
+
     ));
   };
   
@@ -487,10 +496,11 @@ const FaceSelection = () => {
     return Object.keys(parentData.Siblings).map((siblingIndex) => {
       const siblingData = parentData.Siblings[siblingIndex];
       if (!siblingData.children) return null;
+      let key = parentKey.replace(/\s+/g, '.').toLowerCase();
       return siblingData.children.map((cousin, cousinIndex) => {
         idx++
         return(
-        <div className="cousin-family-container" key={`${parentKey} Cousin ${srNoStart}.${siblingIndex + 1}.${cousinIndex + 1}`}>
+        <div className="cousin-family-container" key={`${key} Cousin ${srNoStart}.${siblingIndex + 1}.${cousinIndex + 1}`}>
           <div className="centered-selection">
             <div className="sibling-image-container">
               <div className="question-header">
@@ -503,19 +513,19 @@ const FaceSelection = () => {
               </div>
             </div>
             <CustomFaceOption
-              question={`${parentKey.toLowerCase()}.Siblings.${siblingIndex}.children.${cousinIndex}.spouse`}
+              question={`${key}.Siblings.${siblingIndex}.Children.${cousinIndex+1}.spouse`}
               options={filterOptions(userThumbnails)}
               others={[missingThumbnail,...filterOptions(userThumbnails)]}
               serialNo={`${srNoStart}.${idx}`}
               title={`Select Cousin's Spouse`}
               onSelect={handleSelectFace}
               sendSelection={handleSelectChange}
-              selectedImage={getNestedProperty(formData, `${parentKey.toLowerCase()}.Siblings.${siblingIndex}.children.${cousinIndex}.spouse`) || []}
+              selectedImage={getNestedProperty(formData, `${key}.Siblings.${siblingIndex}.Children.${cousinIndex+1}.spouse`) || []}
               next={next}
               prev={prev}
             />
             <CustomFaceOption
-              question={`${parentKey.toLowerCase()}.Siblings.${siblingIndex}.children.${cousinIndex}.children`}
+              question={`${key}.Siblings.${siblingIndex}.Children.${cousinIndex+1}.children`}
               options={filterOptions(kids)}
               others={[missingThumbnail,...filterOptions(userThumbnails)]}
               serialNo={`${srNoStart}.${siblingIndex + 1}.${cousinIndex + 1}.2`}
@@ -523,7 +533,7 @@ const FaceSelection = () => {
               multiple={true}
               onSelect={handleSelectFace}
               sendSelection={handleSelectChange}
-              selectedImage={getNestedProperty(formData, `${parentKey.toLowerCase()}.Siblings.${siblingIndex}.children.${cousinIndex}.children`) || []}
+              selectedImage={getNestedProperty(formData, `${key}.Siblings.${siblingIndex}.Children.${cousinIndex+1}.children`) || []}
               next={next}
               prev={prev}
               isInternal={true}
@@ -534,6 +544,58 @@ const FaceSelection = () => {
       });
     });
   };
+
+
+    const generateCousinSections1 = (parentData, parentKey, srNoStart) => {
+    let idx=0;
+      if (!parentData.children) return null;
+      return parentData.children.map((cousin, cousinIndex) => {
+        idx++
+        return(
+        <div className="cousin-family-container" key={`${parentKey} Cousin ${srNoStart}.${cousinIndex + 1}`}>
+          <div className="centered-selection">
+            <div className="sibling-image-container">
+              <div className="question-header">
+                <div className="icon">
+                </div>
+                <div className="question">Cousin </div>
+              </div>
+              <div className="selected-face">
+                <img src={cousin} alt={`selected ${cousinIndex + 1}`} className="selected-image" />
+              </div>
+            </div>
+            <CustomFaceOption
+              question={`${parentKey.toLowerCase()}.Siblings.children.${cousinIndex}.spouse`}
+              options={filterOptions(userThumbnails)}
+              others={[missingThumbnail,...filterOptions(userThumbnails)]}
+              serialNo={`${srNoStart}.${idx}`}
+              title={`Select Cousin's Spouse`}
+              onSelect={handleSelectFace}
+              sendSelection={handleSelectChange}
+              selectedImage={getNestedProperty(formData, `${parentKey.toLowerCase()}.Siblings.children.${cousinIndex}.spouse`) || []}
+              next={next}
+              prev={prev}
+            />
+            <CustomFaceOption
+              question={`${parentKey.toLowerCase()}.Siblings.children.${cousinIndex}.children`}
+              options={filterOptions(kids)}
+              others={[missingThumbnail,...filterOptions(userThumbnails)]}
+              serialNo={`${srNoStart}.${cousinIndex + 1}.2`}
+              title={`Select Cousin's Children`}
+              multiple={true}
+              onSelect={handleSelectFace}
+              sendSelection={handleSelectChange}
+              selectedImage={getNestedProperty(formData, `${parentKey}.children`) || []}
+              next={next}
+              prev={prev}
+              isInternal={true}
+            />
+          </div>
+        </div>
+       );
+      });
+  };
+
   
 
   const handleClick = () => {
@@ -712,33 +774,31 @@ const FaceSelection = () => {
   const handleSelectChange = (question, selectedValue) => {
     setIsFormDataUpdated(true);
     setFormData((prevState) => {
-      const newFormData = { ...prevState };
-      const keys = question.split('.');
-      let data = newFormData;
-      keys.forEach((key, index) => {
-        if (index === keys.length - 1) {
-          data[key] = selectedValue;
-        } else {
-          if (!data[key]) {
-            data[key] = {};
-          }
-          data = data[key];
-        }
-      });
-      // Ensure siblings array is maintained properly
-      if (question.includes("siblings") && selectedValue.length < (getNestedProperty(formData, question)?.length || 0)) {
-        const siblingIndex = selectedValue.length;
-        const siblingBaseKey = `${keys.slice(0, -1).join('.')}.siblings.${siblingIndex + 1}`;
-        data[siblingIndex + 1] = {
-          spouse: null,
-          children: []
-        };
-      }
+        const newFormData = { ...prevState };
+        const keys = question.split('.');
+        let data = newFormData;
+        keys.forEach((key, index) => {
+            if (index === keys.length - 1) {
+                if (Array.isArray(data[key]) && typeof selectedValue === 'string') {
+                    // If the existing data is an array and the new value is a string,
+                    // replace or append the new value appropriately
+                    data[key] = data[key].map((item, idx) => idx === keys.length - 1 ? { image: selectedValue, spouse: null, children: [] } : item);
+                } else {
+                    data[key] = selectedValue;
+                }
+            } else {
+                if (!data[key]) {
+                    data[key] = {};
+                }
+                data = data[key];
+            }
+        });
 
-      updateSelectedValues(newFormData);
-      return newFormData;
+        updateSelectedValues(newFormData);
+        return newFormData;
     });
-  };
+};
+
 
   const updateSelectedValues = (formData) => {
     const newSelectedValues = new Set();
@@ -800,6 +860,8 @@ const FaceSelection = () => {
   const checkCharacterSelected = () => {
     if (formData['form_owner'] != null) {
       setIsCharacterSelected(true);
+      
+      setStart(true)
     }
   }
 
@@ -847,7 +909,7 @@ const FaceSelection = () => {
           </motion.div>
         )}
 
-          {isCharacterSelected && !start && (
+          {/* {isCharacterSelected && !start && (
             <motion.div
               initial={{ opacity: 0, scale: 0.5 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -861,7 +923,7 @@ const FaceSelection = () => {
               <h2>Let's Start with Selecting Faces</h2>
               <button onClick={handleClick}>Start</button>
             </motion.div>
-          )}
+          )} */}
         {!!userThumbnails.length && start && (
           <>
             <Header/>
@@ -931,7 +993,7 @@ const FaceSelection = () => {
             {generateCousinSections(formData.bride.father, 'Bride Father', 16)}
             {generateParentSection("Bride", "mother", '17')}
             {generateSiblingFamilySection(formData.bride.mother.siblings, "Bride", "mother", 18)}
-            {generateCousinSections(formData.bride.mother, 'Bride Mothers', 19)}
+            {generateCousinSections(formData.bride.mother, 'Bride Mother', 19)}
             <CustomFaceOption
               serialNo={20}
               title="Please select Other Kids"
