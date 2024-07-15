@@ -63,3 +63,36 @@ header{
 .loading-spinner img {
      margin-left: 0em !important;
 }
+
+.horizontal-sections-wrapper {
+    display: flex;
+    flex-direction: column; /* Changed to column for better section stacking */
+    justify-content: space-between;
+    width: 100%;
+  }
+  
+  .horizontal-section {
+    width: 100%; /* Full width for each section */
+    margin-bottom: 20px; /* Space between sections */
+  }
+  
+  .image-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start; /* Align items to the start of the row */
+  }
+  
+  .image-container {
+    flex: 0 0 calc(25% - 20px); /* Three images per row with some margin */
+    margin: 10px; /* Adjust the margin for spacing between images */
+    box-sizing: border-box;
+    position: relative;
+  }
+  
+  .image_favourite_down {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+  }
+  

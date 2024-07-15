@@ -2523,7 +2523,7 @@ app.post('/downloadImage', async (req, res) => {
     app.post("/getCombinationImagesWithUserIds", async (req, res) => {
       const userIds = req.body.userIds;
       const eventName = req.body.eventName;
-      const minUserCount = 2;  // Minimum number of user IDs that must be present in each image
+      const minUserCount = 1;  // Minimum number of user IDs that must be present in each image
     
       try {
         // Construct FilterExpression with dynamic userIds
@@ -2568,7 +2568,6 @@ app.post('/downloadImage', async (req, res) => {
           }
     
           const data = await docClient.scan(params).promise();
-    
           logger.info(`Scanned ${data.Items.length} items from DynamoDB`);
     
           // Filter items to ensure they meet the criteria:
