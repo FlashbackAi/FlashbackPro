@@ -129,7 +129,7 @@ const PhotoSelection = () => {
     if (formData.bride.image) {
       imagesData['Bride Solos'] = [];
     }
-    if (formData.kids.length) {
+    if (formData.kids) {
       imagesData['Kids'] = [];
     }
     if (formData.groom.image && formData.bride.image) {
@@ -272,6 +272,33 @@ const PhotoSelection = () => {
       console.log(err);
     }
   }
+
+  async function getKidsImages(key, formData) {
+    
+   let data =[];
+    key.forEach( async person=>{
+    try {
+      const response = await API_UTIL.post(`/getImagesWithUserIds`, {
+        'userIds': [extractId(person)],
+        'operation': 'AND',
+        'eventName': eventName
+      });
+  
+      if (response.status === 200) {
+        setImagesData((prevState) => ({
+          ...prevState,
+          ['Kids']: response.data,
+        }));
+        data = [response.data, ...data];
+        
+      }
+    } catch (err) {
+      console.log(err);
+      return err;
+    }
+  });
+    return data;
+  }
   
 
   const fetchCombinedImages = async () => {
@@ -282,10 +309,13 @@ const PhotoSelection = () => {
     let userIds=[];
     userIds.push(extractId(formData.groom.image));
     userIds.push(extractId(formData.bride.image));
-    if(formData.kids && formData.kids.length!=0){
-      formData.kids.forEach(kid =>{
-        userIds.push(extractId(kid));
-      })
+    // if(formData.kids && formData.kids.length!=0){
+    //   formData.kids.forEach(kid =>{
+    //     userIds.push(extractId(kid));
+    //   })
+    // }
+    if(formData.kids){
+      userIds.push(extractId(formData.kids));
     }
     try {
       const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'AND', 'eventName': eventName });
@@ -302,18 +332,58 @@ const PhotoSelection = () => {
     return [];
   };
 
-  
-  const fetchFamilyImages = async (familyType, userIds) => {
-    try {
-      const response = await API_UTIL.post(`/getCombinationImagesWithUserIds`, { 'userIds': userIds, 'eventName': eventName });
-      if (response.status === 200) {
-        return response.data;
-      }
-    } catch (err) {
-      console.log(err);
+ 
+  const fetchFamilyImages = async (key, userIds) => {
+    try{
+    const combinedImages = imagesData["Combined"].length === 0 ? await fetchCombinedImages() : imagesData["Combined"];
+    const brideSolos = imagesData['Bride Solos'].length === 0? await  getSolos('bride', formData):imagesData['Bride Solos'];
+    const groomSolos = imagesData['Groom Solos'].length === 0? await  getSolos('groom', formData):imagesData['Groom Solos'];
+    let kidsImages;
+    // if(formData.kids && formData.kids.length!=0){
+    //   let kidIds = [];
+    //   formData.kids.forEach(kid =>{
+    //     kidIds.push(extractId(kid));
+    //   })
+    //   kidsImages = imagesData['kids'].length ===0? await getKidsImages(kidIds):imagesData['kids']
+    // }
+    if(formData.kids){
+
+      kidsImages = imagesData['Kids'].length ===0? await getKidsImages([extractId(formData.kids)]):imagesData['Kids']
     }
-    return [];
+    const response = await API_UTIL.post(`/getCombinationImagesWithUserIds`, { 'userIds': userIds, 'eventName': eventName });
+    if (response.status === 200) {
+     
+      const filteredData = response.data.filter(img => 
+        !combinedImages.some(combinedImg => combinedImg.image_id === img.image_id) &&
+        !brideSolos.some(brideImg => brideImg.image_id === img.image_id) &&
+        !groomSolos.some(groomImg => groomImg.image_id === img.image_id) &&
+        !kidsImages.some(kidImg => kidImg.image_id === img.image_id)
+      );
+    
+    setImagesData((prevState) => ({
+      ...prevState,
+      [key]: filteredData,
+    }));
+    return filteredData;
+  }
+}
+catch(err){
+  console.log(err);
+  return err;
+}
   };
+  // const fetchFamilyImagesold = async (key, userIds) => {
+  //   try {
+  //     const response = await API_UTIL.post(`/getCombinationImagesWithUserIds`, { 'userIds': userIds, 'eventName': eventName });
+  //     if (response.status === 200) {
+  //       return response.data;
+  //     }
+  //   } catch (err) {
+  //     console.log(err);
+  //   }
+  //   return [];
+  // };
+  
   const extractId = (url) => {
     const parts = url.split("/");
     return parts[parts.length - 1].split(".")[0];
@@ -451,23 +521,8 @@ const extractIds = async (obj) => {
     case "Groom Family":
       if (imagesData[key].length === 0) {
         setIsLoading(true);
-        const combinedImages = imagesData["Combined"].length === 0 ? await fetchCombinedImages() : imagesData["Combined"];
-        const brideSolos = imagesData['Bride Solos'].length === 0? await  getSolos('bride', formData):imagesData['Bride Solos'];
-        const groomSolos = imagesData['Groom Solos'].length === 0? await  getSolos('groom', formData):imagesData['Groom Solos'];
         const userIds = extractUserIds('groom',formData);
-        const familyImages = await fetchFamilyImages(key, userIds);
-        const filteredData = familyImages.filter(img => {
-          // Construct an array that conditionally includes brideSolos and groomSolos only if they have data
-          const imageCollections = [combinedImages, ...brideSolos.length > 0 ? [brideSolos] : [], ...groomSolos.length > 0 ? [groomSolos] : []];
-        
-          // Flatten the array of arrays and check if any image_id matches
-          return !imageCollections.flat().some(combinedImg => combinedImg.image_id === img.image_id);
-        });
-        
-        setImagesData((prevState) => ({
-          ...prevState,
-          [key]: filteredData,
-        }));
+        await fetchFamilyImages(key,userIds)
         setIsLoading(false);
       }else{
         if(isLoading === true)
@@ -478,7 +533,7 @@ const extractIds = async (obj) => {
      case "Groom Father Parents":
           if(imagesData[key].length === 0){
             setIsLoading(true)
-            const userIds =await extractIds(formData.groom.father)
+            const userIds =await extractIds(formData.groom.father.parents)
             try {
               const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName });
               if (response.status === 200) {
@@ -500,7 +555,7 @@ const extractIds = async (obj) => {
     case "Groom Mother Parents":
           if(imagesData[key].length === 0){
             setIsLoading(true)
-            const userIds =await extractIds(formData.groom.mother)
+            const userIds =await extractIds(formData.groom.mother.parents)
             try {
               const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName });
               if (response.status === 200) {
@@ -522,36 +577,20 @@ const extractIds = async (obj) => {
 
       
       case "Bride Family":
-        if (imagesData[key].length === 0) {
-          setIsLoading(true);
-          const combinedImages = imagesData["Combined"].length === 0 ? await fetchCombinedImages() : imagesData["Combined"];
-          const brideSolos = imagesData['Bride Solos'].length === 0? await  getSolos('bride', formData):imagesData['Bride Solos'];
-          const groomSolos = imagesData['Groom Solos'].length === 0? await  getSolos('groom', formData):imagesData['Groom Solos'];
-          const userIds = extractUserIds('bride',formData);
-          
-          const familyImages = await fetchFamilyImages(key, userIds);
-          const filteredData = familyImages.filter(img => {
-            // Construct an array that conditionally includes brideSolos and groomSolos only if they have data
-            const imageCollections = [combinedImages, ...brideSolos.length > 0 ? [brideSolos] : [], ...groomSolos.length > 0 ? [groomSolos] : []];
-          
-            // Flatten the array of arrays and check if any image_id matches
-            return !imageCollections.flat().some(combinedImg => combinedImg.image_id === img.image_id);
-          });
-          
-          setImagesData((prevState) => ({
-            ...prevState,
-            [key]: filteredData,
-          }));
-          setIsLoading(false);
-        }else{
-          if(isLoading === true)
-            setIsLoading(false)
-        }
+          if (imagesData[key].length === 0) {
+            setIsLoading(true);
+            const userIds = extractUserIds('bride',formData);
+            await fetchFamilyImages(key,userIds)
+            setIsLoading(false);
+          }else{
+            if(isLoading === true)
+              setIsLoading(false)
+          }
         break;
         case "Bride Father Parents":
           if(imagesData[key].length === 0){
             setIsLoading(true)
-            const userIds =await extractIds(formData.bride.father)
+            const userIds =await extractIds(formData.bride.father.parents)
             try {
               const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName });
               if (response.status === 200) {
@@ -573,7 +612,7 @@ const extractIds = async (obj) => {
     case "Bride Mother Parents":
           if(imagesData[key].length === 0){
             setIsLoading(true)
-            const userIds =await extractIds(formData.bride.mother)
+            const userIds =await extractIds(formData.bride.mother.parents)
             try {
               const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName });
               if (response.status === 200) {
@@ -623,23 +662,13 @@ const extractIds = async (obj) => {
         if (imagesData[key].length === 0) {
           setIsLoading(true);
           let userIds = [];
-          formData.kids.forEach((kid) => {
-            const temp = kid.split("/");
-            const userId = temp[temp.length - 1].split(".")[0];
-            userIds.push(userId);
-          });
-          try {
-            const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName });
-            if (response.status === 200) {
-              setImagesData((prevState) => ({
-                ...prevState,
-                [key]: response.data,
-              }));
-              setIsLoading(false);
-            }
-          } catch (err) {
-            console.log(err);
-            setIsLoading(false);
+          if(formData.kids && formData.kids.length!=0){
+            // let kidIds = [];
+            // formData.kids.forEach(kid =>{
+            //   kidIds.push(extractId(kid));
+            // })
+            await getKidsImages([extractId(formData.kids)]);
+            setIsLoading(false)
           }
         }else{
           if(isLoading === true)
