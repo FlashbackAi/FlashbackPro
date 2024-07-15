@@ -10,6 +10,7 @@ import API_UTIL from "../../services/AuthIntereptor";
 import { Heart } from "lucide-react";
 import Footer from "../../components/Footer/Footer";
 import "../../components/Footer/Footer.css"; // Import the updated CSS
+import "./ImagesPage.css"
 
 function ImagesPage() {
   const [lastEvaluatedKey, setLastEvaluatedKey] = useState(undefined);
@@ -190,6 +191,9 @@ function ImagesPage() {
       }
     }
     window.addEventListener("touchstart", touchHandler, { passive: false });
+    return () => {
+      window.removeEventListener("touchstart",touchHandler);
+    }
   }, []);
 
   // useEffect(()=>{
@@ -236,6 +240,11 @@ function ImagesPage() {
     document.querySelector(`svg[data-key="${index}"]`).classList.add("hidden");
   };
 
+  const toggleFavourite = (index) => {
+    const isFav = !images[index].isFavourites;
+    handleFavourite(index, images[index].original, isFav);
+  };
+
   return (
     <div className="page-container">
       {isLoading ? (
@@ -245,9 +254,9 @@ function ImagesPage() {
           <Header clientName={clientName} />
           <div className="content-wrap">
             {images.length > 0 ? (
-              <div className="wrapper">
+              <div className="ip-wrapper">
                 {images.map((item, index) => (
-                  <div key={index} className="wrapper-images">
+                  <div key={index} className="ip-wrapper-images">
                     <LazyLoadImage
                       src={item.thumbnail}
                       placeholderSrc={PlaceholderImage}
@@ -256,11 +265,19 @@ function ImagesPage() {
                       onClick={() => handleClick(item, index)}
                     />
                     {/* {item.isFavourites && ( */}
-                    <Heart
+                    {/* <Heart
                       data-key={index}
                       className="image_favourite_down hidden"
-                    />
+                    /> */}
                     {/* )} */}
+                    <Heart
+                      data-key={index}
+                      className={`heart-icon ${item.isFavourites ? "bgRed" : ""}`}
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent the click from triggering the image click
+                        toggleFavourite(index);
+                      }}
+                    />
                   </div>
                 ))}
                 <div>
@@ -273,6 +290,7 @@ function ImagesPage() {
                       clickedUrl={clickedUrl}
                       handleBackButton={handleBackButton}
                       handleFavourite={handleFavourite}
+                      images={images} // Pass the images array to Modal
                     />
                   )}
                 </div>

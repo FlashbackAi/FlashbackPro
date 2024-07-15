@@ -1,0 +1,82 @@
+
+.header {
+    font-size: 1em;
+  }
+  
+  .container {
+    display: flex;
+  }
+  
+  .sidebar {
+    width: 8em;
+  }
+  
+  .content {
+    padding: 1px;
+  }
+  
+  .wrapper-images img {
+    padding: 0em;
+  }
+  
+  .content h2 {
+    margin: 0.5em;
+  }
+  
+  .wrapper-images-pro {
+    position: relative;
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    border: 2px solid gray;
+  }
+  
+  .wrapper-images-pro:hover {
+    transform: scale(1.05);
+  }
+  
+  .wrapper-images-pro img {
+    width: 10em;
+    height: 11em;
+    margin: auto;
+    object-fit: cover;
+    border-radius: 5%;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    /* border: 2px solid gray; */
+  }
+  
+  .wrapper-pro {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr); /* 8 images per row for larger screens */
+    gap: 0.50em; /* Gap between grid items */
+    margin: 2em;
+  }
+  
+  .wrapper-pro p {
+    margin: 0;
+  }
+  
+  .loading-spinner img {
+    margin-left: 0em !important;
+  }
+  
+  /* Responsive adjustments for tablets */
+  @media (max-width: 1024px) {
+    .wrapper-pro {
+      grid-template-columns: repeat(4, 1fr); /* 4 images per row for tablets */
+      margin: 1em;
+    }
+  }
+  
+  /* Responsive adjustments for mobile devices */
+  @media (max-width: 768px) {
+    .wrapper-pro {
+      grid-template-columns: repeat(3, 1fr); /* 2 images per row for mobile devices */
+      margin: 1em;
+    }
+  
+    .wrapper-images-pro img {
+      width: 100%; /* Full width on mobile */
+      height: auto;
+    }
+  }

@@ -18,6 +18,7 @@ const PhotoSelection = () => {
   const { eventName, form_owner } = useParams();
   const [isPhotosSelectionStarted, setIsPhotosSelectionStarted] = useState(false);
   const [imagesData, setImagesData] = useState({});
+  const [currentIndex, setCurrentIndex] = useState(0); // Add this line to state
   const [formData, setFormData] = useState({
     event_name: eventName,
     form_owner: null,
@@ -95,14 +96,25 @@ const PhotoSelection = () => {
     }
   };
 
-  const handleClickImage = (item) => {
+  const handleClickImage = (item,index) => {
     console.log("Image clicked:", item.s3_url);
-    setClickedImg(item.s3_url);
-    setClickedImgFavourite(item.selected);
-    const imgName = item.s3_url.split("amazonaws.com/")[1];
+    setClickedImg(imagesData[activeMainTab][index].s3_url); // Update this line
+    setClickedImgFavourite(imagesData[activeMainTab][index].selected); // Update this line
+    setCurrentIndex(index);
+    const imgName = imagesData[activeMainTab][index].s3_url.split("amazonaws.com/")[1]; // Update this line
     setClickedUrl(imgName);
     setImageLoaded(false);  // Set imageLoaded to false when a new image is clicked
     window.history.pushState({ id: 1 }, null, "?image=" + `${imgName}`);
+  };
+
+  const toggleFavourite = (item, tab) => {
+    const newFavouriteState = !item.selected;
+    handleFavourite(item.s3_url, newFavouriteState, tab);
+    if (newFavouriteState) {
+      displayFavIcon(item.s3_url);
+    } else {
+      hideFavIcon(item.s3_url);
+    }
   };
 
   const handleBackButton = () => {
@@ -908,7 +920,7 @@ const extractIds = async (obj) => {
                     <LoadingSpinner />
                   ) : imagesData[tab].length > 0 ? (
                     <div className="horizontal-sections-wrapper">
-                      <div className="horizontal-section">
+                      <div className="horizontal-section-selected">
                         <h3>Selected Images</h3>
                         <div className="image-row">
                           {imagesData[tab].filter(item => item.selected).length > 0 ? (
@@ -921,11 +933,15 @@ const extractIds = async (obj) => {
                                     displayFavIcon(item.s3_url);
                                     setImageLoaded(true); // Set imageLoaded to true when image is loaded
                                   }}
-                                  onClick={() => handleClickImage(item)}
+                                  onClick={() => handleClickImage(item,index)}
                                 />
                                 <Heart
                                   data-key={item.s3_url}
-                                  className="image_favourite_down"
+                                  className={`heart-icon ${item.selected ? 'bgred' : ''}`}
+                                  onClick={ (e) => {
+                                    e.stopPropagation(); // Prevent click event from propagating to the image
+                                    toggleFavourite(item, tab);
+                                  }}  
                                 />
                               </div>
                             ))
@@ -947,11 +963,15 @@ const extractIds = async (obj) => {
                                     hideFavIcon(item.s3_url);
                                     setImageLoaded(true); // Set imageLoaded to true when image is loaded
                                   }}
-                                  onClick={() => handleClickImage(item)}
+                                  onClick={() => handleClickImage(item,index)}
                                 />
                                 <Heart
                                   data-key={item.s3_url}
-                                  className="image_favourite_down hidden"
+                                  className="heart-icon"
+                                  onClick={(e) => {
+                                    e.stopPropagation(); // Prevent click event from propagating to the image
+                                    toggleFavourite(item, tab);
+                                  }}
                                 />
                               </div>
                             ))
@@ -968,6 +988,9 @@ const extractIds = async (obj) => {
                           clickedUrl={clickedUrl}
                           handleBackButton={handleBackButton}
                           handleFavourite={(imageUrl, isFav) => handleFavourite(imageUrl, isFav, tab)}
+                          images={imagesData[tab]} // Add this line
+                          currentIndex={currentIndex} // Add this line
+                          setCurrentIndex={setCurrentIndex} // Add this line
                           favourite={clickedImgFavourite}  // Pass the favourite state
                           sharing={false}
                           close={true}
