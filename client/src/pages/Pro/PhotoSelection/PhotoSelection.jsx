@@ -129,6 +129,9 @@ const PhotoSelection = () => {
     if (formData.bride.image) {
       imagesData['Bride Solos'] = [];
     }
+    if (formData.kids.length) {
+      imagesData['Kids'] = [];
+    }
     if (formData.groom.image && formData.bride.image) {
       imagesData['Combined'] = [];
     }
@@ -136,11 +139,20 @@ const PhotoSelection = () => {
     if ( formData.groom.father.image || formData.groom.mother.image || formData.groom.brothers.length || formData.groom.sisters.length) {
       imagesData['Groom Family'] = [];
     }
-    if ( formData.groom.father.siblings.length || formData.groom.father.parents.length) {
-      imagesData['Groom Father Extended Family'] = [];
+
+    if ( formData.groom.father.parents.length) 
+      imagesData['Groom Father Parents'] = [];
+    if ( formData.groom.father.siblings.length ){
+      formData.groom.father.siblings.forEach((sibling, index) => {
+        imagesData[`Groom Father Sibling ${index + 1} Family`] = [];
+      });
     }
-    if ( formData.groom.mother.siblings.length || formData.groom.mother.parents.length) {
+    if (formData.groom.mother.parents.length)
       imagesData['Groom Mother Extended Family'] = [];
+   if ( formData.groom.mother.siblings.length ){
+      formData.groom.mother.siblings.forEach((sibling, index) => {
+        imagesData[`Groom Mother Sibling ${index + 1} Family`] = [];
+      });
     }
 
 
@@ -148,13 +160,27 @@ const PhotoSelection = () => {
     if (formData.bride.father.image || formData.bride.mother.image || formData.bride.brothers.length || formData.bride.sisters.length) {
       imagesData['Bride Family'] = [];
     }
+
+    
+    if ( formData.bride.father.parents.length)
+      imagesData['Bride Father Extended Family'] = [];
+    if ( formData.bride.father.siblings.length ){
+      formData.bride.father.siblings.forEach((sibling, index) => {
+        imagesData[`Bride Father Sibling ${index + 1} Family`] = [];
+      });
+    }
+    if (formData.bride.mother.parents.length)
+      imagesData['Bride Mother Extended Family'] = [];
+    if ( formData.bride.mother.siblings.length ){
+      formData.bride.mother.siblings.forEach((sibling, index) => {
+        imagesData[`Bride Mother Sibling ${index + 1} Family`] = [];
+      });
+    }
     if( ( formData.groom.father.image || formData.groom.mother.image || formData.groom.brothers.length || formData.groom.sisters.length) && (formData.bride.father.image || formData.bride.mother.image || formData.bride.brothers.length || formData.bride.sisters.length)) {
       imagesData['Groom and Bride Family'] = [];
     }
 
-    if (formData.kids.length) {
-      imagesData['Kids'] = [];
-    }
+  
     if (formData.otherKids.length) {
       imagesData['Other Kids'] = [];
     }
@@ -194,35 +220,30 @@ const PhotoSelection = () => {
     }
   };
 
-  const handleFavourite = async (imageUrl, isFav, images, key) => {
-    const index = images.findIndex(image => image.s3_url === imageUrl);
-    if (index === -1) {
-      console.log(`Image not found for imageUrl ${imageUrl}`);
-      return;
-    }
-    const tempImages = [...images];
-    let imgObj = tempImages[index];
-    if (isFav) {
-      tempImages[index].selected = true;
-      imgObj = tempImages[index];
-      displayFavIcon(imageUrl);
-    } else {
-      tempImages[index].selected = false;
-      imgObj = tempImages[index];
-      hideFavIcon(imageUrl);
-    }
-    setImagesData((prevState) => ({
-      ...prevState,
-      [key]: tempImages,
-    }));
-
-    try {
-      await API_UTIL.post("/saveSelectedImage", {
-        imageId: images[index].image_id,
-        value: isFav
+  const handleFavourite = async (imageUrl, isFav, key) => {
+    setImagesData((prevState) => {
+      const updatedData = { ...prevState };
+      Object.keys(updatedData).forEach((tabKey) => {
+        updatedData[tabKey] = updatedData[tabKey].map((image) => {
+          if (image.s3_url === imageUrl) {
+            return { ...image, selected: isFav };
+          }
+          return image;
+        });
       });
+      return updatedData;
+    });
+  
+    try {
+      const response = await API_UTIL.post("/saveSelectedImage", {
+        imageId: imagesData[key].find(image => image.s3_url === imageUrl).image_id,
+        value: isFav,
+      });
+      if (response.status === 200) {
+        console.log("Image selection updated successfully.");
+      }
     } catch (error) {
-      console.error('Error saving favorite:', error);
+      console.error("Error saving favorite:", error);
     }
   };
 
@@ -254,13 +275,25 @@ const PhotoSelection = () => {
   
 
   const fetchCombinedImages = async () => {
-    const tempBride = formData.bride.image.split("/");
-    const brideId = tempBride[tempBride.length - 1].split(".")[0];
-    const tempGroom = formData.groom.image.split("/");
-    const groomId = tempGroom[tempGroom.length - 1].split(".")[0];
+    // const tempBride = formData.bride.image.split("/");
+    // const brideId = tempBride[tempBride.length - 1].split(".")[0];
+    // const tempGroom = formData.groom.image.split("/");
+    // const groomId = tempGroom[temp.length - 1].split(".")[0];
+    let userIds=[];
+    userIds.push(extractId(formData.groom.image));
+    userIds.push(extractId(formData.bride.image));
+    if(formData.kids && formData.kids.length!=0){
+      formData.kids.forEach(kid =>{
+        userIds.push(extractId(kid));
+      })
+    }
     try {
-      const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': [groomId, brideId], 'operation': 'AND', 'eventName': eventName });
+      const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'AND', 'eventName': eventName });
       if (response.status === 200) {
+        setImagesData((prevState) => ({
+          ...prevState,
+          ['Combined']: response.data,
+        }));
         return response.data;
       }
     } catch (err) {
@@ -268,9 +301,7 @@ const PhotoSelection = () => {
     }
     return [];
   };
-  const fetchSolos = async(char)=>{
-    const temp = formData.char.image.split("/");
-  }
+
   
   const fetchFamilyImages = async (familyType, userIds) => {
     try {
@@ -379,21 +410,28 @@ const extractIds = async (obj) => {
           await getSolos('groom', formData);
           setIsLoading(false);
         }
+        else{
+          if(isLoading === true)
+            setIsLoading(false)
+        }
         break;
       case "Bride Solos":
         if (imagesData[key].length === 0) {
           setIsLoading(true);
           await getSolos('bride', formData);
           setIsLoading(false);
+        }else{
+          if(isLoading === true)
+            setIsLoading(false)
         }
         break;
       case "Combined":
         if (imagesData[key].length === 0) {
           setIsLoading(true);
-          temp = formData.bride.image.split("/");
-          const brideId = temp[temp.length - 1].split(".")[0];
-          temp = formData.groom.image.split("/");
-          const groomId = temp[temp.length - 1].split(".")[0];
+          // temp = formData.bride.image.split("/");
+          // const brideId = temp[temp.length - 1].split(".")[0];
+          // temp = formData.groom.image.split("/");
+          // const groomId = temp[temp.length - 1].split(".")[0];
           try {
             const combinedImages = await fetchCombinedImages();
               setImagesData((prevState) => ({
@@ -405,9 +443,12 @@ const extractIds = async (obj) => {
             console.log(err);
             setIsLoading(false);
           }
+        }else{
+          if(isLoading === true)
+            setIsLoading(false)
         }
         break;
-  case "Groom Family":
+    case "Groom Family":
       if (imagesData[key].length === 0) {
         setIsLoading(true);
         const combinedImages = imagesData["Combined"].length === 0 ? await fetchCombinedImages() : imagesData["Combined"];
@@ -428,10 +469,13 @@ const extractIds = async (obj) => {
           [key]: filteredData,
         }));
         setIsLoading(false);
+      }else{
+        if(isLoading === true)
+          setIsLoading(false)
       }
       break;
       
-     case "Groom Father Extended Family":
+     case "Groom Father Parents":
           if(imagesData[key].length === 0){
             setIsLoading(true)
             const userIds =await extractIds(formData.groom.father)
@@ -448,9 +492,12 @@ const extractIds = async (obj) => {
               console.log(err);
               setIsLoading(false);
             }
+          }else{
+            if(isLoading === true)
+              setIsLoading(false)
           }
           break;
-    case "Groom Mother Extended Family":
+    case "Groom Mother Parents":
           if(imagesData[key].length === 0){
             setIsLoading(true)
             const userIds =await extractIds(formData.groom.mother)
@@ -467,6 +514,9 @@ const extractIds = async (obj) => {
               console.log(err);
               setIsLoading(false);
             }
+          }else{
+            if(isLoading === true)
+              setIsLoading(false)
           }
           break;
 
@@ -493,9 +543,12 @@ const extractIds = async (obj) => {
             [key]: filteredData,
           }));
           setIsLoading(false);
+        }else{
+          if(isLoading === true)
+            setIsLoading(false)
         }
         break;
-        case "Bride Father Extended Family":
+        case "Bride Father Parents":
           if(imagesData[key].length === 0){
             setIsLoading(true)
             const userIds =await extractIds(formData.bride.father)
@@ -512,9 +565,12 @@ const extractIds = async (obj) => {
               console.log(err);
               setIsLoading(false);
             }
+          }else{
+            if(isLoading === true)
+              setIsLoading(false)
           }
           break;
-    case "Bride Mother Extended Family":
+    case "Bride Mother Parents":
           if(imagesData[key].length === 0){
             setIsLoading(true)
             const userIds =await extractIds(formData.bride.mother)
@@ -531,6 +587,9 @@ const extractIds = async (obj) => {
               console.log(err);
               setIsLoading(false);
             }
+          }else{
+            if(isLoading === true)
+              setIsLoading(false)
           }
           break;
 
@@ -555,6 +614,9 @@ const extractIds = async (obj) => {
               [key]: filteredData,
             }));
             setIsLoading(false);
+          }else{
+            if(isLoading === true)
+              setIsLoading(false)
           }
           break;
       case "Kids":
@@ -579,6 +641,9 @@ const extractIds = async (obj) => {
             console.log(err);
             setIsLoading(false);
           }
+        }else{
+          if(isLoading === true)
+            setIsLoading(false)
         }
         break;
       case "Other Kids":
@@ -603,6 +668,9 @@ const extractIds = async (obj) => {
             console.log(err);
             setIsLoading(false);
           }
+        }else{
+          if(isLoading === true)
+            setIsLoading(false)
         }
         break;
       case "Other Cousins":
@@ -627,6 +695,9 @@ const extractIds = async (obj) => {
             console.log(err);
             setIsLoading(false);
           }
+        }else{
+          if(isLoading === true)
+            setIsLoading(false)
         }
         break;
       case "Uncles":
@@ -651,6 +722,9 @@ const extractIds = async (obj) => {
             console.log(err);
             setIsLoading(false);
           }
+        }else{
+          if(isLoading === true)
+            setIsLoading(false)
         }
         break;
       case "Aunts":
@@ -675,6 +749,9 @@ const extractIds = async (obj) => {
             console.log(err);
             setIsLoading(false);
           }
+        }else{
+          if(isLoading === true)
+            setIsLoading(false)
         }
         break;
       case "Grand Parents":
@@ -699,6 +776,9 @@ const extractIds = async (obj) => {
             console.log(err);
             setIsLoading(false);
           }
+        }else{
+          if(isLoading === true)
+            setIsLoading(false)
         }
         break;
       case "Other Important Relatives":
@@ -723,6 +803,9 @@ const extractIds = async (obj) => {
             console.log(err);
             setIsLoading(false);
           }
+        }else{
+          if(isLoading === true)
+            setIsLoading(false)
         }
         break;
       case "Friends":
@@ -747,10 +830,40 @@ const extractIds = async (obj) => {
             console.log(err);
             setIsLoading(false);
           }
+        }else{
+          if(isLoading === true)
+            setIsLoading(false)
         }
         break;
-      default:
-        console.log("Unknown key:", key);
+        default:
+          if (key.startsWith("Groom Father Sibling") || key.startsWith("Groom Mother Sibling")) {
+            if (imagesData[key].length === 0) {
+              setIsLoading(true);
+              const relation = key.split(' ')[1]
+              const siblingIndex = key.split(' ')[3]
+              const parentType = relation.toLowerCase();
+              const siblingKey = extractId(formData.groom[parentType].siblings[parseInt(siblingIndex) - 1]);
+              const userIds = await extractIds(formData.groom[parentType].Siblings[parseInt(siblingIndex)]);
+              userIds.push(siblingKey);
+              try {
+                const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName });
+                if (response.status === 200) {
+                  setImagesData((prevState) => ({
+                    ...prevState,
+                    [key]: response.data,
+                  }));
+                  setIsLoading(false);
+                }
+              } catch (err) {
+                console.log(err);
+                setIsLoading(false);
+              }
+            }
+          }else{
+            if(isLoading === true)
+              setIsLoading(false)
+          }
+          break;
     }
     console.log(imagesData[key].length)
     // imagesData[key].length === 0 ?setFetchTimeout(true):console.log("Images fetched for : "+key);
@@ -788,58 +901,94 @@ const extractIds = async (obj) => {
                 </ul>
               </div>
               <div className="content">
-                {Object.keys(imagesData).map((tab, idx) => (
-                  <div key={idx} className={`tab-content ${activeMainTab === tab ? 'active' : ''}`}>
-                    <h2>{tab} Pictures</h2>
-                    {isLoading ? (
-                      <LoadingSpinner />
-                    ) : imagesData[tab].length > 0 ? (
-                      <div className="wrapper">
-                        {imagesData[tab].map((item, index) => (
-                          <div key={index} className="wrapper-images">
-                            <LazyLoadImage
-                              src={item.thumbnailUrl}
-                              effect="blur"
-                              onLoad={() => {
-                                item.selected === true && displayFavIcon(item.s3_url);
-                                setImageLoaded(true); // Set imageLoaded to true when image is loaded
-                              }}
-                              onClick={() => handleClickImage(item)}
-                            />
-                            <Heart
-                              data-key={item.s3_url}
-                              className="image_favourite_down hidden"
-                            />
-                          </div>
-                        ))}
-                        {clickedImg && (
-                          <Modal
-                            clickedImg={clickedImg}
-                            clickedImgFavourite={clickedImgFavourite}
-                            setClickedImg={setClickedImg}
-                            clickedUrl={clickedUrl}
-                            handleBackButton={handleBackButton}
-                            handleFavourite={(imageUrl, isFav) => handleFavourite(imageUrl, isFav, imagesData[tab], tab)}
-                            favourite={clickedImgFavourite}  // Pass the favourite state
-                            sharing={false}
-                            close={true}
-                            select={true}
-                          >
-                            {imageLoaded && ( // Only render image tools if image is loaded
-                              <div className="imageToolBox">
-                                {/* ToolBox content here */}
+              {Object.keys(imagesData).map((tab, idx) => (
+                <div key={idx} className={`tab-content ${activeMainTab === tab ? 'active' : ''}`}>
+                  <h2>{tab} Pictures</h2>
+                  {isLoading ? (
+                    <LoadingSpinner />
+                  ) : imagesData[tab].length > 0 ? (
+                    <div className="horizontal-sections-wrapper">
+                      <div className="horizontal-section">
+                        <h3>Selected Images</h3>
+                        <div className="image-row">
+                          {imagesData[tab].filter(item => item.selected).length > 0 ? (
+                            imagesData[tab].filter(item => item.selected).map((item, index) => (
+                              <div key={index} className="image-container">
+                                <LazyLoadImage
+                                  src={item.thumbnailUrl}
+                                  effect="blur"
+                                  onLoad={() => {
+                                    displayFavIcon(item.s3_url);
+                                    setImageLoaded(true); // Set imageLoaded to true when image is loaded
+                                  }}
+                                  onClick={() => handleClickImage(item)}
+                                />
+                                <Heart
+                                  data-key={item.s3_url}
+                                  className="image_favourite_down"
+                                />
                               </div>
-                            )}
-                          </Modal>
-                        )}
+                            ))
+                          ) : (
+                            <p>No selected images</p>
+                          )}
+                        </div>
                       </div>
-                    ) : fetchTimeout ? (
-                      <p>No images to display</p>
-                    ) : (
-                      <p>Failed to load images</p>
-                    )}
-                  </div>
-                ))}
+                      <div className="horizontal-section">
+                        <h3>Other Images</h3>
+                        <div className="image-row">
+                          {imagesData[tab].filter(item => !item.selected).length > 0 ? (
+                            imagesData[tab].filter(item => !item.selected).map((item, index) => (
+                              <div key={index} className="image-container">
+                                <LazyLoadImage
+                                  src={item.thumbnailUrl}
+                                  effect="blur"
+                                  onLoad={() => {
+                                    hideFavIcon(item.s3_url);
+                                    setImageLoaded(true); // Set imageLoaded to true when image is loaded
+                                  }}
+                                  onClick={() => handleClickImage(item)}
+                                />
+                                <Heart
+                                  data-key={item.s3_url}
+                                  className="image_favourite_down hidden"
+                                />
+                              </div>
+                            ))
+                          ) : (
+                            <p>No other images</p>
+                          )}
+                        </div>
+                      </div>
+                      {clickedImg && (
+                        <Modal
+                          clickedImg={clickedImg}
+                          clickedImgFavourite={clickedImgFavourite}
+                          setClickedImg={setClickedImg}
+                          clickedUrl={clickedUrl}
+                          handleBackButton={handleBackButton}
+                          handleFavourite={(imageUrl, isFav) => handleFavourite(imageUrl, isFav, tab)}
+                          favourite={clickedImgFavourite}  // Pass the favourite state
+                          sharing={false}
+                          close={true}
+                          select={true}
+                        >
+                          {imageLoaded && ( // Only render image tools if image is loaded
+                            <div className="imageToolBox">
+                              {/* ToolBox content here */}
+                            </div>
+                          )}
+                        </Modal>
+                      )}
+                    </div>
+                  ) : fetchTimeout ? (
+                    <p>No images to display</p>
+                  ) : (
+                    <p>Failed to load images</p>
+                  )}
+                </div>
+              ))}
+
               </div>
             </div>
           </>
