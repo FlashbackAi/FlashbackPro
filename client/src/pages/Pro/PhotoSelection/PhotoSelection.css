@@ -1,166 +1,164 @@
-/* ImageModal.css */
+header{
+  font-size: 1em ;
+}
 
-.header {
-    font-size: 1em;
-  }
-  
-  .container {
-    display: flex;
-  }
-  
-  .sidebar {
-    width: 8em;
-  }
-  
-  .content {
-    padding: 1px;
-  }
-  
-  .wrapper-images img {
-    padding: 0em;
-  }
-  
-  .content h2 {
-    margin: 0.5em;
-  }
-  
-  .wrapper-images-pro {
-    position: relative;
-    width: 100%;
-    height: auto;
-    object-fit: cover;
-    border: 2px solid gray;
-  }
-  
-  .wrapper-images-pro:hover {
-    transform: scale(1.05);
-  }
-  
-  .wrapper-images-pro img {
-    width: 10em;
-    height: 11em;
-    margin: auto;
-    object-fit: cover;
-    border-radius: 5%;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    /* border: 2px solid gray; */
-  }
-  
-  .wrapper-pro {
-    display: grid;
-    grid-template-columns: repeat(8, 1fr); /* 8 images per row for larger screens */
-    gap: 0.50em; /* Gap between grid items */
-    margin: 2em;
-  }
-  
-  .wrapper-pro p {
-    margin: 0;
-  }
-  
-  .loading-spinner img {
-    margin-left: 0em !important;
-  }
-  
-  /* Responsive adjustments for tablets */
-  @media (max-width: 1024px) {
-    .wrapper-pro {
-      grid-template-columns: repeat(4, 1fr); /* 4 images per row for tablets */
-      margin: 1em;
-    }
-  }
-  
-  /* Responsive adjustments for mobile devices */
-  @media (max-width: 768px) {
-    .wrapper-pro {
-      grid-template-columns: repeat(3, 1fr); /* 2 images per row for mobile devices */
-      margin: 1em;
-    }
-  
-    .wrapper-images-pro img {
-      width: 100%; /* Full width on mobile */
-      height: auto;
-    }
-  }
-  
+.container {
+  display: flex;
+}
+.sidebar{
+  width:8em;
+}
+
+.content{
+  padding:1px;
+}
+
+.wrapper-images img {
+   padding: 0em;
+}
+
+.content h2{
+  margin:0.5em;
+}
+
+
+
+.wrapper-images-pro{
+position: relative;
+width: 7em;
+height: auto;
+object-fit: cover;
+margin: 0.1em;
+}
+
+.wrapper-images-pro :hover{
+  transform: scale(1.05);
+}
+
+.wrapper-images-pro img{
+width: 6em;
+height: 7em;
+object-fit: cover;
+border-radius: 20%;
+box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+border: 2px solid gray;
+}
+
+.wrapper-pro{
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(6.9em, 1fr)
+  ); /* Three images per row, each with a minimum width of 300px */
+  gap: 0.65em; /*Gap between grid items */
+  background-size: 8em;
+  width: calc(100% - 1.4em);
+  margin-left: 0.5em;
+}
+
+.wrapper-pro p{
+  margin: 0;
+}
+
 .loading-spinner img {
-     margin-left: 0em !important;
+   margin-left: 0em !important;
 }
 
 .horizontal-sections-wrapper {
-    display: flex;
-    flex-direction: column; /* Changed to column for better section stacking */
-    justify-content: space-between;
-    width: 100%;
-  }
-  
-  .horizontal-section {
-    width: 100%; /* Full width for each section */
-    margin-bottom: 20px; /* Space between sections */
-  }
-
-  .horizontal-section-selected {
-    width: 100%; /* Full width for each section */
-    margin-bottom: 20px; /* Space between sections */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 
-              0 1px 3px rgba(0, 0, 0, 0.08);
-  }
-
-  .horizontal-sections-wrapper h3{
-    margin-bottom: 1em;
-    background-color: rgb(236, 229, 229);
-    padding: 0.5em;
-  }
-  
-  .image-row {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-start; /* Align items to the start of the row */
-  }
-  
-  .image-container {
-    flex: 0 0 calc(25% - 20px); /* Three images per row with some margin */
-    margin: 10px; /* Adjust the margin for spacing between images */
-    box-sizing: border-box;
-    position: relative;
-  }
-  
-  /* .image_favourite_down {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 10;
-
-  } */
-
-  .heart-icon.bgred {
-  position: absolute;
-  bottom: 0.5em;
-  right: 0.3em;
-  border-radius: 50%;
-  padding: 5px;
-  width: 2em;
-  height: 2em;
-  /* background-color: white; Default background color */
-  cursor: pointer;
-  transition: background-color 0.2s; /* Smooth background color transition */
-  color: red;
-  fill: red;
+  display: flex;
+  flex-direction: column; /* Changed to column for better section stacking */
+  justify-content: space-between;
+  width: 100%;
 }
 
-.heart-icon {
+.horizontal-section {
+  width: 100%; /* Full width for each section */
+  margin-bottom: 20px; /* Space between sections */
+}
+
+.image-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start; /* Align items to the start of the row */
+}
+
+.image-container {
+  flex: 0 0 calc(25% - 20px); /* Three images per row with some margin */
+  margin: 10px; /* Adjust the margin for spacing between images */
+  box-sizing: border-box;
+  position: relative;
+}
+
+.image_favourite_down {
   position: absolute;
-  bottom: 0.5em;
-  right: 0.3em;
-  border-radius: 50%;
-  padding: 5px;
-  width: 2em;
-  height: 2em;
-  /* background-color: white; Default background color */
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+}
+
+.navigation-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
   cursor: pointer;
-  transition: background-color 0.2s; /* Smooth background color transition */
+  z-index: 10;
   color: white;
+  width: 24px;
+  height: 24px;
+}
+
+.navigation-arrow:first-of-type {
+  left: 16px;
+}
+
+.navigation-arrow:last-of-type {
+  right: 16px;
+}
+
+.sidebar-thumbnail {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  margin-right: 10px;
+  margin: auto;
+}
+
+.sidebar-thumbnails {
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+}
+
+.sidebar li {
+  border-bottom: 0.001em   solid #ddd; /* Separation line between items */
+}
+
+.sidebar li:last-child {
+  border-bottom: none; /* Remove border from the last item */
+}
+
+.image_favourite_down {
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.image_favourite_down.bgRed {
+  color: red;
+}
+
+.image_favourite_down.white {
+  color: white !important;
+  visibility: visible;
+}
+
+.heart-white-img{
+  position: absolute;
+  bottom: 0.5em;
+  right: 0.3em;
+  border-radius: 50%;
+  padding: 5px;
+  width: 2em;
+  height: 2em;
 }
 
 
-
-  
