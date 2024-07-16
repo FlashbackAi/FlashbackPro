@@ -95,4 +95,26 @@ header{
     right: 10px;
     z-index: 10;
   }
+  .sidebar-thumbnail {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    margin-right: 10px;
+    margin: auto;
+  }
+  
+  .sidebar-thumbnails {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+  }
+
+  .sidebar li {
+    border-bottom: 0.001em   solid #ddd; /* Separation line between items */
+  }
+  
+  .sidebar li:last-child {
+    border-bottom: none; /* Remove border from the last item */
+  }
+  
   
