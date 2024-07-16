@@ -70,7 +70,7 @@ const FaceSelection = () => {
       brothers: [],
       sisters: []
     },
-    kids: [],
+    kids:null,
     otherKids:[],
     otherCousins: [],
     uncles: [],
@@ -994,21 +994,9 @@ const FaceSelection = () => {
             {generateParentSection("Bride", "mother", '17')}
             {generateSiblingFamilySection(formData.bride.mother.siblings, "Bride", "mother", 18)}
             {generateCousinSections(formData.bride.mother, 'Bride Mother', 19)}
+
             <CustomFaceOption
               serialNo={20}
-              title="Please select Other Kids"
-              next={next}
-              prev={prev}
-              options={filterOptions(kids)}
-              others={filterOptions(userThumbnails)}
-              question="otherKids"
-              multiple={true}
-              sendSelection={handleSelectChange}
-              onSelect={handleSelectFace}
-              selectedImage={formData.otherKids}
-            />
-            <CustomFaceOption
-              serialNo={21}
               title="Please select Other Cousins"
               next={next}
               prev={prev}
@@ -1019,6 +1007,19 @@ const FaceSelection = () => {
               others={filterOptions(userThumbnails)}
               onSelect={handleSelectFace}
               selectedImage={formData.otherCousins}
+            />
+            <CustomFaceOption
+              serialNo={21}
+              title="Please select Other Kids"
+              next={next}
+              prev={prev}
+              options={filterOptions(kids)}
+              others={filterOptions(userThumbnails)}
+              question="otherKids"
+              multiple={true}
+              sendSelection={handleSelectChange}
+              onSelect={handleSelectFace}
+              selectedImage={formData.otherKids}
             />
             <CustomFaceOption
               serialNo={22}
@@ -1058,9 +1059,23 @@ const FaceSelection = () => {
               sendSelection={handleSelectChange}
               onSelect={handleSelectFace}
               selectedImage={formData.grandParents}
-            />
+            />            
+          <CustomFaceOption
+            serialNo={25}
+            title="Please select Friends"
+            next={next}
+            prev={prev}
+            question="friends"
+            multiple={true}
+            sendSelection={handleSelectChange}
+            others={filterOptions(userThumbnails)}
+            options={filterOptions(cousins)}
+            onSelect={handleSelectFace}
+            selectedImage={formData.friends}
+            
+          />
             <CustomFaceOption
-              serialNo={25}
+              serialNo={26}
               title="Please select Other Important Relatives"
               next={next}
               prev={prev}
@@ -1070,23 +1085,11 @@ const FaceSelection = () => {
               others={filterOptions(userThumbnails)}
               options={filterOptions(userThumbnails)}
               onSelect={handleSelectFace}
+            isSubmit={true}
+            sendSubmitAction={onSubmitForm}
               selectedImage={formData.otherImportantRelatives}
             />
-            <CustomFaceOption
-              serialNo={26}
-              title="Please select Friends"
-              next={next}
-              prev={prev}
-              question="friends"
-              multiple={true}
-              sendSelection={handleSelectChange}
-              others={filterOptions(userThumbnails)}
-              options={filterOptions(cousins)}
-              onSelect={handleSelectFace}
-              selectedImage={formData.friends}
-              isSubmit={true}
-              sendSubmitAction={onSubmitForm}
-            />
+
           {/* <button onClick={handleReset()}>Reset</button> */}
           </>
         )}

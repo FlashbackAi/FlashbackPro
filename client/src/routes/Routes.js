@@ -128,7 +128,7 @@ const ROUTES=[
         component:AlbumSelectionForm
     },
     {
-        path:"/faceSelection/:eventName",
+        path:"/relations/:eventName",
         exact:false,
         protected:false,
         component:FaceSelection
