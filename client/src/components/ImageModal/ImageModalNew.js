@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, ArrowDownToLine, Share2 } from "lucide-react";
+import { Heart, ArrowDownToLine, Share2, ArrowLeft, ArrowRight } from "lucide-react";
 import LoadingSpinner from "../Loader/LoadingSpinner"; // Ensure you have a LoadingSpinner component
 import API_UTIL from "../../services/AuthIntereptor";
 
@@ -15,11 +15,38 @@ const Modal = ({
   sharing = true,
   close = true,
   select = false,
+  imagesData = [],  // Pass imagesData as a prop
+  setClickedImgFavourite // Add the setter prop
 }) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isFavourite, setIsFavourite] = useState(clickedImgFavourite);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0); // Track the current image index
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const currentIndex = imagesData.findIndex(image => image.s3_url === clickedImg);
+    setCurrentIndex(currentIndex);
+  }, [clickedImg, imagesData]);
+
+  // const navigateImages = (direction) => {
+
+  //   const filteredImages = imagesData.filter(image => (image.selected !== undefined ? image.selected : false) === isFavourite);
+
+  //   let newIndex = filteredImages.findIndex(image => image.s3_url === clickedImg) + direction;
+
+  //   // Ensure the newIndex wraps around the array length
+  //   if (newIndex < 0) newIndex = filteredImages.length - 1;
+  //   if (newIndex >= filteredImages.length) newIndex = 0;
+
+  //   const newImage = filteredImages[newIndex];
+  //   if (newImage) {
+  //     setCurrentIndex(newIndex);
+  //     setClickedImg(newImage.s3_url);
+  //     setIsFavourite(newImage.selected !== undefined ? newImage.selected : false); // Update the favourite state
+  //     setClickedImgFavourite(newImage.selected !== undefined ? newImage.selected : false); // Update the favourite state in PhotoSelection
+  //   }
+  // };
 
   const downloadCurrentImage = async () => {
     if (!clickedImg) {
@@ -54,6 +81,7 @@ const Modal = ({
     const newFavState = !isFavourite;
     handleFavourite(clickedImg, newFavState);
     setIsFavourite(newFavState);
+    setClickedImgFavourite(newFavState);
   };
 
   const share = () => {
@@ -117,6 +145,12 @@ const Modal = ({
             )}
           </div>
         )}
+         {imageLoaded && ( // Add navigation arrows
+        <>
+          {/* <ArrowLeft className="navigation-arrow" onClick={() => navigateImages(-1)} />
+          <ArrowRight className="navigation-arrow" onClick={() => navigateImages(1)} /> */}
+        </>
+      )}
       </div>
     </div>
   );

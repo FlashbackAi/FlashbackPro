@@ -105,6 +105,11 @@ const PhotoSelection = () => {
     window.history.pushState({ id: 1 }, null, "?image=" + `${imgName}`);
   };
 
+  const handleFavouriteClick = (e, item, tab) => {
+    e.stopPropagation(); // Prevent modal from opening
+    handleFavourite(item.s3_url, !item.selected, tab);
+  };
+
   const handleBackButton = () => {
     setClickedImg(null);
   };
@@ -997,7 +1002,8 @@ const handleSelectTab = async (key) => {
                                 />
                                 <Heart
                                   data-key={item.s3_url}
-                                  className="image_favourite_down"
+                                  className={`heart-icon ${item.selected ? 'bgRed' : ''}`}
+                                  onClick={(e) => handleFavouriteClick(e, item, tab)} // Add this line
                                 />
                               </div>
                             ))
@@ -1021,10 +1027,17 @@ const handleSelectTab = async (key) => {
                                   }}
                                   onClick={() => handleClickImage(item)}
                                 />
-                                <Heart
+                                {/* <Heart
                                   data-key={item.s3_url}
-                                  className="image_favourite_down hidden"
-                                />
+                                  // className={`heart-icon ${!item.selected || undefined ? 'white' : 'bgRed'}`}
+                                  // style={{ color: item.selected || undefined ? 'white' : 'red'}} // Set the heart color
+                                  className="heart-icon"
+                                  onClick={(e) => handleFavouriteClick(e, item, tab)} // Add this line
+                                /> */}
+                                <img src="https://img.icons8.com/ffffff/m_outlined/2x/like.png" 
+                                alt = "heart-img"
+                                className="heart-white-img"
+                                onClick={(e) => handleFavouriteClick(e, item, tab)} />
                               </div>
                             ))
                           ) : (
@@ -1037,13 +1050,15 @@ const handleSelectTab = async (key) => {
                           clickedImg={clickedImg}
                           clickedImgFavourite={clickedImgFavourite}
                           setClickedImg={setClickedImg}
+                          setClickedImgFavourite={setClickedImgFavourite} // Pass the setter
                           clickedUrl={clickedUrl}
                           handleBackButton={handleBackButton}
-                          handleFavourite={(imageUrl, isFav) => handleFavourite(imageUrl, isFav, tab)}
+                          handleFavourite={(imageUrl, isFav) => handleFavourite(imageUrl, isFav, activeMainTab)}
                           favourite={clickedImgFavourite}  // Pass the favourite state
                           sharing={false}
                           close={true}
                           select={true}
+                          imagesData={imagesData[activeMainTab].images}
                         >
                           {imageLoaded && ( // Only render image tools if image is loaded
                             <div className="imageToolBox">
