@@ -20,7 +20,7 @@ const WeddingAlbums = () => {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <h3 className='card-h3'>Semi-Automated Wedding Albums</h3>
+      <h3 className='card-h3'>Auto-Curated Wedding Albums</h3>
       <Carousel
         showThumbs={false}
         infiniteLoop={true}

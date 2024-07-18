@@ -95,7 +95,7 @@ function Registration() {
     <form onSubmit={handleSubmit} className="login-form-container">
       <div className="loginLeft">
         <p className="loginLogo">
-          Flashback<p className="logoCaption">Create & share memories</p>
+          Flashback<p className="logoCaption">Auto Curate & Instant Share memories</p>
         </p>
       </div>
       <div className="login-form">

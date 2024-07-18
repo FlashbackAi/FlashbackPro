@@ -605,7 +605,7 @@ p {
 }
 
 .loginLogoBox h2::after {
-  content: "Create & Share Memories";
+  content: "Auto Curate & Instant Share Memories";
   position: absolute;
   bottom: -1em;
   display: block;
