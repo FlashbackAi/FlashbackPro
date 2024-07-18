@@ -34,7 +34,7 @@ header h2 {
 }
 
 header h2::after {
-  content: "Create & Share Memories";
+  content: "Curate & Share Memories";
   position: absolute;
   bottom: -1em;
   display: block;

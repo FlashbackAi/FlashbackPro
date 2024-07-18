@@ -7,7 +7,7 @@ const Footer = () => {
         <div className="contactus">
         <p>
             Contact: <a href="tel:+919090401234">+919090401234</a>
-            <a href="mailto:team@flashback.inc">,team@flashback.inc</a>
+            <a href="mailto:team@flashback.inc"> team@flashback.inc</a>
         </p>
         </div>
         <div className="social-container">
