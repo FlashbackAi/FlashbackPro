@@ -985,7 +985,7 @@ const handleSelectTab = async (key) => {
                     <LoadingSpinner />
                   ) : imagesData[tab].images.length > 0 ? (
                     <div className="horizontal-sections-wrapper">
-                      <div className="horizontal-section">
+                      <div className="horizontal-section-selected">
                         <h3>Selected Images</h3>
                         <div className="image-row">
                           {imagesData[tab].images.filter(item => item.selected).length > 0 ? (
@@ -1029,10 +1029,7 @@ const handleSelectTab = async (key) => {
                                 />
                                 {/* <Heart
                                   data-key={item.s3_url}
-                                  // className={`heart-icon ${!item.selected || undefined ? 'white' : 'bgRed'}`}
-                                  // style={{ color: item.selected || undefined ? 'white' : 'red'}} // Set the heart color
-                                  className="heart-icon"
-                                  onClick={(e) => handleFavouriteClick(e, item, tab)} // Add this line
+                                  className="image_favourite_down hidden"
                                 /> */}
                                 <img src="https://img.icons8.com/ffffff/m_outlined/2x/like.png" 
                                 alt = "heart-img"
@@ -1059,6 +1056,7 @@ const handleSelectTab = async (key) => {
                           close={true}
                           select={true}
                           imagesData={imagesData[activeMainTab].images}
+
                         >
                           {imageLoaded && ( // Only render image tools if image is loaded
                             <div className="imageToolBox">

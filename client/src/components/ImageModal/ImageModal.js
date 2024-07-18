@@ -19,7 +19,6 @@
 //   select = false,
 // }) => {
 //   const history = useNavigate();
-  
 //   const handleClick = (e) => {
 //     if (e.target.classList.contains("dismiss")) {
 //       setClickedImg(null);
@@ -370,4 +369,6 @@ const ImageModal = ({
 };
 
 export default ImageModal;
+
+
 

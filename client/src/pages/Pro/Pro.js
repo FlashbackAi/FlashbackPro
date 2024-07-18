@@ -9,6 +9,7 @@ import Header from "../../components/Header/Header";
 import API_UTIL from "../../services/AuthIntereptor";
 import Footer from "../../components/Footer/Footer";
 import "../../components/Footer/Footer.css"; // Import your CSS file
+import "./Pro.css";
 
 function Pro() {
   const { eventName } = useParams();

@@ -10,7 +10,7 @@ import API_UTIL from "../../services/AuthIntereptor";
 import { Heart } from "lucide-react";
 import Footer from "../../components/Footer/Footer";
 import "../../components/Footer/Footer.css"; // Import the updated CSS
-import "./ImagesPage.css"
+import "./ImagePage.css";
 
 function ImagesPage() {
   const [lastEvaluatedKey, setLastEvaluatedKey] = useState(undefined);
@@ -278,7 +278,7 @@ function ImagesPage() {
                         toggleFavourite(index);
                       }}
                     />
-                  </div>
+                  </div> 
                 ))}
                 <div>
                   {clickedImg && (
