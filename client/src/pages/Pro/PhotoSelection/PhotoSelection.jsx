@@ -68,6 +68,7 @@ const PhotoSelection = () => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [activeMainTab, setActiveMainTab] = useState();
   const [fetchTimeout, setFetchTimeout] = useState(false);
+  
 
   const handleMainTabClick = async (key) => {
     setActiveMainTab(key);
@@ -1052,11 +1053,11 @@ const handleSelectTab = async (key) => {
                           handleBackButton={handleBackButton}
                           handleFavourite={(imageUrl, isFav) => handleFavourite(imageUrl, isFav, activeMainTab)}
                           favourite={clickedImgFavourite}  // Pass the favourite state
-                          sharing={false}
+                          sharing={true}
                           close={true}
                           select={true}
                           imagesData={imagesData[activeMainTab].images}
-
+                          initialFavourite={clickedImgFavourite}  // Pass the initial favourite state
                         >
                           {imageLoaded && ( // Only render image tools if image is loaded
                             <div className="imageToolBox">

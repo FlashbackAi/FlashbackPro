@@ -1,64 +1,106 @@
 .overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
-  
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modalOuter {
+  position: relative;
+  width: 80%; /* Set a fixed width for the modal */
+  max-width: 800px; /* Set a maximum width */
+  max-height: 90vh;
+  background: #1c1c1c;
+  padding: 3em;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.modalOuter img {
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+}
+
+.dismiss {
+  position: absolute;
+  top: 87%;
+  right: 10px;
+  font-size: 0.8em;
+  cursor: pointer;
+  z-index: 1001;
+}
+
+.modal-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 2rem;
+  cursor: pointer;
+  z-index: 1001;
+}
+
+.left-arrow {
+  left: 10px;
+}
+
+.right-arrow {
+  right: 10px;
+}
+
+.imageToolBox {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 10px;
+}
+
+/* Media Queries for Mobile Responsiveness */
+@media (max-width: 768px) {
   .modalOuter {
-    position: relative;
-    width: 80%; /* Set a fixed width for the modal */
-    max-width: 800px; /* Set a maximum width */
-    max-height: 90vh;
-    background: #1c1c1c;
-    padding: 20px;
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    width: 95%; /* Adjust width for smaller screens */
+    padding: 1em; /* Reduce padding for smaller screens */
   }
-  
+
   .modalOuter img {
-    max-width: 100%;
-    max-height: 70vh;
-    object-fit: contain;
+    max-height: 60vh; /* Adjust image height for smaller screens */
   }
-  
+
   .dismiss {
-    position: absolute;
-    top: 62em;
-    right: 10px;
-    font-size: 0.8em;
-    cursor: pointer;
-    z-index: 1001;
+    top: auto; /* Adjust position for smaller screens */
+    bottom: 10px;
+    font-size: 1em; /* Adjust font size for better visibility */
   }
-  
+
   .modal-arrow {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 2rem;
-    cursor: pointer;
-    z-index: 1001;
+    font-size: 1.5rem; /* Adjust arrow size for smaller screens */
   }
-  
-  .left-arrow {
-    left: 10px;
+}
+
+@media (max-width: 480px) {
+  .modalOuter {
+    width: 100%; /* Full width for very small screens */
+    padding: 0.5em; /* Further reduce padding */
   }
-  
-  .right-arrow {
-    right: 10px;
+
+  .modalOuter img {
+    max-height: 50vh; /* Further adjust image height */
   }
-  
-  .imageToolBox {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
-    margin-top: 10px;
+
+  .dismiss {
+    bottom: 5px; /* Further adjust position */
+    font-size: 1.2em; /* Adjust font size for better visibility */
   }
+
+  .modal-arrow {
+    font-size: 1.2rem; /* Adjust arrow size for very small screens */
+  }
+}
