@@ -21,10 +21,12 @@ const ReactDOMServer = require('react-dom/server');
 const React = require('react');
 const { set } = require('lodash');
 const ExcelJS = require('exceljs');
+const dotenv = require('dotenv');
+const rateLimit = require('express-rate-limit');
 //const App = require('..\\client');
 const oldEvents = ["Aarthi_Vinay_19122021","Convocation_PrathimaCollege","KSL_25042024","Jahnavi_Vaishnavi_SC_28042024","KSL_22052024","KSL_16052024","V20_BootCamp_2024","Neha_ShivaTeja_18042024"]
 
-
+dotenv.config();
 app.use(cors()); // Allow cross-origin requests
 app.use(express.json());
 
@@ -2750,12 +2752,32 @@ app.post('/saveEventDetails', upload.single('image'), async (req, res) => {
 
   const fileKey = `${clientName}-${eventName}.jpg`;
 
+  const eventNameWithoutSpaces = eventName.replace(/\s+/g, '_');
+  const formattedEventCreateDate = eventDate.split('T')[0].replace(/-/g,'');
+  const CreateUploadFolderName = `${eventNameWithoutSpaces}_${formattedEventCreateDate}`;
+  logger.info('CreateUploadFolderName:', CreateUploadFolderName);
+
+  const createfolderparams = {
+    Bucket: indexBucketName,
+    Key: `${CreateUploadFolderName}/`,
+    Body: ''
+  };
+
   const params = {
     Bucket: "flashbackeventthumbnail",
     Key: fileKey,
     Body: file.buffer,
     ContentType: file.mimetype,
   };
+
+
+  try {
+    s3.putObject(createfolderparams).promise();
+    logger.info('Folder created successfully:', CreateUploadFolderName);
+  } catch (s3Error) {
+    logger.info('S3 error details:', JSON.stringify(s3Error, null, 2));
+    throw new Error(`Failed to create S3 folder: ${s3Error.message}`);
+  }
 
   try {
     // Upload image to S3
@@ -2777,6 +2799,7 @@ app.post('/saveEventDetails', upload.single('image'), async (req, res) => {
         invitation_note: invitationNote,
         invitation_url: invitation_url,
         event_image: imageUrl,
+        folder_name: CreateUploadFolderName
       },
     };
 
@@ -2926,6 +2949,93 @@ app.post("/deleteEvent", async (req, res) => {
     res.status(500).send(err.message);
   }
 });
+
+const uploadStatus = new Map();
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
+
+app.use(limiter);
+app.use(express.json());
+
+
+
+const imageUpload = multer({
+  storage: multerS3({
+    s3: s3,
+    bucket: imagesBucketName,
+    key: function (req, file, cb) {
+      const folderName = req.params.folder_name;
+      cb(null, `${folderName}/${file.originalname}`);
+    }
+  })
+});
+
+app.post('/uploadFiles/:eventName/:eventDate/:folder_name', upload.array('files', 2000), async (req, res) => {
+  try {
+    const { eventName, eventDate, folder_name } = req.params;
+    const { chunkNumber, totalChunks } = req.body;
+    
+    const uploadPromises = req.files.map(async (file) => {
+      const fileId = `${folder_name}/${file.originalname}`;
+      const params = {
+        Bucket: imagesBucketName,
+        Key: fileId,
+        Body: file.buffer,
+        ContentType: file.mimetype
+      };
+
+      try {
+        const result = await s3.upload(params).promise();
+        uploadStatus.set(fileId, {
+          status: 'completed',
+          chunkNumber,
+          totalChunks
+        });
+        return result;
+      } catch (error) {
+        console.error(`Error uploading file ${file.originalname}:`, error);
+        uploadStatus.set(fileId, {
+          status: 'failed',
+          chunkNumber,
+          totalChunks,
+          error: error.message
+        });
+        throw error;
+      }
+    });
+
+    const results = await Promise.allSettled(uploadPromises);
+
+    const successfulUploads = results.filter(r => r.status === 'fulfilled').map(r => r.value);
+    const failedUploads = results.filter(r => r.status === 'rejected').map(r => r.reason);
+
+    res.status(200).json({
+      message: 'Upload process completed',
+      successfulUploads,
+      failedUploads,
+      totalFiles: req.files.length
+    });
+  } catch (error) {
+    console.error('Error in upload process:', error);
+    res.status(500).json({ error: 'Error in upload process' });
+  }
+});
+
+// app.get('/upload-status/:fileId', async (req, res) => {
+//   try {
+//     const { fileId } = req.params;
+//     const status = uploadStatus.get(fileId) || { status: 'not found' };
+//     res.json(status);
+//   } catch (error) {
+//     console.error('Error fetching upload status:', error);
+//     res.status(500).json({ error: 'Error fetching upload status' });
+//   }
+// });
+
 
 app.get("/getClientEventDetails/:clientName", async (req, res) => {
   
