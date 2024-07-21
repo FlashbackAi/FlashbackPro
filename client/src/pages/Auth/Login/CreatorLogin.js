@@ -198,7 +198,7 @@ const CustomOption = ({ children, ...props }) => {
     return (
       <div className="loginBody">
         <div className="loginLeft">
-          {/* <p className="loginLogo">Flashback<p className="logoCaption">Auto Curate & Instant Share Memories</p></p> */}
+          {/* <p className="loginLogo">Flashback<p className="logoCaption">Auto Curate & Instant Share memories</p></p> */}
           <div className="loginLogoBox">
             <h2>
               FlashB

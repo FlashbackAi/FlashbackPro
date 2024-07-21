@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, ArrowDownToLine, Share2, ArrowLeft, ArrowRight } from "lucide-react";
+import { Heart, ArrowDownToLine, Share2, ArrowRight, ArrowLeft } from "lucide-react";
 import LoadingSpinner from "../Loader/LoadingSpinner"; // Ensure you have a LoadingSpinner component
 import API_UTIL from "../../services/AuthIntereptor";
+import "./ImageModal.css";
 
 const Modal = ({
   clickedImg,
@@ -15,41 +16,48 @@ const Modal = ({
   sharing = true,
   close = true,
   select = false,
-  imagesData = [],  // Pass imagesData as a prop
-  setClickedImgFavourite // Add the setter prop
+  imagesData = [], // All images in the current tab
+  initialFavourite = false, // The initial favourite state
 }) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isFavourite, setIsFavourite] = useState(clickedImgFavourite);
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0); // Track the current image index
+  const [currentIndex, setCurrentIndex] = useState(null);
+  const [currentImgUrl, setCurrentImgUrl] = useState(clickedUrl);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const currentIndex = imagesData.findIndex(image => image.s3_url === clickedImg);
-    setCurrentIndex(currentIndex);
-  }, [clickedImg, imagesData]);
+    setIsFavourite(clickedImgFavourite);
+    setCurrentIndex(imagesData.findIndex((img) => img.s3_url === clickedImg));
+  }, [clickedImgFavourite, clickedImg, imagesData]);
 
-  // const navigateImages = (direction) => {
+  useEffect(() => {
+    const handleSwipe = (e) => {
+      const touchStartX = e.touches[0].clientX;
+      const handleMove = (moveEvent) => {
+        const touchEndX = moveEvent.touches[0].clientX;
+        if (touchStartX - touchEndX > 50) {
+          handleNextImage();
+        } else if (touchEndX - touchStartX > 50) {
+          handlePrevImage();
+        }
+        document.removeEventListener("touchmove", handleMove);
+      };
+      document.addEventListener("touchmove", handleMove);
+      document.addEventListener("touchend", () => {
+        document.removeEventListener("touchmove", handleMove);
+      }, { once: true });
+    };
 
-  //   const filteredImages = imagesData.filter(image => (image.selected !== undefined ? image.selected : false) === isFavourite);
+    document.addEventListener("touchstart", handleSwipe);
 
-  //   let newIndex = filteredImages.findIndex(image => image.s3_url === clickedImg) + direction;
-
-  //   // Ensure the newIndex wraps around the array length
-  //   if (newIndex < 0) newIndex = filteredImages.length - 1;
-  //   if (newIndex >= filteredImages.length) newIndex = 0;
-
-  //   const newImage = filteredImages[newIndex];
-  //   if (newImage) {
-  //     setCurrentIndex(newIndex);
-  //     setClickedImg(newImage.s3_url);
-  //     setIsFavourite(newImage.selected !== undefined ? newImage.selected : false); // Update the favourite state
-  //     setClickedImgFavourite(newImage.selected !== undefined ? newImage.selected : false); // Update the favourite state in PhotoSelection
-  //   }
-  // };
+    return () => {
+      document.removeEventListener("touchstart", handleSwipe);
+    };
+  }, [currentIndex, imagesData]);
 
   const downloadCurrentImage = async () => {
-    if (!clickedImg) {
+    if (!currentImgUrl) {
       console.error("No current image found");
       return;
     }
@@ -57,12 +65,12 @@ const Modal = ({
     setIsDownloading(true);
     try {
       const response = await API_UTIL.post(`/downloadImage`, {
-        imageUrl: clickedUrl,
+        imageUrl: currentImgUrl,
       });
       if (response.status === 200) {
         const link = document.createElement("a");
         link.href = response.data;
-        link.download = clickedUrl;
+        link.download = currentImgUrl;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -81,11 +89,21 @@ const Modal = ({
     const newFavState = !isFavourite;
     handleFavourite(clickedImg, newFavState);
     setIsFavourite(newFavState);
-    setClickedImgFavourite(newFavState);
+
+    // Update the imagesData array to reflect the change in favorite status
+    const updatedImagesData = imagesData.map((img) => {
+      if (img.s3_url === clickedImg) {
+        return { ...img, selected: newFavState };
+      }
+      return img;
+    });
+
+    // Update currentIndex
+    setCurrentIndex(updatedImagesData.findIndex(img => img.s3_url === clickedImg));
   };
 
   const share = () => {
-    const shareAbleUrl = `${process.env.REACT_APP_SERVER_IP}/share/${clickedUrl.split(".jpg")[0]}?redirectTo=singleImage`;
+    const shareAbleUrl = `${process.env.REACT_APP_SERVER_IP}/share/${currentImgUrl.split(".jpg")[0]}?redirectTo=singleImage`;
     const text = `${shareAbleUrl}\n Click and follow url to *View* and *Download Image*`;
     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
     window.open(whatsappUrl, "_blank");
@@ -94,6 +112,40 @@ const Modal = ({
   const handleModalClose = () => {
     setClickedImg(null);
     navigate(".", { replace: true }); // Remove the image parameter from the URL
+  };
+
+  const handleNextImage = () => {
+    let currentArray;
+    if (initialFavourite) {
+      currentArray = imagesData.filter(img => img.selected === true);
+    } else {
+      currentArray = imagesData.filter(img => img.selected === false || img.selected === undefined);
+    }
+
+    const currentIndexInArray = currentArray.findIndex(img => img.s3_url === clickedImg);
+    const nextIndex = (currentIndexInArray + 1) % currentArray.length;
+
+    setClickedImg(currentArray[nextIndex].s3_url);
+    setIsFavourite(currentArray[nextIndex].selected);
+    setCurrentIndex(nextIndex);
+    setCurrentImgUrl(currentArray[nextIndex].s3_url.split("amazonaws.com/")[1]);
+  };
+
+  const handlePrevImage = () => {
+    let currentArray;
+    if (initialFavourite) {
+      currentArray = imagesData.filter(img => img.selected === true);
+    } else {
+      currentArray = imagesData.filter(img => img.selected === false || img.selected === undefined);
+    }
+
+    const currentIndexInArray = currentArray.findIndex(img => img.s3_url === clickedImg);
+    const prevIndex = (currentIndexInArray - 1 + currentArray.length) % currentArray.length;
+
+    setClickedImg(currentArray[prevIndex].s3_url);
+    setIsFavourite(currentArray[prevIndex].selected);
+    setCurrentIndex(prevIndex);
+    setCurrentImgUrl(currentArray[prevIndex].s3_url.split("amazonaws.com/")[1]);
   };
 
   return (
@@ -116,7 +168,10 @@ const Modal = ({
             {(favourite || select) && (
               <div
                 className="dFlex alignCenter cursor-pointer"
-                onClick={addToFavourite}
+                onClick={(e) => {
+                  addToFavourite(e);
+                  handleNextImage();
+                }}
               >
                 <Heart className={"favourite " + (isFavourite ? "bgRed" : "")} />
                 {isFavourite ? "Unselect" : "Select"}
@@ -139,21 +194,19 @@ const Modal = ({
             </div>
             {sharing && (
               <div className="dFlex alignCenter cursor-pointer" onClick={share}>
-                <Share2 className={"favourite " + (isFavourite ? "bgRed" : "")} />
+                <Share2 className="share-icon" />
                 Share
               </div>
             )}
           </div>
         )}
-         {imageLoaded && ( // Add navigation arrows
-        <>
-          {/* <ArrowLeft className="navigation-arrow" onClick={() => navigateImages(-1)} />
-          <ArrowRight className="navigation-arrow" onClick={() => navigateImages(1)} /> */}
-        </>
-      )}
+        <ArrowLeft className="modal-arrow left-arrow" onClick={handlePrevImage} />
+        <ArrowRight className="modal-arrow right-arrow" onClick={handleNextImage} />
       </div>
     </div>
   );
 };
 
 export default Modal;
+
+

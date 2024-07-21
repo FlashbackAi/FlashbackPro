@@ -34,13 +34,14 @@ header h2 {
 }
 
 header h2::after {
-  content: "Curate & Share Memories";
+  content: "Auto Curate & Instant Share Memories";
   position: absolute;
-  bottom: -1em;
+  bottom: -1.2em;
   display: block;
   text-align: center;
   font-size: 30%;
   letter-spacing: 0.1em;
+  white-space: nowrap;
 }
 
 header img {
