@@ -2068,8 +2068,8 @@ app.post('/downloadImage', async (req, res) => {
     
                     // Resize the image
                     const resizedImageStream = await sharp(Body)
-                        .resize(500, 500)
-                        .jpeg({ quality: 50, force: false }) // Convert image to JPEG with specified quality
+                        .resize(1000, 1000)
+                        .jpeg({ quality: 80, force: false }) // Convert image to JPEG with specified quality
                         .toBuffer();
     
                     // Extract the relative path excluding the folder

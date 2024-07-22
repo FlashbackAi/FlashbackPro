@@ -97,10 +97,10 @@ const PhotoSelection = () => {
   };
 
   const handleClickImage = (item) => {
-    console.log("Image clicked:", item.s3_url);
-    setClickedImg(item.s3_url);
+    console.log("Image clicked:", item.thumbnailUrl);
+    setClickedImg(item.thumbnailUrl);
     setClickedImgFavourite(item.selected);
-    const imgName = item.s3_url.split("amazonaws.com/")[1];
+    const imgName = item.thumbnailUrl.split("amazonaws.com/")[1];
     setClickedUrl(imgName);
     setImageLoaded(false);  // Set imageLoaded to false when a new image is clicked
     window.history.pushState({ id: 1 }, null, "?image=" + `${imgName}`);
@@ -996,7 +996,7 @@ const handleSelectTab = async (key) => {
                                   src={item.thumbnailUrl}
                                   effect="blur"
                                   onLoad={() => {
-                                    displayFavIcon(item.s3_url);
+                                    displayFavIcon(item.thumbnailUrl);
                                     setImageLoaded(true); // Set imageLoaded to true when image is loaded
                                   }}
                                   onClick={() => handleClickImage(item)}
