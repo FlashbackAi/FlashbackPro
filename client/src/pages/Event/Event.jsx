@@ -287,9 +287,19 @@ const Event = ({ eventName, eventDate, folderName }) => {
 
   return (
     <div className="event-container">
-      <h1 className="event-title">Events</h1>
+      <h1 className="event-title">My Projects</h1>
       {events.length > 0 ? (
         <ul className="event-list">
+            <li className="event-item">
+              <div className="event-card">
+                <Link to="/eventSelector">
+                <img src="https://img.icons8.com/B48E75/stamp/2x/add.png" alt="add-Image" className="add-event-image" />
+                </Link>
+                <div className="event-card-footer">
+                  <h2 className="event-name">Click here to Add Projects</h2>
+                </div>
+              </div>
+            </li>
           {events.map((event) => (
             <li key={event.event_name} className="event-item">
               <div className="event-card" onClick={() => openModal(event)}>
@@ -317,12 +327,6 @@ const Event = ({ eventName, eventDate, folderName }) => {
       ) : (
         <p className="no-events">No events found. Click on + to add events</p>
       )}
-
-      <div className="add-button">
-        <Link to="/CreateEvent">
-          <img src="https://img.icons8.com/B48E75/stamp/2x/add.png" alt="add-button"/>
-        </Link>
-      </div>
 
       <Modal
         isOpen={isModalOpen}

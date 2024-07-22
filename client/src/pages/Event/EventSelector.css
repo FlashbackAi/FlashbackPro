@@ -1,0 +1,100 @@
+.event-selector-wrapper {
+    text-align: center;
+    margin-top: 2em;
+  }
+  
+  .event-selector-wrapper h1{
+    color: white;
+    font-size: 2em;
+    margin: 1em;
+  }
+
+  .event-selector-wrapper h2{
+    color: white;
+    font-size: 1em;
+    margin: 1em;
+  }
+
+  .event-selector-cards, .sub-event-selector-cards {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin: 1em;
+  }
+  
+  .event-selector-card{
+    position: relative;
+    width: 18em;
+    height: 12em;
+    cursor: pointer;
+    transition: transform 0.3s, opacity 0.3s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 1em;
+  } 
+
+  .sub-event-selector-card {
+    position: relative;
+    width: 16em;
+    height: 12em;
+    cursor: pointer;
+    transition: transform 0.3s, opacity 0.3s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .event-selector-card img, .sub-event-selector-card img {
+    width: 95%;
+    height: 85%;
+    border-bottom: 1px solid #ddd;
+    object-fit: cover;
+  }
+  
+  .event-selector-card.selected, .sub-event-selector-card.selected {
+    transform: scale(1.1);
+  }
+  
+  .tick {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 24px;
+    color: white;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent);
+    padding: 2px 6px;
+    border-radius: 50%;
+  }
+  
+  .card-label {
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 5px 0;
+    text-align: center;
+    font-size: 1em;
+  }
+  
+  .next-button {
+    margin-top: 2em;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .next-button:hover {
+    background-color: #0056b3;
+  }
+  

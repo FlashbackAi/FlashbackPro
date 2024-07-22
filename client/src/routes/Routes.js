@@ -21,6 +21,9 @@ import Event from "../pages/Event/Event";
 import CreateEventForm from "../pages/CreateEvent/CreateEvent";
 import { LoginEvent } from "../pages/LoginEvent/LoginEvent";
 import About from "../pages/About/About";
+import EventMain from "../pages/Event/EventMain";
+import EventSelector from "../pages/Event/EventSelector";
+import CreateEvents from "../pages/Event/CreateEvents";
 
 
 const ROUTES=[
@@ -173,8 +176,21 @@ const ROUTES=[
         path:"/Event",
         exact:false,
         protected:false,
-        component:Event,
+        component:EventMain,
     },
+    {
+        path:"/eventSelector",
+        exact:false,
+        protected:false,
+        component:EventSelector,
+    },
+    {
+        path:"/createEventForm",
+        exact:false,
+        protected:false,
+        component:CreateEvents,
+    },
+
     {
         path:"/about",
         exact:false,
