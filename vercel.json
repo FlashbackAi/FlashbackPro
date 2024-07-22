@@ -1,9 +1,8 @@
 {
-    "buildCommand": "cd client && npm install && npm run build",
-    "outputDirectory": "client/build",
-    "rewrites": [
-      { "source": "/api/:path*", "destination": "https://13.126.31.242:5000" },
-      { "source": "/(.*)", "destination": "/index.html" }
-    ],
-    "builds": [{ "src": "client/package.json", "use": "@vercel/node" }]
-  }
+  "buildCommand": "cd client && npm install && npm run build",
+  "outputDirectory": "client/build",
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://flashback.inc:5000/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
