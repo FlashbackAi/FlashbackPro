@@ -1210,6 +1210,7 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
      let isUserRegistered ;
      let clientName;
      let clientObject;
+     let userObject;
      if(!oldEvents.includes(eventName))
       {
         isUserRegistered = await checkIsUserRegistered(userId);
@@ -1230,8 +1231,10 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
 
     const result = await userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites);
     logger.info("total"+result.Items.length)
-    if(!lastEvaluatedKey && isFavourites)
+    if(!lastEvaluatedKey && isFavourites){
       clientObject = await getClientObject(eventName);
+      userObject = await getUserObject(userId);
+    }
        
     
     result.Items.sort((a, b) => a.faces_in_image - b.faces_in_image);
@@ -1251,7 +1254,7 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
     });
       const images = await Promise.all(imagesPromises);
       logger.info('total images fetched for the user -> '+userId+'  in event -> '+eventName +"isFavourites -> "+isFavourites+' : '+result.Count);
-      res.json({"images":images, 'totalImages':result.Count,'lastEvaluatedKey':result.LastEvaluatedKey,'clientObj':clientObject});
+      res.json({"images":images, 'totalImages':result.Count,'lastEvaluatedKey':result.LastEvaluatedKey,'clientObj':clientObject,'userObj':userObject});
   }
   } catch (err) {
      logger.info("Error in S3 get", err);
@@ -1335,6 +1338,29 @@ async function getClientObject(eventName) {
     return result.Items[0];
   } catch (error) {
     console.error("Error getting client object:", error);
+    throw error;
+  }
+}
+
+async function getUserObject(userId){
+  try{
+    logger.info("getting user info for userId : "+userId);
+    params = {
+      TableName: userrecordstable,
+      FilterExpression: "user_id = :userId",
+      ExpressionAttributeValues: {
+        ":userId": userId
+      }
+    };
+    const result = await docClient.scan(params).promise();
+
+    if (result.Items.length === 0) {
+      throw new Error("userId not found");
+    }
+    logger.info("user details fetched successfully");
+    return result.Items[0];
+  } catch (error) {
+    console.error("Error getting user object:", error);
     throw error;
   }
 }
@@ -3147,6 +3173,7 @@ app.post("/updateStatus", async (req, res) => {
 
 app.post("/updateUserClientInteraction", async (req, res) => {
   const { userPhoneNumber, clientName,eventName ,rewardPoints} = req.body;
+  let newRewardPoints;
   logger.info("Updating User Client Interaction -> " + userPhoneNumber + ":" + clientName);
 
   try {
@@ -3184,6 +3211,7 @@ app.post("/updateUserClientInteraction", async (req, res) => {
       };
 
       await docClient.update(updateParams).promise();
+      logger.info("updated the user client interaction table");
     } else {
       updateParams = {
         TableName: userClientInteractionTable,
@@ -3195,23 +3223,25 @@ app.post("/updateUserClientInteraction", async (req, res) => {
       };
 
       await docClient.put(updateParams).promise();
+      logger.info("updated the user client interaction table");
 
       // Step 3: Update reward points in the users table
-      let rewardPoints = rewardPoints+10;
+      newRewardPoints = rewardPoints+10;
       const rewardPointsUpdateParams = {
         TableName: userrecordstable,
         Key: { "user_phone_number": userPhoneNumber },
         UpdateExpression: "SET reward_points = :rewardPoints",
         ExpressionAttributeValues: {
-          ":rewardPoints": rewardPoints 
+          ":rewardPoints": newRewardPoints 
         },
         ReturnValues: "UPDATED_NEW"
       };
 
       await docClient.update(rewardPointsUpdateParams).promise();
+      logger.info("updated the users table with updated reward points");
     }
 
-    res.status(200).send({"clientName":clientName,"rewardPoints":rewardPoints});
+    res.status(200).send({"clientName":clientName,"rewardPoints":newRewardPoints});
   } catch (err) {
     logger.error(err.message);
     res.status(500).send(err.message);
