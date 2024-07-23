@@ -1,9 +1,0 @@
-{
-    "buildCommand": "cd client && npm run build",
-    "outputDirectory": "client/build",
-    "rewrites": [
-      { "source": "/api/:path*", "destination": "https://flashback.inc:5000" },
-      { "source": "/(.*)", "destination": "/index.html" }
-    ],
-    "builds": [{ "src": "client/package.json", "use": "@vercel/node" }]
-  }
