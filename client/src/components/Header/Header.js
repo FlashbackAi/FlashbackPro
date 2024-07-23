@@ -107,8 +107,6 @@ const Header = ({ clientObj, userObj, eventName, dontshowredeem }) => {
             setShowPopup(true); // Show the popup
           }
 
-            setShowPopup(true); //delete it
-
         } catch (error) {
           console.error("Error updating user-client interaction:", error);
           if (error.response) {
