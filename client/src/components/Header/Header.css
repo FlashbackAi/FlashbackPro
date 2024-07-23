@@ -68,7 +68,9 @@ header h3 {
   /* padding: 10px; */
   position: sticky;
   z-index: 12;
-  background-color: #1c1c1c;
+  background-color: #5a5959;
+  padding: 0.5em;
+  margin: 0.5em;
 }
 
 .second-header-container h1 {
@@ -78,7 +80,7 @@ header h3 {
 
 .second-header-container div,
 .second-header-container a {
-  display: flex;
+  display: inline-block;
   align-items: center;
 }
 
@@ -114,7 +116,7 @@ header h3 {
 }
 
 .popup-content h2 {
-  margin-top: 0;
+  padding: 1em;
   color: aliceblue;
 }
 

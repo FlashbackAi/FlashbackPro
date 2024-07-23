@@ -141,12 +141,12 @@ const Header = ({ clientObj, userObj, eventName, dontshowredeem }) => {
       <header className="stickToTop">
         <h2>FlashBack</h2>
         <div className="second-header-container">
-          {!dontshowredeem && <div className="redeem-points" onClick={handleRedeemPointsClick}>Redeem Points - {redeemPoints} 🪙</div>}
           {clientObj &&
             <>
-              <h3>An Event By {clientObj.user_name}</h3>
+
               <div>
-                <h3>Visit : </h3>
+
+                <h3>Clicked by - {clientObj.user_name}</h3>
                 <a href={clientObj.social_media.instagram} target="_blank" rel="noopener noreferrer">
                   <img src="https://img.icons8.com/ffffff/fluent/2x/instagram-new.png" alt="Instagram" onClick={() => setInstaClick(true)} />
                 </a>
@@ -154,6 +154,8 @@ const Header = ({ clientObj, userObj, eventName, dontshowredeem }) => {
                   <img src="https://img.icons8.com/ffffff/color/2x/youtube-play.png" alt="YouTube" onClick={() => setYoutubeClick(true)} />
                 </a>
               </div>
+
+              {!dontshowredeem && <div className="redeem-points" onClick={handleRedeemPointsClick}>Redeem Points - {redeemPoints} 🪙</div>}
             </>}
         </div>
       </header>
@@ -172,6 +174,8 @@ const Header = ({ clientObj, userObj, eventName, dontshowredeem }) => {
         <div className="popup">
           <div className="popup-content">
             <h2>Coming Soon!</h2>
+            <h2>Redeem the Points for Amazon Gift Cards</h2>
+            <h4>Follow your Photographer Instagram & Youtube to Earn more Points</h4>
             <button onClick={handleCloseComingSoonPopup}>Close</button>
           </div>
         </div>
