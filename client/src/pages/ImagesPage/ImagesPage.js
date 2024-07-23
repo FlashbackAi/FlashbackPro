@@ -27,7 +27,8 @@ function ImagesPage() {
   const isFavouritesFetched = useRef(false);
   const history = useNavigate();
   const location = useLocation();
-  const [clientName, setClientName] = useState();
+  const [clientObj, setClientObj] = useState();
+  const [userObj,setUserObj] = useState();
 
   const handleClick = (item, index) => {
     setClickedImg(item.original);
@@ -48,7 +49,8 @@ function ImagesPage() {
         }
       );
       if (response.status === 200) {
-        setClientName(response.data.clientName);
+        setClientObj(response.data.clientObj);
+        setUserObj(response.data.userObj); //alternative for login
         const formattedImages = response.data.images.map((img) => ({
           original: img.url,
           thumbnail: img.thumbnailUrl,
@@ -245,13 +247,15 @@ function ImagesPage() {
     handleFavourite(index, images[index].original, isFav);
   };
 
+  console.log(clientObj);
+
   return (
     <div className="page-container">
       {isLoading ? (
         <LoadingSpinner />
       ) : (
         <>
-          <Header clientName={clientName} />
+          <Header clientObj={clientObj} userObj={userObj} eventName={eventName} />
           <div className="content-wrap">
             {images.length > 0 ? (
               <div className="ip-wrapper">

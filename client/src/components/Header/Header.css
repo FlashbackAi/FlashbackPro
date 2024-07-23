@@ -1,7 +1,6 @@
 header {
-  padding: 0.4em 1rem;
-  font-size: 1em;
-  margin-bottom: 1em;
+  padding: 0.5em 1rem;
+  /* font-size: 1em; */
   display: flex;
   justify-content: center;
   flex-direction: column;
@@ -59,3 +58,77 @@ header h3 {
   /* position: relative; */
   width: fit-content;
 }
+
+/* CSS for SecondHeader component */
+.second-header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  /* padding: 10px; */
+  position: sticky;
+  z-index: 12;
+  background-color: #1c1c1c;
+}
+
+.second-header-container h1 {
+  margin: 0 10px;
+  font-size: 1.2em !important;
+}
+
+.second-header-container div,
+.second-header-container a {
+  display: flex;
+  align-items: center;
+}
+
+.second-header-container img {
+  width: 24px; /* Adjust size as needed */
+  height: auto;
+  margin-left: 10px;
+}
+
+.redeem-points {
+  font-size: 0.6em;
+  cursor: pointer;
+}
+
+.popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.popup-content {
+  background: #1c1c1c !important;
+  padding: 1em;
+  border-radius: 1em;
+  text-align: center;
+}
+
+.popup-content h2 {
+  margin-top: 0;
+  color: aliceblue;
+}
+
+.popup-content p {
+  color: antiquewhite;
+}
+
+.popup-content button {
+  margin-top: 3em;
+  padding: 0.1em 0.2em;
+  background: #b48e75;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+

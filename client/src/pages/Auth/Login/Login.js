@@ -230,6 +230,7 @@ function Login() {
       } else {
         navigate(from);
       }
+      sessionStorage.setItem('phoneNumber', fullPhoneNumber);
       toast(
         `hey ${fullPhoneNumber}, you already exist. Have a great event ahead..`,
         { position: "top-center" }
@@ -280,7 +281,7 @@ function Login() {
 
   return (
     <div>
-      <Header/>
+      <Header dontshowredeem={true}/>
       <div className="loginBody">
       <div className="loginLeft">
         <div className="login-form-container">
