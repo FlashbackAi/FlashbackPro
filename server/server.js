@@ -104,6 +104,7 @@ const userUploadsTableName = 'userUploads';
 const userFoldersTableName = 'userFolders';
 const userEventTableName='user_event_mapping';
 const userOutputTable='user_outputs';
+const userClientInteractionTable ='user_client_interaction';
 const eventsTable = 'events';
 const indexedDataTableName = 'indexed_data'
 const formDataTableName = 'selectionFormData'; 
@@ -1208,6 +1209,7 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
      const lastEvaluatedKey = req.body.lastEvaluatedKey;
      let isUserRegistered ;
      let clientName;
+     let clientObject;
      if(!oldEvents.includes(eventName))
       {
         isUserRegistered = await checkIsUserRegistered(userId);
@@ -1229,17 +1231,7 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
     const result = await userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites);
     logger.info("total"+result.Items.length)
     if(!lastEvaluatedKey && isFavourites)
-      {
-        params = {
-          TableName: eventsTable,
-          KeyConditionExpression: 'event_name = :eventName',
-          ExpressionAttributeValues: {
-            ':eventName': eventName
-          },    
-        };
-        const res = await docClient.query(params).promise();
-        clientName = res.Items[0].client_name;
-      }
+      clientObject = await getClientObject(eventName);
        
     
     result.Items.sort((a, b) => a.faces_in_image - b.faces_in_image);
@@ -1259,7 +1251,7 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
     });
       const images = await Promise.all(imagesPromises);
       logger.info('total images fetched for the user -> '+userId+'  in event -> '+eventName +"isFavourites -> "+isFavourites+' : '+result.Count);
-      res.json({"images":images, 'totalImages':result.Count,'lastEvaluatedKey':result.LastEvaluatedKey,'clientName':clientName});
+      res.json({"images":images, 'totalImages':result.Count,'lastEvaluatedKey':result.LastEvaluatedKey,'clientObj':clientObject});
   }
   } catch (err) {
      logger.info("Error in S3 get", err);
@@ -1312,6 +1304,40 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
 //     }
   
 // }
+async function getClientObject(eventName) {
+
+  try {
+    logger.info("fetching client info for eventName: "+eventName);
+    let params = {
+      TableName: eventsTable,
+      KeyConditionExpression: 'event_name = :eventName',
+      ExpressionAttributeValues: {
+        ':eventName': eventName
+      },    
+    };
+    const res = await docClient.query(params).promise();
+    let clientName = res.Items[0].client_name;
+    logger.info("fetched clientName"+clientName)
+    params = {
+      TableName: userrecordstable,
+      FilterExpression: "user_name = :clientName",
+      ExpressionAttributeValues: {
+        ":clientName": clientName
+      }
+    };
+
+    const result = await docClient.scan(params).promise();
+
+    if (result.Items.length === 0) {
+      throw new Error("Client not found");
+    }
+    logger.info("client details fetched successfully");
+    return result.Items[0];
+  } catch (error) {
+    console.error("Error getting client object:", error);
+    throw error;
+  }
+}
 
 async function checkIsUserRegistered(userId){
 
@@ -3113,6 +3139,81 @@ app.post("/updateStatus", async (req, res) => {
     res.status(200).send({"message": "Status Updated Successfully for all users of the event"});
   } catch (err) {
     logger.info(err.message);
+    res.status(500).send(err.message);
+  }
+});
+
+
+
+app.post("/updateUserClientInteraction", async (req, res) => {
+  const { userPhoneNumber, clientName,eventName ,rewardPoints} = req.body;
+  logger.info("Updating User Client Interaction -> " + userPhoneNumber + ":" + clientName);
+
+  try {
+    // Step 1: Check if there is an entry with the given userPhoneNumber and clientName
+    const getParams = {
+      TableName: userClientInteractionTable,
+      Key: {
+        "user_phone_number": userPhoneNumber,
+        "client_name": clientName
+      }
+    };
+
+    const getResult = await docClient.get(getParams).promise();
+
+    const newTimestampEntry = {
+      event_name: eventName,
+      visited_time: new Date().toISOString()
+    };
+
+    let updateParams;
+
+    if (getResult.Item) {
+      // Entry exists, update the visited_time_stamp array
+      updateParams = {
+        TableName: userClientInteractionTable,
+        Key: {
+          "user_phone_number": userPhoneNumber,
+          "client_name": clientName
+        },
+        UpdateExpression: "SET visited_time_obj = list_append(visited_time_obj, :newTimestampEntry)",
+        ExpressionAttributeValues: {
+          ":newTimestampEntry": [newTimestampEntry]
+        },
+        ReturnValues: "UPDATED_NEW"
+      };
+
+      await docClient.update(updateParams).promise();
+    } else {
+      updateParams = {
+        TableName: userClientInteractionTable,
+        Item: {
+          "user_phone_number": userPhoneNumber,
+          "client_name": clientName,
+          "visited_time_obj": [newTimestampEntry]
+        }
+      };
+
+      await docClient.put(updateParams).promise();
+
+      // Step 3: Update reward points in the users table
+      let rewardPoints = rewardPoints+10;
+      const rewardPointsUpdateParams = {
+        TableName: userrecordstable,
+        Key: { "user_phone_number": userPhoneNumber },
+        UpdateExpression: "SET reward_points = :rewardPoints",
+        ExpressionAttributeValues: {
+          ":rewardPoints": rewardPoints 
+        },
+        ReturnValues: "UPDATED_NEW"
+      };
+
+      await docClient.update(rewardPointsUpdateParams).promise();
+    }
+
+    res.status(200).send({"clientName":clientName,"rewardPoints":rewardPoints});
+  } catch (err) {
+    logger.error(err.message);
     res.status(500).send(err.message);
   }
 });
