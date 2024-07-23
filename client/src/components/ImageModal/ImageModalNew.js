@@ -100,6 +100,7 @@ const Modal = ({
 
     // Update currentIndex
     setCurrentIndex(updatedImagesData.findIndex(img => img.s3_url === clickedImg));
+
   };
 
   const share = () => {
@@ -117,8 +118,12 @@ const Modal = ({
   const handleNextImage = () => {
     let currentArray;
     if (initialFavourite) {
+      if(!imagesData.filter(img => img.selected === true).length)
+        return handleModalClose();
       currentArray = imagesData.filter(img => img.selected === true);
     } else {
+      if(!imagesData.filter(img => img.selected === false || img.selected === undefined))
+        return handleModalClose();
       currentArray = imagesData.filter(img => img.selected === false || img.selected === undefined);
     }
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './CreateEvent.css';
+import './CreateEvents.css';
 import API_UTIL from '../../services/AuthIntereptor';
 import { toast } from 'react-toastify';
 import { useNavigate, useLocation } from 'react-router-dom';

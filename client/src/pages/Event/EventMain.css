@@ -1,0 +1,64 @@
+/* Ensure the body and html take full height */
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+  }
+  
+  .event-main-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  
+  .event-main-content {
+    flex: 1;
+    padding-bottom: 100px; /* Height of the bottom buttons and footer to prevent overlap */
+    background: #1c1c1c;
+  }
+  
+  .event-bottom-buttons {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background: #1c1c1c;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+  }
+  
+  .event-buttons {
+    padding: 10px 20px;
+    background-color: #b48e75;
+    color: white;
+    border: none;
+    cursor: pointer;
+    width: 33%;
+  }
+  
+  .event-buttons:hover {
+    background-color: #0056b3;
+  }
+  
+  footer {
+    background: #f8f9fa;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .add-button {
+    position: fixed;
+    bottom: 2rem;
+    right: 1rem;
+    margin-right: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .add-button img {
+    padding: 1rem;
+    border-radius: 50%;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    font-size: 2rem;
+  }
+  

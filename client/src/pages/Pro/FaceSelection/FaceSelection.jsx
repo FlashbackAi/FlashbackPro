@@ -878,7 +878,7 @@ const FaceSelection = () => {
             }}
             className="entry"
           >
-            <Header />
+            <Header/>
             <h2>Please Select the Album type</h2>
             <div style={{ display: 'flex', justifyContent: 'space-around' }}>
               

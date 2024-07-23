@@ -72,13 +72,13 @@ const logger = winston.createLogger({
  });
 
  // *** Comment these certificates while testing changes in local developer machine. And, uncomment while pushing to mainline***
-// const privateKey = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/privkey.pem', 'utf8');
-// const certificate = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/fullchain.pem', 'utf8');
+const privateKey = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/privkey.pem', 'utf8');
+const certificate = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/fullchain.pem', 'utf8');
 
-// const credentials = {
-//   key: privateKey,
-//   cert: certificate
-// }
+const credentials = {
+  key: privateKey,
+  cert: certificate
+}
 
 // Set up AWS S3
 const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.js
@@ -104,6 +104,7 @@ const userUploadsTableName = 'userUploads';
 const userFoldersTableName = 'userFolders';
 const userEventTableName='user_event_mapping';
 const userOutputTable='user_outputs';
+const userClientInteractionTable ='user_client_interaction';
 const eventsTable = 'events';
 const indexedDataTableName = 'indexed_data'
 const formDataTableName = 'selectionFormData'; 
@@ -581,13 +582,13 @@ app.post('/trigger-flashback-new', async (req, res) => {
        
       } catch (error) {
         console.error('Error inserting or updating items:', error);
-        throw new Error('Error inserting or updating items in DynamoDB');
+        throw new Error('Error inserting or updating items in DynamoDB',error);
       }
       res.send(result); // End the response stream 
 }catch (error) {
     console.error('Error triggering flashback:', error);
     // If an error occurs, send an error response to the client
-    res.status(500).json({"message":"Failure in creating flashbacks"});
+    res.status(500).json({"message":"Failure in creating flashbacks"+error});
   }
 });
 
@@ -1208,6 +1209,8 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
      const lastEvaluatedKey = req.body.lastEvaluatedKey;
      let isUserRegistered ;
      let clientName;
+     let clientObject;
+     let userObject;
      if(!oldEvents.includes(eventName))
       {
         isUserRegistered = await checkIsUserRegistered(userId);
@@ -1228,18 +1231,10 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
 
     const result = await userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites);
     logger.info("total"+result.Items.length)
-    if(!lastEvaluatedKey && isFavourites)
-      {
-        params = {
-          TableName: eventsTable,
-          KeyConditionExpression: 'event_name = :eventName',
-          ExpressionAttributeValues: {
-            ':eventName': eventName
-          },    
-        };
-        const res = await docClient.query(params).promise();
-        clientName = res.Items[0].client_name;
-      }
+    if(!lastEvaluatedKey && isFavourites){
+      clientObject = await getClientObject(eventName);
+      userObject = await getUserObject(userId);
+    }
        
     
     result.Items.sort((a, b) => a.faces_in_image - b.faces_in_image);
@@ -1259,7 +1254,7 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
     });
       const images = await Promise.all(imagesPromises);
       logger.info('total images fetched for the user -> '+userId+'  in event -> '+eventName +"isFavourites -> "+isFavourites+' : '+result.Count);
-      res.json({"images":images, 'totalImages':result.Count,'lastEvaluatedKey':result.LastEvaluatedKey,'clientName':clientName});
+      res.json({"images":images, 'totalImages':result.Count,'lastEvaluatedKey':result.LastEvaluatedKey,'clientObj':clientObject,'userObj':userObject});
   }
   } catch (err) {
      logger.info("Error in S3 get", err);
@@ -1312,6 +1307,63 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
 //     }
   
 // }
+async function getClientObject(eventName) {
+
+  try {
+    logger.info("fetching client info for eventName: "+eventName);
+    let params = {
+      TableName: eventsTable,
+      KeyConditionExpression: 'event_name = :eventName',
+      ExpressionAttributeValues: {
+        ':eventName': eventName
+      },    
+    };
+    const res = await docClient.query(params).promise();
+    let clientName = res.Items[0].client_name;
+    logger.info("fetched clientName"+clientName)
+    params = {
+      TableName: userrecordstable,
+      FilterExpression: "user_name = :clientName",
+      ExpressionAttributeValues: {
+        ":clientName": clientName
+      }
+    };
+
+    const result = await docClient.scan(params).promise();
+
+    if (result.Items.length === 0) {
+      throw new Error("Client not found");
+    }
+    logger.info("client details fetched successfully");
+    return result.Items[0];
+  } catch (error) {
+    console.error("Error getting client object:", error);
+    throw error;
+  }
+}
+
+async function getUserObject(userId){
+  try{
+    logger.info("getting user info for userId : "+userId);
+    params = {
+      TableName: userrecordstable,
+      FilterExpression: "user_id = :userId",
+      ExpressionAttributeValues: {
+        ":userId": userId
+      }
+    };
+    const result = await docClient.scan(params).promise();
+
+    if (result.Items.length === 0) {
+      throw new Error("userId not found");
+    }
+    logger.info("user details fetched successfully");
+    return result.Items[0];
+  } catch (error) {
+    console.error("Error getting user object:", error);
+    throw error;
+  }
+}
 
 async function checkIsUserRegistered(userId){
 
@@ -3117,13 +3169,92 @@ app.post("/updateStatus", async (req, res) => {
   }
 });
 
-// const httpsServer = https.createServer(credentials, app);
 
-// httpsServer.listen(PORT, () => {
-//   logger.info(`Server is running on https://localhost:${PORT}`);
-// }); 
+
+app.post("/updateUserClientInteraction", async (req, res) => {
+  const { userPhoneNumber, clientName,eventName ,rewardPoints} = req.body;
+  let newRewardPoints;
+  logger.info("Updating User Client Interaction -> " + userPhoneNumber + ":" + clientName);
+
+  try {
+    // Step 1: Check if there is an entry with the given userPhoneNumber and clientName
+    const getParams = {
+      TableName: userClientInteractionTable,
+      Key: {
+        "user_phone_number": userPhoneNumber,
+        "client_name": clientName
+      }
+    };
+
+    const getResult = await docClient.get(getParams).promise();
+
+    const newTimestampEntry = {
+      event_name: eventName,
+      visited_time: new Date().toISOString()
+    };
+
+    let updateParams;
+
+    if (getResult.Item) {
+      // Entry exists, update the visited_time_stamp array
+      updateParams = {
+        TableName: userClientInteractionTable,
+        Key: {
+          "user_phone_number": userPhoneNumber,
+          "client_name": clientName
+        },
+        UpdateExpression: "SET visited_time_obj = list_append(visited_time_obj, :newTimestampEntry)",
+        ExpressionAttributeValues: {
+          ":newTimestampEntry": [newTimestampEntry]
+        },
+        ReturnValues: "UPDATED_NEW"
+      };
+
+      await docClient.update(updateParams).promise();
+      logger.info("updated the user client interaction table");
+    } else {
+      updateParams = {
+        TableName: userClientInteractionTable,
+        Item: {
+          "user_phone_number": userPhoneNumber,
+          "client_name": clientName,
+          "visited_time_obj": [newTimestampEntry]
+        }
+      };
+
+      await docClient.put(updateParams).promise();
+      logger.info("updated the user client interaction table");
+
+      // Step 3: Update reward points in the users table
+      newRewardPoints = rewardPoints+10;
+      const rewardPointsUpdateParams = {
+        TableName: userrecordstable,
+        Key: { "user_phone_number": userPhoneNumber },
+        UpdateExpression: "SET reward_points = :rewardPoints",
+        ExpressionAttributeValues: {
+          ":rewardPoints": newRewardPoints 
+        },
+        ReturnValues: "UPDATED_NEW"
+      };
+
+      await docClient.update(rewardPointsUpdateParams).promise();
+      logger.info("updated the users table with updated reward points");
+    }
+
+    res.status(200).send({"clientName":clientName,"rewardPoints":newRewardPoints});
+  } catch (err) {
+    logger.error(err.message);
+    res.status(500).send(err.message);
+  }
+});
+
+  const httpsServer = https.createServer(credentials, app);
+
+  httpsServer.listen(PORT, () => {
+    logger.info(`Server is running on https://localhost:${PORT}`);
+  });
 
 // //**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
- app.listen(PORT ,() => {
- logger.info(`Server started on http://localhost:${PORT}`);
- });
+//  app.listen(PORT ,() => {
+//  logger.info(`Server started on http://localhost:${PORT}`);
+//  });
