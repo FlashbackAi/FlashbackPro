@@ -118,6 +118,7 @@ import React from 'react'
 //import useWindowSize from 'react-use/lib/useWindowSize'
 import Confetti from 'react-confetti'
 import logo from "../../media/images/logoCropped.png"
+import Header from '../../components/Header/Header';
 
 function Home () {
   //const { width, height } = useWindowSize()
@@ -128,15 +129,7 @@ function Home () {
 
     <Confetti opacity="0.7" friction="0.95 "
     />
-     <div className="loginLogoBox">
-          <h2>
-            FlashB
-            <span>
-              <img alt='logo' src={logo} />
-            </span>
-            ck
-          </h2>
-        </div>
+     <Header dontshowredeem={true}/>
     {/* <p className="loginLogo">Flashback<p className="logoCaption">Create & share memories</p></p> */}
     <p className="Congrats"> Congratulations!! <br/><br/>You are successfully registered for the event!  </p>
         <p> </p>
