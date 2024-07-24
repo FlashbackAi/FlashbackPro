@@ -98,7 +98,7 @@
 // // export default EventSelector;
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import './EventSelector.css';
 
 const events = [
@@ -138,7 +138,11 @@ const subEvents = [
 const EventSelector = () => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [selectedSubEvents, setSelectedSubEvents] = useState([]);
+  const location = useLocation();
+  const userName = location.state?.userName;
   const navigate = useNavigate();
+
+  console.log(userName);
 
   const handleEventClick = (event) => {
     setSelectedEvent(event);
@@ -154,12 +158,17 @@ const EventSelector = () => {
   };
 
   const handleNextClick = () => {
+    console.log(selectedEvent);
     navigate('/createEventForm', {
       state: {
-        selectedSubEvents
+        selectedEvent,
+        selectedSubEvents,
+        userName,
       }
     });
   };
+
+  console.log(selectedEvent);
 
   return (
     <div className='event-selector-wrapper'>

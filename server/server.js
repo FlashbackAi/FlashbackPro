@@ -2846,7 +2846,8 @@ app.post('/saveProjectDetails', upload.single('image'), async (req, res) => {
         project_name: projectName,
         client_name: clientName,
         project_image: imageUrl,
-        project_created_date:new Date().toISOString()
+        project_created_date:new Date().toISOString(),
+        project_type: projectType
       },
     };
 

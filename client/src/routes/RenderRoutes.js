@@ -15,9 +15,8 @@ const isTokenExpired = (token) => {
 };
 
 const ProtectedRoute = ({ children }) => {
-  let location = useLocation();
-  const token = localStorage.getItem("accessToken");
-  const isAuthenticated = token && !isTokenExpired(token);
+ const isAuthenticated = !!sessionStorage.getItem('userphoneNumber');
+ let location = useLocation();
 
   return isAuthenticated ? (
     children

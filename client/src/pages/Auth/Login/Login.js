@@ -77,7 +77,7 @@ function Login() {
     isToastDisp.current = true;
   }, []);
 
-  const from = location.state?.from || "/home";
+  const from = location.state?.from || "/event";
 
   useEffect(() => {
     const loadModels = async () => {
@@ -195,9 +195,13 @@ function Login() {
     event.preventDefault();
     const fullPhoneNumber = countryCode + phoneNumber;
     let userSource = "flashback";
-    if (from.includes("photos")) {
+    // if (from.includes("photos")) {
+    //   userSource = "flashback-pro";
+    // }
+    if (typeof from === 'string' && from.includes("photos")) {
       userSource = "flashback-pro";
     }
+    
     const response = await API_UTIL.post(`/createUser`, {
       username: fullPhoneNumber,
       eventName: eventName,
@@ -211,7 +215,7 @@ function Login() {
         position: "top-center",
       });
     } else if (response.status === 200) {
-      if (from.includes("photos")) {
+      if (typeof from === 'string' && from.includes("photos")) {
         try {
           const urlArray = from.split("/");
           const response = await API_UTIL.post(`/userIdPhoneNumberMapping`, {
@@ -230,7 +234,7 @@ function Login() {
       } else {
         navigate(from);
       }
-      sessionStorage.setItem('phoneNumber', fullPhoneNumber);
+      sessionStorage.setItem('userphoneNumber', fullPhoneNumber);
       toast(
         `hey ${fullPhoneNumber}, you already exist. Have a great event ahead..`,
         { position: "top-center" }

@@ -175,7 +175,7 @@ const ROUTES=[
     {
         path:"/Event",
         exact:false,
-        protected:false,
+        protected:true,
         component:EventMain,
     },
     {
