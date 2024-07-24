@@ -2933,8 +2933,8 @@ app.post('/deleteProjectDetails', async (req, res) => {
 });
 
 
-app.put('/updateEvent/:eventName/:eventDate', async (req, res) => {
-  const { eventName, eventDate } = req.params;
+app.put('/updateEvent/:eventName/:projectName', async (req, res) => {
+  const { eventName, projectName } = req.params;
   const {
     invitationNote,
     eventLocation,
@@ -2949,7 +2949,7 @@ app.put('/updateEvent/:eventName/:eventDate', async (req, res) => {
     TableName: eventsTable,
     Key: {
       event_name: eventName,
-      event_date: eventDate,
+      project_name: projectName,
     },
     UpdateExpression: "set event_location = :eventLocation, invitation_note = :invitationNote, street = :street, city = :city, #st = :state, pin_code = :pinCode, invitation_url = :invitation_url",
     ExpressionAttributeNames: {
@@ -2980,14 +2980,14 @@ app.put('/updateEvent/:eventName/:eventDate', async (req, res) => {
 
 
 // API endpoint to delete an event
-app.delete('/deleteEvent/:eventName/:eventDate', async (req, res) => {
-  const { eventName, eventDate } = req.params;
+app.delete('/deleteEvent/:eventName/:projectName', async (req, res) => {
+  const { eventName, projectName } = req.params;
 
   const params = {
     TableName: eventsTable,
     Key: {
       event_name: eventName,
-      event_date: eventDate,
+      project_name: projectName,
     }
   };
   logger.info(params.Key)
@@ -3003,24 +3003,85 @@ app.delete('/deleteEvent/:eventName/:eventDate', async (req, res) => {
 
 app.post("/deleteEvent", async (req, res) => {
   const eventName = req.body.eventName;
-  const eventDate = req.body.eventDate;
+  const eventDate = req.body.projectName;
   logger.info("Deleting Event: " + eventName);
+    try {
+      const eventParams = {
+        TableName: eventsTable,
+        Key: {
+          event_name: eventName,
+          project_name:projectName
+        }
+      };
+      const deleteResult = await docClient.delete(eventParams).promise();
+      logger.info("Event Deleted Successfully: " + eventName);
+      res.status(200).send({"message": "Event Deleted Successfully"});
+    } catch (err) {
+      logger.info(err.message);
+      res.status(500).send(err.message);
+    }
+});
+
+
+app.get("/getProjectDetails/:clientName", async (req, res) => {
+  
+  const clientName = req.params.clientName; // Adjust based on your token payload
+  logger.info(`Fetching event details for ${clientName}`)
   try {
-    const eventParams = {
-      TableName: eventsTable,
-      Key: {
-        event_name: eventName,
-        event_date:eventDate
+    const projectParams = {
+      TableName: projectsTable,
+      FilterExpression: "client_name = :clientName",
+      ExpressionAttributeValues: {
+        ":clientName": clientName
       }
+
     };
-    const deleteResult = await docClient.delete(eventParams).promise();
-    logger.info("Event Deleted Successfully: " + eventName);
-    res.status(200).send({"message": "Event Deleted Successfully"});
+
+
+    const result = await docClient.scan(projectParams).promise();
+
+    if (result.Items && result.Items.length > 0) {
+      logger.info(`Fetched project details for ${clientName}`)
+      res.status(200).send(result.Items);
+    } else {
+      res.status(404).send({ message: "No events found for this client" });
+    }
   } catch (err) {
     logger.info(err.message);
     res.status(500).send(err.message);
   }
 });
+
+
+app.get("/getEventDetails/:projectName", async (req, res) => {
+  
+  const projectName = req.params.projectName; // Adjust based on your token payload
+  logger.info(`Fetching event details for ${projectName}`)
+  try {
+    const projectParams = {
+      TableName: projectsTable,
+      FilterExpression: "project_name = :projectName",
+      ExpressionAttributeValues: {
+        ":projectName": projectName
+      }
+
+    };
+
+
+    const result = await docClient.scan(projectParams).promise();
+
+    if (result.Items && result.Items.length > 0) {
+      logger.info(`Fetched project details for ${projectName}`)
+      res.status(200).send(result.Items);
+    } else {
+      res.status(404).send({ message: "No events found for this project" });
+    }
+  } catch (err) {
+    logger.info(err.message);
+    res.status(500).send(err.message);
+  }
+});
+
 
 const uploadStatus = new Map();
 
@@ -3097,46 +3158,6 @@ app.post('/uploadFiles/:eventName/:eventDate/:folder_name', upload.array('files'
   }
 });
 
-// app.get('/upload-status/:fileId', async (req, res) => {
-//   try {
-//     const { fileId } = req.params;
-//     const status = uploadStatus.get(fileId) || { status: 'not found' };
-//     res.json(status);
-//   } catch (error) {
-//     console.error('Error fetching upload status:', error);
-//     res.status(500).json({ error: 'Error fetching upload status' });
-//   }
-// });
-
-
-app.get("/getProjectDetails/:clientName", async (req, res) => {
-  
-  const clientName = req.params.clientName; // Adjust based on your token payload
-  logger.info(`Fetching event details for ${clientName}`)
-  try {
-    const projectParams = {
-      TableName: projectsTable,
-      FilterExpression: "client_name = :clientName",
-      ExpressionAttributeValues: {
-        ":clientName": clientName
-      }
-
-    };
-
-
-    const result = await docClient.scan(projectParams).promise();
-
-    if (result.Items && result.Items.length > 0) {
-      logger.info(`Fetched project details for ${clientName}`)
-      res.status(200).send(result.Items);
-    } else {
-      res.status(404).send({ message: "No events found for this client" });
-    }
-  } catch (err) {
-    logger.info(err.message);
-    res.status(500).send(err.message);
-  }
-});
 
 
 
@@ -3269,10 +3290,10 @@ app.post("/updateUserClientInteraction", async (req, res) => {
 });
 
 
-app.get("/fetchUserDetails",async (req,res)=>{
+app.get("/fetchUserDetails/:userPhoneNumber",async (req,res)=>{
 
   try{
-    const userPhoneNumber =req.body.userPhoneNumber;
+    const userPhoneNumber =req.params.userPhoneNumber;
     const result = await getUserObjectByUserPhoneNumber(userPhoneNumber);
     res.send({"message":"Successfully fetched user details","data":result});
   }
@@ -3323,7 +3344,6 @@ app.post("/updateUserDetails", async (req, res) => {
       res.status(500).json({ error: "Could not update user details" });
   }
 });
-
   const httpsServer = https.createServer(credentials, app);
 
   httpsServer.listen(PORT, () => {
