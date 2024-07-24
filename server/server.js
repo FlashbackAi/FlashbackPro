@@ -106,6 +106,7 @@ const userEventTableName='user_event_mapping';
 const userOutputTable='user_outputs';
 const userClientInteractionTable ='user_client_interaction';
 const eventsTable = 'events';
+const eventsDataTable = 'events_data';
 const projectsTable = 'projects_data';
 const indexedDataTableName = 'indexed_data'
 const formDataTableName = 'selectionFormData'; 
@@ -2818,6 +2819,8 @@ app.post('/saveProjectDetails', upload.single('image'), async (req, res) => {
   const file = req.file;
   const projectName = req.body.projectName;
   const clientName = req.body.clientName;
+  const projectType = req.body.projectType;
+  const events = req.body.events;
 
   logger.info('Saving project Info:', projectName); 
 
@@ -2848,6 +2851,17 @@ app.post('/saveProjectDetails', upload.single('image'), async (req, res) => {
     };
 
     const putResult = await docClient.put(projectParams).promise();
+    events.map(async (event,index)=>{
+      const eventParams = {
+        TableName: eventsDataTable,
+        Item: {
+          project_name: projectName,
+          event_name: event,
+          event_created_date:new Date().toISOString()
+        },
+      };
+    })
+
     logger.info('Project Created Successfully: ' + projectName);
     res.status(200).send({ message: 'Event Created Successfully', projectName: imageUrl });
   } catch (error) {
