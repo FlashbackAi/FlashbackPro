@@ -80,3 +80,7 @@
       height: auto;
     }
   }
+
+.second-header-container {
+  display: none !important;
+}

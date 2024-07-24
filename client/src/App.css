@@ -1214,6 +1214,7 @@ li {
 }
 
 .imageToolBox > div {
+  padding-left: 2.5em;
   letter-spacing: 1px;
   font-size: 1em;
   font-weight: 600;

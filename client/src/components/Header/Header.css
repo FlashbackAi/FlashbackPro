@@ -15,6 +15,7 @@ header {
 .stickToTop{
   position: sticky;
   top: 0;
+  padding-bottom: 1em;
 }
 
 .m_Bottom_Low {
@@ -68,7 +69,9 @@ header h3 {
   /* padding: 10px; */
   position: sticky;
   z-index: 12;
-  background-color: #1c1c1c;
+  background-color: #5a5959;
+  padding: 0.5em;
+  margin: 0.5em;
 }
 
 .second-header-container h1 {
@@ -78,19 +81,22 @@ header h3 {
 
 .second-header-container div,
 .second-header-container a {
-  display: flex;
+  display: inline-block;
   align-items: center;
 }
 
 .second-header-container img {
-  width: 24px; /* Adjust size as needed */
+  width: 1.25em;
   height: auto;
   margin-left: 10px;
+  margin-top: 0.25em;
 }
 
 .redeem-points {
   font-size: 0.6em;
   cursor: pointer;
+  color: #bbb6b6;
+  font-weight: bold;
 }
 
 .popup {
@@ -114,21 +120,26 @@ header h3 {
 }
 
 .popup-content h2 {
-  margin-top: 0;
-  color: aliceblue;
+  padding: 1em;
+  color: #bbb6b6;
 }
 
+.popup-content h4 {
+  color: #bbb6b6;
+}
+
+
 .popup-content p {
-  color: antiquewhite;
+  color: #bbb6b6;
 }
 
 .popup-content button {
   margin-top: 3em;
-  padding: 0.1em 0.2em;
+  padding: 0.25em 0.25em;
   background: #b48e75;
-  color: white;
+  color: inherit;
   border: none;
   border-radius: 5px;
   cursor: pointer;
+  font-weight: bold;
 }
-

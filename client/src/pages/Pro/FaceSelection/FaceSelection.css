@@ -16,7 +16,7 @@ html::-webkit-scrollbar {
 }
 
 .albumSelectionForm {
-  display: flex;
+  display: ruby-text;
   flex-direction: column;
   justify-content: center;
   align-items: center;
@@ -49,7 +49,8 @@ button {
   color: #c1c1c1;
 }
 section {
-padding: 25px !important;
+  padding: 0em !important;
+  text-align: left;
 }
 
 .entry {
@@ -464,4 +465,8 @@ button {
   height: auto;
   justify-content: center;
   object-fit: cover; 
+}
+
+.second-header-container {
+  display: none;
 }
