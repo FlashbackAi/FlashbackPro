@@ -2856,6 +2856,86 @@ app.post('/saveProjectDetails', upload.single('image'), async (req, res) => {
   }
 });
 
+app.post('/saveEventDetails', upload.single('image'), async (req, res) => {
+  const file = req.file;
+  //  logger.info(file);
+  const {
+    eventName,
+    eventDate,
+    projectName,
+    eventLocation,
+    street,
+    city,
+    state,
+    pinCode,
+    invitationNote,
+    invitation_url
+  } = req.body;
+
+  logger.info('Event Location:', eventLocation); 
+
+  const fileKey = `${projectName}-${eventName}.jpg`;
+
+  const eventNameWithoutSpaces = eventName.replace(/\s+/g, '_');
+  const formattedEventCreateDate = eventDate.split('T')[0].replace(/-/g,'');
+  const CreateUploadFolderName = `${eventNameWithoutSpaces}_${formattedEventCreateDate}`;
+  logger.info('CreateUploadFolderName:', CreateUploadFolderName);
+
+  const createfolderparams = {
+    Bucket: indexBucketName,
+    Key: `${CreateUploadFolderName}/`,
+    Body: ''
+  };
+
+  const params = {
+    Bucket: "flashbackeventthumbnail",
+    Key: fileKey,
+    Body: file.buffer,
+    ContentType: file.mimetype,
+  };
+
+
+  try {
+    s3.putObject(createfolderparams).promise();
+    logger.info('Folder created successfully:', CreateUploadFolderName);
+  } catch (s3Error) {
+    logger.info('S3 error details:', JSON.stringify(s3Error, null, 2));
+    throw new Error(`Failed to create S3 folder: ${s3Error.message}`);
+  }
+
+  try {
+    // Upload image to S3
+    const data = await s3.upload(params).promise();
+    const imageUrl = data.Location;
+
+    // Save event details to DynamoDB
+    const eventParams = {
+      TableName: eventsTable,
+      Item: {
+        event_name: eventName,
+        client_name: clientName,
+        event_date: eventDate,
+        event_location: eventLocation,
+        street,
+        city,
+        state,
+        pin_code: pinCode,
+        invitation_note: invitationNote,
+        invitation_url: invitation_url,
+        event_image: imageUrl,
+        folder_name: CreateUploadFolderName
+      },
+    };
+
+    const putResult = await docClient.put(eventParams).promise();
+    logger.info('Event Created Successfully: ' + eventName);
+    res.status(200).send({ message: 'Event Created Successfully', eventImage: imageUrl });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Error creating event' });
+  }
+});
+
 
 app.post('/deleteProjectDetails', async (req, res) => {
   const projectName = req.body.projectName;
