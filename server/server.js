@@ -106,6 +106,7 @@ const userEventTableName='user_event_mapping';
 const userOutputTable='user_outputs';
 const userClientInteractionTable ='user_client_interaction';
 const eventsTable = 'events';
+const projectsTable = 'projects_data';
 const indexedDataTableName = 'indexed_data'
 const formDataTableName = 'selectionFormData'; 
 const recokgImages = 'RekognitionImageProperties';
@@ -1233,7 +1234,7 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
     logger.info("total"+result.Items.length)
     if(!lastEvaluatedKey && isFavourites){
       clientObject = await getClientObject(eventName);
-      userObject = await getUserObject(userId);
+      userObject = await getUserObjectByUserId(userId);
     }
        
     
@@ -1342,7 +1343,7 @@ async function getClientObject(eventName) {
   }
 }
 
-async function getUserObject(userId){
+async function getUserObjectByUserId(userId){
   try{
     logger.info("getting user info for userId : "+userId);
     params = {
@@ -1356,6 +1357,29 @@ async function getUserObject(userId){
 
     if (result.Items.length === 0) {
       throw new Error("userId not found");
+    }
+    logger.info("user details fetched successfully");
+    return result.Items[0];
+  } catch (error) {
+    console.error("Error getting user object:", error);
+    throw error;
+  }
+}
+
+async function getUserObjectByUserPhoneNumber(userPhoneNumber){
+  try{
+    logger.info("getting user info for userPhoneNumber : "+userPhoneNumber);
+    params = {
+      TableName: userrecordstable,
+      FilterExpression: "user_phone_number = :userPhoneNumber",
+      ExpressionAttributeValues: {
+        ":userPhoneNumber": userPhoneNumber
+      }
+    };
+    const result = await docClient.scan(params).promise();
+
+    if (result.Items.length === 0) {
+      throw new Error("userPhoneNumber not found");
     }
     logger.info("user details fetched successfully");
     return result.Items[0];
@@ -2322,6 +2346,10 @@ app.post('/downloadImage', async (req, res) => {
         };  
         const data = await docClient.get(params).promise();
         logger.info("Successfully fetched form data for  event name ->"+event_name +" form owner -> "+form_owner );
+
+        // const clientObject = await getClientObject(event_name);
+        // const userObject = await getUserObject(userId);
+        // res.send({'data':data.Item,'clientObj':clientObject,'userObj':userObject});
         res.send(data.Item);
       }
       catch(error){
@@ -2784,36 +2812,16 @@ app.post("/saveSelectedImage", async (req, res) => {
   }
 });
 
-app.post('/saveEventDetails', upload.single('image'), async (req, res) => {
+
+
+app.post('/saveProjectDetails', upload.single('image'), async (req, res) => {
   const file = req.file;
-  //  logger.info(file);
-  const {
-    eventName,
-    eventDate,
-    clientName,
-    eventLocation,
-    street,
-    city,
-    state,
-    pinCode,
-    invitationNote,
-    invitation_url
-  } = req.body;
+  const projectName = req.body.projectName;
+  const clientName = req.body.clientName;
 
-  logger.info('Event Location:', eventLocation); 
+  logger.info('Saving project Info:', projectName); 
 
-  const fileKey = `${clientName}-${eventName}.jpg`;
-
-  const eventNameWithoutSpaces = eventName.replace(/\s+/g, '_');
-  const formattedEventCreateDate = eventDate.split('T')[0].replace(/-/g,'');
-  const CreateUploadFolderName = `${eventNameWithoutSpaces}_${formattedEventCreateDate}`;
-  logger.info('CreateUploadFolderName:', CreateUploadFolderName);
-
-  const createfolderparams = {
-    Bucket: indexBucketName,
-    Key: `${CreateUploadFolderName}/`,
-    Body: ''
-  };
+  const fileKey = `${projectName}-${clientName}.jpg`;
 
   const params = {
     Bucket: "flashbackeventthumbnail",
@@ -2824,94 +2832,106 @@ app.post('/saveEventDetails', upload.single('image'), async (req, res) => {
 
 
   try {
-    s3.putObject(createfolderparams).promise();
-    logger.info('Folder created successfully:', CreateUploadFolderName);
-  } catch (s3Error) {
-    logger.info('S3 error details:', JSON.stringify(s3Error, null, 2));
-    throw new Error(`Failed to create S3 folder: ${s3Error.message}`);
-  }
-
-  try {
     // Upload image to S3
     const data = await s3.upload(params).promise();
     const imageUrl = data.Location;
 
-    // Save event details to DynamoDB
-    const eventParams = {
-      TableName: eventsTable,
+    // Save project details to DynamoDB
+    const projectParams = {
+      TableName: projectsTable,
       Item: {
-        event_name: eventName,
+        project_name: projectName,
         client_name: clientName,
-        event_date: eventDate,
-        event_location: eventLocation,
-        street,
-        city,
-        state,
-        pin_code: pinCode,
-        invitation_note: invitationNote,
-        invitation_url: invitation_url,
-        event_image: imageUrl,
-        folder_name: CreateUploadFolderName
+        project_image: imageUrl,
+        project_created_date:new Date().toISOString()
       },
     };
 
-    const putResult = await docClient.put(eventParams).promise();
-    logger.info('Event Created Successfully: ' + eventName);
-    res.status(200).send({ message: 'Event Created Successfully', eventImage: imageUrl });
+    const putResult = await docClient.put(projectParams).promise();
+    logger.info('Project Created Successfully: ' + projectName);
+    res.status(200).send({ message: 'Event Created Successfully', projectName: imageUrl });
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Error creating event' });
   }
 });
 
-// Endpoint to update an event
-// app.put('/updateEvent/:eventName/:eventDate', async (req, res) => {
-//   const { eventName, eventDate } = req.params;
-//   const {
-//     eventName: newEventName,
-//     eventDate: newEventDate,
-//     invitationNote,
-//     eventLocation,
-//     street,
-//     city,
-//     state: newState,
-//     pinCode,
-//     invitation_url
-//   } = req.body;
 
-//   const updateParams = {
-//     TableName: eventsTable,
-//     Key: {
-//       event_name: eventName,
-//       event_date: eventDate,
-//     },
-//     UpdateExpression: "set event_name = :newEventName, event_date = :newEventDate, event_location = :eventLocation,invitation_note = :invitationNote, street = :street, city = :city, #st = :state, pin_code = :pinCode, invitation_url = :invitation_url",
-//     ExpressionAttributeNames: {
-//       "#st": "state",
-//     },
-//     ExpressionAttributeValues: {
-//       ":newEventName": newEventName,
-//       ":newEventDate": newEventDate,
-//       ":eventLocation": eventLocation,
-//       ":invitationNote": invitationNote, 
-//       ":street": street,
-//       ":city": city,
-//       ":state": newState,
-//       ":pinCode": pinCode,
-//       ":invitation_url": invitation_url,
-//     },
-//     ReturnValues: "ALL_NEW",
-//   };
+app.post('/deleteProjectDetails', async (req, res) => {
+  const projectName = req.body.projectName;
+  const clientName = req.body.clientName;
 
-//   try {
-//     const result = await docClient.update(updateParams).promise();
-//     logger.info(`Updated event: ${eventName} on ${eventDate}`);
-//     res.status(200).send(result.Attributes);
-//   } catch (err) {
-//     logger.info(err.message);
-//     res.status(500).send({ error: 'Failed to update the event' });
-//   }
-// });
+  logger.info('Deleting project Info:', projectName);
+
+  const fileKey = `${projectName}-${clientName}.jpg`;
+
+  // Set up parameters for S3 deletion
+  const deleteParams = {
+    Bucket: "flashbackeventthumbnail",
+    Key: fileKey,
+  };
+
+  try {
+    // Delete image from S3
+    await s3.deleteObject(deleteParams).promise();
+    logger.info('Image Deleted Successfully:', fileKey);
+
+    // Set up parameters for deleting project details from DynamoDB
+    const deleteProjectParams = {
+      TableName: projectsTable,
+      Key: {
+        project_name: projectName,
+        client_name: clientName
+      }
+    };
+
+    // Delete project details from DynamoDB
+    await docClient.delete(deleteProjectParams).promise();
+    logger.info('Project Deleted Successfully:', projectName);
+
+    // Query for related events in the Events table
+    const scanParams = {
+      TableName: eventsTable,
+      FilterExpression: "project_name = :projectName",
+      ExpressionAttributeValues: {
+        ':projectName': projectName
+      }
+    };
+
+    const eventsData = await docClient.scan(scanParams).promise();
+
+    // Extract S3 keys from event URLs and delete the events
+    const deleteEventPromises = eventsData.Items.map(async event => {
+      const eventImageUrl = event.event_image; // Assuming event_image_url is the field containing the URL
+      const eventFileKey = eventImageUrl.split('/').pop(); // Extract the key from the URL
+
+      // Delete the event image from S3
+      const deleteEventImageParams = {
+        Bucket: "flashbackeventthumbnail",
+        Key: eventFileKey
+      };
+      await s3.deleteObject(deleteEventImageParams).promise();
+
+      // Delete the event from DynamoDB
+      const deleteEventParams = {
+        TableName: eventsTable,
+        Key: {
+          event_id: event.event_name // Assuming event_id is the primary key
+        }
+      };
+      return docClient.delete(deleteEventParams).promise();
+    });
+
+    await Promise.all(deleteEventPromises);
+    logger.info('All related events and their images deleted successfully.');
+
+    res.status(200).send({ message: 'Project and related events deleted successfully' });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Error deleting project and related events' });
+  }
+});
+
 
 app.put('/updateEvent/:eventName/:eventDate', async (req, res) => {
   const { eventName, eventDate } = req.params;
@@ -3247,6 +3267,19 @@ app.post("/updateUserClientInteraction", async (req, res) => {
     res.status(500).send(err.message);
   }
 });
+
+
+app.get("/fetchUserDetails",async (req,res)=>{
+
+  try{
+    const userPhoneNumber =req.body.userPhoneNumber;
+    const result = await getUserObjectByUserPhoneNumber(userPhoneNumber);
+    res.send(result);
+  }
+  catch(err){
+    res.status(500).send(err.message);
+  }
+})
 
   const httpsServer = https.createServer(credentials, app);
 
