@@ -3464,6 +3464,7 @@ app.post("/updateUserDetails", async (req, res) => {
   httpsServer.listen(PORT, () => {
     logger.info(`Server is running on https://localhost:${PORT}`);
   });
+  
 
 // //**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
 //  app.listen(PORT ,() => {
