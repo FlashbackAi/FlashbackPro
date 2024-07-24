@@ -3109,13 +3109,13 @@ app.post('/uploadFiles/:eventName/:eventDate/:folder_name', upload.array('files'
 // });
 
 
-app.get("/getClientEventDetails/:clientName", async (req, res) => {
+app.get("/getProjectDetails/:clientName", async (req, res) => {
   
   const clientName = req.params.clientName; // Adjust based on your token payload
   logger.info(`Fetching event details for ${clientName}`)
   try {
-    const eventParams = {
-      TableName: eventsTable,
+    const projectParams = {
+      TableName: projectsTable,
       FilterExpression: "client_name = :clientName",
       ExpressionAttributeValues: {
         ":clientName": clientName
@@ -3124,10 +3124,10 @@ app.get("/getClientEventDetails/:clientName", async (req, res) => {
     };
 
 
-    const result = await docClient.scan(eventParams).promise();
+    const result = await docClient.scan(projectParams).promise();
 
     if (result.Items && result.Items.length > 0) {
-      logger.info(`Fetched event details for ${clientName}`)
+      logger.info(`Fetched project details for ${clientName}`)
       res.status(200).send(result.Items);
     } else {
       res.status(404).send({ message: "No events found for this client" });
@@ -3274,12 +3274,55 @@ app.get("/fetchUserDetails",async (req,res)=>{
   try{
     const userPhoneNumber =req.body.userPhoneNumber;
     const result = await getUserObjectByUserPhoneNumber(userPhoneNumber);
-    res.send(result);
+    res.send({"message":"Successfully fetched user details","data":result});
   }
   catch(err){
     res.status(500).send(err.message);
   }
 })
+
+app.post("/updateUserDetails", async (req, res) => {
+  const { user_phone_number, ...updateFields } = req.body;
+
+  logger.info("Updating the user info for the user_name: ",user_phone_number)
+  
+  if (!user_phone_number) {
+      return res.status(400).json({ error: "User phone number is required" });
+  }
+
+  if (Object.keys(updateFields).length === 0) {
+      return res.status(400).json({ error: "At least one field to update must be provided" });
+  }
+
+  const updateExpressions = [];
+  const expressionAttributeNames = {};
+  const expressionAttributeValues = {};
+
+  Object.keys(updateFields).forEach(key => {
+      updateExpressions.push(`#${key} = :${key}`);
+      expressionAttributeNames[`#${key}`] = key;
+      expressionAttributeValues[`:${key}`] = updateFields[key];
+  });
+
+  const params = {
+      TableName: userrecordstable,
+      Key: {
+          user_phone_number: user_phone_number
+      },
+      UpdateExpression: `SET ${updateExpressions.join(', ')}`,
+      ExpressionAttributeNames: expressionAttributeNames,
+      ExpressionAttributeValues: expressionAttributeValues,
+      ReturnValues: 'ALL_NEW'
+  };
+
+  try {
+      const result = await docClient.update(params).promise();
+      res.status(200).json({ message: "User details updated successfully", data: result.Attributes });
+  } catch (error) {
+      console.error("Error updating user details:", error);
+      res.status(500).json({ error: "Could not update user details" });
+  }
+});
 
   const httpsServer = https.createServer(credentials, app);
 
