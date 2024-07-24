@@ -2857,7 +2857,8 @@ app.post('/saveProjectDetails', upload.single('image'), async (req, res) => {
         Item: {
           project_name: projectName,
           event_name: event,
-          event_created_date:new Date().toISOString()
+          event_created_date:new Date().toISOString(),
+          user_deduplication_processed:false
         },
       };
     })
