@@ -2863,6 +2863,23 @@ app.post('/saveProjectDetails', upload.single('image'), async (req, res) => {
       };
       const putResult = await docClient.put(eventParams).promise();
       logger.info("Saved event: ",event);
+      const eventNameWithoutSpaces = event.replace(/\s+/g, '_');
+      const CreateUploadFolderName = `${eventNameWithoutSpaces}`;
+      logger.info('CreateUploadFolderName:', CreateUploadFolderName);
+    
+      const createfolderparams = {
+        Bucket: indexBucketName,
+        Key: `${CreateUploadFolderName}/`,
+        Body: ''
+      };
+    
+      try {
+        s3.putObject(createfolderparams).promise();
+        logger.info('Folder created successfully:', CreateUploadFolderName);
+      } catch (s3Error) {
+        logger.info('S3 error details:', JSON.stringify(s3Error, null, 2));
+        throw new Error(`Failed to create S3 folder: ${s3Error.message}`);
+      }
     })
 
     logger.info('Project Created Successfully: ' + projectName);
