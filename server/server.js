@@ -2861,6 +2861,8 @@ app.post('/saveProjectDetails', upload.single('image'), async (req, res) => {
           user_deduplication_processed:false
         },
       };
+      const putResult = await docClient.put(eventParams).promise();
+      logger.info("Saved event: ",event);
     })
 
     logger.info('Project Created Successfully: ' + projectName);
