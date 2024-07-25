@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import "../AlbumSelectionForm/AlbumSelectionForm.css";
 import "./PhotoSelection.css";
 import Header from "../../../components/Header/Header";
 import { motion } from "framer-motion";
@@ -92,7 +91,7 @@ const PhotoSelection = () => {
     if (element) {
       element.classList.add("hidden");
     } else {
-      console.log(`Element not found for imageUrl ${imageUrl}`);
+      //console.log(`Element not found for imageUrl ${imageUrl}`);
     }
   };
 

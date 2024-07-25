@@ -56,4 +56,35 @@
   .submit-button:hover {
     background-color: #0056b3;
   }
+  .add-project-button {
+    background-color: #1e293b;
+    color: #ffffff;
+    border: none;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    margin-right: 0.5rem;
+    font-size: 1rem;
+    transition: background-color 0.2s;
+  }
+  
+  .add-project-button:hover {
+    background-color: #374151;
+  }
+  
+  .save-project-button {
+    background-color: #4CAF50;
+    color: #ffffff;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-top: 0.5rem;
+    transition: background-color 0.2s;
+  }
+  
+  .save-project-button:hover {
+    background-color: #45a049;
+  }
   

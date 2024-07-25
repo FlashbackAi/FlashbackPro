@@ -8,13 +8,10 @@ import Home from "../pages/Home/Home";
 import CreateFlashBack from "../pages/CreateFlashback/CreateFlashBack";
 import Profile from "../pages/Profile/Profile";
 import ImagesPage from "../pages/ImagesPage/ImagesPage";
-import Flashs from "../pages/Flashs/Flashs";
-import Pro from "../pages/Pro/Pro";
-import AlbumSelection from "../pages/Pro/AlbumSelection/AlbumSelection";
+import Pro from "../pages/Pro/ProShare/Pro";
 import TermsAndConditions from "../pages/TermsAndConditions/TermsAndConditions";
 import Collage from "../pages/Edit/Collage/Collage";
 import SharedImage from "../pages/ImagesPage/SharedImage";
-import AlbumSelectionForm from "../pages/Pro/AlbumSelectionForm/AlbumSelectionForm";
 import PhotoSelection from "../pages/Pro/PhotoSelection/PhotoSelection";
 import FaceSelection from "../pages/Pro/FaceSelection/FaceSelection";
 import Event from "../pages/Event/Event";
@@ -24,6 +21,7 @@ import About from "../pages/About/About";
 import EventMain from "../pages/Event/EventMain";
 import EventSelector from "../pages/Event/EventSelector";
 import CreateEvents from "../pages/Event/CreateEvents";
+import EventDetails from "../pages/Event/EventDetails/EventDetails";
 
 
 const ROUTES=[
@@ -46,66 +44,66 @@ const ROUTES=[
         //component:Login
         component:LoginEvent,
     },
-    {
-        path:"/registration",
-        exact:false,
-        protected:false,
-        component:Registration
-    },
-    {
-        path:"/forgotPassword",
-        exact:false,
-        protected:false,
-        component:ForgotPassword
-    },
-    {
-        path:"/admin",
-        exact:false,
-        protected:false,
-        component:Admin
-    },
-    {
-        path:"/admin/shareEvents",
-        exact:true,
-        protected:false,
-        component:ShareEvents
-    },
-    {
-        path:"/admin/ShareEvents/:eventName/people",
-        exact:false,
-        protected:false,
-        component:ShareEvents
-    },
+    // {
+    //     path:"/registration",
+    //     exact:false,
+    //     protected:false,
+    //     component:Registration
+    // },
+    // {
+    //     path:"/forgotPassword",
+    //     exact:false,
+    //     protected:false,
+    //     component:ForgotPassword
+    // },
+    // {
+    //     path:"/admin",
+    //     exact:false,
+    //     protected:false,
+    //     component:Admin
+    // },
+    // {
+    //     path:"/admin/shareEvents",
+    //     exact:true,
+    //     protected:false,
+    //     component:ShareEvents
+    // },
+    // {
+    //     path:"/admin/ShareEvents/:eventName/people",
+    //     exact:false,
+    //     protected:false,
+    //     component:ShareEvents
+    // },
     {
         path:"/home",
         exact:false,
         protected:false,
         component:Home
     },
-    {
-        path:"/createFlashback",
-        exact:false,
-        protected:true,
-        component:CreateFlashBack,
-    },
-    {
-        path:"/profile",
-        exact:false,
-        protected:true,
-        component:Profile,
-    },
+    // {
+    //     path:"/createFlashback",
+    //     exact:false,
+    //     protected:true,
+    //     component:CreateFlashBack,
+    // },
+    // {
+    //     path:"/profile",
+    //     exact:false,
+    //     protected:true,
+    //     component:Profile,
+    // },
     {
         path:"/photos/:eventName/:userId",
         exact:false,
         protected:false,
         component:ImagesPage
     },
-    {
-        path:"/pictures/:eventName/:userId",
-        exact:false,
-        protected:false,
-        component:Flashs
-    },
+    // {
+    //     path:"/pictures/:eventName/:userId",
+    //     exact:false,
+    //     protected:false,
+    //     component:Flashs
+    // },
     {
         path:"/pro/:eventName",
         exact:false,
@@ -118,18 +116,18 @@ const ROUTES=[
         protected:false,
         component:TermsAndConditions
     },
-    {
-        path:"/AlbumSelection/:eventName",
-        exact:false,
-        protected:false,
-        component:AlbumSelection
-    },
-    {
-        path:"/form/:eventName",
-        exact:false,
-        protected:false,
-        component:AlbumSelectionForm
-    },
+    // {
+    //     path:"/AlbumSelection/:eventName",
+    //     exact:false,
+    //     protected:false,
+    //     component:AlbumSelection
+    // },
+    // {
+    //     path:"/form/:eventName",
+    //     exact:false,
+    //     protected:false,
+    //     component:AlbumSelectionForm
+    // },
     {
         path:"/relations/:eventName",
         exact:false,
@@ -185,10 +183,16 @@ const ROUTES=[
         component:EventSelector,
     },
     {
-        path:"/createEventForm",
+        path:"/createEventForm/:clientName",
         exact:false,
         protected:false,
         component:CreateEvents,
+    },
+    {
+        path:"/eventDetails/:eventName",
+        exact:false,
+        protected:false,
+        component:EventDetails,
     },
 
     {

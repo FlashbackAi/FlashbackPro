@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import "../AlbumSelectionForm/AlbumSelectionForm.css";
 import "./FaceSelection.css";
 import Header from "../../../components/Header/Header";
 import { ArrowRight, ChevronLeft, Plus } from "lucide-react";

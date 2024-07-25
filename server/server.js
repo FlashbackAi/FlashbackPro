@@ -2815,106 +2815,133 @@ app.post("/saveSelectedImage", async (req, res) => {
 
 
 
-app.post('/saveProjectDetails', upload.single('image'), async (req, res) => {
-  const file = req.file;
+// app.post('/saveProjectDetails', upload.single('image'), async (req, res) => {
+//   const file = req.file;
+//   const projectName = req.body.projectName;
+//   const clientName = req.body.clientName;
+//   const projectType = req.body.projectType;
+//   const events = req.body.events;
+
+//   logger.info('Saving project Info:', projectName); 
+
+//   const fileKey = `${projectName}-${clientName}.jpg`;
+
+//   const params = {
+//     Bucket: "flashbackeventthumbnail",
+//     Key: fileKey,
+//     Body: file.buffer,
+//     ContentType: file.mimetype,
+//   };
+
+
+//   try {
+//     // Upload image to S3
+//     const data = await s3.upload(params).promise();
+//     const imageUrl = data.Location;
+
+//     // Save project details to DynamoDB
+//     const projectParams = {
+//       TableName: projectsTable,
+//       Item: {
+//         project_name: projectName,
+//         client_name: clientName,
+//         project_image: imageUrl,
+//         project_created_date:new Date().toISOString(),
+//         project_type: projectType
+//       },
+//     };
+
+//     const putResult = await docClient.put(projectParams).promise();
+//     events.map(async (event,index)=>{
+//       const eventParams = {
+//         TableName: eventsDataTable,
+//         Item: {
+//           project_name: projectName,
+//           event_name: event,
+//           event_created_date:new Date().toISOString(),
+//           user_deduplication_processed:false
+//         },
+//       };
+//       const putResult = await docClient.put(eventParams).promise();
+//       logger.info("Saved event: ",event);
+//       const eventNameWithoutSpaces = event.replace(/\s+/g, '_');
+//       const CreateUploadFolderName = `${eventNameWithoutSpaces}`;
+//       logger.info('CreateUploadFolderName:', CreateUploadFolderName);
+    
+//       const createfolderparams = {
+//         Bucket: indexBucketName,
+//         Key: `${CreateUploadFolderName}/`,
+//         Body: ''
+//       };
+    
+//       try {
+//         s3.putObject(createfolderparams).promise();
+//         logger.info('Folder created successfully:', CreateUploadFolderName);
+//       } catch (s3Error) {
+//         logger.info('S3 error details:', JSON.stringify(s3Error, null, 2));
+//         throw new Error(`Failed to create S3 folder: ${s3Error.message}`);
+//       }
+//     })
+
+//     logger.info('Project Created Successfully: ' + projectName);
+//     res.status(200).send({ message: 'Event Created Successfully', projectName: imageUrl });
+//   } catch (error) {
+//     console.error('Error:', error);
+//     res.status(500).json({ error: 'Error creating event' });
+//   }
+// });
+
+app.post('/saveProjectDetails', async (req, res) => {
   const projectName = req.body.projectName;
   const clientName = req.body.clientName;
-  const projectType = req.body.projectType;
-  const events = req.body.events;
 
   logger.info('Saving project Info:', projectName); 
 
-  const fileKey = `${projectName}-${clientName}.jpg`;
-
-  const params = {
-    Bucket: "flashbackeventthumbnail",
-    Key: fileKey,
-    Body: file.buffer,
-    ContentType: file.mimetype,
-  };
-
-
   try {
-    // Upload image to S3
-    const data = await s3.upload(params).promise();
-    const imageUrl = data.Location;
-
     // Save project details to DynamoDB
     const projectParams = {
       TableName: projectsTable,
       Item: {
         project_name: projectName,
         client_name: clientName,
-        project_image: imageUrl,
-        project_created_date:new Date().toISOString(),
-        project_type: projectType
+        project_created_date:new Date().toISOString()
       },
     };
 
     const putResult = await docClient.put(projectParams).promise();
-    events.map(async (event,index)=>{
-      const eventParams = {
-        TableName: eventsDataTable,
-        Item: {
-          project_name: projectName,
-          event_name: event,
-          event_created_date:new Date().toISOString(),
-          user_deduplication_processed:false
-        },
-      };
-      const putResult = await docClient.put(eventParams).promise();
-      logger.info("Saved event: ",event);
-      const eventNameWithoutSpaces = event.replace(/\s+/g, '_');
-      const CreateUploadFolderName = `${eventNameWithoutSpaces}`;
-      logger.info('CreateUploadFolderName:', CreateUploadFolderName);
-    
-      const createfolderparams = {
-        Bucket: indexBucketName,
-        Key: `${CreateUploadFolderName}/`,
-        Body: ''
-      };
-    
-      try {
-        s3.putObject(createfolderparams).promise();
-        logger.info('Folder created successfully:', CreateUploadFolderName);
-      } catch (s3Error) {
-        logger.info('S3 error details:', JSON.stringify(s3Error, null, 2));
-        throw new Error(`Failed to create S3 folder: ${s3Error.message}`);
-      }
-    })
 
     logger.info('Project Created Successfully: ' + projectName);
-    res.status(200).send({ message: 'Event Created Successfully', projectName: imageUrl });
+    res.status(200).send({ message: 'Project Created Successfully',data:projectName});
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Error creating event' });
   }
 });
 
-app.post('/saveEventDetails', upload.single('image'), async (req, res) => {
+
+
+app.post('/saveEventDetails', upload.single('eventImage'), async (req, res) => {
   const file = req.file;
   //  logger.info(file);
   const {
     eventName,
     eventDate,
     projectName,
+    clientName,
     eventLocation,
-    street,
-    city,
-    state,
-    pinCode,
     invitationNote,
     invitation_url
   } = req.body;
 
   logger.info('Event Location:', eventLocation); 
 
-  const fileKey = `${projectName}-${eventName}.jpg`;
+ 
 
   const eventNameWithoutSpaces = eventName.replace(/\s+/g, '_');
-  const formattedEventCreateDate = eventDate.split('T')[0].replace(/-/g,'');
-  const CreateUploadFolderName = `${eventNameWithoutSpaces}_${formattedEventCreateDate}`;
+  const clientNameWithoutSpaces = clientName.replace(/\s+/g, '_');
+  const CreateUploadFolderName = `${eventNameWithoutSpaces}_${clientNameWithoutSpaces}`;
   logger.info('CreateUploadFolderName:', CreateUploadFolderName);
+  const fileKey = `${CreateUploadFolderName}.jpg`;
 
   const createfolderparams = {
     Bucket: indexBucketName,
@@ -2940,21 +2967,24 @@ app.post('/saveEventDetails', upload.single('image'), async (req, res) => {
 
   try {
     // Upload image to S3
+
     const data = await s3.upload(params).promise();
     const imageUrl = data.Location;
 
     // Save event details to DynamoDB
+    const eventNameWithoutSpaces = eventName.replace(/\s+/g, '_');
+    const clientNameWithoutSpaces = clientName.replace(/\s+/g, '_');
+    const CreateUploadFolderName = `${eventNameWithoutSpaces}_${clientNameWithoutSpaces}`;
+    logger.info('CreateUploadFolderName:', CreateUploadFolderName);
+  
     const eventParams = {
       TableName: eventsTable,
       Item: {
-        event_name: eventName,
+        event_name: CreateUploadFolderName,
+        project_name:projectName,
         client_name: clientName,
         event_date: eventDate,
         event_location: eventLocation,
-        street,
-        city,
-        state,
-        pin_code: pinCode,
         invitation_note: invitationNote,
         invitation_url: invitation_url,
         event_image: imageUrl,
@@ -2964,88 +2994,195 @@ app.post('/saveEventDetails', upload.single('image'), async (req, res) => {
 
     const putResult = await docClient.put(eventParams).promise();
     logger.info('Event Created Successfully: ' + eventName);
-    res.status(200).send({ message: 'Event Created Successfully', eventImage: imageUrl });
+    res.status(200).send({ message: 'Event Created Successfully', data: putResult });
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Error creating event' });
   }
 });
-
-
-app.post('/deleteProjectDetails', async (req, res) => {
-  const projectName = req.body.projectName;
-  const clientName = req.body.clientName;
-
-  logger.info('Deleting project Info:', projectName);
-
-  const fileKey = `${projectName}-${clientName}.jpg`;
-
-  // Set up parameters for S3 deletion
-  const deleteParams = {
-    Bucket: "flashbackeventthumbnail",
-    Key: fileKey,
-  };
-
+app.get("/getClientEventDetails/:clientName", async (req, res) => {
+  
+  const clientName = req.params.clientName; // Adjust based on your token payload
+  logger.info(`Fetching event details for ${clientName}`)
   try {
-    // Delete image from S3
-    await s3.deleteObject(deleteParams).promise();
-    logger.info('Image Deleted Successfully:', fileKey);
-
-    // Set up parameters for deleting project details from DynamoDB
-    const deleteProjectParams = {
-      TableName: projectsTable,
-      Key: {
-        project_name: projectName,
-        client_name: clientName
-      }
-    };
-
-    // Delete project details from DynamoDB
-    await docClient.delete(deleteProjectParams).promise();
-    logger.info('Project Deleted Successfully:', projectName);
-
-    // Query for related events in the Events table
-    const scanParams = {
+    const eventParams = {
       TableName: eventsTable,
-      FilterExpression: "project_name = :projectName",
+      FilterExpression: "client_name = :clientName",
       ExpressionAttributeValues: {
-        ':projectName': projectName
+        ":clientName": clientName
       }
+
     };
 
-    const eventsData = await docClient.scan(scanParams).promise();
 
-    // Extract S3 keys from event URLs and delete the events
-    const deleteEventPromises = eventsData.Items.map(async event => {
-      const eventImageUrl = event.event_image; // Assuming event_image_url is the field containing the URL
-      const eventFileKey = eventImageUrl.split('/').pop(); // Extract the key from the URL
+    const result = await docClient.scan(eventParams).promise();
 
-      // Delete the event image from S3
-      const deleteEventImageParams = {
-        Bucket: "flashbackeventthumbnail",
-        Key: eventFileKey
-      };
-      await s3.deleteObject(deleteEventImageParams).promise();
-
-      // Delete the event from DynamoDB
-      const deleteEventParams = {
-        TableName: eventsTable,
-        Key: {
-          event_id: event.event_name // Assuming event_id is the primary key
-        }
-      };
-      return docClient.delete(deleteEventParams).promise();
-    });
-
-    await Promise.all(deleteEventPromises);
-    logger.info('All related events and their images deleted successfully.');
-
-    res.status(200).send({ message: 'Project and related events deleted successfully' });
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ error: 'Error deleting project and related events' });
+    if (result.Items && result.Items.length > 0) {
+      logger.info(`Fetched event details for ${clientName}`)
+      res.status(200).send(result.Items);
+    } 
+  } catch (err) {
+    logger.info(err.message);
+    res.status(500).send(err.message);
   }
 });
+
+
+// app.post('/saveEventDetails', upload.single('image'), async (req, res) => {
+//   const file = req.file;
+//   //  logger.info(file);
+//   const {
+//     eventName,
+//     eventDate,
+//     projectName,
+//     eventLocation,
+//     street,
+//     city,
+//     state,
+//     pinCode,
+//     invitationNote,
+//     invitation_url
+//   } = req.body;
+
+//   logger.info('Event Location:', eventLocation); 
+
+//   const fileKey = `${projectName}-${eventName}.jpg`;
+
+//   const eventNameWithoutSpaces = eventName.replace(/\s+/g, '_');
+//   const formattedEventCreateDate = eventDate.split('T')[0].replace(/-/g,'');
+//   const CreateUploadFolderName = `${eventNameWithoutSpaces}_${formattedEventCreateDate}`;
+//   logger.info('CreateUploadFolderName:', CreateUploadFolderName);
+
+//   const createfolderparams = {
+//     Bucket: indexBucketName,
+//     Key: `${CreateUploadFolderName}/`,
+//     Body: ''
+//   };
+
+//   const params = {
+//     Bucket: "flashbackeventthumbnail",
+//     Key: fileKey,
+//     Body: file.buffer,
+//     ContentType: file.mimetype,
+//   };
+
+
+//   try {
+//     s3.putObject(createfolderparams).promise();
+//     logger.info('Folder created successfully:', CreateUploadFolderName);
+//   } catch (s3Error) {
+//     logger.info('S3 error details:', JSON.stringify(s3Error, null, 2));
+//     throw new Error(`Failed to create S3 folder: ${s3Error.message}`);
+//   }
+
+//   try {
+//     // Upload image to S3
+//     const data = await s3.upload(params).promise();
+//     const imageUrl = data.Location;
+
+//     // Save event details to DynamoDB
+//     const eventParams = {
+//       TableName: eventsTable,
+//       Item: {
+//         event_name: eventName,
+//         client_name: clientName,
+//         event_date: eventDate,
+//         event_location: eventLocation,
+//         street,
+//         city,
+//         state,
+//         pin_code: pinCode,
+//         invitation_note: invitationNote,
+//         invitation_url: invitation_url,
+//         event_image: imageUrl,
+//         folder_name: CreateUploadFolderName
+//       },
+//     };
+
+//     const putResult = await docClient.put(eventParams).promise();
+//     logger.info('Event Created Successfully: ' + eventName);
+//     res.status(200).send({ message: 'Event Created Successfully', eventImage: imageUrl });
+//   } catch (error) {
+//     console.error('Error:', error);
+//     res.status(500).json({ error: 'Error creating event' });
+//   }
+// });
+
+
+// app.post('/deleteProjectDetails', async (req, res) => {
+//   const projectName = req.body.projectName;
+//   const clientName = req.body.clientName;
+
+//   logger.info('Deleting project Info:', projectName);
+
+//   const fileKey = `${projectName}-${clientName}.jpg`;
+
+//   // Set up parameters for S3 deletion
+//   const deleteParams = {
+//     Bucket: "flashbackeventthumbnail",
+//     Key: fileKey,
+//   };
+
+//   try {
+//     // Delete image from S3
+//     await s3.deleteObject(deleteParams).promise();
+//     logger.info('Image Deleted Successfully:', fileKey);
+
+//     // Set up parameters for deleting project details from DynamoDB
+//     const deleteProjectParams = {
+//       TableName: projectsTable,
+//       Key: {
+//         project_name: projectName,
+//         client_name: clientName
+//       }
+//     };
+
+//     // Delete project details from DynamoDB
+//     await docClient.delete(deleteProjectParams).promise();
+//     logger.info('Project Deleted Successfully:', projectName);
+
+//     // Query for related events in the Events table
+//     const scanParams = {
+//       TableName: eventsTable,
+//       FilterExpression: "project_name = :projectName",
+//       ExpressionAttributeValues: {
+//         ':projectName': projectName
+//       }
+//     };
+
+//     const eventsData = await docClient.scan(scanParams).promise();
+
+//     // Extract S3 keys from event URLs and delete the events
+//     const deleteEventPromises = eventsData.Items.map(async event => {
+//       const eventImageUrl = event.event_image; // Assuming event_image_url is the field containing the URL
+//       const eventFileKey = eventImageUrl.split('/').pop(); // Extract the key from the URL
+
+//       // Delete the event image from S3
+//       const deleteEventImageParams = {
+//         Bucket: "flashbackeventthumbnail",
+//         Key: eventFileKey
+//       };
+//       await s3.deleteObject(deleteEventImageParams).promise();
+
+//       // Delete the event from DynamoDB
+//       const deleteEventParams = {
+//         TableName: eventsTable,
+//         Key: {
+//           event_id: event.event_name // Assuming event_id is the primary key
+//         }
+//       };
+//       return docClient.delete(deleteEventParams).promise();
+//     });
+
+//     await Promise.all(deleteEventPromises);
+//     logger.info('All related events and their images deleted successfully.');
+
+//     res.status(200).send({ message: 'Project and related events deleted successfully' });
+//   } catch (error) {
+//     console.error('Error:', error);
+//     res.status(500).json({ error: 'Error deleting project and related events' });
+//   }
+// });
 
 
 app.put('/updateEvent/:eventName/:projectName', async (req, res) => {
@@ -3092,17 +3229,90 @@ app.put('/updateEvent/:eventName/:projectName', async (req, res) => {
   }
 });
 
+app.get("/getEventDetails/:eventName", async (req, res) => {
+  
+  const eventName = req.params.eventName; // Adjust based on your token payload
+  logger.info(`Fetching event details for ${eventName}`)
+  try {
+    const eventParams = {
+      TableName: eventsTable,
+      FilterExpression: "event_name = :eventName",
+      ExpressionAttributeValues: {
+        ":eventName": eventName
+      }
+
+    };
+
+
+    const result = await docClient.scan(eventParams).promise();
+
+    if (result.Items && result.Items.length > 0) {
+      logger.info(`Fetched event details for ${eventName}`)
+      res.status(200).send(result.Items[0]);
+    } else {
+      res.status(404).send({ message: "Event not found" });
+    }
+  } catch (err) {
+    logger.info(err.message);
+    res.status(500).send(err.message);
+  }
+});
+
+
 
 
 // API endpoint to delete an event
-app.delete('/deleteEvent/:eventName/:projectName', async (req, res) => {
-  const { eventName, projectName } = req.params;
+// app.delete('/deleteEvent/:eventName/:projectName', async (req, res) => {
+//   const { eventName, projectName } = req.params;
+
+//   const params = {
+//     TableName: eventsTable,
+//     Key: {
+//       event_name: eventName,
+//       project_name: projectName,
+//     }
+//   };
+//   logger.info(params.Key)
+//   logger.info("Deletion Started");
+//   try {
+//     const result = await docClient.delete(params).promise();
+//     res.status(200).json({ message: 'Event deleted successfully', result });
+//     logger.info("Deletion");
+//   } catch (error) {
+//     res.status(500).json({ message: 'Error deleting event', error: error.message });
+//   }
+// });
+
+// app.post("/deleteEvent", async (req, res) => {
+//   const eventName = req.body.eventName;
+//   const eventDate = req.body.projectName;
+//   logger.info("Deleting Event: " + eventName);
+//     try {
+//       const eventParams = {
+//         TableName: eventsTable,
+//         Key: {
+//           event_name: eventName,
+//           project_name:projectName
+//         }
+//       };
+//       const deleteResult = await docClient.delete(eventParams).promise();
+//       logger.info("Event Deleted Successfully: " + eventName);
+//       res.status(200).send({"message": "Event Deleted Successfully"});
+//     } catch (err) {
+//       logger.info(err.message);
+//       res.status(500).send(err.message);
+//     }
+// });
+
+// API endpoint to delete an event
+app.delete('/deleteEvent/:eventName/:eventDate', async (req, res) => {
+  const { eventName, eventDate } = req.params;
 
   const params = {
     TableName: eventsTable,
     Key: {
       event_name: eventName,
-      project_name: projectName,
+      event_date: eventDate,
     }
   };
   logger.info(params.Key)
@@ -3115,28 +3325,6 @@ app.delete('/deleteEvent/:eventName/:projectName', async (req, res) => {
     res.status(500).json({ message: 'Error deleting event', error: error.message });
   }
 });
-
-app.post("/deleteEvent", async (req, res) => {
-  const eventName = req.body.eventName;
-  const eventDate = req.body.projectName;
-  logger.info("Deleting Event: " + eventName);
-    try {
-      const eventParams = {
-        TableName: eventsTable,
-        Key: {
-          event_name: eventName,
-          project_name:projectName
-        }
-      };
-      const deleteResult = await docClient.delete(eventParams).promise();
-      logger.info("Event Deleted Successfully: " + eventName);
-      res.status(200).send({"message": "Event Deleted Successfully"});
-    } catch (err) {
-      logger.info(err.message);
-      res.status(500).send(err.message);
-    }
-});
-
 
 app.get("/getProjectDetails/:clientName", async (req, res) => {
   
@@ -3155,12 +3343,11 @@ app.get("/getProjectDetails/:clientName", async (req, res) => {
 
     const result = await docClient.scan(projectParams).promise();
 
-    if (result.Items && result.Items.length > 0) {
+    if (result.Items) {
       logger.info(`Fetched project details for ${clientName}`)
-      res.status(200).send(result.Items);
-    } else {
-      res.status(404).send({ message: "No events found for this client" });
+      res.status(200).send(result.Items.map(item => item.project_name));
     }
+ 
   } catch (err) {
     logger.info(err.message);
     res.status(500).send(err.message);
@@ -3459,6 +3646,7 @@ app.post("/updateUserDetails", async (req, res) => {
       res.status(500).json({ error: "Could not update user details" });
   }
 });
+
   const httpsServer = https.createServer(credentials, app);
 
   httpsServer.listen(PORT, () => {
