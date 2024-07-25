@@ -3459,6 +3459,7 @@ app.post("/updateUserDetails", async (req, res) => {
       res.status(500).json({ error: "Could not update user details" });
   }
 });
+
   const httpsServer = https.createServer(credentials, app);
 
   httpsServer.listen(PORT, () => {
