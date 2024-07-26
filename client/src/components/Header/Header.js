@@ -77,6 +77,7 @@ import React, { useState, useEffect } from "react";
 import logo from "../../media/images/logoCropped.png";
 import "./Header.css";
 import API_UTIL from "../../services/AuthIntereptor";
+import { Link } from "react-router-dom";
 
 const Header = ({ clientObj, userObj, eventName, dontshowredeem }) => {
   const [instaClick, setInstaClick] = useState(false);
@@ -154,7 +155,7 @@ const Header = ({ clientObj, userObj, eventName, dontshowredeem }) => {
 
               <div>
 
-                <h3>Clicked by - {clientObj.user_name}</h3>
+                <h3>Clicked by - <Link to="/portfolio">{clientObj.user_name}</Link></h3>
                 <a href={clientObj.social_media.instagram} target="_blank" rel="noopener noreferrer">
                   <img src="https://img.icons8.com/ffffff/fluent/2x/instagram-new.png" alt="Instagram" onClick={() => setInstaClick(true)} />
                 </a>

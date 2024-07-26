@@ -22,8 +22,12 @@ const EventDetails = () => {
   const [uploadFilesModalStatus, setUploadFilesModalStatus] = useState('');
   const [isUploadFilesFailed, setIsUploadFilesFailed] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [toggleEdit,setToggleEdit] = useState(false);
   const qrRef = useRef();
+  const userDetails = location.state?.userDetails; // Retrieve userDetails from location state
   const navigate = useNavigate();
+  
+  console.log(userDetails);
 
   useEffect(() => {
     const fetchEventData = async (eventName) => {
@@ -42,18 +46,21 @@ const EventDetails = () => {
   }, []);
 
   const handleEditClick = () => {
-    setEditData({
-      eventName: event.event_name,
-      eventDate: event.event_date.split(' ')[0],
-      eventTime: event.event_date.split(' ')[1],
-      invitationNote: event.invitation_note,
-      eventLocation: event.event_location,
-      street: event.street,
-      city: event.city,
-      state: event.state,
-      pinCode: event.pin_code,
-      invitation_url: event.invitation_url,
-    });
+    if(!toggleEdit){
+      setEditData({
+        eventName: event.event_name,
+        eventDate: event.event_date.split(' ')[0],
+        eventTime: event.event_date.split(' ')[1],
+        invitationNote: event.invitation_note,
+        eventLocation: event.event_location,
+        street: event.street,
+        city: event.city,
+        state: event.state,
+        pinCode: event.pin_code,
+        invitation_url: event.invitation_url,
+      });
+    }
+    setToggleEdit(!toggleEdit);
   };
 
   const handleInputChange = (e) => {
@@ -208,8 +215,14 @@ const EventDetails = () => {
     }
       //setIsUploadFilesFailed(true);
   };
+ 
   const formatEventName = (name) => {
-    return name.replace(/_/g, ' ');
+    let event = name.replace(/_/g, ' ');
+    console.log(userDetails.user_name);
+    console.log(event);
+    event = event.replace(userDetails.user_name, '');
+    console.log(event)
+    return event;
   };
 
   function getFormattedDate(datetime) {
@@ -240,18 +253,22 @@ const EventDetails = () => {
     <div className="event-details-container">
       <h1 className="event-details-title">{formatEventName(event?.event_name)}</h1>
       <div className="event-details-content">
-        <img 
+        {/* <img 
           src="https://img.icons8.com/ffffff/android/2x/edit.png" 
           alt="Edit" 
           className="edit-icon" 
           onClick={handleEditClick}
-        />
+        /> */}
+        
+        <div className='edit-option' onClick={handleEditClick}>
+          {toggleEdit ? "Disable Edit" : "Enable Edit"}
+        </div>
         <img 
           src={event.event_image} 
           alt="Event" 
           className="modal-image" 
         />
-        {editData ? (
+        {toggleEdit ? (
           <form onSubmit={handleFormSubmit} className="edit-form">
             <div className="form-group">
               <p className="form-label">Event Name: {formatEventName(editData?.eventName)}</p>
@@ -274,7 +291,7 @@ const EventDetails = () => {
                 onChange={handleInputChange} 
                 className="form-input"
               />
-              <label className="form-label">Street:</label>
+              {/* <label className="form-label">Street:</label>
               <input 
                 type="text" 
                 name="street" 
@@ -308,7 +325,7 @@ const EventDetails = () => {
                 pattern="^\d{6}$"
                 title="Please enter a valid 6-digit PIN code"
                 required
-              />
+              /> */}
               <label className="form-label">Invitation URL:</label>
               <input 
                 type="text" 
@@ -327,10 +344,10 @@ const EventDetails = () => {
               <p className="form-value">Time: {getFormattedTime(event.event_date)}</p>
               <p className="form-value">Invitation Note: {event.invitation_note}</p>
               <p className="form-value">Location: {event.event_location}</p>
-              <p className="form-value">Street: {event.street},</p>
+              {/* <p className="form-value">Street: {event.street},</p>
               <p className="form-value">City: {event.city},</p>
               <p className="form-value">State: {event.state},</p>
-              <p className="form-value">Pin Code: {event.pin_code}</p>
+              <p className="form-value">Pin Code: {event.pin_code}</p> */}
               <p className='form-value'>Folder: {event.folder_name}</p>
             </div>
             <div className='form-footer'>

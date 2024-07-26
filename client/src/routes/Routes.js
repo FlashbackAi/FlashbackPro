@@ -22,6 +22,7 @@ import EventMain from "../pages/Event/EventMain";
 import EventSelector from "../pages/Event/EventSelector";
 import CreateEvents from "../pages/Event/CreateEvents";
 import EventDetails from "../pages/Event/EventDetails/EventDetails";
+import Portfolio from "../pages/Portfolio/Portfolio";
 
 
 const ROUTES=[
@@ -174,7 +175,7 @@ const ROUTES=[
         path:"/Event",
         exact:false,
         protected:true,
-        component:EventMain,
+        component:Event,
     },
     {
         path:"/eventSelector",
@@ -194,13 +195,18 @@ const ROUTES=[
         protected:false,
         component:EventDetails,
     },
-
     {
         path:"/about",
         exact:false,
         protected:false,
         component:About,
     },
+    {
+        path:"/portfolio",
+        exact:false,
+        protected:false,
+        component:Portfolio,
+    }
 
 ]
 

@@ -240,7 +240,7 @@ const Event = ({ eventName, eventDate, folderName }) => {
   };
 
   const onEventClick = (eventName) => {
-    navigate(`/eventDetails/${eventName}`)
+    navigate(`/eventDetails/${eventName}`, { state: { userDetails } })
   };
 
   const closeModal = () => {
@@ -315,15 +315,15 @@ const Event = ({ eventName, eventDate, folderName }) => {
       console.error('Error updating event:', error);
       toast.error('Failed to update the event. Please try again.');
     }
-  };
-
-  const formatEventName = (name) => {
+  }; const formatEventName = (name) => {
     let event = name.replace(/_/g, ' ');
     console.log(userDetails.user_name)
     event.replace(userDetails.user_name, '');
     console.log(event)
     return event;
   };
+
+ 
 
   function getFormattedDate(datetime) {
     const date = new Date(datetime);
