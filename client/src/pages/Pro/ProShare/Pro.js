@@ -9,6 +9,7 @@ import Header from "../../../components/Header/Header";
 import API_UTIL from "../../../services/AuthIntereptor";
 import Footer from "../../../components/Footer/Footer";
 import "../../../components/Footer/Footer.css"; // Import your CSS file
+import MergeDuplicateUsers from "./MergeHandler/MergeDuplicateUsers";
 import "./Pro.css";
 
 function Pro() {
@@ -20,12 +21,54 @@ function Pro() {
   const isDataFetched = useRef(false);
   const history = useNavigate();
   const [clickedImg, setClickedImg] = useState(null);
+  const [showMergeDuplicateUsers, setShowMergeDuplicateUsers] = useState(false);
+  const [mergeMode, setMergeMode] = useState(false);
+  const [selectedMainUser, setSelectedMainUser] = useState(null);
+  const [selectedDuplicateUsers, setSelectedDuplicateUsers] = useState([]);
   const serverIp = process.env.REACT_APP_SERVER_IP;
 
   const handleClick = (item) => {
-    shareOnWhatsApp(item);
-    setClickedImg(true);
+    if (mergeMode) {
+      handleThumbnailClick(item);
+    } else {
+      shareOnWhatsApp(item);
+      setClickedImg(true);
+    }
   };
+
+  const handleMergeClick = () => {
+    setShowMergeDuplicateUsers(true);
+    setMergeMode(true);
+    setSelectedMainUser(null);
+    setSelectedDuplicateUsers([]);
+  };
+
+  const handleCloseMerge = () => {
+    setShowMergeDuplicateUsers(false);
+    setMergeMode(false);
+    setSelectedMainUser(null);
+    setSelectedDuplicateUsers([]);
+  };
+
+  const handleMerge = async (mainUser, duplicateUsers) => {
+    try {
+      console.log("Merging", mainUser, "with", duplicateUsers);
+      await fetchThumbnails();
+      handleCloseMerge();
+    } catch (error) {
+      console.error("Error merging users:", error);
+    }
+  };
+
+
+  const handleThumbnailClick = (item) => {
+    if (!selectedMainUser) {
+      setSelectedMainUser(item);
+    } else if (selectedDuplicateUsers.length < 5 && !selectedDuplicateUsers.includes(item) && item !== selectedMainUser) {
+      setSelectedDuplicateUsers([...selectedDuplicateUsers, item]);
+    }
+  };
+
 
   const shareOnWhatsApp = (item) => {
     const userId = item.user_id;
@@ -61,30 +104,48 @@ function Pro() {
   return (
     <div className="page-container">
       {isLoading ? (
-        <LoadingSpinner /> // You can replace this with a spinner or loader component
+        <LoadingSpinner />
       ) : (
         <>
           <Header />
           <div className="content-wrap">
+            <div className="toolbar">
+              <button onClick={handleMergeClick}>Merge Duplicate Faces</button>
+            </div>
+            {showMergeDuplicateUsers && (
+              <MergeDuplicateUsers
+                onClose={handleCloseMerge}
+                onMerge={handleMerge}
+                thumbnails={userThumbnails}
+                selectedMainUser={selectedMainUser}
+                selectedDuplicateUsers={selectedDuplicateUsers}
+                onMainUserSelect={setSelectedMainUser}
+                onDuplicateUserSelect={setSelectedDuplicateUsers}
+              />
+            )}
             {userThumbnails.length > 0 ? (
               <div className="wrapper-pro">
                 {userThumbnails.map((item, index) => (
-                  <div key={index} className="wrapper-images-pro">
+                  <div 
+                    key={index} 
+                    className={`wrapper-images-pro ${
+                      (mergeMode && selectedMainUser === item) ? 'selected-main' :
+                      (mergeMode && selectedDuplicateUsers.includes(item)) ? 'selected-duplicate' : ''
+                    }`}
+                    onClick={() => handleClick(item)}
+                  >
                     <LazyLoadImage
                       src={item.face_url}
-                      onClick={() => handleClick(item)}
+                      alt={`User ${index + 1}`}
                     />
                     <p>{item.count}</p>
                   </div>
                 ))}
-                <div>
-                  {clickedImg && <></>}
-                </div>
               </div>
             ) : fetchTimeout ? (
-              <p>No images to display</p> // Message shown if fetch timeout is reached
+              <p>No images to display</p>
             ) : (
-              <p>Failed to load images</p> // Message shown if images fetch fails for other reasons
+              <p>Failed to load images</p>
             )}
           </div>
           <Footer />

@@ -1,5 +1,5 @@
 node_modules
 
 
-server/logs/application.log
 .env
+server/logs/application.log
