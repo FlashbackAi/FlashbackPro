@@ -28,16 +28,18 @@ function Pro() {
   const [selectedMainUser, setSelectedMainUser] = useState(null);
   const [selectedDuplicateUsers, setSelectedDuplicateUsers] = useState([]);
   const [showRewardPointsPopUp, setShowRewardPointsPopUp] = useState(null);
+  const [rewardPoints,setRewardPoints] = useState();
   const serverIp = process.env.REACT_APP_SERVER_IP;
 
   const handleClick = (item) => {
     if (mergeMode) {
       handleThumbnailClick(item);
     } else {
+      
+    saveShareDetails(item);
       shareOnWhatsApp(item);
       setClickedImg(true);
     }
-    saveShareDetails(item);
     
   };
 
@@ -62,8 +64,11 @@ function Pro() {
   const handleMerge = async (mainUser, duplicateUsers) => {
     try {
       console.log("Merging", mainUser, "with", duplicateUsers);
+      
+      updateRewardPoints(50);
       await fetchThumbnails();
       handleCloseMerge();
+    
     } catch (error) {
       console.error("Error merging users:", error);
     }
@@ -96,7 +101,7 @@ function Pro() {
       const response = await API_UTIL.post(`/saveProShareDetails`,{user:user,sharedUser:item.user_id,eventName:eventName});
       if (response.status === 200) {
 
-        updateRewardPoints();
+        updateRewardPoints(10);
       } else {
         throw new Error("Failed to save share info");
       }
@@ -161,15 +166,16 @@ function Pro() {
     }
   };
 
-  const updateRewardPoints = async () =>{
+  const updateRewardPoints = async (points) =>{
     const updateData = {
       user_phone_number: sessionStorage.getItem('userphoneNumber'),
-      reward_points : userDetails.reward_points+10
+      reward_points : userDetails?.reward_points ? userDetails.reward_points + points : 50 + points
     };
   
     try {
       const response = await API_UTIL.post('/updateUserDetails', updateData);
       if (response.status === 200) {
+        setRewardPoints(points)
         setShowRewardPointsPopUp(true);
         setUserDetails(response.data.data)
       } else {
@@ -243,7 +249,7 @@ function Pro() {
                 <div className="popup">
                   <div className="popup-content">
                     <h2>Congratulations!</h2>
-                    <p>You have received 10 reward points!</p>
+                    <p>You have received {rewardPoints} reward points!</p>
                     <button onClick={handleClosePopup}>X</button>
                   </div>
                 </div>
