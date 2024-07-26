@@ -3,14 +3,21 @@ import './Portfolio.css';
 import Modal from 'react-modal';
 
 const photos = [
-  'https://www.hindustantimes.com/ht-img/img/2024/02/21/1600x900/rakul_preet_singh_1708527529195_1708527529380.png',
-  'https://www.hindustantimes.com/ht-img/img/2024/02/21/1600x900/rakul_preet_singh_1708527529195_1708527529380.png',
-  'https://www.hindustantimes.com/ht-img/img/2024/02/21/1600x900/rakul_preet_singh_1708527529195_1708527529380.png',
-  'https://www.hindustantimes.com/ht-img/img/2024/02/21/1600x900/rakul_preet_singh_1708527529195_1708527529380.png',
-  'https://www.hindustantimes.com/ht-img/img/2024/02/21/1600x900/rakul_preet_singh_1708527529195_1708527529380.png',
-  'https://www.hindustantimes.com/ht-img/img/2024/02/21/1600x900/rakul_preet_singh_1708527529195_1708527529380.png',
-  'https://www.hindustantimes.com/ht-img/img/2024/02/21/1600x900/rakul_preet_singh_1708527529195_1708527529380.png',
-  'https://www.hindustantimes.com/ht-img/img/2024/02/21/1600x900/rakul_preet_singh_1708527529195_1708527529380.png',
+  'assets/Images/img1.jpg',
+  'assets/Images/img2.jpg', 
+  'assets/Images/img4.jpg',
+  'assets/Images/img7.jpg',
+  'assets/Images/img8.jpg',
+  'assets/Images/img9.jpg', 
+  'assets/Images/img11.jpg',
+  'assets/Images/img12.jpg',
+  'assets/Images/img13.jpg',
+  'assets/Images/img17.jpg',
+  'assets/Images/img19.jpg',
+  'assets/Images/img20.jpg'
+
+  
+  
   // Add more photo URLs here
 ];
 

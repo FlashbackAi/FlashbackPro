@@ -3550,15 +3550,15 @@ app.post("/updateUserClientInteraction", async (req, res) => {
 
   try {
     // Step 1: Check if there is an entry with the given userPhoneNumber and clientName
-    const getParams = {
-      TableName: userClientInteractionTable,
-      Key: {
-        "user_phone_number": userPhoneNumber,
-        "client_name": clientName
-      }
-    };
+    // const getParams = {
+    //   TableName: userClientInteractionTable,
+    //   Key: {
+    //     "user_phone_number": userPhoneNumber,
+    //     "client_name": clientName
+    //   }
+    // };
 
-    const getResult = await docClient.get(getParams).promise();
+    // const getResult = await docClient.get(getParams).promise();
 
     const newTimestampEntry = {
       event_name: eventName,
@@ -3567,24 +3567,24 @@ app.post("/updateUserClientInteraction", async (req, res) => {
 
     let updateParams;
 
-    if (getResult.Item) {
-      // Entry exists, update the visited_time_stamp array
-      updateParams = {
-        TableName: userClientInteractionTable,
-        Key: {
-          "user_phone_number": userPhoneNumber,
-          "client_name": clientName
-        },
-        UpdateExpression: "SET visited_time_obj = list_append(visited_time_obj, :newTimestampEntry)",
-        ExpressionAttributeValues: {
-          ":newTimestampEntry": [newTimestampEntry]
-        },
-        ReturnValues: "UPDATED_NEW"
-      };
+    // if (getResult.Item) {
+    //   // Entry exists, update the visited_time_stamp array
+    //   updateParams = {
+    //     TableName: userClientInteractionTable,
+    //     Key: {
+    //       "user_phone_number": userPhoneNumber,
+    //       "client_name": clientName
+    //     },
+    //     UpdateExpression: "SET visited_time_obj = list_append(visited_time_obj, :newTimestampEntry)",
+    //     ExpressionAttributeValues: {
+    //       ":newTimestampEntry": [newTimestampEntry]
+    //     },
+    //     ReturnValues: "UPDATED_NEW"
+    //   };
 
-      await docClient.update(updateParams).promise();
-      logger.info("updated the user client interaction table");
-    } else {
+    //   await docClient.update(updateParams).promise();
+    //   logger.info("updated the user client interaction table");
+    // } else {
       updateParams = {
         TableName: userClientInteractionTable,
         Item: {
@@ -3611,7 +3611,7 @@ app.post("/updateUserClientInteraction", async (req, res) => {
 
       await docClient.update(rewardPointsUpdateParams).promise();
       logger.info("updated the users table with updated reward points");
-    }
+    
 
     res.status(200).send({"clientName":clientName,"rewardPoints":newRewardPoints});
   } catch (err) {

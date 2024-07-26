@@ -73,11 +73,12 @@
 
 // export default Header;
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect} from "react";
 import logo from "../../media/images/logoCropped.png";
 import "./Header.css";
 import API_UTIL from "../../services/AuthIntereptor";
 import { Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router";
 
 const Header = ({ clientObj, userObj, eventName, dontshowredeem }) => {
   const [instaClick, setInstaClick] = useState(false);
@@ -85,6 +86,8 @@ const Header = ({ clientObj, userObj, eventName, dontshowredeem }) => {
   const [redeemPoints, setRedeemPoints] = useState(userObj?.reward_points ? userObj?.reward_points : 50);
   const [showPopup, setShowPopup] = useState(false);
   const [showComingSoonPopup, setShowComingSoonPopup] = useState(false);
+  const [portfolioClick, setPortfolioClick] = useState(false)
+  const navigate = useNavigate();
 
   console.log(userObj?.reward_points)
 
@@ -93,44 +96,50 @@ const Header = ({ clientObj, userObj, eventName, dontshowredeem }) => {
     setRedeemPoints(userObj?.reward_points ? userObj.reward_points : 50);
   }, [userObj]);
 
-  useEffect(() => {
-    const updateInteraction = async () => {
-      if (instaClick || youtubeClick) {
-        try {
-          const requestData = {
-            userPhoneNumber: userObj.user_phone_number,
-            clientName: clientObj.user_name,
-            eventName: eventName, // replace with actual event name if available
-            rewardPoints: redeemPoints,
-          };
 
-          console.log('Sending request to server with data:', requestData);
+  const updateInteraction = async () => {
+    console.log("logged");
+    console.log(portfolioClick)
+    if (instaClick || youtubeClick || portfolioClick) {
+      try {
+        const requestData = {
+          userPhoneNumber: userObj.user_phone_number,
+          clientName: clientObj.user_name,
+          eventName: eventName, // replace with actual event name if available
+          rewardPoints: redeemPoints,
+        };
 
-          const response = await API_UTIL.post("/updateUserClientInteraction", requestData);
+        console.log('Sending request to server with data:', requestData);
 
-          // Log the response to the console
-          console.log('Server response:', response.data);
-          if (response.data.rewardPoints ) {
-            setRedeemPoints(response.data.rewardPoints);
-            setShowPopup(true); // Show the popup
-          }
+        const response = await API_UTIL.post("/updateUserClientInteraction", requestData);
 
-        } catch (error) {
-          console.error("Error updating user-client interaction:", error);
-          if (error.response) {
-            console.error("Server responded with status code:", error.response.status);
-            console.error("Response data:", error.response.data);
-          }
-        } finally {
-          // Reset the click states to avoid repeated updates
-          setInstaClick(false);
-          setYoutubeClick(false);
+        // Log the response to the console
+        console.log('Server response:', response.data);
+        if (response.data.rewardPoints ) {
+          setRedeemPoints(response.data.rewardPoints);
+          setShowPopup(true); // Show the popup
         }
-      }
-    };
 
+      } catch (error) {
+        console.error("Error updating user-client interaction:", error);
+        if (error.response) {
+          console.error("Server responded with status code:", error.response.status);
+          console.error("Response data:", error.response.data);
+        }
+      } finally {
+        // Reset the click states to avoid repeated updates
+        setInstaClick(false);
+        setYoutubeClick(false);       
+        setPortfolioClick(false)
+      }
+    }
+  };
+
+
+  useEffect(() => {
+    
     updateInteraction();
-  }, [instaClick, youtubeClick, clientObj, userObj, eventName]);
+  }, [instaClick, youtubeClick, portfolioClick, clientObj, userObj, eventName]);
 
   const handleClosePopup = () => {
     setShowPopup(false);
@@ -144,6 +153,10 @@ const Header = ({ clientObj, userObj, eventName, dontshowredeem }) => {
     setShowComingSoonPopup(false);
   };
 
+  const PortfolioClick = async ()=>{
+    setPortfolioClick(true);
+  }
+
   return (
     <>
       <header className="stickToTop">
@@ -155,7 +168,7 @@ const Header = ({ clientObj, userObj, eventName, dontshowredeem }) => {
 
               <div>
 
-                <h3>Clicked by - <Link to="/portfolio">{clientObj.user_name}</Link></h3>
+                <h3>Clicked by - <a href="/portfolio"  target = "_blank" onClick={PortfolioClick}>{clientObj.user_name}</a></h3>
                 <a href={clientObj.social_media.instagram} target="_blank" rel="noopener noreferrer">
                   <img src="https://img.icons8.com/ffffff/fluent/2x/instagram-new.png" alt="Instagram" onClick={() => setInstaClick(true)} />
                 </a>
