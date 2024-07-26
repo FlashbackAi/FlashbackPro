@@ -85,6 +85,13 @@ const Header = ({ clientObj, userObj, eventName, dontshowredeem }) => {
   const [showPopup, setShowPopup] = useState(false);
   const [showComingSoonPopup, setShowComingSoonPopup] = useState(false);
 
+  console.log(userObj?.reward_points)
+
+  useEffect(() => {
+    // Update redeem points when userObj prop changes
+    setRedeemPoints(userObj?.reward_points ? userObj.reward_points : 50);
+  }, [userObj]);
+
   useEffect(() => {
     const updateInteraction = async () => {
       if (instaClick || youtubeClick) {
@@ -140,9 +147,10 @@ const Header = ({ clientObj, userObj, eventName, dontshowredeem }) => {
     <>
       <header className="stickToTop">
         <h2>FlashBack</h2>
+        {clientObj &&
+            
         <div className="second-header-container">
-          {clientObj &&
-            <>
+          
 
               <div>
 
@@ -156,8 +164,9 @@ const Header = ({ clientObj, userObj, eventName, dontshowredeem }) => {
               </div>
 
               {!dontshowredeem && <div className="redeem-points" onClick={handleRedeemPointsClick}>Redeem Points - {redeemPoints} 🪙</div>}
-            </>}
+            
         </div>
+        }
       </header>
 
       {showPopup && (

@@ -15,6 +15,8 @@ import "./Pro.css";
 function Pro() {
   const { eventName } = useParams();
   const [userThumbnails, setUserThumbnails] = useState([]);
+  const [clientDetails, setClientDetails] = useState([]);
+  const [userDetails, setUserDetails] = useState([]);
   const username = sessionStorage.getItem("username");
   const [isLoading, setIsLoading] = useState(true);
   const [fetchTimeout, setFetchTimeout] = useState(false);
@@ -25,6 +27,7 @@ function Pro() {
   const [mergeMode, setMergeMode] = useState(false);
   const [selectedMainUser, setSelectedMainUser] = useState(null);
   const [selectedDuplicateUsers, setSelectedDuplicateUsers] = useState([]);
+  const [showRewardPointsPopUp, setShowRewardPointsPopUp] = useState(null);
   const serverIp = process.env.REACT_APP_SERVER_IP;
 
   const handleClick = (item) => {
@@ -34,6 +37,12 @@ function Pro() {
       shareOnWhatsApp(item);
       setClickedImg(true);
     }
+    saveShareDetails(item);
+    
+  };
+
+  const handleClosePopup = () => {
+    setShowRewardPointsPopUp(false)
   };
 
   const handleMergeClick = () => {
@@ -78,6 +87,26 @@ function Pro() {
     window.open(whatsappUrl, "_blank");
   };
 
+  const saveShareDetails = async (item) => {
+
+    try{
+      const user = sessionStorage.getItem('userphoneNumber');
+      
+
+      const response = await API_UTIL.post(`/saveProShareDetails`,{user:user,sharedUser:item.user_id,eventName:eventName});
+      if (response.status === 200) {
+
+        updateRewardPoints();
+      } else {
+        throw new Error("Failed to save share info");
+      }
+
+    }catch(error){
+      console.error("Error fetching user thumbnails:", error);
+    }
+
+  };
+
   const fetchThumbnails = async () => {
     if (userThumbnails.length === 0) setIsLoading(true);
 
@@ -85,6 +114,7 @@ function Pro() {
       const response = await API_UTIL.get(`/userThumbnails/${eventName}`);
       if (response.status === 200) {
         setUserThumbnails(response.data);
+        fetchClientDetails();
       } else {
         throw new Error("Failed to fetch user thumbnails");
       }
@@ -95,9 +125,66 @@ function Pro() {
     }
   };
 
+  const fetchClientDetails = async () => {
+    if (userThumbnails.length === 0) setIsLoading(true);
+
+    try {
+      const response = await API_UTIL.get(`/getClientDetailsByEventname/${eventName}`);
+      if (response.status === 200) {
+        setClientDetails(response.data);
+        console.log(response.data.user_name)        
+        fetchuserDetails();
+      } else {
+        throw new Error("Failed to fetch client Details");
+      }
+    } catch (error) {
+      console.error("Error fetching user thumbnails:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchuserDetails = async () => {
+    if (userThumbnails.length === 0) setIsLoading(true);
+
+    try {
+      const response = await API_UTIL.get(`/getUserDetails/${sessionStorage.getItem('userphoneNumber')}`);
+      if (response.status === 200) {
+        setUserDetails(response.data);
+      } else {
+        throw new Error("Failed to fetch client Details");
+      }
+    } catch (error) {
+      console.error("Error fetching user thumbnails:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateRewardPoints = async () =>{
+    const updateData = {
+      user_phone_number: sessionStorage.getItem('userphoneNumber'),
+      reward_points : userDetails.reward_points+10
+    };
+  
+    try {
+      const response = await API_UTIL.post('/updateUserDetails', updateData);
+      if (response.status === 200) {
+        setShowRewardPointsPopUp(true);
+        setUserDetails(response.data.data)
+      } else {
+        console.log("Failed to update user details. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error updating user details:", error);
+    }
+  
+  }
+
   useEffect(() => {
     if (isDataFetched.current) return;
     fetchThumbnails();
+    
     isDataFetched.current = true;
   }, []);
 
@@ -107,7 +194,9 @@ function Pro() {
         <LoadingSpinner />
       ) : (
         <>
-          <Header />
+         {userDetails.user_phone_number && (
+          <Header clientObj={clientDetails} userObj={userDetails} eventName={eventName} />
+         )}
           <div className="content-wrap">
             <div className="toolbar">
               <button onClick={handleMergeClick}>Merge Duplicate Faces</button>
@@ -141,6 +230,16 @@ function Pro() {
                     <p>{item.count}</p>
                   </div>
                 ))}
+
+                {showRewardPointsPopUp && (
+                <div className="popup">
+                  <div className="popup-content">
+                    <h2>Congratulations!</h2>
+                    <p>You have received 10 reward points!</p>
+                    <button onClick={handleClosePopup}>X</button>
+                  </div>
+                </div>
+              )}
               </div>
             ) : fetchTimeout ? (
               <p>No images to display</p>

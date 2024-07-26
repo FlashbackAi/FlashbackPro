@@ -81,11 +81,6 @@
     }
   }
 
-.second-header-container {
-  display: none !important;
-}
-
-
 .selected-main {
   border: 3px solid #007bff !important;
 }

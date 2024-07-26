@@ -107,7 +107,7 @@ const ROUTES=[
     {
         path:"/pro/:eventName",
         exact:false,
-        protected:false,
+        protected:true,
         component:Pro
     },
     {

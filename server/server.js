@@ -72,13 +72,13 @@ const logger = winston.createLogger({
  });
 
  // *** Comment these certificates while testing changes in local developer machine. And, uncomment while pushing to mainline***
-const privateKey = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/privkey.pem', 'utf8');
-const certificate = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/fullchain.pem', 'utf8');
+// const privateKey = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/privkey.pem', 'utf8');
+// const certificate = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/fullchain.pem', 'utf8');
 
-const credentials = {
-  key: privateKey,
-  cert: certificate
-}
+// const credentials = {
+//   key: privateKey,
+//   cert: certificate
+// }
 
 // Set up AWS S3
 const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.js
@@ -111,6 +111,7 @@ const projectsTable = 'projects_data';
 const indexedDataTableName = 'indexed_data'
 const formDataTableName = 'selectionFormData'; 
 const recokgImages = 'RekognitionImageProperties';
+const proShareDataTable = 'pro_share_data';
 
 
 const ClientId = '6goctqurrumilpurvtnh6s4fl1'
@@ -1483,6 +1484,8 @@ app.get('/userThumbnails/:eventName', async (req, res) => {
   }
 });
 
+
+
 app.get('/userThumbnails/:eventName/:userId', async (req, res) => {
   try {
    
@@ -1534,7 +1537,7 @@ app.get('/userThumbnails/:eventName/:userId', async (req, res) => {
     const thumbnailObject = await getThumbanailsForUserIds(keys);
    
     logger.info("Total number of user thumbnails fetched : "+thumbnailObject.length)
-     res.json(thumbnailObject);
+     res.send({"message":"Successfully fetched thumb"});
   } catch (err) {
      logger.info("Error in S3 get", err);
       res.status(500).send('Error getting images from S3');
@@ -3027,6 +3030,32 @@ app.get("/getClientEventDetails/:clientName", async (req, res) => {
   }
 });
 
+app.get("/getClientDetailsByEventname/:eventName", async (req, res) => {
+  
+  const eventName = req.params.eventName; // Adjust based on your token payload
+  logger.info(`Fetching event details for ${eventName}`)
+  try {
+   const clientObj = await getClientObject(eventName);
+   res.send(clientObj);
+  } catch (err) {
+    logger.info(err.message);
+    res.status(500).send(err.message);
+  }
+});
+
+app.get("/getUserDetails/:userPhoneNumber", async (req, res) => {
+  
+  const userPhoneNumber = req.params.userPhoneNumber; // Adjust based on your token payload
+  logger.info(`Fetching user details for ${userPhoneNumber}`)
+  try {
+   const userObj = await getUserObjectByUserPhoneNumber(userPhoneNumber)
+   res.send(userObj);
+  } catch (err) {
+    logger.info(err.message);
+    res.status(500).send(err.message);
+  }
+});
+
 
 // app.post('/saveEventDetails', upload.single('image'), async (req, res) => {
 //   const file = req.file;
@@ -3647,14 +3676,40 @@ app.post("/updateUserDetails", async (req, res) => {
   }
 });
 
-  const httpsServer = https.createServer(credentials, app);
+app.post("/saveProShareDetails",async (req, res) =>{
 
-  httpsServer.listen(PORT, () => {
-    logger.info(`Server is running on https://localhost:${PORT}`);
-  });
+  const user = req.body.user;
+  const eventName = req.body.eventName;
+  const sharedUser = req.body.sharedUser;
+  try{
+     const proParams ={
+      TableName:proShareDataTable,
+      Item: {
+        "user": user,
+        "event_name": eventName,
+        "shared_user": sharedUser,
+        "user-event_name":user+"-"+eventName,
+      }
+    };
+
+    result = await docClient.put(proParams).promise();
+    logger.info("insert the record of sharing link by user : "+user+" to user : "+sharedUser+" of the event : "+eventName);
+    res.send({"message":"Successfully inserted record",data:result.Items})
+     }
+  catch(err){
+    res.status(500).send(err.message);
+  }
+
+});
+
+  // const httpsServer = https.createServer(credentials, app);
+
+  // httpsServer.listen(PORT, () => {
+  //   logger.info(`Server is running on https://localhost:${PORT}`);
+  // });
   
 
 // //**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
-//  app.listen(PORT ,() => {
-//  logger.info(`Server started on http://localhost:${PORT}`);
-//  });
+ app.listen(PORT ,() => {
+ logger.info(`Server started on http://localhost:${PORT}`);
+ });

@@ -925,7 +925,6 @@ const FaceSelection = () => {
           )} */}
         {!!userThumbnails.length && start && (
           <>
-            <Header/>
             <div className="couple-container" key={`Couple`}>
               <div className="centered-selection">
                 <CustomFaceOption
