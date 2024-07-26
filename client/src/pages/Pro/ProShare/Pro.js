@@ -198,8 +198,14 @@ function Pro() {
           <Header clientObj={clientDetails} userObj={userDetails} eventName={eventName} />
          )}
           <div className="content-wrap">
+            <div className="statsSections">
             <div className="toolbar">
               <button onClick={handleMergeClick}>Merge Duplicate Faces</button>
+            </div>
+
+            <div className="totalCount">
+                <label>Total Attendees: {userThumbnails.length}</label>
+              </div>
             </div>
             {showMergeDuplicateUsers && (
               <MergeDuplicateUsers
@@ -213,6 +219,8 @@ function Pro() {
               />
             )}
             {userThumbnails.length > 0 ? (
+            <>
+              
               <div className="wrapper-pro">
                 {userThumbnails.map((item, index) => (
                   <div 
@@ -241,12 +249,14 @@ function Pro() {
                 </div>
               )}
               </div>
+              </>
             ) : fetchTimeout ? (
               <p>No images to display</p>
             ) : (
               <p>Failed to load images</p>
             )}
           </div>
+          
           <Footer />
         </>
       )}
