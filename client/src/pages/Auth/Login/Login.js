@@ -58,7 +58,7 @@ function Login() {
   const [termsAccepted, setTermsAccepted] = useState(true);
   const isToastDisp = useRef(false);
   const [step, setStep] = useState(0); // 0: move head, 1: blink, 2: ready to capture
-  const [isCaptureEnabled, setIsCaptureEnabled] = useState(false);
+  const [isCaptureEnabled, setIsCaptureEnabled] = useState(true);
 
   const videoConstraints = {
     width: 350,
@@ -90,22 +90,22 @@ function Login() {
     loadModels();
   }, []);
 
-  useEffect(() => {
-    const intervalId = setInterval(async () => {
-      if (webcamRef.current && webcamRef.current.video && webcamRef.current.video.readyState === 4) {
-        const video = webcamRef.current.video;
-        if (video.videoWidth > 0 && video.videoHeight > 0) {
-          if (step === 0) {
-            await detectHeadMovement();
-          } else if (step === 1) {
-            await detectBlink();
-          }
-        }
-      }
-    }, 1000);
+  // useEffect(() => {
+  //   const intervalId = setInterval(async () => {
+  //     if (webcamRef.current && webcamRef.current.video && webcamRef.current.video.readyState === 4) {
+  //       const video = webcamRef.current.video;
+  //       if (video.videoWidth > 0 && video.videoHeight > 0) {
+  //         if (step === 0) {
+  //           await detectHeadMovement();
+  //         } else if (step === 1) {
+  //           await detectBlink();
+  //         }
+  //       }
+  //     }
+  //   }, 1000);
 
-    return () => clearInterval(intervalId);
-  }, [step]);
+  //   return () => clearInterval(intervalId);
+  // }, [step]);
 
   const handlePhoneNumberChange = (e) => {
     const value = e.target.value;
@@ -120,61 +120,61 @@ function Login() {
     }
   };
 
-  const detectHeadMovement = async () => {
-    if (!webcamRef.current) return;
-    const video = webcamRef.current.video;
-    if (video.videoWidth === 0) return;
+  // const detectHeadMovement = async () => {
+  //   if (!webcamRef.current) return;
+  //   const video = webcamRef.current.video;
+  //   if (video.videoWidth === 0) return;
 
-    const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks();
+  //   const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks();
 
-    if (detections.length > 0) {
-      const landmarks = detections[0].landmarks;
-      const nose = landmarks.getNose();
-      const noseX = nose[3].x; // The tip of the nose (center point)
+  //   if (detections.length > 0) {
+  //     const landmarks = detections[0].landmarks;
+  //     const nose = landmarks.getNose();
+  //     const noseX = nose[3].x; // The tip of the nose (center point)
 
-      // Detect significant head movement
+  //     // Detect significant head movement
     
-      const videoWidth = video.videoWidth;
-      console.log(noseX, videoWidth*0.3,videoWidth*0.7)
-      if (noseX < videoWidth * 0.4 || noseX > videoWidth * 0.6) {
-        console.log('Head movement detected');
-        setStep(1);
-        setMessage("Please blink.");
-      }
-    }
-  };
+  //     const videoWidth = video.videoWidth;
+  //     console.log(noseX, videoWidth*0.3,videoWidth*0.7)
+  //     if (noseX < videoWidth * 0.4 || noseX > videoWidth * 0.6) {
+  //       console.log('Head movement detected');
+  //       setStep(1);
+  //       setMessage("Please blink.");
+  //     }
+  //   }
+  // };
 
-  const detectBlink = async () => {
-    if (!webcamRef.current) return;
-    const video = webcamRef.current.video;
-    if (video.videoWidth === 0) return;
+  // const detectBlink = async () => {
+  //   if (!webcamRef.current) return;
+  //   const video = webcamRef.current.video;
+  //   if (video.videoWidth === 0) return;
 
-    const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceExpressions();
+  //   const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceExpressions();
 
-    if (detections.length > 0) {
-      const landmarks = detections[0].landmarks;
-      const leftEye = landmarks.getLeftEye();
-      const rightEye = landmarks.getRightEye();
+  //   if (detections.length > 0) {
+  //     const landmarks = detections[0].landmarks;
+  //     const leftEye = landmarks.getLeftEye();
+  //     const rightEye = landmarks.getRightEye();
 
-      const leftEAR = calculateEAR(leftEye);
-      const rightEAR = calculateEAR(rightEye);
+  //     const leftEAR = calculateEAR(leftEye);
+  //     const rightEAR = calculateEAR(rightEye);
 
-      if (leftEAR < 0.27 && rightEAR < 0.27) {
-        setMessage("Please Capture your Selfie");
-        console.log('Blink detected');
-        setStep(2);
+  //     if (leftEAR < 0.27 && rightEAR < 0.27) {
+  //       setMessage("Please Capture your Selfie");
+  //       console.log('Blink detected');
+  //       setStep(2);
        
-        setIsCaptureEnabled(true);
-      }
-    }
-  };
+  //       setIsCaptureEnabled(true);
+  //     }
+  //   }
+  // };
 
-  const calculateEAR = (eye) => {
-    const A = Math.hypot(eye[1].x - eye[5].x, eye[1].y - eye[5].y);
-    const B = Math.hypot(eye[2].x - eye[4].x, eye[2].y - eye[4].y);
-    const C = Math.hypot(eye[0].x - eye[3].x, eye[0].y - eye[3].y);
-    return (A + B) / (2.0 * C);
-  };
+  // const calculateEAR = (eye) => {
+  //   const A = Math.hypot(eye[1].x - eye[5].x, eye[1].y - eye[5].y);
+  //   const B = Math.hypot(eye[2].x - eye[4].x, eye[2].y - eye[4].y);
+  //   const C = Math.hypot(eye[0].x - eye[3].x, eye[0].y - eye[3].y);
+  //   return (A + B) / (2.0 * C);
+  // };
 
   const capture = async () => {
     if (isCaptureEnabled) {
@@ -186,8 +186,7 @@ function Login() {
 
   const retake = () => {
     setImgSrc(null);
-    setStep(0);
-    setMessage("Please move your head to the left or right.");
+    setStep(0); 
     setIsCaptureEnabled(false);
   };
 
@@ -264,6 +263,7 @@ function Login() {
               userId: urlArray[urlArray.length - 1],
             });
             if (response.status == 200) {
+              console.log(from)
               console.log("Succesfully mapped the userId and phoneNumber");
               navigate(from);
             }
@@ -326,10 +326,10 @@ function Login() {
           )}
           {isNewUser && (
             <div className="login-form-container">
-              {/*<p className="caution">Hey, don't worry we won't see your image :)</p>*/}
-              <p className={`instructions ${step === 0 ? 'rotate' : step === 1 ? 'blink' : ''}`}>
+              <p className="caution">Hey, don't worry we won't see your image :)</p>
+              {/* <p className={`instructions ${step === 0 ? 'rotate' : step === 1 ? 'blink' : ''}`}>
                <span className="instructionSpan">{step === 0 ? " Please move your head left or right  to verify." : step === 1 ? " Please blink  to verify." : "Capture your Selfie"}</span>
-              </p>
+              </p> */}
               {imgSrc ? (
                 <img src={imgSrc} alt="webcam" />
               ) : (
