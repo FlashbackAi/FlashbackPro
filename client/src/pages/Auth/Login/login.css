@@ -64,3 +64,29 @@
 .instructionSpan{
   color:#64a856 ;
 }
+
+
+@media (max-width: 768px) {
+  .loginBody {
+    padding: 10px;
+    z-index: 12;
+  }
+
+  .loginLeft {
+    padding: 10px;
+  }
+
+  .country-code {
+    width: 80px;
+    margin-right: 5px;
+  }
+
+  .iconImg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .submit, .takePhoto {
+    font-size: 0.9rem;
+  }
+}

@@ -1,0 +1,27 @@
+.rsvp-form {
+    width: 60%;
+    margin: auto;
+}
+
+.label-name {
+    font-size: 2em;
+    margin: 2em;
+}
+
+.rsvp-container {
+    padding: 2em;
+}
+
+.rsvp-input{
+    padding: 0.8em;
+    margin: 1em;
+}
+
+.rsvp-heading{
+    font-size: 3em;
+    margin: 0 3em;
+}
+
+.rsvp-button {
+    margin: 2em 16em;
+}
