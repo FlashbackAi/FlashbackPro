@@ -2527,7 +2527,7 @@ app.post('/downloadImage', async (req, res) => {
     logger.info("Total images fetched for user->"+userId+" : "+result.Items.length);
     return result.Items.map(item => item.s3_url);
 }
-   app.post("/getImagesWithUserIds",async(req,res)=>{
+   app.post("/getImagesWithUserIds-old",async(req,res)=>{
       const userIds = req.body.userIds;
       const operation = req.body.operation;
       const mode = req.body.mode;
@@ -2606,7 +2606,7 @@ app.post('/downloadImage', async (req, res) => {
       
     });
 
-    app.post("/getImagesWithUserIds-new", async (req, res) => {
+    app.post("/getImagesWithUserIds", async (req, res) => {
       const { userIds, operation, mode, eventName } = req.body;
       
       logger.info(`Received request to get images with userIds: ${userIds}, operation: ${operation}, mode: ${mode}, eventName: ${eventName}`);
@@ -2674,13 +2674,13 @@ app.post('/downloadImage', async (req, res) => {
         if (operation === 'AND' && mode !== 'Loose') {
           // AND + Strict: Images that have exactly the specified user IDs
           logger.info(userIds)
-          // filteredImages = imageDetails.filter(item =>
-          //   userIds.every(userId => item.user_ids.includes(userId))
-          // );
-          //logger.info(`Filtered images with AND + Strict. Count: ${filteredImages.length}`);
           filteredImages = imageDetails.filter(item =>
-            userIds.length === item.user_ids.length
+            userIds.length === item.user_ids.length && userIds.every(userId => item.user_ids.includes(userId))
           );
+          //logger.info(`Filtered images with AND + Strict. Count: ${filteredImages.length}`);
+          // filteredImages = imageDetails.filter(item =>
+           
+          // );
           logger.info(`Filtered images with AND + Strict. Count: ${filteredImages.length}`);
         } else if (operation === 'AND' && mode === 'Loose') {
           // AND + Loose: Images that have all the specified user IDs but may also have other user IDs
@@ -2714,7 +2714,7 @@ app.post('/downloadImage', async (req, res) => {
     });
     
 
-    app.post("/getCombinationImagesWithUserIds", async (req, res) => {
+    app.post("/getCombinationImagesWithUserIds-old", async (req, res) => {
       const userIds = req.body.userIds;
       const eventName = req.body.eventName;
       const minUserCount = 1;  // Minimum number of user IDs that must be present in each image
@@ -2790,7 +2790,7 @@ app.post('/downloadImage', async (req, res) => {
       }
     });
 
-    app.post("/getCombinationImagesWithUserIds-new", async (req, res) => {
+    app.post("/getCombinationImagesWithUserIds", async (req, res) => {
       const { userIds, eventName } = req.body;
       const minUserCount = 1; // Minimum number of user IDs that must be present in each image
       
