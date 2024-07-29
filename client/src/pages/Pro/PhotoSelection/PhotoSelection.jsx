@@ -156,7 +156,7 @@ const PhotoSelection = () => {
       });
     }
     if (formData.groom.mother.parents.length)
-      imagesData['Groom Mother Extended Family'] = { images: [], thumbnails: formData.groom.father.parents };
+      imagesData['Groom Mother Parents'] = { images: [], thumbnails: formData.groom.father.parents };
     if ( formData.groom.mother.siblings.length ){
       formData.groom.mother.siblings.forEach((sibling, index) => {
         imagesData[`Groom Mother Sibling ${index + 1} Family`] = { images: [], thumbnails: [sibling,'/assets/family_icon.png'] };
@@ -168,7 +168,7 @@ const PhotoSelection = () => {
     }
   
     if ( formData.bride.father.parents.length)
-      imagesData['Bride Father Grand Parents'] = { images: [], thumbnail: formData.bride.father.parents };
+      imagesData['Bride Father Parents'] = { images: [], thumbnail: formData.bride.father.parents };
     if ( formData.bride.father.siblings.length ){
       formData.bride.father.siblings.forEach((sibling, index) => {
         imagesData[`Bride Father Sibling ${index + 1} Family`] = { images: [],thumbnails: [sibling,'/assets/family_icon.png']  };
