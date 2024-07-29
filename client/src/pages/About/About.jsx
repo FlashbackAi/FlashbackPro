@@ -29,7 +29,7 @@ const About = () => {
         <div className="container header-content">
           <h1 className='header-h1'>Flashback Inc</h1>
           <p className='header-p'>Auto Curate & Instant Share Memories</p>
-          <button onClick={openModal} className="cta-button">Get Your Photos</button>
+          <button onClick={openModal} className="cta-button">Get Started</button>
         </div>
       </header>
       <div className='OurProducts'>

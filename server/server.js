@@ -1412,7 +1412,7 @@ async function checkIsUserRegistered(userId){
   }
 }
 
-app.get('/userThumbnails/:eventName', async (req, res) => {
+app.get('/userThumbnails-old/:eventName', async (req, res) => {
   
   const eventName = req.params.eventName;
   try {
@@ -1543,6 +1543,111 @@ app.get('/userThumbnails/:eventName/:userId', async (req, res) => {
       res.status(500).send('Error getting images from S3');
   }
 });
+
+app.get('/userThumbnails/:eventName', async (req, res) => {
+  const eventName = req.params.eventName;
+
+  try {
+    logger.info("Thumbnails are being fetched for event: " + eventName);
+
+    // Step 1: Check if userThumbnails already exist in EventTable using scan
+    const scanParams = {
+      TableName: eventsTable,
+      FilterExpression: 'event_name = :eventName',
+      ExpressionAttributeValues: {
+        ':eventName': eventName
+      },
+      ProjectionExpression: 'userThumbnails'
+    };
+
+    const scanResult = await docClient.scan(scanParams).promise();
+    if (scanResult.Items.length > 0 && scanResult.Items[0].userThumbnails) {
+      logger.info("User thumbnails found in db for event: " + eventName);
+      return res.json(scanResult.Items[0].userThumbnails);
+    }
+
+    logger.info("User thumbnails not found in DynamoDB");
+
+    // Step 2: Query indexedDataTableName to get imageIds associated with the eventName
+    const params = {
+      TableName: indexedDataTableName,
+      IndexName: 'folder_name-user_id-index',
+      ProjectionExpression: 'user_id, image_id, Gender_Value, AgeRange_Low, AgeRange_High',
+      KeyConditionExpression: 'folder_name = :folderName',
+      ExpressionAttributeValues: {
+        ':folderName': eventName
+      }
+    };
+
+    let items = [];
+    let lastEvaluatedKey = null;
+    do {
+      if (lastEvaluatedKey) {
+        params.ExclusiveStartKey = lastEvaluatedKey;
+      }
+
+      const data = await docClient.query(params).promise();
+      items = items.concat(data.Items);
+      lastEvaluatedKey = data.LastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    const userCountMap = new Map();
+
+    items.forEach(item => {
+      const userId = item.user_id;
+      const gender = item.Gender_Value;
+      const ageLow = item.AgeRange_Low;
+      const ageHigh = item.AgeRange_High;
+      if (!userCountMap.has(userId)) {
+        // Initialize the map with an object containing userId, count, and gender
+        userCountMap.set(userId, { userId, count: 0, gender, age: 0 });
+      }
+
+      // Increment the count for this userId
+      const userInfo = userCountMap.get(userId);
+      userInfo.count += 1;
+      // Age average
+      if (ageLow && ageHigh) {
+        userInfo.age = (userInfo.age + ((ageLow + ageHigh) / 2)) / 2;
+      }
+      // Update the map with the new object
+      userCountMap.set(userId, userInfo);
+    });
+
+    logger.info("Total number of user userIds fetched: " + userCountMap.size);
+    const usersIds = Array.from(userCountMap.keys());
+    const keys = usersIds.map(userId => ({ user_id: userId }));
+
+    const thumbnailObject = await getThumbanailsForUserIds(keys);
+    thumbnailObject.forEach(item => {
+      item.count = userCountMap.get(item.user_id).count;
+      item.gender = userCountMap.get(item.user_id).gender;
+      item.avgAge = userCountMap.get(item.user_id).age;
+    });
+    thumbnailObject.sort((a, b) => b.count - a.count);
+
+    logger.info("Total number of user thumbnails fetched: " + thumbnailObject.length);
+
+    // Step 3: Store the result in EventTable
+    const storeParams = {
+      TableName: eventsTable,
+      Item: {
+        event_name: eventName,
+        event_date:'06-02-2022',
+        userThumbnails: thumbnailObject
+      }
+    };
+
+    await docClient.put(storeParams).promise();
+    logger.info("User thumbnails saved for event: " + eventName);
+
+    res.json(thumbnailObject);
+  } catch (err) {
+    logger.error("Error in fetching thumbnails", err);
+    res.status(500).send('Error getting thumbnails for the event: ' + eventName);
+  }
+});
+
 
 async function getThumbanailsForUserIds(keys){
 
@@ -2527,7 +2632,7 @@ app.post('/downloadImage', async (req, res) => {
     logger.info("Total images fetched for user->"+userId+" : "+result.Items.length);
     return result.Items.map(item => item.s3_url);
 }
-   app.post("/getImagesWithUserIds",async(req,res)=>{
+   app.post("/getImagesWithUserIds-old",async(req,res)=>{
       const userIds = req.body.userIds;
       const operation = req.body.operation;
       const mode = req.body.mode;
@@ -2606,7 +2711,7 @@ app.post('/downloadImage', async (req, res) => {
       
     });
 
-    app.post("/getImagesWithUserIds-new", async (req, res) => {
+    app.post("/getImagesWithUserIds", async (req, res) => {
       const { userIds, operation, mode, eventName } = req.body;
       
       logger.info(`Received request to get images with userIds: ${userIds}, operation: ${operation}, mode: ${mode}, eventName: ${eventName}`);
@@ -2674,13 +2779,13 @@ app.post('/downloadImage', async (req, res) => {
         if (operation === 'AND' && mode !== 'Loose') {
           // AND + Strict: Images that have exactly the specified user IDs
           logger.info(userIds)
-          // filteredImages = imageDetails.filter(item =>
-          //   userIds.every(userId => item.user_ids.includes(userId))
-          // );
-          //logger.info(`Filtered images with AND + Strict. Count: ${filteredImages.length}`);
           filteredImages = imageDetails.filter(item =>
-            userIds.length === item.user_ids.length
+            userIds.length === item.user_ids.length && userIds.every(userId => item.user_ids.includes(userId))
           );
+          //logger.info(`Filtered images with AND + Strict. Count: ${filteredImages.length}`);
+          // filteredImages = imageDetails.filter(item =>
+           
+          // );
           logger.info(`Filtered images with AND + Strict. Count: ${filteredImages.length}`);
         } else if (operation === 'AND' && mode === 'Loose') {
           // AND + Loose: Images that have all the specified user IDs but may also have other user IDs
@@ -2714,7 +2819,7 @@ app.post('/downloadImage', async (req, res) => {
     });
     
 
-    app.post("/getCombinationImagesWithUserIds", async (req, res) => {
+    app.post("/getCombinationImagesWithUserIds-old", async (req, res) => {
       const userIds = req.body.userIds;
       const eventName = req.body.eventName;
       const minUserCount = 1;  // Minimum number of user IDs that must be present in each image
@@ -2790,7 +2895,7 @@ app.post('/downloadImage', async (req, res) => {
       }
     });
 
-    app.post("/getCombinationImagesWithUserIds-new", async (req, res) => {
+    app.post("/getCombinationImagesWithUserIds", async (req, res) => {
       const { userIds, eventName } = req.body;
       const minUserCount = 1; // Minimum number of user IDs that must be present in each image
       
@@ -3896,6 +4001,272 @@ app.post("/saveProShareDetails",async (req, res) =>{
   }
 
 });
+
+app.post("/getImageUserIdCount", async (req, res) => {
+  const { user_id, eventName } = req.body;
+  
+  logger.info(`Received request to get images for user_id: ${user_id} with eventName: ${eventName}`);
+
+  try {
+    let imageIds = new Set();
+
+    // Step 1: Query indexedDataTableName to get imageIds associated with the user_id and eventName
+    let lastEvaluatedKey = null;
+    do {
+      const params = {
+        TableName: indexedDataTableName,
+        IndexName: 'user_id-folder_name-index',
+        KeyConditionExpression: "user_id = :userId and folder_name = :eventName",
+        ExpressionAttributeValues: {
+          ":userId": user_id,
+          ":eventName": eventName
+        },
+        ProjectionExpression: "image_id",
+        ExclusiveStartKey: lastEvaluatedKey
+      };
+
+      logger.info(`Querying indexedDataTableName for user_id: ${user_id} and eventName: ${eventName}`);
+
+      const data = await docClient.query(params).promise();
+      data.Items.forEach(item => {
+        imageIds.add(item.image_id);
+      });
+
+      lastEvaluatedKey = data.LastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    if (imageIds.size === 0) {
+      logger.info('No images found for the given user_id and eventName');
+      return res.send([]);
+    }
+
+    logger.info(`Total unique imageIds found: ${imageIds.size}`);
+
+    // Step 2: Fetch user_ids for each image_id from RecogImages table
+    const imageDetailsPromises = Array.from(imageIds).map(imageId => {
+      const params = {
+        TableName: recokgImages,
+        Key: { image_id: imageId },
+        ProjectionExpression: 'user_ids'
+      };
+      return docClient.get(params).promise();
+    });
+
+    logger.info('Fetching image details from RecogImages table');
+
+    const imageDetailsResults = await Promise.all(imageDetailsPromises);
+    const userIdMap = {};
+
+    imageDetailsResults.forEach(result => {
+      if (result.Item && result.Item.user_ids) {
+        result.Item.user_ids.forEach(id => {
+          if (!userIdMap[id]) {
+            userIdMap[id] = 0;
+          }
+          userIdMap[id]++;
+        });
+      }
+    });
+
+    // Step 3: Fetch userThumbnails from EventTable using scan
+    const scanParams = {
+      TableName: eventsTable,
+      FilterExpression: 'event_name = :eventName',
+      ExpressionAttributeValues: {
+        ':eventName': eventName
+      },
+      ProjectionExpression: 'userThumbnails'
+    };
+
+    const scanResult = await docClient.scan(scanParams).promise();
+    if (scanResult.Items.length === 0 || !scanResult.Items[0].userThumbnails) {
+      logger.info('No userThumbnails found in EventTable for the given event');
+      return res.send(userIdMap);
+    }
+
+    const userThumbnails = scanResult.Items[0].userThumbnails;
+
+    // Step 4: Enrich userIdMap with avgAge and gender
+    const enrichedUserIdMap = Object.entries(userIdMap).map(([userId, count]) => {
+      const userThumbnail = userThumbnails.find(thumbnail => thumbnail.user_id === userId);
+      return {
+        user_id: userId,
+        count: count,
+        avgAge: userThumbnail ? userThumbnail.avgAge : null,
+        gender: userThumbnail ? userThumbnail.gender : null
+      };
+    });
+
+    // Step 5: Sort the enriched userIdMap by count
+    enrichedUserIdMap.sort((a, b) => b.count - a.count);
+
+    logger.info('Sorted and enriched user_id map successfully');
+
+    res.send(enrichedUserIdMap);
+  } catch (error) {
+    logger.error(`Error fetching images: ${error.message}`);
+    res.status(500).send("Error fetching images");
+  }
+});
+
+app.get("/getFamilySuggestions/:user_id/:eventName", async (req, res) => {
+  const { user_id, eventName } = req.params;
+  
+  logger.info(`Received request to get family suggestions for user_id: ${user_id} with eventName: ${eventName}`);
+
+  try {
+    let imageIds = new Set();
+
+    // Step 1: Query indexedDataTableName to get imageIds associated with the user_id and eventName
+    let lastEvaluatedKey = null;
+    do {
+      const params = {
+        TableName: indexedDataTableName,
+        IndexName: 'user_id-folder_name-index',
+        KeyConditionExpression: "user_id = :userId and folder_name = :eventName",
+        ExpressionAttributeValues: {
+          ":userId": user_id,
+          ":eventName": eventName
+        },
+        ProjectionExpression: "image_id",
+        ExclusiveStartKey: lastEvaluatedKey
+      };
+
+      logger.info(`Querying indexedDataTableName for user_id: ${user_id} and eventName: ${eventName}`);
+
+      const data = await docClient.query(params).promise();
+      data.Items.forEach(item => {
+        imageIds.add(item.image_id);
+      });
+
+      lastEvaluatedKey = data.LastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    if (imageIds.size === 0) {
+      logger.info('No images found for the given user_id and eventName');
+      return res.send([]);
+    }
+
+    logger.info(`Total unique imageIds found: ${imageIds.size}`);
+
+    // Step 2: Fetch user_ids for each image_id from RecogImages table
+    const imageDetailsPromises = Array.from(imageIds).map(imageId => {
+      const params = {
+        TableName: recokgImages,
+        Key: { image_id: imageId },
+        ProjectionExpression: 'user_ids'
+      };
+      return docClient.get(params).promise();
+    });
+
+    logger.info('Fetching image details from RecogImages table');
+
+    const imageDetailsResults = await Promise.all(imageDetailsPromises);
+    const userIdMap = {};
+
+    imageDetailsResults.forEach(result => {
+      if (result.Item && result.Item.user_ids) {
+        result.Item.user_ids.forEach(id => {
+          if (!userIdMap[id]) {
+            userIdMap[id] = 0;
+          }
+          userIdMap[id]++;
+        });
+      }
+    });
+
+    // Step 3: Fetch userThumbnails from EventTable using scan
+    const scanParams = {
+      TableName: eventsTable,
+      FilterExpression: 'event_name = :eventName',
+      ExpressionAttributeValues: {
+        ':eventName': eventName
+      },
+      ProjectionExpression: 'userThumbnails'
+    };
+
+    const scanResult = await docClient.scan(scanParams).promise();
+    if (scanResult.Items.length === 0 || !scanResult.Items[0].userThumbnails) {
+      logger.info('No userThumbnails found in EventTable for the given event');
+      return res.send(userIdMap);
+    }
+
+    const userThumbnails = scanResult.Items[0].userThumbnails;
+
+    // Step 4: Enrich userIdMap with avgAge and gender
+    const enrichedUserIdMap = Object.entries(userIdMap).map(([userId, count]) => {
+      const userThumbnail = userThumbnails.find(thumbnail => thumbnail.user_id === userId);
+      return {
+        user_id: userId,
+        count: count,
+        avgAge: userThumbnail ? userThumbnail.avgAge : null,
+        gender: userThumbnail ? userThumbnail.gender : null
+      };
+    });
+
+    // Step 5: Sort the enriched userIdMap by count
+    enrichedUserIdMap.sort((a, b) => b.count - a.count);
+
+    logger.info('Sorted and enriched user_id map successfully');
+
+    // Step 6: Generate Family Suggestions
+    const user = enrichedUserIdMap.find(user => user.user_id === user_id);
+    if (!user) {
+      logger.info('No information found for the provided user_id');
+      return res.status(404).send('User not found');
+    }
+
+    const userAge = user.avgAge;
+    const userGender = user.gender;
+    const familySuggestions = {
+      father: [],
+      mother: [],
+      siblings: [],
+      spouse: [],
+      kids: []
+    };
+
+    enrichedUserIdMap.forEach(person => {
+      if (person.user_id === user_id) return;
+
+      if (person.gender === 'Male' && person.avgAge >= userAge + 10) {
+        if (familySuggestions.father.length < 10) {
+          familySuggestions.father.push(person);
+        }
+      } else if (person.gender === 'Female' && person.avgAge >= userAge + 10) {
+        if (familySuggestions.mother.length < 10) {
+          familySuggestions.mother.push(person);
+        }
+      } else if (Math.abs(person.avgAge - userAge) <= 10) {
+        if (familySuggestions.siblings.length < 10) {
+          familySuggestions.siblings.push(person);
+        }
+        if (familySuggestions.spouse.length < 10 && person.gender !== userGender) {
+          familySuggestions.spouse.push(person);
+        }
+      } else if (person.avgAge <= userAge - 15) {
+        if (familySuggestions.kids.length < 10) {
+          familySuggestions.kids.push(person);
+        }
+      }
+    });
+
+    // Sorting the lists based on the count
+    familySuggestions.father.sort((a, b) => b.count - a.count); // Higher count first
+    familySuggestions.mother.sort((a, b) => b.count - a.count); // Higher count first
+    familySuggestions.siblings.sort((a, b) => b.count - a.count); // Higher count first
+    familySuggestions.spouse.sort((a, b) => b.count - a.count); // Higher count first
+    familySuggestions.kids.sort((a, b) => b.count - a.count); // Higher count first
+
+    res.send(familySuggestions);
+  } catch (error) {
+    logger.error(`Error fetching images: ${error.message}`);
+    res.status(500).send("Error fetching images");
+  }
+});
+
+
+
 
   const httpsServer = https.createServer(credentials, app);
 

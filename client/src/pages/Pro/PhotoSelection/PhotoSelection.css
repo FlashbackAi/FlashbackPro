@@ -4,13 +4,17 @@ header{
 
 .container {
     display: flex;
+    flex: 1;
 }
 .sidebar{
     width:8em;
+    height: 100vh;;
+    overflow-y: auto;
 }
 
 .content{
     padding:1px;
+    height: 100vh;;
     text-align: left;
 }
 
