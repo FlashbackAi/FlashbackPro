@@ -75,7 +75,7 @@ const CreateEventForm = () => {
       setFormData({ ...formData, projectName: response.data.data.project});
       setNewProjectName('');
       setShowNewProjectInput(false);
-      console.log(projects)
+      console.log(projects);
       toast.success('Project created successfully');
     } catch (error) {
       console.error('Error creating project:', error);
@@ -132,6 +132,8 @@ const CreateEventForm = () => {
     if (selectedFile) {
       formDataToSend.append('eventImage', selectedFile);
     }
+
+    console.log(formDataToSend);
 
     try {
       const response = await API_UTIL.post('/saveEventDetails', formDataToSend, {
@@ -227,7 +229,6 @@ const CreateEventForm = () => {
             </div>
             <div className="form-group">
               
-           
             <label>Create New Project</label>  
             <button 
             type="button" 

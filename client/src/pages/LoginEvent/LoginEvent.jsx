@@ -50,21 +50,29 @@ import { useParams, useNavigate } from 'react-router';
 import API_UTIL from '../../services/AuthIntereptor.js';
 import Header from '../../components/Header/Header.js';
 import "./LoginEvent.css"
+import { eventHandlers } from 'jsx-ast-utils';
 
 export const LoginEvent = () => {
     const { eventName } = useParams();
     const navigate = useNavigate();
-    const [error, setError] = useState(null);
-    const [eventData, setEventData] = useState([]);
-    const [matchingEvent, setMatchingEvent] = useState(null);
+    // const [error, setError] = useState(null);
+    // const [eventData, setEventData] = useState([]);
+    // const [matchingEvent, setMatchingEvent] = useState(null);
     const [userPhoneNumber, setUserPhoneNumber] = useState(null);
+    const [loading,setLoading] = useState(true);
     const [attendees, setAttendees] = useState(1); // Default to 1 attendee
+    const [userDetails, setUserDetails] = useState();
 
     useEffect(() => {
         const phoneNumber = sessionStorage.getItem('userphoneNumber');
         if (phoneNumber) {
             setUserPhoneNumber(phoneNumber);
+            fetchUserDetails(phoneNumber)
+            setLoading(false)
+        } else {
+            setLoading(false);
         }
+
     }, []);
 
     // useEffect(() => {
@@ -82,16 +90,40 @@ export const LoginEvent = () => {
     //     fetchEventData();
     // });
 
-    if (error) return <div className="loading-screen">Error: {error}</div>;
+    //if (error) return <div className="loading-screen">Error: {error}</div>;
+
+    const fetchUserDetails = async (phoneNumber) => {
+        try {
+          const response = await API_UTIL.get(`/fetchUserDetails/${phoneNumber}`);
+          setUserDetails(response.data);
+            console.log(response.data);
+            setLoading(false);
+        } catch (error) {
+          console.error('Error fetching user details:', error);
+          setLoading(false);
+        }
+      };
 
     const handleAttendeesChange = (e) => {
         setAttendees(e.target.value);
     };
 
+    // const formatEventName = (name) => {
+    //     let event = name.replace(/_/g, ' ');
+    //     console.log(userDetails?.data.user_name)
+    //     event.replace(userDetails?.data.user_name, '');
+    //     console.log(event)
+    //     return event;
+    // }
+
     const formatEventName = (name) => {
-        let event = name.replace(/_/g, ' ');
-        return event
-    }
+        if (userDetails && userDetails.data.user_name) {
+            let event = name.replace(/_/g, ' ');
+            event = event.replace(userDetails.data.user_name, '');
+            return event;
+        }
+        return name.replace(/_/g, ' ');
+    };
 
     const handleFormSubmit = (e) => {
         e.preventDefault();
@@ -99,11 +131,30 @@ export const LoginEvent = () => {
         console.log(`Number of attendees: ${attendees}`);
     };
 
-    if (!userPhoneNumber) {
-        return <Login />;
+    if(loading){
+        return <div className='loading-screen'>Loading....</div>
     }
 
+    if (!userPhoneNumber && eventName) {
+        return (
+            <Login
+                name = {eventName}
+                onLoginSuccess={(phoneNumber) => {
+                    sessionStorage.setItem('userphoneNumber', phoneNumber);
+                    setUserPhoneNumber(phoneNumber);
+                    navigate(`/login/${eventName}/rsvp`);
+                }}
+            />
+        );
+    }
+
+    // if (!userPhoneNumber) {
+    //     return (
+    //     <Login />)
+    // }
+
     // After successful login, show the form
+    if(eventName && userPhoneNumber){
     return (
         <div>
             {/* {matchingEvent && (
@@ -131,6 +182,11 @@ export const LoginEvent = () => {
             </form>
         </div>
     );
+}
+// If no eventName, just render the login component
+return <Login />;
 };
+
+
 
 export default LoginEvent;

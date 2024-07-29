@@ -71,14 +71,15 @@ const EventDetails = () => {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await API_UTIL.put(`/updateEvent/${event.event_name}/${event.event_date}`, {
+      const response = await API_UTIL.put(`/updateEvent/${event.event_name}/${event.project_name}`, {
         invitationNote: editData.invitationNote,
         eventLocation: editData.eventLocation,
-        street: editData.street,
-        city: editData.city,
-        state: editData.state,
-        pinCode: editData.pinCode,
-        invitation_url: editData.invitation_url
+        eventDate: editData.eventDate,
+        // street: editData.street,
+        // city: editData.city,
+        // state: editData.state,
+        // pinCode: editData.pinCode,
+        //invitation_url: editData.invitation_url
       });
       if (response.status === 200) {
         toast.success('Event updated successfully');
@@ -217,17 +218,17 @@ const EventDetails = () => {
   };
 
   const sendInvite = () => {
-        const message = editData ? `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(editData?.eventDate)} at ${getFormattedTime(editData?.eventDate)}. Location: ${editData?.eventLocation} , Url: https://flashback.inc/login/${formattedName(event?.event_name)}`
-                        : `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(event.event_date)} at ${getFormattedTime(event.event_date)}. Location: ${event.event_location} , Url: https://flashback.inc/login/${formattedName(event?.event_name)}`;
+        const message = editData ? `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(editData?.eventDate)} at ${getFormattedTime(editData?.eventDate)}. Location: ${editData?.eventLocation} , Url: https://flashback.inc/login/${event?.event_name}`
+                        : `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(event.event_date)} at ${getFormattedTime(event.event_date)}. Location: ${event.event_location} , Url: https://flashback.inc/login/${event?.event_name}`;
         const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
         window.open(url, '_blank');
   }
 
-  const formattedName = (name) => {
-    let event = name.replace(userDetails.user_name, '');
-    console.log(event)
-    return event;
-  };
+  // const formattedName = (name) => {
+  //   let event = name.replace(userDetails.user_name, '');
+  //   console.log(event)
+  //   return event;
+  // };
  
   const formatEventName = (name) => {
     let event = name.replace(/_/g, ' ');
