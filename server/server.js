@@ -2712,7 +2712,7 @@ app.post('/downloadImage', async (req, res) => {
     });
 
     app.post("/getImagesWithUserIds", async (req, res) => {
-      const { userIds, operation, mode, eventName } = req.body;
+      const { userIds, operation, mode, eventName, sort } = req.body;
       
       logger.info(`Received request to get images with userIds: ${userIds}, operation: ${operation}, mode: ${mode}, eventName: ${eventName}`);
     
@@ -2809,7 +2809,13 @@ app.post('/downloadImage', async (req, res) => {
           thumbnailUrl: "https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/" + item.s3_url.split("amazonaws.com/")[1]
         }));
     
+        if(sort === 'desc'){
+          logger.info('sorting reverse')
+          items.sort((a, b) => b.user_ids.length - a.user_ids.length);
+        }
+        else{
         items.sort((a, b) => a.user_ids.length - b.user_ids.length);
+        }
         logger.info(`Total images to be returned: ${items.length}`);
         res.send(items);
       } catch (error) {
@@ -2953,7 +2959,7 @@ app.post('/downloadImage', async (req, res) => {
     
         const imageDetailsResults = await Promise.all(imageDetailsPromises);
         const imageDetails = imageDetailsResults.map(result => {
-          logger.info(`Fetched user_ids for image_id ${result.Item.image_id}: ${result.Item.user_ids}`);
+          // logger.info(`Fetched user_ids for image_id ${result.Item.image_id}: ${result.Item.user_ids}`);
           return result.Item;
         });
     
@@ -2971,7 +2977,6 @@ app.post('/downloadImage', async (req, res) => {
           ...item,
           thumbnailUrl: "https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/" + item.s3_url.split("amazonaws.com/")[1]
         }));
-    
         items.sort((a, b) => a.user_ids.length - b.user_ids.length);
         logger.info(`Total images to be returned: ${items.length}`);
         res.send(items);
