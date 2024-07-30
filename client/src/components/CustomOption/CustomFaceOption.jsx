@@ -6,6 +6,7 @@ const CustomFaceOption = ({
   options,
   others,
   serialNo,
+  onSelect,
   title,
   isFirst = false,
   isSubmit = false,
@@ -34,21 +35,24 @@ const CustomFaceOption = ({
         setSelection((prevSelection) => [...prevSelection, value]);
       }
     }
+    // Fetch and update family suggestions
+    onSelect(question, value);
   };
 
   const handleClickSelected = (index, value) => {
     console.log(value);
     if (value.includes('missing.jpg')) {
-        setSelection(selection.filter((_, i) => i !== index));
+      setSelection(selection.filter((_, i) => i !== index));
     } else {
-        if (selection.includes(value)) {
-            setSelection(selection.filter((item) => item !== value));
-        } else {
-            setSelection((prevSelection) => [...prevSelection, value]);
-        }
+      if (selection.includes(value)) {
+        setSelection(selection.filter((item) => item !== value));
+      } else {
+        setSelection((prevSelection) => [...prevSelection, value]);
+      }
     }
-};
 
+    onSelect(question, value);
+  };
 
   useEffect(() => {
     sendSelection && sendSelection(question, multiple ? selection : selection[0]);
@@ -96,7 +100,7 @@ const CustomFaceOption = ({
             </div>
           ))}
         </div>
-        
+
         <div className="separator">
           <hr className="partition-style" />
           <p>All Other People</p>

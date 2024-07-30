@@ -327,16 +327,30 @@ const PhotoSelection = () => {
       userIds.push(extractId(formData.kids));
     }
     try {
-      const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'AND', 'eventName': eventName });
+      const response = await API_UTIL.post(`/getCombinationImagesWithUserIds`, { 'userIds': userIds, 'operation': 'AND', 'eventName': eventName });
       if (response.status === 200) {
+
+      const brideSolos = imagesData['Bride Solos'].images.length === 0 ? await getSolos('bride', formData) : imagesData['Bride Solos'].images;
+      const groomSolos = imagesData['Groom Solos'].images.length === 0 ? await getSolos('groom', formData) : imagesData['Groom Solos'].images;
+      let kidsImages;
+  
+      if (formData.kids) {
+        kidsImages = imagesData['Kids'].images.length === 0 ? await getKidsImages([extractId(formData.kids)]) : imagesData['Kids'].images;
+      }
+        const filteredData = response.data.filter(img =>
+          !brideSolos.some(brideImg => brideImg.image_id === img.image_id) &&
+          !groomSolos.some(groomImg => groomImg.image_id === img.image_id) &&
+          (!kidsImages || !kidsImages.some(kidImg => kidImg.image_id === img.image_id))
+        );
+
         setImagesData((prevState) => ({
           ...prevState,
           'Combined': {
             ...prevState['Combined'],
-            images: response.data
+            images: filteredData
           },
         }));
-        return response.data;
+        return filteredData;
       }
     } catch (err) {
       console.log(err);
