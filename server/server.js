@@ -3704,14 +3704,14 @@ app.get("/getEventDetails/:eventName", async (req, res) => {
 // });
 
 // API endpoint to delete an event
-app.delete('/deleteEvent/:eventName/:eventDate', async (req, res) => {
-  const { eventName, eventDate } = req.params;
+app.delete('/deleteEvent/:eventName/:projectName', async (req, res) => {
+  const { eventName, projectName } = req.params;
 
   const params = {
-    TableName: eventsTable,
+    TableName: eventsDataTable,
     Key: {
       event_name: eventName,
-      event_date: eventDate,
+      project_name: projectName,
     }
   };
   logger.info(params.Key)

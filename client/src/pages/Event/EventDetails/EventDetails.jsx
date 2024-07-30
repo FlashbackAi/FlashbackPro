@@ -83,7 +83,7 @@ const EventDetails = () => {
       });
       if (response.status === 200) {
         toast.success('Event updated successfully');
-        navigate('/events');
+        navigate('/event');
       }
     } catch (error) {
       console.error('Error updating event:', error);
