@@ -349,7 +349,7 @@ const FaceSelection = () => {
           </div>
           <CustomFaceOption
             question={`${char.toLowerCase()}.${parentKey}.parents`}
-            options={filterOptions([suggestions.father,...suggestions.mother])}
+            options={filterOptions([suggestions?.father||[],suggestions?.mother||[]])}
             others={[missingThumbnail,...filterOptions(userThumbnails)]}
             title={`Select ${char} ${parentKey} Parents`}
             onSelect={handleSelectFace}
@@ -362,7 +362,7 @@ const FaceSelection = () => {
           />
           <CustomFaceOption
             question={`${char.toLowerCase()}.${parentKey}.siblings`}
-            options={filterOptions(suggestions.siblings).slice(0,20)}
+            options={filterOptions(suggestions?.siblings||[]).slice(0,20)}
             others={[missingThumbnail,...filterOptions(userThumbnails)]}
             title={`Select ${char} ${parentKey} Siblings`}
             onSelect={handleSelectFace}
@@ -391,7 +391,7 @@ const FaceSelection = () => {
   
       if (parentKey === "Brother" || parentKey === "Sister") {
         ques = `${char.toLowerCase()}.${parentKey}`;
-        opt = suggestions.kids || [];
+        opt = suggestions?.kids || [];
       } else {
         ques = `${char.toLowerCase()}.${parentKey}.Siblings`;
         opt = userThumbnails;
@@ -413,7 +413,7 @@ const FaceSelection = () => {
             </div>
             <CustomFaceOption
               question={`${ques}.${index + 1}.spouse`}
-              options={filterOptions(suggestions.spouse).slice(0, 20)}
+              options={filterOptions(suggestions?.spouse||[]).slice(0, 20)}
               others={[missingThumbnail, ...filterOptions(userThumbnails)]}
               serialNo={`${srNoStart}.${index + 1}`}
               title={`Select ${char} ${parentKey} ${index + 1} Spouse`}
@@ -425,7 +425,7 @@ const FaceSelection = () => {
             />
             <CustomFaceOption
               question={`${ques}.${index + 1}.children`}
-              options={filterOptions(suggestions.kids)}
+              options={filterOptions(suggestions?.kids||[])}
               others={[missingThumbnail, ...filterOptions(userThumbnails)]}
               title={`Select ${char} ${parentKey} Sibling ${index + 1} Children`}
               multiple={true}
@@ -529,7 +529,7 @@ const FaceSelection = () => {
             </div>
             <CustomFaceOption
               question={`${key}.Siblings.${siblingIndex}.Children.${cousinIndex+1}.spouse`}
-              options={filterOptions(suggestions.spouse)}
+              options={filterOptions(suggestions?.spouse||[])}
               others={[missingThumbnail,...filterOptions(userThumbnails)]}
               serialNo={`${srNoStart}.${idx}`}
               title={`Select Cousin's Spouse`}
@@ -541,7 +541,7 @@ const FaceSelection = () => {
             />
             <CustomFaceOption
               question={`${key}.Siblings.${siblingIndex}.Children.${cousinIndex+1}.children`}
-              options={filterOptions(suggestions.kidss)}
+              options={filterOptions(suggestions?.kids||[])}
               others={[missingThumbnail,...filterOptions(userThumbnails)]}
               serialNo={`${srNoStart}.${siblingIndex + 1}.${cousinIndex + 1}.2`}
               title={`Select Cousin's Children`}
