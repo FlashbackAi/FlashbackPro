@@ -156,7 +156,7 @@ const PhotoSelection = () => {
       });
     }
     if (formData.groom.mother.parents.length)
-      imagesData['Groom Mother Extended Family'] = { images: [], thumbnails: formData.groom.father.parents };
+      imagesData['Groom Mother Parents'] = { images: [], thumbnails: formData.groom.mother.parents };
     if ( formData.groom.mother.siblings.length ){
       formData.groom.mother.siblings.forEach((sibling, index) => {
         imagesData[`Groom Mother Sibling ${index + 1} Family`] = { images: [], thumbnails: [sibling,'/assets/family_icon.png'] };
@@ -168,14 +168,14 @@ const PhotoSelection = () => {
     }
   
     if ( formData.bride.father.parents.length)
-      imagesData['Bride Father Grand Parents'] = { images: [], thumbnail: formData.bride.father.parents };
+      imagesData['Bride Father Parents'] = { images: [], thumbnails: formData.bride.father.parents };
     if ( formData.bride.father.siblings.length ){
       formData.bride.father.siblings.forEach((sibling, index) => {
         imagesData[`Bride Father Sibling ${index + 1} Family`] = { images: [],thumbnails: [sibling,'/assets/family_icon.png']  };
       });
     }
     if (formData.bride.mother.parents.length)
-      imagesData['Bride Mother Grand Parents'] = { images: [], thumbnails: formData.bride.mother.parents };
+      imagesData['Bride Mother Parents'] = { images: [], thumbnails: formData.bride.mother.parents };
     if ( formData.bride.mother.siblings.length ){
       formData.bride.mother.siblings.forEach((sibling, index) => {
         imagesData[`Bride Mother Sibling ${index + 1} Family`] = { images: [], thumbnails: [sibling,'/assets/family_icon.png'] };
@@ -694,7 +694,7 @@ const handleSelectTab = async (key) => {
           userIds.push(userId);
         });
         try {
-          const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName });
+          const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName, 'sort':'desc' });
           if (response.status === 200) {
             setImagesData((prevState) => ({
               ...prevState,
@@ -724,7 +724,7 @@ const handleSelectTab = async (key) => {
           userIds.push(userId);
         });
         try {
-          const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName });
+          const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName, 'sort':'desc'  });
           if (response.status === 200) {
             setImagesData((prevState) => ({
               ...prevState,
@@ -754,7 +754,7 @@ const handleSelectTab = async (key) => {
           userIds.push(userId);
         });
         try {
-          const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName });
+          const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName, 'sort':'desc'  });
           if (response.status === 200) {
             setImagesData((prevState) => ({
               ...prevState,
@@ -784,7 +784,7 @@ const handleSelectTab = async (key) => {
           userIds.push(userId);
         });
         try {
-          const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName });
+          const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName, 'sort':'desc'  });
           if (response.status === 200) {
             setImagesData((prevState) => ({
               ...prevState,
@@ -814,7 +814,7 @@ const handleSelectTab = async (key) => {
           userIds.push(userId);
         });
         try {
-          const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName });
+          const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName, 'sort':'desc'  });
           if (response.status === 200) {
             setImagesData((prevState) => ({
               ...prevState,
@@ -844,7 +844,7 @@ const handleSelectTab = async (key) => {
           userIds.push(userId);
         });
         try {
-          const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName });
+          const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName, 'sort':'desc'  });
           if (response.status === 200) {
             setImagesData((prevState) => ({
               ...prevState,
@@ -874,7 +874,7 @@ const handleSelectTab = async (key) => {
           userIds.push(userId);
         });
         try {
-          const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName });
+          const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName, 'sort':'desc'  });
           if (response.status === 200) {
             setImagesData((prevState) => ({
               ...prevState,
@@ -895,14 +895,22 @@ const handleSelectTab = async (key) => {
       }
       break;
     default:
-      if (key.startsWith("Groom Father Sibling") || key.startsWith("Groom Mother Sibling")) {
+      if (key.startsWith("Groom Father Sibling") || key.startsWith("Groom Mother Sibling")||key.startsWith("Bride Father Sibling")||key.startsWith("Bride Mother Sibling")) {
         if (imagesData[key].images.length === 0) {
           setIsLoading(true);
           const relation = key.split(' ')[1]
           const siblingIndex = key.split(' ')[3]
           const parentType = relation.toLowerCase();
-          const siblingKey = extractId(formData.groom[parentType].siblings[parseInt(siblingIndex) - 1]);
-          const userIds = await extractIds(formData.groom[parentType].Siblings[parseInt(siblingIndex)]);
+          let siblingKey;
+          let userIds;  
+          if(key.startsWith("Groom")){
+            siblingKey = extractId(formData.groom[parentType].siblings[parseInt(siblingIndex) - 1]);
+            userIds = await extractIds(formData.groom[parentType].Siblings[parseInt(siblingIndex)]);
+        }
+        else{
+          siblingKey = extractId(formData.bride[parentType].siblings[parseInt(siblingIndex) - 1]);
+          userIds = await extractIds(formData.bride[parentType].Siblings[parseInt(siblingIndex)]);
+        }
           userIds.push(siblingKey);
           try {
             const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName });

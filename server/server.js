@@ -1633,7 +1633,7 @@ app.get('/userThumbnails/:eventName', async (req, res) => {
       TableName: eventsTable,
       Item: {
         event_name: eventName,
-        event_date:'06-02-2022',
+        event_date:'09-06-2024',
         userThumbnails: thumbnailObject
       }
     };
@@ -2711,15 +2711,24 @@ app.post('/downloadImage', async (req, res) => {
       
     });
 
-    app.post("/getImagesWithUserIds", async (req, res) => {
-      const { userIds, operation, mode, eventName } = req.body;
-      
-      logger.info(`Received request to get images with userIds: ${userIds}, operation: ${operation}, mode: ${mode}, eventName: ${eventName}`);
     
+    const emotionOrder = ["SAD", "SURPRISED", "FEAR", "HAPPY", "CALM", "ANGRY", "CONFUSED", "DISGUSTED"];
+
+    const getHighestPriorityEmotion = (emotions) => {
+      const highestEmotion = emotions[0]; // Assume the first emotion has the highest confidence
+      return highestEmotion;
+    };
+
+    app.post("/getImagesWithUserIds", async (req, res) => {
+      const { userIds, operation, mode, eventName, sort } = req.body;
+
+      logger.info(`Received request to get images with userIds: ${userIds}, operation: ${operation}, mode: ${mode}, eventName: ${eventName}`);
+
       try {
         let imageIds = new Set();
-    
-        // Step 1: Iterate over each userId to get imageIds associated with them
+        let imageDetails = [];
+
+        // Step 1: Iterate over each userId to get imageIds and emotions associated with them
         for (const userId of userIds) {
           let lastEvaluatedKey = null;
           do {
@@ -2731,31 +2740,32 @@ app.post('/downloadImage', async (req, res) => {
                 ":userId": userId,
                 ":eventName": eventName
               },
-              ProjectionExpression: "image_id",
+              ProjectionExpression: "image_id, Emotions, user_id",
               ExclusiveStartKey: lastEvaluatedKey
             };
-    
+
             logger.info(`Querying indexedDataTableName for userId: ${userId} and eventName: ${eventName}`);
-    
+
             const data = await docClient.query(params).promise();
             data.Items.forEach(item => {
               imageIds.add(item.image_id);
+              imageDetails.push(item); // Collect the image details here
             });
-    
+
             lastEvaluatedKey = data.LastEvaluatedKey;
             logger.info(`Found ${data.Items.length} imageIds for userId: ${userId}, lastEvaluatedKey: ${lastEvaluatedKey}`);
           } while (lastEvaluatedKey);
         }
-    
+
         if (imageIds.size === 0) {
           logger.info('No images found for the given userIds and eventName');
           return res.send([]);
         }
-    
+
         logger.info(`Total unique imageIds found: ${imageIds.size}`);
-    
+
         // Step 2: Fetch user_ids for each image_id from RecogImages table
-        const imageDetailsPromises = Array.from(imageIds).map(imageId => {
+        const recogImageDetailsPromises = Array.from(imageIds).map(imageId => {
           const params = {
             TableName: recokgImages,
             Key: { image_id: imageId },
@@ -2763,53 +2773,75 @@ app.post('/downloadImage', async (req, res) => {
           };
           return docClient.get(params).promise();
         });
-    
+
         logger.info('Fetching image details from RecogImages table');
-    
-        const imageDetailsResults = await Promise.all(imageDetailsPromises);
-        const imageDetails = imageDetailsResults.map(result => {
-          // logger.info(`Fetched user_ids for image_id ${result.Item.image_id}: ${result.Item.user_ids}`);
-          return result.Item;
-        });
-    
+
+        const recogImageDetailsResults = await Promise.all(recogImageDetailsPromises);
+        const recogImageDetailsMap = new Map(recogImageDetailsResults.map(result => [result.Item.image_id, result.Item]));
+
         logger.info('Fetched image details successfully');
-    
-        // Step 3: Filter imageIds based on operation and mode
+
+        // Step 3: Combine details and filter based on operation and mode
         let filteredImages;
         if (operation === 'AND' && mode !== 'Loose') {
           // AND + Strict: Images that have exactly the specified user IDs
-          logger.info(userIds)
           filteredImages = imageDetails.filter(item =>
-            userIds.length === item.user_ids.length && userIds.every(userId => item.user_ids.includes(userId))
+            userIds.length === recogImageDetailsMap.get(item.image_id).user_ids.length &&
+            userIds.every(userId => recogImageDetailsMap.get(item.image_id).user_ids.includes(userId))
           );
-          //logger.info(`Filtered images with AND + Strict. Count: ${filteredImages.length}`);
-          // filteredImages = imageDetails.filter(item =>
-           
-          // );
           logger.info(`Filtered images with AND + Strict. Count: ${filteredImages.length}`);
         } else if (operation === 'AND' && mode === 'Loose') {
           // AND + Loose: Images that have all the specified user IDs but may also have other user IDs
           filteredImages = imageDetails.filter(item =>
-            userIds.every(userId => item.user_ids.includes(userId))
+            userIds.every(userId => recogImageDetailsMap.get(item.image_id).user_ids.includes(userId))
           );
           logger.info(`Filtered images with AND + Loose. Count: ${filteredImages.length}`);
         } else if (operation === 'OR' && mode === 'Loose') {
           // OR + Loose: Images that have at least one of the specified user IDs but may also have other user IDs
           filteredImages = imageDetails.filter(item =>
-            userIds.some(userId => item.user_ids.includes(userId))
+            userIds.some(userId => recogImageDetailsMap.get(item.image_id).user_ids.includes(userId))
           );
           logger.info(`Filtered images with OR + Loose. Count: ${filteredImages.length}`);
         } else {
           logger.error('Invalid operation or mode specified');
           throw new Error('Invalid operation or mode specified');
         }
+
+        // Step 4: Enrich with highest emotion and sort the images
+        const items = filteredImages.map(item => {
+          const recogDetails = recogImageDetailsMap.get(item.image_id);
+          let highestEmotion = null;
+
+          if (recogDetails.user_ids.length === 1 && item.Emotions) {
+            try {
+              const emotions = JSON.parse(item.Emotions);
+              // logger.info(`Parsed emotions for image_id ${item.image_id}: ${JSON.stringify(emotions)}`);
+              highestEmotion = getHighestPriorityEmotion(emotions);
+            } catch (error) {
+              logger.error(`Error parsing emotions for image_id ${item.image_id}: ${error.message}`);
+            }
+          }
+
+          return {
+            ...recogDetails,
+            thumbnailUrl: "https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/" + recogDetails.s3_url.split("amazonaws.com/")[1],
+            highestEmotion: highestEmotion ? highestEmotion.Type : null,
+            highestEmotionConfidence: highestEmotion ? highestEmotion.Confidence : null
+          };
+        });
+
+        // Sort items based on the highest emotion and confidence
+        items.sort((a, b) => {
+          const emotionIndexA = emotionOrder.indexOf(a.highestEmotion);
+          const emotionIndexB = emotionOrder.indexOf(b.highestEmotion);
     
-        const items = filteredImages.map(item => ({
-          ...item,
-          thumbnailUrl: "https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/" + item.s3_url.split("amazonaws.com/")[1]
-        }));
+          if (emotionIndexA !== emotionIndexB) {
+            return emotionIndexA - emotionIndexB;
+          }
     
-        items.sort((a, b) => a.user_ids.length - b.user_ids.length);
+          return b.highestEmotionConfidence - a.highestEmotionConfidence;
+        });
+
         logger.info(`Total images to be returned: ${items.length}`);
         res.send(items);
       } catch (error) {
@@ -2817,8 +2849,8 @@ app.post('/downloadImage', async (req, res) => {
         res.status(500).send("Error fetching images");
       }
     });
-    
 
+    
     app.post("/getCombinationImagesWithUserIds-old", async (req, res) => {
       const userIds = req.body.userIds;
       const eventName = req.body.eventName;
@@ -2903,6 +2935,7 @@ app.post('/downloadImage', async (req, res) => {
     
       try {
         let imageIds = new Set();
+        let imageDetails = [];
     
         // Step 1: Iterate over each userId to get imageIds associated with them
         for (const userId of userIds) {
@@ -2916,7 +2949,7 @@ app.post('/downloadImage', async (req, res) => {
                 ":userId": userId,
                 ":eventName": eventName
               },
-              ProjectionExpression: "image_id",
+              ProjectionExpression: "image_id, Emotions, user_id",
               ExclusiveStartKey: lastEvaluatedKey
             };
     
@@ -2925,6 +2958,7 @@ app.post('/downloadImage', async (req, res) => {
             const data = await docClient.query(params).promise();
             data.Items.forEach(item => {
               imageIds.add(item.image_id);
+              imageDetails.push(item); // Collect the image details here
             });
     
             lastEvaluatedKey = data.LastEvaluatedKey;
@@ -2952,27 +2986,63 @@ app.post('/downloadImage', async (req, res) => {
         logger.info('Fetching image details from RecogImages table');
     
         const imageDetailsResults = await Promise.all(imageDetailsPromises);
-        const imageDetails = imageDetailsResults.map(result => {
-          logger.info(`Fetched user_ids for image_id ${result.Item.image_id}: ${result.Item.user_ids}`);
-          return result.Item;
-        });
+        const recogImageDetailsMap = new Map(imageDetailsResults.map(result => [result.Item.image_id, result.Item]));
     
         logger.info('Fetched image details successfully');
     
-        // Step 3: Filter imageIds based on the criteria
+        // Step 3: Combine details and filter based on operation and mode
         const filteredImages = imageDetails.filter(item => {
-          const matchingUserIds = item.user_ids.filter(userId => userIds.includes(userId));
-          return matchingUserIds.length >= minUserCount && matchingUserIds.length === item.user_ids.length;
+          const recogDetails = recogImageDetailsMap.get(item.image_id);
+          if (!recogDetails) return false;
+    
+          const matchingUserIds = recogDetails.user_ids.filter(userId => userIds.includes(userId));
+          return matchingUserIds.length >= minUserCount && matchingUserIds.length === recogDetails.user_ids.length;
         });
     
         logger.info(`Filtered images based on user IDs and event name. Count: ${filteredImages.length}`);
     
-        const items = filteredImages.map(item => ({
-          ...item,
-          thumbnailUrl: "https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/" + item.s3_url.split("amazonaws.com/")[1]
-        }));
+        // Step 4: Enrich with primary emotion and sort the images
+        const items = filteredImages.map(item => {
+          const recogDetails = recogImageDetailsMap.get(item.image_id);
+          let primaryEmotion = null;
     
-        items.sort((a, b) => a.user_ids.length - b.user_ids.length);
+          if (recogDetails.user_ids.length === 1 && item.Emotions) {
+            try {
+              const emotions = JSON.parse(item.Emotions);
+              // logger.info(`Parsed emotions for image_id ${item.image_id}: ${JSON.stringify(emotions)}`);
+              highestEmotion = getHighestPriorityEmotion(emotions);
+            } catch (error) {
+              logger.error(`Error parsing emotions for image_id ${item.image_id}: ${error.message}`);
+            }
+          }
+    
+          return {
+            ...recogDetails,
+            thumbnailUrl: "https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/" + recogDetails.s3_url.split("amazonaws.com/")[1],
+            highestEmotion: highestEmotion ? highestEmotion.Type : null,
+            highestEmotionConfidence: highestEmotion ? highestEmotion.Confidence : null
+          };
+        });
+    
+        // Sort items based on the primary emotion
+        items.sort((a, b) => {
+          // Sort by the number of user IDs in each image
+          if (a.user_ids.length !== b.user_ids.length) {
+            return a.user_ids.length - b.user_ids.length;
+          }
+    
+          // Sort by primary emotion order
+          const emotionIndexA = emotionOrder.indexOf(a.primaryEmotion);
+          const emotionIndexB = emotionOrder.indexOf(b.primaryEmotion);
+    
+          if (emotionIndexA !== emotionIndexB) {
+            return (emotionIndexA !== -1 ? emotionIndexA : emotionOrder.length) - (emotionIndexB !== -1 ? emotionIndexB : emotionOrder.length);
+          }
+    
+          // Sort by confidence level of the primary emotion
+          return b.primaryEmotionConfidence - a.primaryEmotionConfidence;
+        });
+    
         logger.info(`Total images to be returned: ${items.length}`);
         res.send(items);
       } catch (error) {
@@ -4264,9 +4334,6 @@ app.get("/getFamilySuggestions/:user_id/:eventName", async (req, res) => {
     res.status(500).send("Error fetching images");
   }
 });
-
-
-
 
   const httpsServer = https.createServer(credentials, app);
 
