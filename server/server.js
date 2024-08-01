@@ -4535,6 +4535,145 @@ app.get("/getFamilySuggestions/:user_id/:eventName", async (req, res) => {
   }
 });
 
+app.put("/setFolderName/:eventName", async(req,res) =>{
+  const eventName = req.params.eventName;
+  try {
+    logger.info("fetching images for event : " + eventName)
+    const params = {
+        TableName: recokgImages,
+        FilterExpression: 'contains(#attr, :val)',
+        ExpressionAttributeNames: {
+            '#attr': 's3_url',
+        },
+        ExpressionAttributeValues: {
+            ':val': eventName, 
+        },
+        ProjectionExpression: 's3_url, image_id, selected'
+    };
+
+    let items = [];
+    let lastEvaluatedKey = null;
+
+    do {
+        if (lastEvaluatedKey) {
+            params.ExclusiveStartKey = lastEvaluatedKey;
+        }
+
+        const data = await docClient.scan(params).promise();
+        for (let item of data.Items) {
+            // Extract folder_name from s3_url
+            const s3UrlParts = item.s3_url.split('/');
+            const folder_name = s3UrlParts[s3UrlParts.length - 2]; // Assuming folder name is the second last part of the URL
+
+            // Add folder_name to item
+            item.folder_name = folder_name;
+
+            // Update the record in DynamoDB with the new folder_name
+            const updateParams = {
+                TableName: recokgImages,
+                Key: { image_id: item.image_id }, // Assuming image_id is the primary key
+                UpdateExpression: 'set folder_name = :folder_name',
+                ExpressionAttributeValues: {
+                    ':folder_name': folder_name
+                }
+            };
+            await docClient.update(updateParams).promise();
+        }
+
+        items = items.concat(data.Items);
+        logger.info("Fetched and updated Images -> " + items.length);
+        lastEvaluatedKey = data.LastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    logger.info("Total images fetched and updated: " + items.length);
+    res.send(items);
+} catch (error) {
+    logger.error("Error fetching or updating images: ", error);
+    res.status(500).send("Error fetching or updating images");
+}
+
+});
+
+app.get("/getOtherImages/:eventName", async(req,res) =>{
+ 
+  const eventName = req.params.eventName;
+  try {
+    logger.info("fetching images for event : "+eventName)
+    const params = {
+      TableName: recokgImages,
+      IndexName: 'folder_name-index', 
+      ProjectionExpression: 'image_id,s3_url,folder_name',
+      KeyConditionExpression: 'folder_name = :folderName',
+      FilterExpression: 'attribute_not_exists(user_ids)',
+      ExpressionAttributeValues: {
+        ':folderName': eventName
+      }        
+    };
+
+    let items = [];
+    let lastEvaluatedKey = null;
+    do {
+      if (lastEvaluatedKey) {
+        params.ExclusiveStartKey = lastEvaluatedKey;
+      }
+
+      const data = await docClient.query(params).promise();
+      items = items.concat(data.Items);
+      lastEvaluatedKey = data.LastEvaluatedKey;
+    } while (lastEvaluatedKey)
+      const result = items.map(item => ({
+        ...item,
+        thumbnailUrl: "https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/" + item.s3_url.split("amazonaws.com/")[1]
+      }));
+    logger.info("Total images fetched" + " : " + result.length);
+    res.send(result);
+} catch(err){
+  logger.info(err.message);
+  res.status(500).send(err.message)
+}
+
+});
+
+app.get("/getAllImages/:eventName", async(req,res) =>{
+ 
+  const eventName = req.params.eventName;
+  try {
+    logger.info("fetching images for event : "+eventName)
+    const params = {
+      TableName: recokgImages,
+      IndexName: 'folder_name-index', 
+      ProjectionExpression: 'user_ids, image_id,s3_url,folder_name',
+      KeyConditionExpression: 'folder_name = :folderName',
+      ExpressionAttributeValues: {
+        ':folderName': eventName
+      }        
+    };
+
+    let items = [];
+    let lastEvaluatedKey = null;
+    do {
+      if (lastEvaluatedKey) {
+        params.ExclusiveStartKey = lastEvaluatedKey;
+      }
+
+      const data = await docClient.query(params).promise();
+      items = items.concat(data.Items);
+      lastEvaluatedKey = data.LastEvaluatedKey;
+    } while (lastEvaluatedKey)
+      const result = items.map(item => ({
+        ...item,
+        thumbnailUrl: "https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/" + item.s3_url.split("amazonaws.com/")[1]
+      }));
+    logger.info("Total images fetched" + " : " + result.length);
+    res.send(result);
+} catch(err){
+  logger.info(err.message);
+  res.status(500).send(err.message)
+}
+
+});
+
+
   const httpsServer = https.createServer(credentials, app);
 
   httpsServer.listen(PORT, () => {
