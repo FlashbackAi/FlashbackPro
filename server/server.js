@@ -4682,6 +4682,7 @@ app.get("/getAllImages/:eventName", async(req,res) =>{
     httpsServer.headersTimeout = 65000; // Increase headers timeout
   });
   
+  
 
 // //**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
 //  const server = app.listen(PORT ,() => {
