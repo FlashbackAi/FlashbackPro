@@ -4377,6 +4377,22 @@ app.post("/getImageUserIdCount", async (req, res) => {
   }
 });
 
+const calculateScore = async (person, userAge, expectedAgeDifference) => {
+  const actualAgeDifference = Math.abs(person.avgAge - userAge);
+  const deviation = Math.abs(actualAgeDifference - expectedAgeDifference);
+
+  // Adjust the impact of deviation - make it more lenient or strict as needed
+  const ageFactor = 1 / (1 + deviation); // The '/ 2' reduces the impact of deviation
+  
+  // Logging for debugging purposes
+  // if(expectedAgeDifference === 20){
+  //   logger.info(`deviation: ${deviation}, userAge: ${userAge}, person.avgAge: ${person.avgAge}, USER: ${person.user_id} -> ${person.count * ageFactor}`);
+  // }
+  
+  // Final score is the count multiplied by this more lenient age factor
+  return person.count * ageFactor;
+};
+
 app.get("/getFamilySuggestions/:user_id/:eventName", async (req, res) => {
   const { user_id, eventName } = req.params;
   
@@ -4469,16 +4485,11 @@ app.get("/getFamilySuggestions/:user_id/:eventName", async (req, res) => {
         count: count,
         avgAge: userThumbnail ? userThumbnail.avgAge : null,
         gender: userThumbnail ? userThumbnail.gender : null,
-        face_url:`https://rekognitionuserfaces.s3.amazonaws.com/thumbnails/${userId}.jpg`
+        face_url: `https://rekognitionuserfaces.s3.amazonaws.com/thumbnails/${userId}.jpg`
       };
     });
 
-    // Step 5: Sort the enriched userIdMap by count
-    enrichedUserIdMap.sort((a, b) => b.count - a.count);
-
-    logger.info('Sorted and enriched user_id map successfully');
-
-    // Step 6: Generate Family Suggestions
+    // Step 5: Generate Family Suggestions
     const user = enrichedUserIdMap.find(user => user.user_id === user_id);
     if (!user) {
       logger.info('No information found for the provided user_id');
@@ -4487,46 +4498,105 @@ app.get("/getFamilySuggestions/:user_id/:eventName", async (req, res) => {
 
     const userAge = user.avgAge;
     const userGender = user.gender;
+
+    logger.info(`userAge: ${userAge}, userGender: ${userGender}`);
+    const userObject = {
+      user_id: user_id,
+      avgAge: userAge,
+      gender: userGender
+    };
     const familySuggestions = {
       father: [],
       mother: [],
       siblings: [],
       spouse: [],
-      kids: []
+      kids: [],
+      user: userObject
     };
 
-    enrichedUserIdMap.forEach(person => {
-      if (person.user_id === user_id) return;
+    for (const person of enrichedUserIdMap) {
+      if (person.user_id === user_id) continue;
+      
+      const clonedPerson = {...person};
+      
+      // Calculate scores for father suggestions
+      if (clonedPerson.gender === 'Male' && clonedPerson.avgAge >= userAge) {
+        clonedPerson.score = await calculateScore(clonedPerson, userAge, 20);
+        familySuggestions.father.push(clonedPerson);
+      }
 
-      if (person.gender === 'Male' && person.avgAge >= userAge + 10) {
-        if (familySuggestions.father.length < 10) {
-          familySuggestions.father.push(person);
-        }
-      } if (person.gender === 'Female' && person.avgAge >= userAge + 10) {
-        if (familySuggestions.mother.length < 10) {
-          familySuggestions.mother.push(person);
-        }
-      } if (Math.abs(person.avgAge - userAge) <= 18) {
-        if (familySuggestions.siblings.length < 10) {
-          familySuggestions.siblings.push(person);
-        }
+      // Clone the person object again for mother section
+      const clonedPersonMother = {...person};
+      
+      // Calculate scores for mother suggestions
+      if (clonedPersonMother.gender === 'Female' && clonedPersonMother.avgAge >= userAge) {
+        clonedPersonMother.score = await calculateScore(clonedPersonMother, userAge, 20);
+        familySuggestions.mother.push(clonedPersonMother);
+      }
+
+      // Clone the person object again for siblings section
+      const clonedPersonSibling = {...person};
+      
+      // Calculate scores for siblings suggestions
+      if (Math.abs(clonedPersonSibling.avgAge - userAge) <= 20) {
+        clonedPersonSibling.score = await calculateScore(clonedPersonSibling, userAge, 3);
+        familySuggestions.siblings.push(clonedPersonSibling);
         
-        if (familySuggestions.spouse.length < 10 && person.gender !== userGender) {
-          familySuggestions.spouse.push(person);
-        }
-      } if (person.avgAge <= userAge - 15) {
-        if (familySuggestions.kids.length < 10) {
-          familySuggestions.kids.push(person);
+        const clonedPersonSpouse = {...clonedPersonSibling};
+        if (clonedPersonSpouse.gender !== userGender) {
+          clonedPersonSpouse.score = await calculateScore(clonedPersonSpouse, userAge, 5);
+          familySuggestions.spouse.push(clonedPersonSpouse);
         }
       }
-    });
 
-    // Sorting the lists based on the count
-    familySuggestions.father.sort((a, b) => b.count - a.count); // Higher count first
-    familySuggestions.mother.sort((a, b) => b.count - a.count); // Higher count first
-    familySuggestions.siblings.sort((a, b) => b.count - a.count); // Higher count first
-    familySuggestions.spouse.sort((a, b) => b.count - a.count); // Higher count first
-    familySuggestions.kids.sort((a, b) => b.count - a.count); // Higher count first
+      // Clone the person object again for kids section
+      const clonedPersonKid = {...person};
+      
+      // Calculate scores for kids suggestions
+      if (clonedPersonKid.avgAge <= userAge - 10) {
+        clonedPersonKid.score = await calculateScore(clonedPersonKid, userAge, 20);
+        familySuggestions.kids.push(clonedPersonKid);
+      }
+    }
+
+    // Sorting the lists based on the score
+    familySuggestions.father = familySuggestions.father.sort((a, b) => b.score - a.score).slice(0, 5).map(({ face_url, avgAge }) => ({ face_url, avgAge }));
+    familySuggestions.mother = familySuggestions.mother.sort((a, b) => b.score - a.score).slice(0, 5).map(({ face_url, avgAge }) => ({ face_url, avgAge }));
+    familySuggestions.siblings = familySuggestions.siblings.sort((a, b) => b.score - a.score).slice(0, 10).map(({ face_url, avgAge, gender }) => ({ face_url, avgAge, gender }));
+    familySuggestions.spouse = familySuggestions.spouse.sort((a, b) => b.score - a.score).slice(0, 5).map(({ face_url, avgAge }) => ({ face_url, avgAge }));
+    familySuggestions.kids = familySuggestions.kids.sort((a, b) => b.score - a.score).slice(0, 5).map(({ face_url, avgAge }) => ({ face_url, avgAge }));
+
+
+    // enrichedUserIdMap.forEach(person => {
+    //   if (person.user_id === user_id) return;
+
+    //   if (person.gender === 'Male' && person.avgAge >= userAge + 10) {
+       
+    //       familySuggestions.father.push(person);
+        
+    //   } if (person.gender === 'Female' && person.avgAge >= userAge + 10) {
+       
+    //       familySuggestions.mother.push(person);
+        
+    //   } if (Math.abs(person.avgAge - userAge) <= 18) {
+    //       familySuggestions.siblings.push(person);
+        
+        
+    //     if ( person.gender !== userGender) {
+    //       familySuggestions.spouse.push(person);
+    //     }
+    //   } if (person.avgAge <= userAge - 15) {
+    //       familySuggestions.kids.push(person);
+    //     }
+    // });
+
+    // // Sorting the lists based on the count
+    // familySuggestions.father.sort((a, b) => b.count - a.count).map(({ face_url, avgAge, gender }) => ({ face_url, avgAge, gender }));; // Higher count first
+    // familySuggestions.mother.sort((a, b) => b.count - a.count).map(({ face_url, avgAge, gender }) => ({ face_url, avgAge, gender }));; // Higher count first
+    // familySuggestions.siblings.sort((a, b) => b.count - a.count).map(({ face_url, avgAge, gender }) => ({ face_url, avgAge, gender }));; // Higher count first
+    // familySuggestions.spouse.sort((a, b) => b.count - a.count).map(({ face_url, avgAge, gender }) => ({ face_url, avgAge, gender }));; // Higher count first
+    // familySuggestions.kids.sort((a, b) => b.count - a.count).map(({ face_url, avgAge, gender }) => ({ face_url, avgAge, gender }));; // Higher count first
+
 
     res.send(familySuggestions);
   } catch (error) {
@@ -4534,6 +4604,8 @@ app.get("/getFamilySuggestions/:user_id/:eventName", async (req, res) => {
     res.status(500).send("Error fetching images");
   }
 });
+
+
 
 app.put("/setFolderName/:eventName", async(req,res) =>{
   const eventName = req.params.eventName;
