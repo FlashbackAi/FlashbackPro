@@ -1671,7 +1671,7 @@ async function getThumbanailsForUserIds(keys){
 
     try {
       const data = await docClient.batchGet(params1).promise();
-      const responses = data.Responses[TABLE_NAME];
+      const responses = data.Responses[TABLE_NAME]
       thumbnailObject.push(...responses);
     } catch (error) {
       console.error('Error fetching batch:', error);
@@ -3489,8 +3489,6 @@ app.post('/saveProjectDetails', async (req, res) => {
   }
 });
 
-
-
 app.post('/saveEventDetails', upload.single('eventImage'), async (req, res) => {
   const file = req.file;
   //  logger.info(file);
@@ -3549,7 +3547,7 @@ app.post('/saveEventDetails', upload.single('eventImage'), async (req, res) => {
     logger.info('CreateUploadFolderName:', CreateUploadFolderName);
   
     const eventParams = {
-      TableName: eventsTable,
+      TableName: eventsDataTable,
       Item: {
         event_name: CreateUploadFolderName,
         project_name:projectName,
@@ -3571,13 +3569,14 @@ app.post('/saveEventDetails', upload.single('eventImage'), async (req, res) => {
     res.status(500).json({ error: 'Error creating event' });
   }
 });
+
 app.get("/getClientEventDetails/:clientName", async (req, res) => {
   
   const clientName = req.params.clientName; // Adjust based on your token payload
   logger.info(`Fetching event details for ${clientName}`)
   try {
     const eventParams = {
-      TableName: eventsTable,
+      TableName: eventsDataTable,
       FilterExpression: "client_name = :clientName",
       ExpressionAttributeValues: {
         ":clientName": clientName
@@ -3783,35 +3782,36 @@ app.get("/getUserDetails/:userPhoneNumber", async (req, res) => {
 
 
 app.put('/updateEvent/:eventName/:projectName', async (req, res) => {
-  const { eventName, projectName } = req.params;
+  const {eventName , projectName} = req.params;
   const {
     invitationNote,
     eventLocation,
-    street,
-    city,
-    state: newState,
-    pinCode,
-    invitation_url
+    eventDate,
+    // street,
+    // city,
+    // state: newState,
+    // pinCode,
+    // invitation_url
   } = req.body;
 
   const updateParams = {
-    TableName: eventsTable,
+    TableName: eventsDataTable,
     Key: {
       event_name: eventName,
       project_name: projectName,
     },
-    UpdateExpression: "set event_location = :eventLocation, invitation_note = :invitationNote, street = :street, city = :city, #st = :state, pin_code = :pinCode, invitation_url = :invitation_url",
-    ExpressionAttributeNames: {
-      "#st": "state",
-    },
+    UpdateExpression: "set event_location = :eventLocation, invitation_note = :invitationNote",
+    // ExpressionAttributeNames: {
+    //   "#st": "state",
+    // },
     ExpressionAttributeValues: {
       ":eventLocation": eventLocation,
       ":invitationNote": invitationNote,
-      ":street": street,
-      ":city": city,
-      ":state": newState,
-      ":pinCode": pinCode,
-      ":invitation_url": invitation_url,
+      // ":street": street,
+      // ":city": city,
+      // ":state": newState,
+      // ":pinCode": pinCode,
+      // ":invitation_url": invitation_url,
     },
     ReturnValues: "ALL_NEW",
   };
@@ -3832,7 +3832,7 @@ app.get("/getEventDetails/:eventName", async (req, res) => {
   logger.info(`Fetching event details for ${eventName}`)
   try {
     const eventParams = {
-      TableName: eventsTable,
+      TableName: eventsDataTable,
       FilterExpression: "event_name = :eventName",
       ExpressionAttributeValues: {
         ":eventName": eventName
@@ -3902,14 +3902,14 @@ app.get("/getEventDetails/:eventName", async (req, res) => {
 // });
 
 // API endpoint to delete an event
-app.delete('/deleteEvent/:eventName/:eventDate', async (req, res) => {
-  const { eventName, eventDate } = req.params;
+app.delete('/deleteEvent/:eventName/:projectName', async (req, res) => {
+  const { eventName, projectName } = req.params;
 
   const params = {
-    TableName: eventsTable,
+    TableName: eventsDataTable,
     Key: {
       event_name: eventName,
-      event_date: eventDate,
+      project_name: projectName,
     }
   };
   logger.info(params.Key)
@@ -4681,6 +4681,7 @@ app.get("/getAllImages/:eventName", async(req,res) =>{
     httpsServer.keepAliveTimeout = 60000; // Increase keep-alive timeout
     httpsServer.headersTimeout = 65000; // Increase headers timeout
   });
+  
   
 
 // //**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.

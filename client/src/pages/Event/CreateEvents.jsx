@@ -23,6 +23,7 @@ const CreateEventForm = () => {
   const [projects, setProjects] = useState([]);
   const [newProjectName, setNewProjectName] = useState('');
   const [showNewProjectInput, setShowNewProjectInput] = useState(false);
+  const [displayNone,setDisplayNone] = useState(false);
 
   useEffect(() => {
     populateTimeDropdown();
@@ -74,11 +75,14 @@ const CreateEventForm = () => {
       setFormData({ ...formData, projectName: response.data.data.project});
       setNewProjectName('');
       setShowNewProjectInput(false);
-      console.log(projects)
+      console.log(projects);
       toast.success('Project created successfully');
     } catch (error) {
       console.error('Error creating project:', error);
       toast.error('Failed to create project. Please try again.');
+    }
+    finally{
+      setDisplayNone(!displayNone);
     }
   };
 
@@ -128,6 +132,8 @@ const CreateEventForm = () => {
     if (selectedFile) {
       formDataToSend.append('eventImage', selectedFile);
     }
+
+    console.log(formDataToSend);
 
     try {
       const response = await API_UTIL.post('/saveEventDetails', formDataToSend, {
@@ -205,8 +211,7 @@ const CreateEventForm = () => {
         </div>
         <div className="form-group">
           <label htmlFor="project-name">Project Name:</label>
-          <div className="project-dropdown">
-         
+          {/* <div className="project-dropdown"> */}
             <select
               id="project-name"
               name="projectName"
@@ -221,15 +226,21 @@ const CreateEventForm = () => {
                 </option>
               ))}
             </select>
-            Create New Project  
+            </div>
+            <div className="form-group">
+              
+            <label>Create New Project</label>  
             <button 
             type="button" 
-            onClick={() => setShowNewProjectInput(!showNewProjectInput)} 
-            className="add-project-button"
+            onClick={() => {
+              setShowNewProjectInput(!showNewProjectInput)
+              setDisplayNone(!displayNone)
+            }} 
+            className={`add-project-button${displayNone?"hide":""}`}
           >
             + 
           </button>
-          </div>
+          {/* </div> */}
           {showNewProjectInput && (
             <div className="new-project-input">
               <input
