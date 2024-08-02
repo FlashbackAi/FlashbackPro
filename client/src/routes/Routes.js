@@ -46,6 +46,12 @@ const ROUTES=[
         //component:Login
         component:LoginEvent,
     },
+    {
+        path: "/login/:eventName/rsvp",
+        exact: true,
+        protected: false,
+        component: LoginEvent // or another component if the questionnaire is different
+    },
     // {
     //     path:"/registration",
     //     exact:false,
