@@ -17,7 +17,6 @@ const PhotoSelection = () => {
   const { eventName, form_owner } = useParams();
   const [isPhotosSelectionStarted, setIsPhotosSelectionStarted] = useState(false);
   const [imagesData, setImagesData] = useState({});
-  const [allImages, setAllImages] = useState([]); // New state to store all images
   const [formData, setFormData] = useState({
     event_name: eventName,
     form_owner: null,
@@ -207,11 +206,7 @@ const PhotoSelection = () => {
     if (formData.friends.length) {
       imagesData['Friends'] = { images: [], thumbnail: null };
     }
-    
-    imagesData['Other Images'] = { images: [], thumbnail: null };
-
-    imagesData['Special Elements'] = { images: [], thumbnail: null };
-
+  
     setImagesData(imagesData);
   };
   
@@ -267,7 +262,7 @@ const PhotoSelection = () => {
     const userId = temp[temp.length - 1].split(".")[0];
   
     try {
-      const response = await API_UTIL.post(`/getImagesWithUserIds`, {
+      const response = await API_UTIL.post(`/getImagesWithUserIds-new`, {
         'userIds': [userId],
         'operation': 'AND',
         'eventName': eventName
@@ -282,7 +277,6 @@ const PhotoSelection = () => {
             images: response.data
           },
         }));
-        setAllImages(prevImages => [...prevImages, ...response.data]); // Add this line
         return response.data;
       }
     } catch (err) {
@@ -296,7 +290,7 @@ const PhotoSelection = () => {
   
     for (const person of keys) {
       try {
-        const response = await API_UTIL.post(`/getImagesWithUserIds`, {
+        const response = await API_UTIL.post(`/getImagesWithUserIds-new`, {
           'userIds': [extractId(person)],
           'operation': 'AND',
           'eventName': eventName
@@ -313,7 +307,6 @@ const PhotoSelection = () => {
               images: [...prevState['Kids'].images, ...images]
             }
           }));
-          setAllImages(prevImages => [...prevImages, ...response.data]); // Add this line
         }
       } catch (err) {
         console.log(err);
@@ -334,31 +327,16 @@ const PhotoSelection = () => {
       userIds.push(extractId(formData.kids));
     }
     try {
-      const response = await API_UTIL.post(`/getCombinationImagesWithUserIds`, { 'userIds': userIds, 'operation': 'AND', 'eventName': eventName });
+      const response = await API_UTIL.post(`/getImagesWithUserIds-new`, { 'userIds': userIds, 'operation': 'AND', 'eventName': eventName });
       if (response.status === 200) {
-
-      const brideSolos = imagesData['Bride Solos'].images.length === 0 ? await getSolos('bride', formData) : imagesData['Bride Solos'].images;
-      const groomSolos = imagesData['Groom Solos'].images.length === 0 ? await getSolos('groom', formData) : imagesData['Groom Solos'].images;
-      let kidsImages;
-  
-      if (formData.kids) {
-        kidsImages = imagesData['Kids'].images.length === 0 ? await getKidsImages([extractId(formData.kids)]) : imagesData['Kids'].images;
-      }
-        const filteredData = response.data.filter(img =>
-          !brideSolos.some(brideImg => brideImg.image_id === img.image_id) &&
-          !groomSolos.some(groomImg => groomImg.image_id === img.image_id) &&
-          (!kidsImages || !kidsImages.some(kidImg => kidImg.image_id === img.image_id))
-        );
-
         setImagesData((prevState) => ({
           ...prevState,
           'Combined': {
             ...prevState['Combined'],
-            images: filteredData
+            images: response.data
           },
         }));
-        setAllImages(prevImages => [...prevImages, ...filteredData]); // Add this line
-        return filteredData;
+        return response.data;
       }
     } catch (err) {
       console.log(err);
@@ -377,7 +355,7 @@ const PhotoSelection = () => {
         kidsImages = imagesData['Kids'].images.length === 0 ? await getKidsImages([extractId(formData.kids)]) : imagesData['Kids'].images;
       }
   
-      const response = await API_UTIL.post(`/getCombinationImagesWithUserIds`, { 'userIds': userIds, 'eventName': eventName });
+      const response = await API_UTIL.post(`/getCombinationImagesWithUserIds-new`, { 'userIds': userIds, 'eventName': eventName });
       if (response.status === 200) {
         const filteredData = response.data.filter(img =>
           !combinedImages.some(combinedImg => combinedImg.image_id === img.image_id) &&
@@ -393,7 +371,6 @@ const PhotoSelection = () => {
             images: filteredData,
           }
         }));
-        setAllImages(prevImages => [...prevImages, ...filteredData]); // Add this line
         return filteredData;
       }
     } catch (err) {
@@ -404,7 +381,7 @@ const PhotoSelection = () => {
   
   // const fetchFamilyImagesold = async (key, userIds) => {
   //   try {
-  //     const response = await API_UTIL.post(`/getCombinationImagesWithUserIds`, { 'userIds': userIds, 'eventName': eventName });
+  //     const response = await API_UTIL.post(`/getCombinationImagesWithUserIds-new`, { 'userIds': userIds, 'eventName': eventName });
   //     if (response.status === 200) {
   //       return response.data;
   //     }
@@ -560,7 +537,7 @@ const handleSelectTab = async (key) => {
         setIsLoading(true)
         const userIds = await extractIds(formData.groom.father.parents)
         try {
-          const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName });
+          const response = await API_UTIL.post(`/getImagesWithUserIds-new`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName });
           if (response.status === 200) {
             setImagesData((prevState) => ({
               ...prevState,
@@ -569,7 +546,6 @@ const handleSelectTab = async (key) => {
                 images: response.data,
               }
             }));
-            setAllImages(prevImages => [...prevImages, ...response.data]); // Add this line
             setIsLoading(false);
           }
         } catch (err) {
@@ -586,7 +562,7 @@ const handleSelectTab = async (key) => {
         setIsLoading(true)
         const userIds = await extractIds(formData.groom.mother.parents)
         try {
-          const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName });
+          const response = await API_UTIL.post(`/getImagesWithUserIds-new`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName });
           if (response.status === 200) {
             setImagesData((prevState) => ({
               ...prevState,
@@ -595,7 +571,6 @@ const handleSelectTab = async (key) => {
                 images: response.data,
               }
             }));
-            setAllImages(prevImages => [...prevImages, ...response.data]); // Add this line
             setIsLoading(false);
           }
         } catch (err) {
@@ -623,7 +598,7 @@ const handleSelectTab = async (key) => {
         setIsLoading(true)
         const userIds = await extractIds(formData.bride.father.parents)
         try {
-          const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName });
+          const response = await API_UTIL.post(`/getImagesWithUserIds-new`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName });
           if (response.status === 200) {
             setImagesData((prevState) => ({
               ...prevState,
@@ -632,7 +607,6 @@ const handleSelectTab = async (key) => {
                 images: response.data,
               }
             }));
-            setAllImages(prevImages => [...prevImages, ...response.data]); // Add this line
             setIsLoading(false);
           }
         } catch (err) {
@@ -649,7 +623,7 @@ const handleSelectTab = async (key) => {
         setIsLoading(true)
         const userIds = await extractIds(formData.bride.mother.parents)
         try {
-          const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName });
+          const response = await API_UTIL.post(`/getImagesWithUserIds-new`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName });
           if (response.status === 200) {
             setImagesData((prevState) => ({
               ...prevState,
@@ -658,7 +632,6 @@ const handleSelectTab = async (key) => {
                 images: response.data,
               }
             }));
-            setAllImages(prevImages => [...prevImages, ...response.data]); // Add this line
             setIsLoading(false);
           }
         } catch (err) {
@@ -692,7 +665,6 @@ const handleSelectTab = async (key) => {
             images: filteredData,
           }
         }));
-        setAllImages(prevImages => [...prevImages, ...filteredData]); // Add this line
         setIsLoading(false);
       } else {
         if (isLoading === true)
@@ -722,7 +694,7 @@ const handleSelectTab = async (key) => {
           userIds.push(userId);
         });
         try {
-          const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName, 'sort':'desc' });
+          const response = await API_UTIL.post(`/getImagesWithUserIds-new`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName, 'sort':'desc' });
           if (response.status === 200) {
             setImagesData((prevState) => ({
               ...prevState,
@@ -731,7 +703,6 @@ const handleSelectTab = async (key) => {
                 images: response.data,
               }
             }));
-            setAllImages(prevImages => [...prevImages, ...response.data]); // Add this line
             setIsLoading(false);
           }
         } catch (err) {
@@ -753,7 +724,7 @@ const handleSelectTab = async (key) => {
           userIds.push(userId);
         });
         try {
-          const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName, 'sort':'desc'  });
+          const response = await API_UTIL.post(`/getImagesWithUserIds-new`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName, 'sort':'desc'  });
           if (response.status === 200) {
             setImagesData((prevState) => ({
               ...prevState,
@@ -762,7 +733,6 @@ const handleSelectTab = async (key) => {
                 images: response.data,
               }
             }));
-            setAllImages(prevImages => [...prevImages, ...response.data]); // Add this line
             setIsLoading(false);
           }
         } catch (err) {
@@ -784,7 +754,7 @@ const handleSelectTab = async (key) => {
           userIds.push(userId);
         });
         try {
-          const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName, 'sort':'desc'  });
+          const response = await API_UTIL.post(`/getImagesWithUserIds-new`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName, 'sort':'desc'  });
           if (response.status === 200) {
             setImagesData((prevState) => ({
               ...prevState,
@@ -793,7 +763,6 @@ const handleSelectTab = async (key) => {
                 images: response.data,
               }
             }));
-            setAllImages(prevImages => [...prevImages, ...response.data]); // Add this line
             setIsLoading(false);
           }
         } catch (err) {
@@ -815,7 +784,7 @@ const handleSelectTab = async (key) => {
           userIds.push(userId);
         });
         try {
-          const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName, 'sort':'desc'  });
+          const response = await API_UTIL.post(`/getImagesWithUserIds-new`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName, 'sort':'desc'  });
           if (response.status === 200) {
             setImagesData((prevState) => ({
               ...prevState,
@@ -824,7 +793,6 @@ const handleSelectTab = async (key) => {
                 images: response.data,
               }
             }));
-            setAllImages(prevImages => [...prevImages, ...response.data]); // Add this line
             setIsLoading(false);
           }
         } catch (err) {
@@ -846,7 +814,7 @@ const handleSelectTab = async (key) => {
           userIds.push(userId);
         });
         try {
-          const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName, 'sort':'desc'  });
+          const response = await API_UTIL.post(`/getImagesWithUserIds-new`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName, 'sort':'desc'  });
           if (response.status === 200) {
             setImagesData((prevState) => ({
               ...prevState,
@@ -855,7 +823,6 @@ const handleSelectTab = async (key) => {
                 images: response.data,
               }
             }));
-            setAllImages(prevImages => [...prevImages, ...response.data]); // Add this line
             setIsLoading(false);
           }
         } catch (err) {
@@ -877,7 +844,7 @@ const handleSelectTab = async (key) => {
           userIds.push(userId);
         });
         try {
-          const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName, 'sort':'desc'  });
+          const response = await API_UTIL.post(`/getImagesWithUserIds-new`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName, 'sort':'desc'  });
           if (response.status === 200) {
             setImagesData((prevState) => ({
               ...prevState,
@@ -886,7 +853,6 @@ const handleSelectTab = async (key) => {
                 images: response.data,
               }
             }));
-            setAllImages(prevImages => [...prevImages, ...response.data]); // Add this line
             setIsLoading(false);
           }
         } catch (err) {
@@ -908,7 +874,7 @@ const handleSelectTab = async (key) => {
           userIds.push(userId);
         });
         try {
-          const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName, 'sort':'desc'  });
+          const response = await API_UTIL.post(`/getImagesWithUserIds-new`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName, 'sort':'desc'  });
           if (response.status === 200) {
             setImagesData((prevState) => ({
               ...prevState,
@@ -917,7 +883,6 @@ const handleSelectTab = async (key) => {
                 images: response.data,
               }
             }));
-            setAllImages(prevImages => [...prevImages, ...response.data]); // Add this line
             setIsLoading(false);
           }
         } catch (err) {
@@ -929,61 +894,6 @@ const handleSelectTab = async (key) => {
           setIsLoading(false)
       }
       break;
-      case "Other Images":
-        if (imagesData[key].images.length === 0) {
-          setIsLoading(true);
-          try {
-            const response = await API_UTIL.get(`/getAllImages/${eventName}`);
-            if (response.status === 200) {
-              // Filter out images that are already present in other categories
-              const otherImages = response.data.filter(img =>
-                !allImages.some(existingImg => existingImg.image_id === img.image_id)
-              );
-              setImagesData((prevState) => ({
-                ...prevState,
-                [key]: {
-                  ...prevState[key],
-                  images: otherImages,
-                }
-              }));
-              setIsLoading(false);
-            }
-          } catch (err) {
-            console.log(err);
-            setIsLoading(false);
-          }
-        } else {
-          if (isLoading === true)
-            setIsLoading(false)
-        }
-        break;
-        case "Special Elements":
-          if (imagesData[key].images.length === 0) {
-            setIsLoading(true);
-            
-            try {
-              const response = await API_UTIL.get(`/getOtherImages/${eventName}`);
-              if (response.status === 200) {
-                setImagesData((prevState) => ({
-                  ...prevState,
-                  [key]: {
-                    ...prevState[key],
-                    images: response.data,
-                  }
-                }));
-                setIsLoading(false);
-              }
-            } catch (err) {
-              console.log(err);
-              setIsLoading(false);
-            }
-          } else {
-            if (isLoading === true)
-              setIsLoading(false)
-          }
-          break;
-          
-    
     default:
       if (key.startsWith("Groom Father Sibling") || key.startsWith("Groom Mother Sibling")||key.startsWith("Bride Father Sibling")||key.startsWith("Bride Mother Sibling")) {
         if (imagesData[key].images.length === 0) {
@@ -1003,19 +913,15 @@ const handleSelectTab = async (key) => {
         }
           userIds.push(siblingKey);
           try {
-            const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName });
+            const response = await API_UTIL.post(`/getImagesWithUserIds-new`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName });
             if (response.status === 200) {
-              const images = response.data.filter(img =>
-                !allImages.some(existingImg => existingImg.image_id === img.image_id)
-              );
               setImagesData((prevState) => ({
                 ...prevState,
                 [key]: {
                   ...prevState[key],
-                  images: images,
+                  images: response.data,
                 }
               }));
-              setAllImages(prevImages => [...prevImages, ...images]); // Add this line
               setIsLoading(false);
             }
           } catch (err) {

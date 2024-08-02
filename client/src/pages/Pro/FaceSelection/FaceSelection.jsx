@@ -126,41 +126,52 @@ const FaceSelection = () => {
     const p = path.split('.').reduce((acc, part) => acc && acc[part], obj);
     return p;
   };
+  const extractId = (url) => {
+    const parts = url.split("/");
+    return parts[parts.length - 1].split(".")[0];
+};
   
   const generateFamilySection = (char, srNoStart) => {
     const familyData = formData[char.toLowerCase()];
     if (!familyData || !familyData.image) return null;
   
+    const userId = extractId(familyData.image)
+    const suggestions = formData.suggestions?.[userId] || {};
+    
+
     const parents = [
       {
         label: `${char} Father`,
         question: `${char.toLowerCase()}.father.image`,
-        options: uncles,
+        options: suggestions.father || [],
         isInternal: false
       },
       {
         label: `${char} Mother`,
         question: `${char.toLowerCase()}.mother.image`,
-        options: aunts,
+        options: suggestions.mother || [],
         isInternal: true
       },
     ];
-  
+
     const siblings = [
       {
         label: `${char} Brothers`,
         question: `${char.toLowerCase()}.brothers`,
         gender: 'male',
+        options: suggestions.siblings?.filter(sibling => sibling.gender === 'Male') || [],
         isInternal: false
       },
       {
         label: `${char} Sisters`,
         question: `${char.toLowerCase()}.sisters`,
         gender: 'female',
+        options: suggestions.siblings?.filter(sibling => sibling.gender === 'Female') || [],
         isInternal: true
       },
     ];
-  
+    console.log(parents)
+
     return (
       <div className={`${char.toLowerCase()}-family-container`} key={`${char}-family`}>
         <div className="centered-selection">
@@ -209,7 +220,7 @@ const FaceSelection = () => {
               prev={prev}
               question={sibling.question}
               sendSelection={handleSelectChange}
-              options={filterOptions(sibling.gender === 'male' ? males : sibling.gender === 'female' ? females : males.concat(females)).slice(0, 10)}
+              options={filterOptions(sibling.options)}
               others={[missingThumbnail,...filterOptions(userThumbnails)]}
               onSelect={handleSelectFace}
               selectedImage={getNestedProperty(formData, sibling.question) || []}
@@ -320,7 +331,10 @@ const FaceSelection = () => {
   
   const generateParentSection = (char, parentKey, srNoStart) => {
     const parentData = formData[char.toLowerCase()][parentKey];
+    
     if (!parentData.image) return null;
+    const userId = extractId(parentData.image);
+      const suggestions = formData.suggestions?.[userId] || {};
     return (
       <div className='parent-container' key={`${char} ${parentKey} Family`}>
         <div className="centered-selection">
@@ -335,7 +349,7 @@ const FaceSelection = () => {
           </div>
           <CustomFaceOption
             question={`${char.toLowerCase()}.${parentKey}.parents`}
-            options={filterOptions(grandParents)}
+            options={filterOptions([suggestions?.father||[],suggestions?.mother||[]])}
             others={[missingThumbnail,...filterOptions(userThumbnails)]}
             title={`Select ${char} ${parentKey} Parents`}
             onSelect={handleSelectFace}
@@ -348,7 +362,7 @@ const FaceSelection = () => {
           />
           <CustomFaceOption
             question={`${char.toLowerCase()}.${parentKey}.siblings`}
-            options={filterOptions(userThumbnails).slice(0,20)}
+            options={filterOptions(suggestions?.siblings||[]).slice(0,20)}
             others={[missingThumbnail,...filterOptions(userThumbnails)]}
             title={`Select ${char} ${parentKey} Siblings`}
             onSelect={handleSelectFace}
@@ -364,70 +378,70 @@ const FaceSelection = () => {
     );
   };
   
+
+  
   const generateSiblingFamilySection = (siblings, char, parentKey, srNoStart) => {
     if (!siblings || siblings.length === 0) return null;
-    let opt = userThumbnails;
-    let ques ;
-    if(parentKey === "Brother" || parentKey ==="Sister")
-      {
-        ques = `${char.toLowerCase()}.${parentKey}`
-        opt = kids;
-      }
-      else{
-        ques = `${char.toLowerCase()}.${parentKey}.Siblings`
-        opt = userThumbnails
+  
+    return siblings.map((sibling, index) => {
+      const userId = extractId(sibling);
+      const suggestions = formData.suggestions?.[userId] || {};
+      let opt = userThumbnails;
+      let ques;
+  
+      if (parentKey === "Brother" || parentKey === "Sister") {
+        ques = `${char.toLowerCase()}.${parentKey}`;
+        opt = suggestions?.kids || [];
+      } else {
+        ques = `${char.toLowerCase()}.${parentKey}.Siblings`;
+        opt = userThumbnails;
       }
   
-    return siblings.map((sibling, index) => (
-    <>
-      <div className={`${char.toLowerCase()}-${parentKey.toLowerCase()}-sibling-family-container`} key={`${char} ${parentKey} Sibling ${index + 1}`}>
-        <div className="centered-selection">
-          <div className="sibling-image-container">
-            <div className="question-header">
-              <div className="icon">
-                <ArrowRight className="arrow" />
+      return (
+        <div className={`${char.toLowerCase()}-${parentKey.toLowerCase()}-sibling-family-container`} key={`${char} ${parentKey} Sibling ${index + 1}`}>
+          <div className="centered-selection">
+            <div className="sibling-image-container">
+              <div className="question-header">
+                <div className="icon">
+                  <ArrowRight className="arrow" />
+                </div>
+                <div className="question">{char} {parentKey} Sibling {index + 1}</div>
               </div>
-              <div className="question">{char} {parentKey} Sibling {index + 1}</div>
+              <div className="selected-face">
+                <img src={sibling} alt={`selected ${index + 1}`} className="selected-image" />
+              </div>
             </div>
-            <div className="selected-face">
-              <img src={sibling} alt={`selected ${index + 1}`} className="selected-image" />
-            </div>
+            <CustomFaceOption
+              question={`${ques}.${index + 1}.spouse`}
+              options={filterOptions(suggestions?.spouse||[]).slice(0, 20)}
+              others={[missingThumbnail, ...filterOptions(userThumbnails)]}
+              serialNo={`${srNoStart}.${index + 1}`}
+              title={`Select ${char} ${parentKey} ${index + 1} Spouse`}
+              onSelect={handleSelectFace}
+              sendSelection={handleSelectChange}
+              selectedImage={getNestedProperty(formData, `${ques}.${index + 1}.spouse`) || []}
+              next={next}
+              prev={prev}
+            />
+            <CustomFaceOption
+              question={`${ques}.${index + 1}.children`}
+              options={filterOptions(suggestions?.kids||[])}
+              others={[missingThumbnail, ...filterOptions(userThumbnails)]}
+              title={`Select ${char} ${parentKey} Sibling ${index + 1} Children`}
+              multiple={true}
+              onSelect={handleSelectFace}
+              sendSelection={handleSelectChange}
+              selectedImage={getNestedProperty(formData, `${ques}.${index + 1}.children`) || []}
+              next={next}
+              prev={prev}
+              isInternal={true}
+            />
           </div>
-          <CustomFaceOption
-            question={`${ques}.${index + 1}.spouse`}
-            options={filterOptions(userThumbnails).slice(0,20)}
-            others={[missingThumbnail,...filterOptions(userThumbnails)]}
-            serialNo={`${srNoStart}.${index + 1}`}
-            title={`Select ${char} ${parentKey} ${index + 1} Spouse`}
-            onSelect={handleSelectFace}
-            sendSelection={handleSelectChange}
-            selectedImage={getNestedProperty(formData, `${ques}.${index + 1}.spouse`) || []}
-            next={next}
-            prev={prev}
-          />
-          <CustomFaceOption
-            question={`${ques}.${index + 1}.children`}
-            options={filterOptions(opt)}
-            others={[missingThumbnail,...filterOptions(userThumbnails)]}
-            title={`Select ${char} ${parentKey} Sibling ${index + 1} Children`}
-            multiple={true}
-            onSelect={handleSelectFace}
-            sendSelection={handleSelectChange}
-            selectedImage={getNestedProperty(formData, `${ques}.${index + 1}.children`) || []}
-            next={next}
-            prev={prev}
-            isInternal={true}
-          />
         </div>
-      </div>
-      
-      {/* {(parentKey === "father" || parentKey === "mother") && (getNestedProperty(formData, `${ques}.${index + 1}.children`)) && (
-          generateCousinSections1(getNestedProperty(formData, `${ques}.${index + 1}`), `${ques}.${index + 1}`, srNoStart)
-        )} */}
-        </>
-
-    ));
+      );
+    });
   };
+  
   
 
   // const generateSiblingFamilySection = (siblings, char, parentKey, srNoStart) => {
@@ -497,6 +511,8 @@ const FaceSelection = () => {
       if (!siblingData.children) return null;
       let key = parentKey.replace(/\s+/g, '.').toLowerCase();
       return siblingData.children.map((cousin, cousinIndex) => {
+        const userId = extractId(cousin);
+        const suggestions = formData.suggestions?.[userId] || {};
         idx++
         return(
         <div className="cousin-family-container" key={`${key} Cousin ${srNoStart}.${siblingIndex + 1}.${cousinIndex + 1}`}>
@@ -513,7 +529,7 @@ const FaceSelection = () => {
             </div>
             <CustomFaceOption
               question={`${key}.Siblings.${siblingIndex}.Children.${cousinIndex+1}.spouse`}
-              options={filterOptions(userThumbnails)}
+              options={filterOptions(suggestions?.spouse||[])}
               others={[missingThumbnail,...filterOptions(userThumbnails)]}
               serialNo={`${srNoStart}.${idx}`}
               title={`Select Cousin's Spouse`}
@@ -525,7 +541,7 @@ const FaceSelection = () => {
             />
             <CustomFaceOption
               question={`${key}.Siblings.${siblingIndex}.Children.${cousinIndex+1}.children`}
-              options={filterOptions(kids)}
+              options={filterOptions(suggestions?.kids||[])}
               others={[missingThumbnail,...filterOptions(userThumbnails)]}
               serialNo={`${srNoStart}.${siblingIndex + 1}.${cousinIndex + 1}.2`}
               title={`Select Cousin's Children`}
@@ -766,9 +782,44 @@ const FaceSelection = () => {
     } while (!nextElement);
   };
 
+  const fetchFamilySuggestions = async (userId) => {
+
+
+    
+    const response = await API_UTIL.get(`/getFamilySuggestions/${userId}/${eventName}`);
+    const data = await response.data;
+    return data;
+  };
+  
   const handleSelectFace = async (question, faceUrl) => {
     setSelectedValues((prev) => new Set(prev).add(faceUrl));
-  };
+
+    if (faceUrl && question !== 'form_owner') {
+        // Fetch suggestions asynchronously
+        const parts = faceUrl.toString().split("/");
+        const userId =  parts[parts.length - 1].split(".")[0]
+        const suggestions = await fetchFamilySuggestions(userId);
+        if(faceUrl){
+        setFormData((prevState) => {
+            const newFormData = { ...prevState };
+            newFormData.suggestions = newFormData.suggestions || {}; // Ensure the suggestions object exists
+            newFormData.suggestions[userId] = suggestions; // Save groom suggestions
+            console.log(newFormData);
+            return newFormData;
+        });
+      }else{
+        
+        setFormData((prevState) => {
+          const newFormData = { ...prevState };
+          newFormData.suggestions = newFormData.suggestions || {}; // Ensure the suggestions object exists
+          newFormData.suggestions[userId] = []; // Save groom suggestions
+          console.log(newFormData);
+          return newFormData;
+      });
+      }
+    }
+};
+
 
   const handleSelectChange = (question, selectedValue) => {
     setIsFormDataUpdated(true);

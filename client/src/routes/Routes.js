@@ -13,6 +13,7 @@ import TermsAndConditions from "../pages/TermsAndConditions/TermsAndConditions";
 import Collage from "../pages/Edit/Collage/Collage";
 import SharedImage from "../pages/ImagesPage/SharedImage";
 import PhotoSelection from "../pages/Pro/PhotoSelection/PhotoSelection";
+import PhotoSelectionNew from "../pages/Pro/PhotoSelection/PhotoSelectionNew";
 import FaceSelection from "../pages/Pro/FaceSelection/FaceSelection";
 import Event from "../pages/Event/Event";
 import CreateEventForm from "../pages/CreateEvent/CreateEvent";
@@ -142,10 +143,10 @@ const ROUTES=[
         component:FaceSelection
     },
     {
-        path:"/photoSelection/:eventName",
+        path:"/photoSelectionNew/:eventName/:form_owner",
         exact:false,
         protected:false,
-        component:PhotoSelection
+        component:PhotoSelectionNew
     },
     {
         path:"/photoSelection/:eventName/:form_owner",

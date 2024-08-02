@@ -2719,7 +2719,7 @@ app.post('/downloadImage', async (req, res) => {
       return highestEmotion;
     };
 
-    app.post("/getImagesWithUserIds", async (req, res) => {
+    app.post("/getImagesWithUserIds-new", async (req, res) => {
       const { userIds, operation, mode, eventName, sort } = req.body;
 
       logger.info(`Received request to get images with userIds: ${userIds}, operation: ${operation}, mode: ${mode}, eventName: ${eventName}`);
@@ -2850,6 +2850,119 @@ app.post('/downloadImage', async (req, res) => {
       }
     });
 
+    app.post("/getImagesWithUserIds", async (req, res) => {
+      const { userIds, operation, mode, eventName, sort } = req.body;
+      
+      logger.info(`Received request to get images with userIds: ${userIds}, operation: ${operation}, mode: ${mode}, eventName: ${eventName}`);
+    
+      try {
+        let imageIds = new Set();
+    
+        // Step 1: Iterate over each userId to get imageIds associated with them
+        for (const userId of userIds) {
+          let lastEvaluatedKey = null;
+          do {
+            const params = {
+              TableName: indexedDataTableName,
+              IndexName: 'user_id-folder_name-index',
+              KeyConditionExpression: "user_id = :userId and folder_name = :eventName",
+              ExpressionAttributeValues: {
+                ":userId": userId,
+                ":eventName": eventName
+              },
+              ProjectionExpression: "image_id",
+              ExclusiveStartKey: lastEvaluatedKey
+            };
+    
+            logger.info(`Querying indexedDataTableName for userId: ${userId} and eventName: ${eventName}`);
+    
+            const data = await docClient.query(params).promise();
+            data.Items.forEach(item => {
+              imageIds.add(item.image_id);
+            });
+    
+            lastEvaluatedKey = data.LastEvaluatedKey;
+            logger.info(`Found ${data.Items.length} imageIds for userId: ${userId}, lastEvaluatedKey: ${lastEvaluatedKey}`);
+          } while (lastEvaluatedKey);
+        }
+    
+        if (imageIds.size === 0) {
+          logger.info('No images found for the given userIds and eventName');
+          return res.send([]);
+        }
+    
+        logger.info(`Total unique imageIds found: ${imageIds.size}`);
+    
+        // Step 2: Fetch user_ids for each image_id from RecogImages table
+        const imageDetailsPromises = Array.from(imageIds).map(imageId => {
+          const params = {
+            TableName: recokgImages,
+            Key: { image_id: imageId },
+            ProjectionExpression: 's3_url, user_ids, image_id, selected'
+          };
+          return docClient.get(params).promise();
+        });
+    
+        logger.info('Fetching image details from RecogImages table');
+    
+        const imageDetailsResults = await Promise.all(imageDetailsPromises);
+        const imageDetails = imageDetailsResults.map(result => {
+          // logger.info(`Fetched user_ids for image_id ${result.Item.image_id}: ${result.Item.user_ids}`);
+          return result.Item;
+        });
+    
+        logger.info('Fetched image details successfully');
+    
+        // Step 3: Filter imageIds based on operation and mode
+        let filteredImages;
+        if (operation === 'AND' && mode !== 'Loose') {
+          // AND + Strict: Images that have exactly the specified user IDs
+          logger.info(userIds)
+          filteredImages = imageDetails.filter(item =>
+            userIds.length === item.user_ids.length && userIds.every(userId => item.user_ids.includes(userId))
+          );
+          //logger.info(`Filtered images with AND + Strict. Count: ${filteredImages.length}`);
+          // filteredImages = imageDetails.filter(item =>
+           
+          // );
+          logger.info(`Filtered images with AND + Strict. Count: ${filteredImages.length}`);
+        } else if (operation === 'AND' && mode === 'Loose') {
+          // AND + Loose: Images that have all the specified user IDs but may also have other user IDs
+          filteredImages = imageDetails.filter(item =>
+            userIds.every(userId => item.user_ids.includes(userId))
+          );
+          logger.info(`Filtered images with AND + Loose. Count: ${filteredImages.length}`);
+        } else if (operation === 'OR' && mode === 'Loose') {
+          // OR + Loose: Images that have at least one of the specified user IDs but may also have other user IDs
+          filteredImages = imageDetails.filter(item =>
+            userIds.some(userId => item.user_ids.includes(userId))
+          );
+          logger.info(`Filtered images with OR + Loose. Count: ${filteredImages.length}`);
+        } else {
+          logger.error('Invalid operation or mode specified');
+          throw new Error('Invalid operation or mode specified');
+        }
+    
+        const items = filteredImages.map(item => ({
+          ...item,
+          thumbnailUrl: "https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/" + item.s3_url.split("amazonaws.com/")[1]
+        }));
+    
+        if(sort === 'desc'){
+          logger.info('sorting reverse')
+          items.sort((a, b) => b.user_ids.length - a.user_ids.length);
+        }
+        else{
+        items.sort((a, b) => a.user_ids.length - b.user_ids.length);
+        }
+        logger.info(`Total images to be returned: ${items.length}`);
+        res.send(items);
+      } catch (error) {
+        logger.error(`Error fetching images: ${error.message}`);
+        res.status(500).send("Error fetching images");
+      }
+    });
+
     
     app.post("/getCombinationImagesWithUserIds-old", async (req, res) => {
       const userIds = req.body.userIds;
@@ -2927,7 +3040,7 @@ app.post('/downloadImage', async (req, res) => {
       }
     });
 
-    app.post("/getCombinationImagesWithUserIds", async (req, res) => {
+    app.post("/getCombinationImagesWithUserIds-new", async (req, res) => {
       const { userIds, eventName } = req.body;
       const minUserCount = 1; // Minimum number of user IDs that must be present in each image
       
@@ -3043,6 +3156,91 @@ app.post('/downloadImage', async (req, res) => {
           return b.primaryEmotionConfidence - a.primaryEmotionConfidence;
         });
     
+        logger.info(`Total images to be returned: ${items.length}`);
+        res.send(items);
+      } catch (error) {
+        logger.error(`Error fetching images: ${error.message}`);
+        res.status(500).send("Error fetching images");
+      }
+    });
+    
+    app.post("/getCombinationImagesWithUserIds", async (req, res) => {
+      const { userIds, eventName } = req.body;
+      const minUserCount = 1; // Minimum number of user IDs that must be present in each image
+      
+      logger.info(`Received request to get images with userIds: ${userIds}, eventName: ${eventName}`);
+    
+      try {
+        let imageIds = new Set();
+    
+        // Step 1: Iterate over each userId to get imageIds associated with them
+        for (const userId of userIds) {
+          let lastEvaluatedKey = null;
+          do {
+            const params = {
+              TableName: indexedDataTableName,
+              IndexName: 'user_id-folder_name-index',
+              KeyConditionExpression: "user_id = :userId and folder_name = :eventName",
+              ExpressionAttributeValues: {
+                ":userId": userId,
+                ":eventName": eventName
+              },
+              ProjectionExpression: "image_id",
+              ExclusiveStartKey: lastEvaluatedKey
+            };
+    
+            logger.info(`Querying indexedDataTableName for userId: ${userId} and eventName: ${eventName}`);
+    
+            const data = await docClient.query(params).promise();
+            data.Items.forEach(item => {
+              imageIds.add(item.image_id);
+            });
+    
+            lastEvaluatedKey = data.LastEvaluatedKey;
+            logger.info(`Found ${data.Items.length} imageIds for userId: ${userId}, lastEvaluatedKey: ${lastEvaluatedKey}`);
+          } while (lastEvaluatedKey);
+        }
+    
+        if (imageIds.size === 0) {
+          logger.info('No images found for the given userIds and eventName');
+          return res.send([]);
+        }
+    
+        logger.info(`Total unique imageIds found: ${imageIds.size}`);
+    
+        // Step 2: Fetch user_ids for each image_id from RecogImages table
+        const imageDetailsPromises = Array.from(imageIds).map(imageId => {
+          const params = {
+            TableName: recokgImages,
+            Key: { image_id: imageId },
+            ProjectionExpression: 's3_url, user_ids, image_id, selected'
+          };
+          return docClient.get(params).promise();
+        });
+    
+        logger.info('Fetching image details from RecogImages table');
+    
+        const imageDetailsResults = await Promise.all(imageDetailsPromises);
+        const imageDetails = imageDetailsResults.map(result => {
+          // logger.info(`Fetched user_ids for image_id ${result.Item.image_id}: ${result.Item.user_ids}`);
+          return result.Item;
+        });
+    
+        logger.info('Fetched image details successfully');
+    
+        // Step 3: Filter imageIds based on the criteria
+        const filteredImages = imageDetails.filter(item => {
+          const matchingUserIds = item.user_ids.filter(userId => userIds.includes(userId));
+          return matchingUserIds.length >= minUserCount && matchingUserIds.length === item.user_ids.length;
+        });
+    
+        logger.info(`Filtered images based on user IDs and event name. Count: ${filteredImages.length}`);
+    
+        const items = filteredImages.map(item => ({
+          ...item,
+          thumbnailUrl: "https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/" + item.s3_url.split("amazonaws.com/")[1]
+        }));
+        items.sort((a, b) => a.user_ids.length - b.user_ids.length);
         logger.info(`Total images to be returned: ${items.length}`);
         res.send(items);
       } catch (error) {
@@ -4270,7 +4468,8 @@ app.get("/getFamilySuggestions/:user_id/:eventName", async (req, res) => {
         user_id: userId,
         count: count,
         avgAge: userThumbnail ? userThumbnail.avgAge : null,
-        gender: userThumbnail ? userThumbnail.gender : null
+        gender: userThumbnail ? userThumbnail.gender : null,
+        face_url:`https://rekognitionuserfaces.s3.amazonaws.com/thumbnails/${userId}.jpg`
       };
     });
 
@@ -4303,18 +4502,19 @@ app.get("/getFamilySuggestions/:user_id/:eventName", async (req, res) => {
         if (familySuggestions.father.length < 10) {
           familySuggestions.father.push(person);
         }
-      } else if (person.gender === 'Female' && person.avgAge >= userAge + 10) {
+      } if (person.gender === 'Female' && person.avgAge >= userAge + 10) {
         if (familySuggestions.mother.length < 10) {
           familySuggestions.mother.push(person);
         }
-      } else if (Math.abs(person.avgAge - userAge) <= 10) {
+      } if (Math.abs(person.avgAge - userAge) <= 18) {
         if (familySuggestions.siblings.length < 10) {
           familySuggestions.siblings.push(person);
         }
+        
         if (familySuggestions.spouse.length < 10 && person.gender !== userGender) {
           familySuggestions.spouse.push(person);
         }
-      } else if (person.avgAge <= userAge - 15) {
+      } if (person.avgAge <= userAge - 15) {
         if (familySuggestions.kids.length < 10) {
           familySuggestions.kids.push(person);
         }
@@ -4334,6 +4534,145 @@ app.get("/getFamilySuggestions/:user_id/:eventName", async (req, res) => {
     res.status(500).send("Error fetching images");
   }
 });
+
+app.put("/setFolderName/:eventName", async(req,res) =>{
+  const eventName = req.params.eventName;
+  try {
+    logger.info("fetching images for event : " + eventName)
+    const params = {
+        TableName: recokgImages,
+        FilterExpression: 'contains(#attr, :val)',
+        ExpressionAttributeNames: {
+            '#attr': 's3_url',
+        },
+        ExpressionAttributeValues: {
+            ':val': eventName, 
+        },
+        ProjectionExpression: 's3_url, image_id, selected'
+    };
+
+    let items = [];
+    let lastEvaluatedKey = null;
+
+    do {
+        if (lastEvaluatedKey) {
+            params.ExclusiveStartKey = lastEvaluatedKey;
+        }
+
+        const data = await docClient.scan(params).promise();
+        for (let item of data.Items) {
+            // Extract folder_name from s3_url
+            const s3UrlParts = item.s3_url.split('/');
+            const folder_name = s3UrlParts[s3UrlParts.length - 2]; // Assuming folder name is the second last part of the URL
+
+            // Add folder_name to item
+            item.folder_name = folder_name;
+
+            // Update the record in DynamoDB with the new folder_name
+            const updateParams = {
+                TableName: recokgImages,
+                Key: { image_id: item.image_id }, // Assuming image_id is the primary key
+                UpdateExpression: 'set folder_name = :folder_name',
+                ExpressionAttributeValues: {
+                    ':folder_name': folder_name
+                }
+            };
+            await docClient.update(updateParams).promise();
+        }
+
+        items = items.concat(data.Items);
+        logger.info("Fetched and updated Images -> " + items.length);
+        lastEvaluatedKey = data.LastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    logger.info("Total images fetched and updated: " + items.length);
+    res.send(items);
+} catch (error) {
+    logger.error("Error fetching or updating images: ", error);
+    res.status(500).send("Error fetching or updating images");
+}
+
+});
+
+app.get("/getOtherImages/:eventName", async(req,res) =>{
+ 
+  const eventName = req.params.eventName;
+  try {
+    logger.info("fetching images for event : "+eventName)
+    const params = {
+      TableName: recokgImages,
+      IndexName: 'folder_name-index', 
+      ProjectionExpression: 'image_id,s3_url,folder_name',
+      KeyConditionExpression: 'folder_name = :folderName',
+      FilterExpression: 'attribute_not_exists(user_ids)',
+      ExpressionAttributeValues: {
+        ':folderName': eventName
+      }        
+    };
+
+    let items = [];
+    let lastEvaluatedKey = null;
+    do {
+      if (lastEvaluatedKey) {
+        params.ExclusiveStartKey = lastEvaluatedKey;
+      }
+
+      const data = await docClient.query(params).promise();
+      items = items.concat(data.Items);
+      lastEvaluatedKey = data.LastEvaluatedKey;
+    } while (lastEvaluatedKey)
+      const result = items.map(item => ({
+        ...item,
+        thumbnailUrl: "https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/" + item.s3_url.split("amazonaws.com/")[1]
+      }));
+    logger.info("Total images fetched" + " : " + result.length);
+    res.send(result);
+} catch(err){
+  logger.info(err.message);
+  res.status(500).send(err.message)
+}
+
+});
+
+app.get("/getAllImages/:eventName", async(req,res) =>{
+ 
+  const eventName = req.params.eventName;
+  try {
+    logger.info("fetching images for event : "+eventName)
+    const params = {
+      TableName: recokgImages,
+      IndexName: 'folder_name-index', 
+      ProjectionExpression: 'user_ids, image_id,s3_url,folder_name',
+      KeyConditionExpression: 'folder_name = :folderName',
+      ExpressionAttributeValues: {
+        ':folderName': eventName
+      }        
+    };
+
+    let items = [];
+    let lastEvaluatedKey = null;
+    do {
+      if (lastEvaluatedKey) {
+        params.ExclusiveStartKey = lastEvaluatedKey;
+      }
+
+      const data = await docClient.query(params).promise();
+      items = items.concat(data.Items);
+      lastEvaluatedKey = data.LastEvaluatedKey;
+    } while (lastEvaluatedKey)
+      const result = items.map(item => ({
+        ...item,
+        thumbnailUrl: "https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/" + item.s3_url.split("amazonaws.com/")[1]
+      }));
+    logger.info("Total images fetched" + " : " + result.length);
+    res.send(result);
+} catch(err){
+  logger.info(err.message);
+  res.status(500).send(err.message)
+}
+
+});
+
 
   const httpsServer = https.createServer(credentials, app);
 
