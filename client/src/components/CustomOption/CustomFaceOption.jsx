@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, ChevronLeft } from "lucide-react";
+import './CustomFaceOption.css'
+import { OTHER_PEOPLE, SUGGESTED_PEOPLE } from "../../helpers/constants";
 
 const CustomFaceOption = ({
   options,
@@ -67,6 +69,7 @@ const CustomFaceOption = ({
         ease: "easeIn",
       }}
       className={`${serialNo} question_answer`}
+      id="image_selector_panel"
     >
       <div className="question-header">
         <div className="icon">
@@ -75,7 +78,7 @@ const CustomFaceOption = ({
         <div className="question">{title}</div>
       </div>
       {selection && (
-        <div className="img-options">
+        <div className="img-options" id="selection-panel">
           <div className="selected-face">
             {selection.filter(url => url != null).map((url, index) => (
               <img key={index} src={url} alt={`selected ${index}`} className="selected-image" onClick={() => handleClickSelected(index, url)} />
@@ -104,7 +107,7 @@ const CustomFaceOption = ({
           <>
         <div className="separator">
           <hr className="partition-style" />
-          <p>All Other People</p>
+          <p>{OTHER_PEOPLE}</p>
           <hr className="partition-style" />
         </div>
 

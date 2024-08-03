@@ -1,15 +1,13 @@
 /* Footer.css */
 .footer {
-  background: #5a5959;
+  background: #000000;
   color: white;
   text-align: center;
-  padding: 5px 5px;
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
   align-items: center;
-  position: relative;
   width: 100%;
-  margin-top: 20px;
+  height: 11.25rem;
 }
 
 .contact-container {
@@ -22,6 +20,7 @@
   display: flex;
   align-items: center;
   max-width: 6em;
+  gap: 20px;
 }
 
 .footer p {
@@ -31,6 +30,7 @@
 .footer a {
   color: white;
   text-decoration: none;
+  margin-left: 0;
 }
 
 .social-media-links {
@@ -42,8 +42,8 @@
 }
 
 .social-container img {
-  width: 15px;
-  height: 15px;
+  width: 1rem;
+  height: 1rem;
 }
 
 /* New CSS to ensure the footer is always at the bottom */
@@ -63,5 +63,19 @@
 
 .contactus{
   width: 8em;
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  align-items: baseline;
+  white-space: nowrap;
+  > span:first-of-type {
+    opacity: 0.8;
+  }
+}
+
+.copy-right-info {
+  display: flex;
+  flex-direction: column;
+  align-items: end;
+  opacity: 0.8;
+  white-space: nowrap;
 }

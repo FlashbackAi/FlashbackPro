@@ -1,30 +1,32 @@
 import React from 'react';
 import './Footer.css';
+import { ALL_RIGHTS_RESERVED,
+  CONTACT,
+  YEAR,
+  COMPANY_NAME,
+  PHONE_NUMBER,
+  EMAIL } from '../../helpers/constants';
 
 const Footer = () => {
   return (
     <footer className="footer">
         <div className="contactus">
-        <p>
-            Contact: <a href="tel:+919090401234">+919090401234</a>
-            <a href="mailto:team@flashback.inc"> team@flashback.inc</a>
-        </p>
+          <span > {CONTACT} </span>
+          <a href={`tel:${PHONE_NUMBER}`}> {PHONE_NUMBER} </a>
+          <a href={`mailto:${EMAIL}`}> {EMAIL} </a>
         </div>
         <div className="social-container">
           <a href="https://x.com/Flashback_Inc_" target="_blank" rel="noopener noreferrer">
-            <img src="https://img.icons8.com/ffffff/m_outlined/2x/twitterx--v2.png" alt="Twitter" />
+            <img src="assets/Images/icon-footer-x.svg" alt="Twitter" />
           </a>
           <a href="https://www.instagram.com/flashback_inc/" target="_blank" rel="noopener noreferrer">
-            <img src="https://img.icons8.com/ffffff/fluent/2x/instagram-new.png" alt="Instagram" />
+            <img src="assets/Images/icon-footer-instagram.svg" alt="Instagram" />
           </a>
         </div>
-
-      <div className="contact-container">
-        <p>&copy; 2024 Flashback Inc. All rights reserved.</p>
-
-        <p>
-        </p>
-      </div>
+        <div className="copy-right-info">
+          <span>{COMPANY_NAME} {" "  + YEAR}</span>
+          <span>{ALL_RIGHTS_RESERVED}</span>
+        </div>
     </footer>
   );
 };
