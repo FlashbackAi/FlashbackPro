@@ -93,7 +93,14 @@ const FaceSelection = () => {
 
   
   const filterOptions = (options = []) => {
-    return options.filter((option) => !selectedValues.has(option.face_url));
+    return options.filter((option) => {
+      // Always include the missing thumbnail
+      if (option.face_url === 'assets/missing.jpg') {
+        return true;
+      }
+      // Exclude already selected values, except for the missing thumbnail
+      return !selectedValues.has(option.face_url);
+    });
   };
 
   const [isFormDataUpdated, setIsFormDataUpdated] = useState(false);
@@ -545,7 +552,6 @@ const FaceSelection = () => {
               // options={filterOptions(suggestions?.spouse||[]).slice(0,10)}
               //others={[missingThumbnail,...filterOptions(userThumbnails)]}
               options={filterOptions(removeDuplicates([...suggestions?.spouse?.slice(0, 10)||[],missingThumbnail,...userThumbnails.filter((item) => item.avgAge >= 20 && suggestions?.user?.gender!==item.gender)]))}             
-              
               serialNo={`${srNoStart}.${idx}`}
               title={`Select Cousin's Spouse`}
               onSelect={handleSelectFace}
@@ -1051,17 +1057,18 @@ const FaceSelection = () => {
 
             {/* groom */}
             {generateFamilySection("Groom", '2')}
-            {generateSiblingFamilySection(formData.groom.brothers, "Groom", "Brother", 3)}
-            {generateSiblingFamilySection(formData.groom.sisters, "Groom", "Sister", 4)}
-            {generateParentSection("Groom", "father", '5')}
-            {generateSiblingFamilySection(formData.groom.father.siblings, "Groom", "father", 6)}
-            {generateCousinSections(formData.groom.father, 'Groom Father', 7)}
-            {generateParentSection("Groom", "mother", '8')}
-            {generateSiblingFamilySection(formData.groom.mother.siblings, "Groom", "mother", 9)}  
-            {generateCousinSections(formData.groom.mother, 'Groom Mother', 10)}
+            {generateFamilySection("Bride", '3')}
+            {generateSiblingFamilySection(formData.groom.brothers, "Groom", "Brother", 4)}
+            {generateSiblingFamilySection(formData.groom.sisters, "Groom", "Sister", 5)}
+            {generateParentSection("Groom", "father", '6')}
+            {generateSiblingFamilySection(formData.groom.father.siblings, "Groom", "father", 7)}
+            {generateCousinSections(formData.groom.father, 'Groom Father', 8)}
+            {generateParentSection("Groom", "mother", '9')}
+            {generateSiblingFamilySection(formData.groom.mother.siblings, "Groom", "mother", 10)}  
+            {generateCousinSections(formData.groom.mother, 'Groom Mother', 11)}
 
             {/* bride */}
-            {generateFamilySection("Bride", '11')}
+            {/* {generateFamilySection("Bride", '11')} */}
             {generateSiblingFamilySection(formData.bride.brothers, "Bride", "Brother", 12)}
             {generateSiblingFamilySection(formData.bride.sisters, "Bride", "Sister", 13)}
             {generateParentSection("Bride", "father", '14')}
@@ -1079,7 +1086,9 @@ const FaceSelection = () => {
               question="otherCousins"
               multiple={true}
               sendSelection={handleSelectChange}
-              options={[...filterOptions(cousins),...userThumbnails]}
+              // options={[...filterOptions(cousins),...userThumbnails]}
+              options={filterOptions(removeDuplicates([...cousins,...userThumbnails.filter((item) => item.avgAge >= 16)]))}             
+              
               // others={filterOptions(userThumbnails)}
               onSelect={handleSelectFace}
               selectedImage={formData.otherCousins}
@@ -1089,8 +1098,9 @@ const FaceSelection = () => {
               title="Please select Other Kids"
               next={next}
               prev={prev}
-              options={filterOptions(kids)}
-              others={filterOptions(userThumbnails)}
+              // options={filterOptions(kids)}
+              // others={filterOptions(userThumbnails)}
+              options={filterOptions(removeDuplicates([...kids,...userThumbnails.filter((item) => item.avgAge <= 16)]))}             
               question="otherKids"
               multiple={true}
               sendSelection={handleSelectChange}
@@ -1105,8 +1115,10 @@ const FaceSelection = () => {
               question="uncles"
               multiple={true}
               sendSelection={handleSelectChange}
-              options={filterOptions(uncles)}
-              others={filterOptions(userThumbnails)}
+              // options={filterOptions(uncles)}
+              // others={filterOptions(userThumbnails)}
+              options={filterOptions(removeDuplicates([...uncles,...userThumbnails.filter((item) => item.avgAge >= 16 && item.gender === 'Male')]))}        
+              kids
               onSelect={handleSelectFace}
               selectedImage={formData.uncles}
             />
@@ -1115,8 +1127,9 @@ const FaceSelection = () => {
               title="Please select Aunts"
               next={next}
               prev={prev}
-              options={filterOptions(aunts)}
-              others={filterOptions(userThumbnails)}
+              // options={filterOptions(aunts)}
+              // others={filterOptions(userThumbnails)}
+              options={filterOptions(removeDuplicates([...aunts,...userThumbnails.filter((item) => item.avgAge >= 16 && item.gender === 'Female')]))} 
               onSelect={handleSelectFace}
               question="aunts"
               multiple={true}
@@ -1128,8 +1141,9 @@ const FaceSelection = () => {
               title="Please select Grand Parents"
               next={next}
               prev={prev}
-              options={filterOptions(grandParents)}
-              others={filterOptions(userThumbnails)}
+              // options={filterOptions(grandParents)}
+              // others={filterOptions(userThumbnails)}
+              options={filterOptions(removeDuplicates([...grandParents,...userThumbnails.filter((item) => item.avgAge >= 40)]))} 
               question="grandParents"
               multiple={true}
               sendSelection={handleSelectChange}
@@ -1144,8 +1158,9 @@ const FaceSelection = () => {
             question="friends"
             multiple={true}
             sendSelection={handleSelectChange}
-            others={filterOptions(userThumbnails)}
-            options={filterOptions(cousins)}
+            // others={filterOptions(userThumbnails)}
+            // options={filterOptions(cousins)}
+            options={filterOptions(removeDuplicates([...cousins,...userThumbnails.filter((item) => item.avgAge >= 16)]))} 
             onSelect={handleSelectFace}
             selectedImage={formData.friends}
             
@@ -1158,8 +1173,7 @@ const FaceSelection = () => {
               question="otherImportantRelatives"
               multiple={true}
               sendSelection={handleSelectChange}
-              others={filterOptions(userThumbnails)}
-              options={filterOptions(userThumbnails)}
+              options={filterOptions(removeDuplicates(userThumbnails))} 
               onSelect={handleSelectFace}
             isSubmit={true}
             sendSubmitAction={onSubmitForm}
