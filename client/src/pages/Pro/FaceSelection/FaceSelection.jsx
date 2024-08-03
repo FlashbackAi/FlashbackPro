@@ -143,11 +143,13 @@ const FaceSelection = () => {
       {
         label: `${char} Father`,
         question: `${char.toLowerCase()}.father.image`,
+        gender: 'Male',
         options: suggestions.father || [],
         isInternal: false
       },
       {
         label: `${char} Mother`,
+        gender: 'Female',
         question: `${char.toLowerCase()}.mother.image`,
         options: suggestions.mother || [],
         isInternal: true
@@ -158,14 +160,14 @@ const FaceSelection = () => {
       {
         label: `${char} Brothers`,
         question: `${char.toLowerCase()}.brothers`,
-        gender: 'male',
+        gender: 'Male',
         options: suggestions.siblings?.filter(sibling => sibling.gender === 'Male') || [],
         isInternal: false
       },
       {
         label: `${char} Sisters`,
         question: `${char.toLowerCase()}.sisters`,
-        gender: 'female',
+        gender: 'Female',
         options: suggestions.siblings?.filter(sibling => sibling.gender === 'Female') || [],
         isInternal: true
       },
@@ -193,8 +195,9 @@ const FaceSelection = () => {
               prev={prev}
               question={parent.question}
               sendSelection={handleSelectChange}
-              options={filterOptions(parent.options).slice(0, 10)}
-              others={[missingThumbnail,...filterOptions(userThumbnails)]}
+              options={filterOptions(removeDuplicates([...parent.options.slice(0, 10),missingThumbnail,...userThumbnails.filter((item) => item.avgAge >= 30 && item.gender === parent.gender)]))}             
+              // options={filterOptions(parent.options).slice(0, 10)}
+              // others={[missingThumbnail,...filterOptions(userThumbnails)]}
               onSelect={handleSelectFace}
               selectedImage={getNestedProperty(formData, parent.question) || []}
               isInternal={parent.isInternal}
@@ -220,8 +223,10 @@ const FaceSelection = () => {
               prev={prev}
               question={sibling.question}
               sendSelection={handleSelectChange}
-              options={filterOptions(sibling.options)}
-              others={[missingThumbnail,...filterOptions(userThumbnails)]}
+              options={filterOptions(removeDuplicates([...sibling.options.slice(0, 10),missingThumbnail,...userThumbnails.filter((item) => item.avgAge >= 16 && item.avgAge <= 50  && item.gender === sibling.gender)]))}             
+              
+              // options={filterOptions(sibling.options).slice(0,10)}
+              // others={[missingThumbnail,...filterOptions(userThumbnails)]}
               onSelect={handleSelectFace}
               selectedImage={getNestedProperty(formData, sibling.question) || []}
               multiple={true}
@@ -350,7 +355,8 @@ const FaceSelection = () => {
           </div>
           <CustomFaceOption
             question={`${char.toLowerCase()}.${parentKey}.parents`}
-            options={filterOptions([...suggestions?.father||[],...suggestions?.mother||[]])}
+            // options={filterOptions([...suggestions?.father?.slice(0,8)||[],...suggestions?.mother?.slice(0,8)||[]])}
+            options={filterOptions(removeDuplicates([...suggestions?.father?.slice(0, 10)||[],missingThumbnail,...suggestions?.mother?.slice(0, 10)||[],...userThumbnails.filter((item) => item.avgAge >= 40)]))}             
             others={[missingThumbnail,...filterOptions(userThumbnails)]}
             title={`Select ${char} ${parentKey} Parents`}
             onSelect={handleSelectFace}
@@ -363,7 +369,8 @@ const FaceSelection = () => {
           />
           <CustomFaceOption
             question={`${char.toLowerCase()}.${parentKey}.siblings`}
-            options={filterOptions(suggestions?.siblings||[]).slice(0,20)}
+            // options={filterOptions(suggestions?.siblings||[]).slice(0,20)}
+            options={filterOptions(removeDuplicates([...suggestions?.siblings?.slice(0, 10)||[],missingThumbnail,...userThumbnails.filter((item) => item.avgAge >= 16)]))}             
             others={[missingThumbnail,...filterOptions(userThumbnails)]}
             title={`Select ${char} ${parentKey} Siblings`}
             onSelect={handleSelectFace}
@@ -389,6 +396,7 @@ const FaceSelection = () => {
       const suggestions = formData.suggestions?.[userId] || {};
       let opt = userThumbnails;
       let ques;
+      console.log(suggestions?.user?.gender)
   
       if (parentKey === "Brother" || parentKey === "Sister") {
         ques = `${char.toLowerCase()}.${parentKey}`;
@@ -414,8 +422,10 @@ const FaceSelection = () => {
             </div>
             <CustomFaceOption
               question={`${ques}.${index + 1}.spouse`}
-              options={filterOptions(suggestions?.spouse||[]).slice(0, 20)}
-              others={[missingThumbnail, ...filterOptions(userThumbnails)]}
+              // options={filterOptions(suggestions?.spouse||[]).slice(0, 10)}
+              options={filterOptions(removeDuplicates([...suggestions?.spouse?.slice(0, 10)||[],missingThumbnail,...userThumbnails.filter((item) => item.avgAge >= 16 && suggestions?.user?.gender!==item.gender)]))}             
+              
+              // others={[missingThumbnail, ...filterOptions(userThumbnails)]}
               serialNo={`${srNoStart}.${index + 1}`}
               title={`Select ${char} ${parentKey} ${index + 1} Spouse`}
               onSelect={handleSelectFace}
@@ -426,7 +436,9 @@ const FaceSelection = () => {
             />
             <CustomFaceOption
               question={`${ques}.${index + 1}.children`}
-              options={filterOptions(suggestions?.kids||[])}
+              // options={filterOptions(suggestions?.kids||[]).slice(0,10)}
+              options={filterOptions(removeDuplicates([...suggestions?.kids?.slice(0, 10)||[],missingThumbnail,...userThumbnails.filter((item) => item.avgAge <= 40)]))}             
+              
               others={[missingThumbnail, ...filterOptions(userThumbnails)]}
               title={`Select ${char} ${parentKey} Sibling ${index + 1} Children`}
               multiple={true}
@@ -530,8 +542,10 @@ const FaceSelection = () => {
             </div>
             <CustomFaceOption
               question={`${key}.Siblings.${siblingIndex}.Children.${cousinIndex+1}.spouse`}
-              options={filterOptions(suggestions?.spouse||[])}
-              others={[missingThumbnail,...filterOptions(userThumbnails)]}
+              // options={filterOptions(suggestions?.spouse||[]).slice(0,10)}
+              //others={[missingThumbnail,...filterOptions(userThumbnails)]}
+              options={filterOptions(removeDuplicates([...suggestions?.spouse?.slice(0, 10)||[],missingThumbnail,...userThumbnails.filter((item) => item.avgAge >= 20 && suggestions?.user?.gender!==item.gender)]))}             
+              
               serialNo={`${srNoStart}.${idx}`}
               title={`Select Cousin's Spouse`}
               onSelect={handleSelectFace}
@@ -542,8 +556,9 @@ const FaceSelection = () => {
             />
             <CustomFaceOption
               question={`${key}.Siblings.${siblingIndex}.Children.${cousinIndex+1}.children`}
-              options={filterOptions(suggestions?.kids||[])}
-              others={[missingThumbnail,...filterOptions(userThumbnails)]}
+              options={filterOptions(removeDuplicates([...suggestions?.kids?.slice(0, 10)||[],missingThumbnail,...userThumbnails.filter((item) => item.avgAge <= 20)]))}             
+              // options={filterOptions(suggestions?.kids||[]).slice(0,10)}
+              // others={[missingThumbnail,...filterOptions(userThumbnails)]}
               serialNo={`${srNoStart}.${siblingIndex + 1}.${cousinIndex + 1}.2`}
               title={`Select Cousin's Children`}
               multiple={true}
@@ -916,6 +931,17 @@ const FaceSelection = () => {
     }
   }
 
+  const removeDuplicates = (array) => {
+    const uniqueUrls = new Set();
+    return array.filter((item) => {
+      if (!uniqueUrls.has(item.face_url)) {
+        uniqueUrls.add(item.face_url);
+        return true;
+      }
+      return false;
+    });
+  };
+
   return (
     <>
       <section className="albumSelectionForm">
@@ -981,8 +1007,8 @@ const FaceSelection = () => {
               <div className="centered-selection">
                 <CustomFaceOption
                   serialNo={1}
-                  options={filterOptions(grooms).slice(0, 10)}
-                  others={filterOptions(userThumbnails)}
+                  options={filterOptions(removeDuplicates([...grooms.slice(0, 5),...userThumbnails.filter((item) => item.gender === "Male"&& item.avgAge > 10  )]))}
+                  // others={filterOptions(userThumbnails)}
                   title="Please select the Groom's image"
                   next={next}
                   prev={prev}
@@ -998,7 +1024,7 @@ const FaceSelection = () => {
                   title="Please select the Bride's image"
                   next={next}
                   prev={prev}
-                  options={filterOptions(brides).slice(0, 10)}
+                  options={filterOptions(removeDuplicates([...brides.slice(0, 5),...userThumbnails.filter((item) => item.gender === "Female" && item.avgAge >= 20)]))}
                   others={filterOptions(userThumbnails)}
                   onSelect={handleSelectFace}
                   question="bride.image"
@@ -1053,8 +1079,8 @@ const FaceSelection = () => {
               question="otherCousins"
               multiple={true}
               sendSelection={handleSelectChange}
-              options={filterOptions(cousins)}
-              others={filterOptions(userThumbnails)}
+              options={[...filterOptions(cousins),...userThumbnails]}
+              // others={filterOptions(userThumbnails)}
               onSelect={handleSelectFace}
               selectedImage={formData.otherCousins}
             />
