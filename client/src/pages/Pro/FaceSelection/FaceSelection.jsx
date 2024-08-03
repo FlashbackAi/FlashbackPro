@@ -335,6 +335,7 @@ const FaceSelection = () => {
     if (!parentData.image) return null;
     const userId = extractId(parentData.image);
       const suggestions = formData.suggestions?.[userId] || {};
+      console.log(suggestions)
     return (
       <div className='parent-container' key={`${char} ${parentKey} Family`}>
         <div className="centered-selection">
@@ -349,7 +350,7 @@ const FaceSelection = () => {
           </div>
           <CustomFaceOption
             question={`${char.toLowerCase()}.${parentKey}.parents`}
-            options={filterOptions([suggestions?.father||[],suggestions?.mother||[]])}
+            options={filterOptions([...suggestions?.father||[],...suggestions?.mother||[]])}
             others={[missingThumbnail,...filterOptions(userThumbnails)]}
             title={`Select ${char} ${parentKey} Parents`}
             onSelect={handleSelectFace}
@@ -626,8 +627,8 @@ const FaceSelection = () => {
       if (response.status === 200) {
         setUserThumbnails(response.data);
         const malesData = response.data.filter((item) => item.gender === "Male");
-        const groomData = response.data.filter((item) => item.gender === "Male" && item.avgAge >= 15 && item.avgAge <= 40);
-        const brideData = response.data.filter((item) => item.gender === "Female" && item.avgAge >= 15 && item.avgAge <= 40);
+        const groomData = response.data.filter((item) => item.gender === "Male" && item.avgAge >= 15 && item.avgAge <= 45);
+        const brideData = response.data.filter((item) => item.gender === "Female" && item.avgAge >= 15 && item.avgAge <= 45);
         const femalesData = response.data.filter((item) => item.gender === "Female");
         const kids = response.data.filter((item) => item.avgAge <= 15);
         const uncles = response.data.filter((item) => item.gender === "Male" && item.avgAge >= 40);
