@@ -17,6 +17,7 @@ const PhotoSelection = () => {
   const { eventName, form_owner } = useParams();
   const [isPhotosSelectionStarted, setIsPhotosSelectionStarted] = useState(false);
   const [imagesData, setImagesData] = useState({});
+  const [allImages, setAllImages] = useState([]); // New state to store all images
   const [formData, setFormData] = useState({
     event_name: eventName,
     form_owner: null,
@@ -206,7 +207,11 @@ const PhotoSelection = () => {
     if (formData.friends.length) {
       imagesData['Friends'] = { images: [], thumbnail: null };
     }
-  
+    
+    imagesData['Other Images'] = { images: [], thumbnail: null };
+
+    imagesData['Special Elements'] = { images: [], thumbnail: null };
+
     setImagesData(imagesData);
   };
   
@@ -277,6 +282,7 @@ const PhotoSelection = () => {
             images: response.data
           },
         }));
+        setAllImages(prevImages => [...prevImages, ...response.data]); // Add this line
         return response.data;
       }
     } catch (err) {
@@ -307,6 +313,7 @@ const PhotoSelection = () => {
               images: [...prevState['Kids'].images, ...images]
             }
           }));
+          setAllImages(prevImages => [...prevImages, ...response.data]); // Add this line
         }
       } catch (err) {
         console.log(err);
@@ -350,6 +357,7 @@ const PhotoSelection = () => {
             images: filteredData
           },
         }));
+        setAllImages(prevImages => [...prevImages, ...filteredData]); // Add this line
         return filteredData;
       }
     } catch (err) {
@@ -385,6 +393,7 @@ const PhotoSelection = () => {
             images: filteredData,
           }
         }));
+        setAllImages(prevImages => [...prevImages, ...filteredData]); // Add this line
         return filteredData;
       }
     } catch (err) {
@@ -560,6 +569,7 @@ const handleSelectTab = async (key) => {
                 images: response.data,
               }
             }));
+            setAllImages(prevImages => [...prevImages, ...response.data]); // Add this line
             setIsLoading(false);
           }
         } catch (err) {
@@ -585,6 +595,7 @@ const handleSelectTab = async (key) => {
                 images: response.data,
               }
             }));
+            setAllImages(prevImages => [...prevImages, ...response.data]); // Add this line
             setIsLoading(false);
           }
         } catch (err) {
@@ -621,6 +632,7 @@ const handleSelectTab = async (key) => {
                 images: response.data,
               }
             }));
+            setAllImages(prevImages => [...prevImages, ...response.data]); // Add this line
             setIsLoading(false);
           }
         } catch (err) {
@@ -646,6 +658,7 @@ const handleSelectTab = async (key) => {
                 images: response.data,
               }
             }));
+            setAllImages(prevImages => [...prevImages, ...response.data]); // Add this line
             setIsLoading(false);
           }
         } catch (err) {
@@ -679,6 +692,7 @@ const handleSelectTab = async (key) => {
             images: filteredData,
           }
         }));
+        setAllImages(prevImages => [...prevImages, ...filteredData]); // Add this line
         setIsLoading(false);
       } else {
         if (isLoading === true)
@@ -717,6 +731,7 @@ const handleSelectTab = async (key) => {
                 images: response.data,
               }
             }));
+            setAllImages(prevImages => [...prevImages, ...response.data]); // Add this line
             setIsLoading(false);
           }
         } catch (err) {
@@ -747,6 +762,7 @@ const handleSelectTab = async (key) => {
                 images: response.data,
               }
             }));
+            setAllImages(prevImages => [...prevImages, ...response.data]); // Add this line
             setIsLoading(false);
           }
         } catch (err) {
@@ -777,6 +793,7 @@ const handleSelectTab = async (key) => {
                 images: response.data,
               }
             }));
+            setAllImages(prevImages => [...prevImages, ...response.data]); // Add this line
             setIsLoading(false);
           }
         } catch (err) {
@@ -807,6 +824,7 @@ const handleSelectTab = async (key) => {
                 images: response.data,
               }
             }));
+            setAllImages(prevImages => [...prevImages, ...response.data]); // Add this line
             setIsLoading(false);
           }
         } catch (err) {
@@ -837,6 +855,7 @@ const handleSelectTab = async (key) => {
                 images: response.data,
               }
             }));
+            setAllImages(prevImages => [...prevImages, ...response.data]); // Add this line
             setIsLoading(false);
           }
         } catch (err) {
@@ -867,6 +886,7 @@ const handleSelectTab = async (key) => {
                 images: response.data,
               }
             }));
+            setAllImages(prevImages => [...prevImages, ...response.data]); // Add this line
             setIsLoading(false);
           }
         } catch (err) {
@@ -897,6 +917,7 @@ const handleSelectTab = async (key) => {
                 images: response.data,
               }
             }));
+            setAllImages(prevImages => [...prevImages, ...response.data]); // Add this line
             setIsLoading(false);
           }
         } catch (err) {
@@ -908,6 +929,61 @@ const handleSelectTab = async (key) => {
           setIsLoading(false)
       }
       break;
+      case "Other Images":
+        if (imagesData[key].images.length === 0) {
+          setIsLoading(true);
+          try {
+            const response = await API_UTIL.get(`/getAllImages/${eventName}`);
+            if (response.status === 200) {
+              // Filter out images that are already present in other categories
+              const otherImages = response.data.filter(img =>
+                !allImages.some(existingImg => existingImg.image_id === img.image_id)
+              );
+              setImagesData((prevState) => ({
+                ...prevState,
+                [key]: {
+                  ...prevState[key],
+                  images: otherImages,
+                }
+              }));
+              setIsLoading(false);
+            }
+          } catch (err) {
+            console.log(err);
+            setIsLoading(false);
+          }
+        } else {
+          if (isLoading === true)
+            setIsLoading(false)
+        }
+        break;
+        case "Special Elements":
+          if (imagesData[key].images.length === 0) {
+            setIsLoading(true);
+            
+            try {
+              const response = await API_UTIL.get(`/getOtherImages/${eventName}`);
+              if (response.status === 200) {
+                setImagesData((prevState) => ({
+                  ...prevState,
+                  [key]: {
+                    ...prevState[key],
+                    images: response.data,
+                  }
+                }));
+                setIsLoading(false);
+              }
+            } catch (err) {
+              console.log(err);
+              setIsLoading(false);
+            }
+          } else {
+            if (isLoading === true)
+              setIsLoading(false)
+          }
+          break;
+          
+    
     default:
       if (key.startsWith("Groom Father Sibling") || key.startsWith("Groom Mother Sibling")||key.startsWith("Bride Father Sibling")||key.startsWith("Bride Mother Sibling")) {
         if (imagesData[key].images.length === 0) {
@@ -929,13 +1005,17 @@ const handleSelectTab = async (key) => {
           try {
             const response = await API_UTIL.post(`/getImagesWithUserIds`, { 'userIds': userIds, 'operation': 'OR', mode: 'Loose', 'eventName': eventName });
             if (response.status === 200) {
+              const images = response.data.filter(img =>
+                !allImages.some(existingImg => existingImg.image_id === img.image_id)
+              );
               setImagesData((prevState) => ({
                 ...prevState,
                 [key]: {
                   ...prevState[key],
-                  images: response.data,
+                  images: images,
                 }
               }));
+              setAllImages(prevImages => [...prevImages, ...images]); // Add this line
               setIsLoading(false);
             }
           } catch (err) {

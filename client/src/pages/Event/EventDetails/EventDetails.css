@@ -38,30 +38,32 @@
     margin-bottom: 1em;
   }
   
-  .form-group {
+  .ed-form-group {
     margin:auto;
     max-width: 60em;
     margin-bottom: 15px;
   }
   
-  .form-label {
+  .ed-form-label {
     display: block;
     font-weight: bold;
     margin-bottom: 5px;
   }
   
-  .form-value {
+  .ed-form-value {
     margin-bottom: 10px;
-    padding: 1em;
-    font-size: 1em;
+    padding: 0.2em;
+    font-size: 1.4em;
+    margin: 0.5em !important;
     color: white;
   }
 
-  .form-footer {
+  .ed-form-footer {
+    width: 50%;
     margin: auto;
   }
   
-  .form-input,
+  .ed-form-input,
   textarea {
     width: 100%;
     padding: 10px;
@@ -85,6 +87,7 @@
     border-radius: 4px;
     font-size: 1em;
     cursor: pointer;
+    margin-top: 2em;
   }
   
   .save-button:hover {
@@ -206,17 +209,27 @@
 
   .edit-option {
     position: absolute;
-    bottom: 32em;
+    bottom: 23em;
     right: 0.2rem;
     width: 6rem;
     height: 1.5rem;
-    transition: transform 0.2s;
+    transition: transed-form 0.2s;
     cursor: pointer;
     color: white !important;
     border-radius: 0.25rem;
   }
   
   .edit-option:hover {
-    transform: scale(1.1);
+    transed-form: scale(1.1);
   }
-  
+
+  .edit-form {
+    margin: auto;
+    width: 60%;
+  }
+
+  .eo-form-details{
+    margin:auto;
+    max-width: 80em;
+    margin-bottom: 15px;
+  }

@@ -28,9 +28,10 @@ const oldEvents = ["Aarthi_Vinay_19122021","Convocation_PrathimaCollege","KSL_25
 
 dotenv.config();
 app.use(cors()); // Allow cross-origin requests
-app.use(express.json());
+// app.use(express.json());
 
-app.use(express.json());
+// app.use(express.json());
+app.use(express.json({ limit: '15mb' })); 
 
 // SSR Start
 app.set("view engine", "ejs");
@@ -1671,7 +1672,7 @@ async function getThumbanailsForUserIds(keys){
 
     try {
       const data = await docClient.batchGet(params1).promise();
-      const responses = data.Responses[TABLE_NAME];
+      const responses = data.Responses[TABLE_NAME]
       thumbnailObject.push(...responses);
     } catch (error) {
       console.error('Error fetching batch:', error);
@@ -3489,8 +3490,6 @@ app.post('/saveProjectDetails', async (req, res) => {
   }
 });
 
-
-
 app.post('/saveEventDetails', upload.single('eventImage'), async (req, res) => {
   const file = req.file;
   //  logger.info(file);
@@ -3549,7 +3548,7 @@ app.post('/saveEventDetails', upload.single('eventImage'), async (req, res) => {
     logger.info('CreateUploadFolderName:', CreateUploadFolderName);
   
     const eventParams = {
-      TableName: eventsTable,
+      TableName: eventsDataTable,
       Item: {
         event_name: CreateUploadFolderName,
         project_name:projectName,
@@ -3571,13 +3570,14 @@ app.post('/saveEventDetails', upload.single('eventImage'), async (req, res) => {
     res.status(500).json({ error: 'Error creating event' });
   }
 });
+
 app.get("/getClientEventDetails/:clientName", async (req, res) => {
   
   const clientName = req.params.clientName; // Adjust based on your token payload
   logger.info(`Fetching event details for ${clientName}`)
   try {
     const eventParams = {
-      TableName: eventsTable,
+      TableName: eventsDataTable,
       FilterExpression: "client_name = :clientName",
       ExpressionAttributeValues: {
         ":clientName": clientName
@@ -3783,35 +3783,36 @@ app.get("/getUserDetails/:userPhoneNumber", async (req, res) => {
 
 
 app.put('/updateEvent/:eventName/:projectName', async (req, res) => {
-  const { eventName, projectName } = req.params;
+  const {eventName , projectName} = req.params;
   const {
     invitationNote,
     eventLocation,
-    street,
-    city,
-    state: newState,
-    pinCode,
-    invitation_url
+    eventDate,
+    // street,
+    // city,
+    // state: newState,
+    // pinCode,
+    // invitation_url
   } = req.body;
 
   const updateParams = {
-    TableName: eventsTable,
+    TableName: eventsDataTable,
     Key: {
       event_name: eventName,
       project_name: projectName,
     },
-    UpdateExpression: "set event_location = :eventLocation, invitation_note = :invitationNote, street = :street, city = :city, #st = :state, pin_code = :pinCode, invitation_url = :invitation_url",
-    ExpressionAttributeNames: {
-      "#st": "state",
-    },
+    UpdateExpression: "set event_location = :eventLocation, invitation_note = :invitationNote",
+    // ExpressionAttributeNames: {
+    //   "#st": "state",
+    // },
     ExpressionAttributeValues: {
       ":eventLocation": eventLocation,
       ":invitationNote": invitationNote,
-      ":street": street,
-      ":city": city,
-      ":state": newState,
-      ":pinCode": pinCode,
-      ":invitation_url": invitation_url,
+      // ":street": street,
+      // ":city": city,
+      // ":state": newState,
+      // ":pinCode": pinCode,
+      // ":invitation_url": invitation_url,
     },
     ReturnValues: "ALL_NEW",
   };
@@ -3832,7 +3833,7 @@ app.get("/getEventDetails/:eventName", async (req, res) => {
   logger.info(`Fetching event details for ${eventName}`)
   try {
     const eventParams = {
-      TableName: eventsTable,
+      TableName: eventsDataTable,
       FilterExpression: "event_name = :eventName",
       ExpressionAttributeValues: {
         ":eventName": eventName
@@ -3902,14 +3903,14 @@ app.get("/getEventDetails/:eventName", async (req, res) => {
 // });
 
 // API endpoint to delete an event
-app.delete('/deleteEvent/:eventName/:eventDate', async (req, res) => {
-  const { eventName, eventDate } = req.params;
+app.delete('/deleteEvent/:eventName/:projectName', async (req, res) => {
+  const { eventName, projectName } = req.params;
 
   const params = {
-    TableName: eventsTable,
+    TableName: eventsDataTable,
     Key: {
       event_name: eventName,
-      event_date: eventDate,
+      project_name: projectName,
     }
   };
   logger.info(params.Key)
@@ -4377,6 +4378,21 @@ app.post("/getImageUserIdCount", async (req, res) => {
   }
 });
 
+const calculateScore = async (person, userCount,userAge, expectedAgeDifference) => {
+  const actualAgeDifference = Math.abs(person.avgAge - userAge);
+  const deviation = Math.abs(actualAgeDifference - expectedAgeDifference);
+
+  // Calculate the age factor based on the deviation
+  const maxDeviation = 50; // Deviation at which the score becomes 0
+  const ageFactor = Math.max(0, 100 - (deviation / maxDeviation) * 100); // Linear decrease from 100 to 0
+
+  const countFactor = Math.max(0, (person.count / userCount) * 100);
+
+  // Final score is the count multiplied by the age factor
+  return countFactor*0.8 + ageFactor*0.2;
+};
+
+
 app.get("/getFamilySuggestions/:user_id/:eventName", async (req, res) => {
   const { user_id, eventName } = req.params;
   
@@ -4469,16 +4485,11 @@ app.get("/getFamilySuggestions/:user_id/:eventName", async (req, res) => {
         count: count,
         avgAge: userThumbnail ? userThumbnail.avgAge : null,
         gender: userThumbnail ? userThumbnail.gender : null,
-        face_url:`https://rekognitionuserfaces.s3.amazonaws.com/thumbnails/${userId}.jpg`
+        face_url: `https://rekognitionuserfaces.s3.amazonaws.com/thumbnails/${userId}.jpg`
       };
     });
 
-    // Step 5: Sort the enriched userIdMap by count
-    enrichedUserIdMap.sort((a, b) => b.count - a.count);
-
-    logger.info('Sorted and enriched user_id map successfully');
-
-    // Step 6: Generate Family Suggestions
+    // Step 5: Generate Family Suggestions
     const user = enrichedUserIdMap.find(user => user.user_id === user_id);
     if (!user) {
       logger.info('No information found for the provided user_id');
@@ -4487,46 +4498,106 @@ app.get("/getFamilySuggestions/:user_id/:eventName", async (req, res) => {
 
     const userAge = user.avgAge;
     const userGender = user.gender;
+    const userCount = user.count;
+
+    logger.info(`userAge: ${userAge}, userGender: ${userGender}`);
+    const userObject = {
+      user_id: user_id,
+      avgAge: userAge,
+      gender: userGender
+    };
     const familySuggestions = {
       father: [],
       mother: [],
       siblings: [],
       spouse: [],
-      kids: []
+      kids: [],
+      user: userObject
     };
 
-    enrichedUserIdMap.forEach(person => {
-      if (person.user_id === user_id) return;
+    for (const person of enrichedUserIdMap) {
+      if (person.user_id === user_id || person.avgAge === null) continue;
+      
+      const clonedPerson = {...person};
+      
+      // Calculate scores for father suggestions
+      if (clonedPerson.gender === 'Male' && clonedPerson.avgAge >= userAge) {
+        clonedPerson.score = await calculateScore(clonedPerson,userCount, userAge, 15);
+        familySuggestions.father.push(clonedPerson);
+      }
 
-      if (person.gender === 'Male' && person.avgAge >= userAge + 10) {
-        if (familySuggestions.father.length < 10) {
-          familySuggestions.father.push(person);
-        }
-      } if (person.gender === 'Female' && person.avgAge >= userAge + 10) {
-        if (familySuggestions.mother.length < 10) {
-          familySuggestions.mother.push(person);
-        }
-      } if (Math.abs(person.avgAge - userAge) <= 18) {
-        if (familySuggestions.siblings.length < 10) {
-          familySuggestions.siblings.push(person);
-        }
+      // Clone the person object again for mother section
+      const clonedPersonMother = {...person};
+      
+      // Calculate scores for mother suggestions
+      if (clonedPersonMother.gender === 'Female' && clonedPersonMother.avgAge >= userAge) {
+        clonedPersonMother.score = await calculateScore(clonedPersonMother,userCount, userAge, 15);
+        familySuggestions.mother.push(clonedPersonMother);
+      }
+
+      // Clone the person object again for siblings section
+      const clonedPersonSibling = {...person};
+      
+      // Calculate scores for siblings suggestions
+      if (Math.abs(clonedPersonSibling.avgAge - userAge) <= 20) {
+        clonedPersonSibling.score = await calculateScore(clonedPersonSibling, userCount, userAge, 3);
+        familySuggestions.siblings.push(clonedPersonSibling);
         
-        if (familySuggestions.spouse.length < 10 && person.gender !== userGender) {
-          familySuggestions.spouse.push(person);
-        }
-      } if (person.avgAge <= userAge - 15) {
-        if (familySuggestions.kids.length < 10) {
-          familySuggestions.kids.push(person);
+        const clonedPersonSpouse = {...clonedPersonSibling};
+        if (clonedPersonSpouse.gender !== userGender) {
+          clonedPersonSpouse.score = await calculateScore(clonedPersonSpouse, userCount, userAge, 5);
+          familySuggestions.spouse.push(clonedPersonSpouse);
         }
       }
-    });
 
-    // Sorting the lists based on the count
-    familySuggestions.father.sort((a, b) => b.count - a.count); // Higher count first
-    familySuggestions.mother.sort((a, b) => b.count - a.count); // Higher count first
-    familySuggestions.siblings.sort((a, b) => b.count - a.count); // Higher count first
-    familySuggestions.spouse.sort((a, b) => b.count - a.count); // Higher count first
-    familySuggestions.kids.sort((a, b) => b.count - a.count); // Higher count first
+      // Clone the person object again for kids section
+      const clonedPersonKid = {...person};
+      
+      // Calculate scores for kids suggestions
+      if (clonedPersonKid.avgAge <= userAge - 10) {
+        clonedPersonKid.score = await calculateScore(clonedPersonKid, userCount, userAge, 20);
+        familySuggestions.kids.push(clonedPersonKid);
+      }
+    }
+
+    // Sorting the lists based on the score
+    familySuggestions.father = familySuggestions.father.sort((a, b) => b.score - a.score).slice(0, 15).map(({ face_url, avgAge }) => ({ face_url, avgAge }));
+    familySuggestions.mother = familySuggestions.mother.sort((a, b) => b.score - a.score).slice(0, 15).map(({ face_url, avgAge }) => ({ face_url, avgAge }));
+    familySuggestions.siblings = familySuggestions.siblings.sort((a, b) => b.score - a.score).slice(0, 15).map(({ face_url, avgAge, gender }) => ({ face_url, avgAge, gender }));
+    familySuggestions.spouse = familySuggestions.spouse.sort((a, b) => b.score - a.score).slice(0, 15).map(({ face_url, avgAge }) => ({ face_url, avgAge }));
+    familySuggestions.kids = familySuggestions.kids.sort((a, b) => b.score - a.score).slice(0, 15).map(({ face_url, avgAge }) => ({ face_url, avgAge }));
+
+
+    // enrichedUserIdMap.forEach(person => {
+    //   if(person.avgAge!==null){
+    //   if (person.user_id === user_id) return;
+
+    //   if (person.gender === 'Male' && person.avgAge >= userAge) {
+       
+    //       familySuggestions.father.push(person);
+        
+    //   } if (person.gender === 'Female' && person.avgAge >= userAge) {
+       
+    //       familySuggestions.mother.push(person);
+        
+    //   }
+    //       familySuggestions.siblings.push(person);
+    //   if ( person.gender !== userGender) {
+    //     familySuggestions.spouse.push(person);
+    //   }
+    //    if (person.avgAge <= userAge - 10) {
+    //       familySuggestions.kids.push(person);
+    //     }
+    //   }
+    // });
+
+    // // Sorting the lists based on the count
+    // familySuggestions.father =  familySuggestions.father.sort((a, b) => b.count - a.count).slice(0, 10).map(({ face_url, avgAge, gender }) => ({ face_url, avgAge, gender })); // Higher count first
+    // familySuggestions.mother = familySuggestions.mother.sort((a, b) => b.count - a.count).slice(0, 10).map(({ face_url, avgAge, gender }) => ({ face_url, avgAge, gender })); // Higher count first
+    // familySuggestions.siblings = familySuggestions.siblings.sort((a, b) => b.count - a.count).slice(0, 20).map(({ face_url, avgAge, gender }) => ({ face_url, avgAge, gender })); // Higher count first
+    // familySuggestions.spouse = familySuggestions.spouse.sort((a, b) => b.count - a.count).slice(0, 10).map(({ face_url, avgAge, gender }) => ({ face_url, avgAge, gender })); // Higher count first
+    // familySuggestions.kids = familySuggestions.kids.sort((a, b) => b.count - a.count).slice(0, 10).map(({ face_url, avgAge, gender }) => ({ face_url, avgAge, gender })); // Higher count first
+
 
     res.send(familySuggestions);
   } catch (error) {
@@ -4534,6 +4605,147 @@ app.get("/getFamilySuggestions/:user_id/:eventName", async (req, res) => {
     res.status(500).send("Error fetching images");
   }
 });
+
+
+
+app.put("/setFolderName/:eventName", async(req,res) =>{
+  const eventName = req.params.eventName;
+  try {
+    logger.info("fetching images for event : " + eventName)
+    const params = {
+        TableName: recokgImages,
+        FilterExpression: 'contains(#attr, :val)',
+        ExpressionAttributeNames: {
+            '#attr': 's3_url',
+        },
+        ExpressionAttributeValues: {
+            ':val': eventName, 
+        },
+        ProjectionExpression: 's3_url, image_id, selected'
+    };
+
+    let items = [];
+    let lastEvaluatedKey = null;
+
+    do {
+        if (lastEvaluatedKey) {
+            params.ExclusiveStartKey = lastEvaluatedKey;
+        }
+
+        const data = await docClient.scan(params).promise();
+        for (let item of data.Items) {
+            // Extract folder_name from s3_url
+            const s3UrlParts = item.s3_url.split('/');
+            const folder_name = s3UrlParts[s3UrlParts.length - 2]; // Assuming folder name is the second last part of the URL
+
+            // Add folder_name to item
+            item.folder_name = folder_name;
+
+            // Update the record in DynamoDB with the new folder_name
+            const updateParams = {
+                TableName: recokgImages,
+                Key: { image_id: item.image_id }, // Assuming image_id is the primary key
+                UpdateExpression: 'set folder_name = :folder_name',
+                ExpressionAttributeValues: {
+                    ':folder_name': folder_name
+                }
+            };
+            await docClient.update(updateParams).promise();
+        }
+
+        items = items.concat(data.Items);
+        logger.info("Fetched and updated Images -> " + items.length);
+        lastEvaluatedKey = data.LastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    logger.info("Total images fetched and updated: " + items.length);
+    res.send(items);
+} catch (error) {
+    logger.error("Error fetching or updating images: ", error);
+    res.status(500).send("Error fetching or updating images");
+}
+
+});
+
+app.get("/getOtherImages/:eventName", async(req,res) =>{
+ 
+  const eventName = req.params.eventName;
+  try {
+    logger.info("fetching images for event : "+eventName)
+    const params = {
+      TableName: recokgImages,
+      IndexName: 'folder_name-index', 
+      ProjectionExpression: 'image_id,s3_url,folder_name',
+      KeyConditionExpression: 'folder_name = :folderName',
+      FilterExpression: 'attribute_not_exists(user_ids)',
+      ExpressionAttributeValues: {
+        ':folderName': eventName
+      }        
+    };
+
+    let items = [];
+    let lastEvaluatedKey = null;
+    do {
+      if (lastEvaluatedKey) {
+        params.ExclusiveStartKey = lastEvaluatedKey;
+      }
+
+      const data = await docClient.query(params).promise();
+      items = items.concat(data.Items);
+      lastEvaluatedKey = data.LastEvaluatedKey;
+    } while (lastEvaluatedKey)
+      const result = items.map(item => ({
+        ...item,
+        thumbnailUrl: "https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/" + item.s3_url.split("amazonaws.com/")[1]
+      }));
+    logger.info("Total images fetched" + " : " + result.length);
+    res.send(result);
+} catch(err){
+  logger.info(err.message);
+  res.status(500).send(err.message)
+}
+
+});
+
+app.get("/getAllImages/:eventName", async(req,res) =>{
+ 
+  const eventName = req.params.eventName;
+  try {
+    logger.info("fetching images for event : "+eventName)
+    const params = {
+      TableName: recokgImages,
+      IndexName: 'folder_name-index', 
+      ProjectionExpression: 'user_ids, image_id,s3_url,folder_name',
+      KeyConditionExpression: 'folder_name = :folderName',
+      ExpressionAttributeValues: {
+        ':folderName': eventName
+      }        
+    };
+
+    let items = [];
+    let lastEvaluatedKey = null;
+    do {
+      if (lastEvaluatedKey) {
+        params.ExclusiveStartKey = lastEvaluatedKey;
+      }
+
+      const data = await docClient.query(params).promise();
+      items = items.concat(data.Items);
+      lastEvaluatedKey = data.LastEvaluatedKey;
+    } while (lastEvaluatedKey)
+      const result = items.map(item => ({
+        ...item,
+        thumbnailUrl: "https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/" + item.s3_url.split("amazonaws.com/")[1]
+      }));
+    logger.info("Total images fetched" + " : " + result.length);
+    res.send(result);
+} catch(err){
+  logger.info(err.message);
+  res.status(500).send(err.message)
+}
+
+});
+
 
   const httpsServer = https.createServer(credentials, app);
 
@@ -4543,8 +4755,9 @@ app.get("/getFamilySuggestions/:user_id/:eventName", async (req, res) => {
     httpsServer.headersTimeout = 65000; // Increase headers timeout
   });
   
+  
 
-// //**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
+//**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
 //  const server = app.listen(PORT ,() => {
 //  logger.info(`Server started on http://localhost:${PORT}`);
 //  server.keepAliveTimeout = 60000; // Increase keep-alive timeout

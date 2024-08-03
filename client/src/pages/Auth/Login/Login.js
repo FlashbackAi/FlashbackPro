@@ -44,7 +44,7 @@ const CustomControl = ({ children, ...props }) => {
 
 const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
 
-function Login() {
+function Login({ name, onLoginSuccess }) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const { eventName } = useParams();
@@ -214,6 +214,20 @@ function Login() {
         position: "top-center",
       });
     } else if (response.status === 200) {
+      sessionStorage.setItem('userphoneNumber', fullPhoneNumber);
+      toast(
+        `Hey ${fullPhoneNumber}, you already exist. Have a great event ahead..`,
+        { position: "top-center" }
+      );
+      if(name) {
+        navigate(`/login/${name}/rsvp`);
+        onLoginSuccess(fullPhoneNumber);
+      }
+      else {
+        navigate(from);
+      }
+      
+
       if (typeof from === 'string' && from.includes("photos")) {
         try {
           const urlArray = from.split("/");
@@ -231,7 +245,7 @@ function Login() {
           navigate(`${location.pathname}`, { state: { from } });
         }
       } else {
-        navigate(from);
+        navigate(eventName ? `/login/${eventName}/rsvp` : from);
       }
       sessionStorage.setItem('userphoneNumber', fullPhoneNumber);
       toast(

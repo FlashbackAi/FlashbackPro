@@ -177,7 +177,6 @@ const Event = ({ eventName, eventDate, folderName }) => {
     } else {
       console.log(clientName);
       navigate(`/createEventForm/${userDetails.user_name}`);
-    
     }
   };
   const openIsDetailsModalOpen = () => {
@@ -227,10 +226,10 @@ const Event = ({ eventName, eventDate, folderName }) => {
     setEventToDelete(null);
   };
 
-  const deleteEvent = async (eventName, eventDate) => {
+  const deleteEvent = async (eventName, projectName) => {
     try {
-      await API_UTIL.delete(`/deleteEvent/${eventName}/${eventDate}`);
-      setEvents(events.filter(event => !(event.event_name === eventName && event.event_date === eventDate)));
+      await API_UTIL.delete(`/deleteEvent/${eventName}/${projectName}`);
+      setEvents(events.filter(event => !(event.event_name === eventName && event.project_name === projectName)));
       setIsDeleteModalOpen(false);
       toast.success('Event deleted successfully');
     } catch (error) {
@@ -243,79 +242,80 @@ const Event = ({ eventName, eventDate, folderName }) => {
     navigate(`/eventDetails/${eventName}`, { state: { userDetails } })
   };
 
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedEvent(null);
-    setEditData(null);
-  };
+  // const closeModal = () => {
+  //   setIsModalOpen(false);
+  //   setSelectedEvent(null);
+  //   setEditData(null);
+  // };
 
-  const openQrModal = () => {
-    setIsQrModalOpen(true);
-  };
+  // const openQrModal = () => {
+  //   setIsQrModalOpen(true);
+  // };
 
-  const closeQrModal = () => {
-    setIsQrModalOpen(false);
-  };
+  // const closeQrModal = () => {
+  //   setIsQrModalOpen(false);
+  // };
 
-  const openUploadFilesModal = () => {
-    setUploadFilesModeOpen(true);
-  }
+  // const openUploadFilesModal = () => {
+  //   setUploadFilesModeOpen(true);
+  // }
 
-  const closeUploadFilesModal = () => {
-    setUploadFilesModeOpen(false);
-    setFiles([]);
-    setUploadProgress({});
-    setUploadStatus('');
-    setUploading(false);
-  }
+  // const closeUploadFilesModal = () => {
+  //   setUploadFilesModeOpen(false);
+  //   setFiles([]);
+  //   setUploadProgress({});
+  //   setUploadStatus('');
+  //   setUploading(false);
+  // }
 
-  const handleEditClick = () => {
-    setEditData({
-      eventName: selectedEvent.event_name,
-      eventDate: selectedEvent.event_date.split(' ')[0],
-      eventTime: selectedEvent.event_date.split(' ')[1],
-      invitationNote: selectedEvent.invitation_note,
-      eventLocation: selectedEvent.event_location,
-      street: selectedEvent.street,
-      city: selectedEvent.city,
-      state: selectedEvent.state,
-      pinCode: selectedEvent.pin_code,
-      invitation_url: selectedEvent.invitation_url,
-    });
-  };
+  // const handleEditClick = () => {
+  //   setEditData({
+  //     eventName: selectedEvent.event_name,
+  //     eventDate: selectedEvent.event_date.split(' ')[0],
+  //     eventTime: selectedEvent.event_date.split(' ')[1],
+  //     invitationNote: selectedEvent.invitation_note,
+  //     eventLocation: selectedEvent.event_location,
+  //     street: selectedEvent.street,
+  //     city: selectedEvent.city,
+  //     state: selectedEvent.state,
+  //     pinCode: selectedEvent.pin_code,
+  //     invitation_url: selectedEvent.invitation_url,
+  //   });
+  // };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditData({ ...editData, [name]: value });
-  };
+  // const handleInputChange = (e) => {
+  //   const { name, value } = e.target;
+  //   setEditData({ ...editData, [name]: value });
+  // };
 
-  const handleFormSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await API_UTIL.put(`/updateEvent/${selectedEvent.event_name}/${selectedEvent.event_date}`, {
-        invitationNote: editData.invitationNote,
-        eventLocation: editData.eventLocation,
-        street: editData.street,
-        city: editData.city,
-        state: editData.state,
-        pinCode: editData.pinCode,
-        invitation_url: editData.invitation_url
-      });
-      if (response.status === 200) {
-        toast.success('Event updated successfully');
-        const updatedEvents = events.map(event =>
-          event.event_name === selectedEvent.event_name && event.event_date === selectedEvent.event_date
-            ? { ...event, ...editData }
-            : event
-        );
-        setEvents(updatedEvents);
-        closeModal();
-      }
-    } catch (error) {
-      console.error('Error updating event:', error);
-      toast.error('Failed to update the event. Please try again.');
-    }
-  }; const formatEventName = (name) => {
+  // const handleFormSubmit = async (e) => {
+  //   e.preventDefault();
+  //   try {
+  //     const response = await API_UTIL.put(`/updateEvent/${selectedEvent.event_name}/${selectedEvent.event_date}`, {
+  //       invitationNote: editData.invitationNote,
+  //       eventLocation: editData.eventLocation,
+  //       street: editData.street,
+  //       city: editData.city,
+  //       state: editData.state,
+  //       pinCode: editData.pinCode,
+  //       invitation_url: editData.invitation_url
+  //     });
+  //     if (response.status === 200) {
+  //       toast.success('Event updated successfully');
+  //       const updatedEvents = events.map(event =>
+  //         event.event_name === selectedEvent.event_name && event.event_date === selectedEvent.event_date
+  //           ? { ...event, ...editData }
+  //           : event
+  //       );
+  //       setEvents(updatedEvents);
+  //       closeModal();
+  //     }
+  //   } catch (error) {
+  //     console.error('Error updating event:', error);
+  //     toast.error('Failed to update the event. Please try again.');
+  //   }
+  // };
+   const formatEventName = (name) => {
     let event = name.replace(/_/g, ' ');
     console.log(userDetails.user_name)
     event.replace(userDetails.user_name, '');
@@ -325,38 +325,38 @@ const Event = ({ eventName, eventDate, folderName }) => {
 
  
 
-  function getFormattedDate(datetime) {
-    const date = new Date(datetime);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
-  }
+  // function getFormattedDate(datetime) {
+  //   const date = new Date(datetime);
+  //   const day = String(date.getDate()).padStart(2, '0');
+  //   const month = String(date.getMonth() + 1).padStart(2, '0');
+  //   const year = date.getFullYear();
+  //   return `${day}-${month}-${year}`;
+  // }
 
-  function getFormattedTime(datetime) {
-    const date = new Date(datetime);
-    let hours = date.getHours();
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    hours = hours ? String(hours).padStart(2, '0') : '12'; // the hour '0' should be '12'
-    return `${hours}:${minutes} ${ampm}`;
-  }
+  // function getFormattedTime(datetime) {
+  //   const date = new Date(datetime);
+  //   let hours = date.getHours();
+  //   const minutes = String(date.getMinutes()).padStart(2, '0');
+  //   const ampm = hours >= 12 ? 'PM' : 'AM';
+  //   hours = hours % 12;
+  //   hours = hours ? String(hours).padStart(2, '0') : '12'; // the hour '0' should be '12'
+  //   return `${hours}:${minutes} ${ampm}`;
+  // }
 
-  const sendWhatsAppMessage = () => {
-    const message = `Check out this event: ${selectedEvent.event_name} on ${getFormattedDate(selectedEvent.event_date)} at ${getFormattedTime(selectedEvent.event_date)}. Location: ${selectedEvent.event_location} , Url: https://flashback.inc/login/${selectedEvent.event_name}`;
-    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
-  };
+  // const sendWhatsAppMessage = () => {
+  //   const message = `Check out this event: ${selectedEvent.event_name} on ${getFormattedDate(selectedEvent.event_date)} at ${getFormattedTime(selectedEvent.event_date)}. Location: ${selectedEvent.event_location} , Url: https://flashback.inc/login/${selectedEvent.event_name}`;
+  //   const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+  //   window.open(url, '_blank');
+  // };
 
-  const downloadQRCode = () => {
-    const qrCanvas = qrRef.current.querySelector('canvas');
-    const qrImage = qrCanvas.toDataURL('image/png');
-    const downloadLink = document.createElement('a');
-    downloadLink.href = qrImage;
-    downloadLink.download = `${selectedEvent.event_name}_QR.png`;
-    downloadLink.click();
-  };
+  // const downloadQRCode = () => {
+  //   const qrCanvas = qrRef.current.querySelector('canvas');
+  //   const qrImage = qrCanvas.toDataURL('image/png');
+  //   const downloadLink = document.createElement('a');
+  //   downloadLink.href = qrImage;
+  //   downloadLink.download = `${selectedEvent.event_name}_QR.png`;
+  //   downloadLink.click();
+  // };
 
   if (loading) return <div className="loading-screen">Loading...</div>;
   if (error) return <div className="loading-screen">Error: {error}</div>;
@@ -443,6 +443,23 @@ const Event = ({ eventName, eventDate, folderName }) => {
           </div>
           <button type="submit" className="save-button">Submit</button>
         </form>
+      </Modal>
+
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onRequestClose={closeDeleteModal}
+        contentLabel="Delete Confirmation"
+        className="delete-modal-content"
+        overlayClassName="modal-overlay"
+      >
+        <div className='delete-modal-bg'>
+          <h2 className="modal-title">Confirm Delete</h2>
+          <p className="modal-body">Do you want to delete this event?</p>
+          <div className="modal-footer">
+            <button className="delete-button" onClick={() => deleteEvent(eventToDelete.event_name, eventToDelete.project_name)}>Confirm</button>
+            <button className="cancel-button" onClick={closeDeleteModal}>Cancel</button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

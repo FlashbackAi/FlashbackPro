@@ -71,18 +71,19 @@ const EventDetails = () => {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await API_UTIL.put(`/updateEvent/${event.event_name}/${event.event_date}`, {
+      const response = await API_UTIL.put(`/updateEvent/${event.event_name}/${event.project_name}`, {
         invitationNote: editData.invitationNote,
         eventLocation: editData.eventLocation,
-        street: editData.street,
-        city: editData.city,
-        state: editData.state,
-        pinCode: editData.pinCode,
-        invitation_url: editData.invitation_url
+        eventDate: editData.eventDate,
+        // street: editData.street,
+        // city: editData.city,
+        // state: editData.state,
+        // pinCode: editData.pinCode,
+        //invitation_url: editData.invitation_url
       });
       if (response.status === 200) {
         toast.success('Event updated successfully');
-        navigate('/events');
+        navigate('/event');
       }
     } catch (error) {
       console.error('Error updating event:', error);
@@ -215,6 +216,19 @@ const EventDetails = () => {
     }
       //setIsUploadFilesFailed(true);
   };
+
+  const sendInvite = () => {
+        const message = editData ? `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(editData?.eventDate)} at ${getFormattedTime(editData?.eventDate)}. Location: ${editData?.eventLocation} , Url: https://flashback.inc/login/${event?.event_name}`
+                        : `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(event.event_date)} at ${getFormattedTime(event.event_date)}. Location: ${event.event_location} , Url: https://flashback.inc/login/${event?.event_name}`;
+        const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+        window.open(url, '_blank');
+  }
+
+  // const formattedName = (name) => {
+  //   let event = name.replace(userDetails.user_name, '');
+  //   console.log(event)
+  //   return event;
+  // };
  
   const formatEventName = (name) => {
     let event = name.replace(/_/g, ' ');
@@ -270,89 +284,90 @@ const EventDetails = () => {
         />
         {toggleEdit ? (
           <form onSubmit={handleFormSubmit} className="edit-form">
-            <div className="form-group">
-              <p className="form-label">Event Name: {formatEventName(editData?.eventName)}</p>
-              <div className="form-group">
-                <label className="form-label">Date:</label>
-                <p className="form-value">{getFormattedDate(editData.eventDate)}</p>
+            <div className="eo-form-group">
+              <p className="ed-form-label">Event Name: {formatEventName(editData?.eventName)}</p>
+              <div className="eo-form-group">
+                <label className="ed-form-label">Date:</label>
+                <p className="ed-form-value">{getFormattedDate(editData.eventDate)}</p>
               </div>
-              <label className="form-label">Invitation Note:</label>
+              <label className="ed-form-label">Invitation Note:</label>
               <textarea 
                 name="invitationNote" 
                 value={editData.invitationNote} 
                 onChange={handleInputChange} 
-                className="form-input"
+                className="ed-form-input"
               />
-              <label className="form-label">Location:</label>
+              <label className="ed-form-label">Location:</label>
               <input 
                 type="text" 
                 name="eventLocation" 
                 value={editData.eventLocation} 
                 onChange={handleInputChange} 
-                className="form-input"
+                className="ed-form-input"
               />
-              {/* <label className="form-label">Street:</label>
+              {/* <label className="ed-form-label">Street:</label>
               <input 
                 type="text" 
                 name="street" 
                 value={editData.street} 
                 onChange={handleInputChange} 
-                className="form-input"
+                className="ed-form-input"
               />
-              <label className="form-label">City:</label>
+              <label className="ed-form-label">City:</label>
               <input 
                 type="text" 
                 name="city" 
                 value={editData.city} 
                 onChange={handleInputChange} 
-                className="form-input"
+                className="ed-form-input"
               />
-              <label className="form-label">State:</label>
+              <label className="ed-form-label">State:</label>
               <input 
                 type="text" 
                 name="state" 
                 value={editData.state} 
                 onChange={handleInputChange} 
-                className="form-input"
+                className="ed-form-input"
               />
-              <label className="form-label">Pin Code:</label>
+              <label className="ed-form-label">Pin Code:</label>
               <input 
                 type="text" 
                 name="pinCode" 
                 value={editData.pinCode} 
                 onChange={handleInputChange} 
-                className="form-input"
+                className="ed-form-input"
                 pattern="^\d{6}$"
                 title="Please enter a valid 6-digit PIN code"
                 required
               /> */}
-              <label className="form-label">Invitation URL:</label>
+              {/* <label className="ed-form-label">Invitation URL:</label>
               <input 
                 type="text" 
                 name="invitation_url" 
                 value={editData.invitation_url} 
                 onChange={handleInputChange} 
-                className="form-input"
-              />
+                className="ed-form-input"
+              /> */}
             </div>
             <button type="submit" className="save-button">Save Changes</button>
           </form>
         ) : (
-          <div className="form-group">
-            <div className="form-group">
-              <p className="form-value">Date: {getFormattedDate(event.event_date)}</p>
-              <p className="form-value">Time: {getFormattedTime(event.event_date)}</p>
-              <p className="form-value">Invitation Note: {event.invitation_note}</p>
-              <p className="form-value">Location: {event.event_location}</p>
-              {/* <p className="form-value">Street: {event.street},</p>
-              <p className="form-value">City: {event.city},</p>
-              <p className="form-value">State: {event.state},</p>
-              <p className="form-value">Pin Code: {event.pin_code}</p> */}
-              <p className='form-value'>Folder: {event.folder_name}</p>
+          <div className="ed-form-group">
+            <div className="ed-form-group">
+              <p className="ed-form-value">Date: {getFormattedDate(event.event_date)}</p>
+              <p className="ed-form-value">Time: {getFormattedTime(event.event_date)}</p>
+              <p className="ed-form-value">Invitation Note: {event.invitation_note}</p>
+              <p className="ed-form-value">Location: {event.event_location}</p>
+              {/* <p className="ed-form-value">Street: {event.street},</p>
+              <p className="ed-form-value">City: {event.city},</p>
+              <p className="ed-form-value">State: {event.state},</p>
+              <p className="ed-form-value">Pin Code: {event.pin_code}</p> */}
+              <p className='ed-form-value'>Folder: {event.folder_name}</p>
             </div>
-            <div className='form-footer'>
+            <div className='ed-form-footer'>
             <button className='footer-buttons' onClick={openQrModal}>Generate QR</button>
             <button className='footer-buttons' onClick={openUploadFilesModal}>Upload Files</button>
+            <button className='footer-buttons' onClick={sendInvite}>Invite</button>
             </div>
           </div>
         )}

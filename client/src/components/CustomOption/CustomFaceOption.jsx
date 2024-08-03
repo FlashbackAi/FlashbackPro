@@ -89,7 +89,7 @@ const CustomFaceOption = ({
       <div className="img-options">
         <div className="separator">
           <hr className="partition-style" />
-          <p>{SUGGESTED_PEOPLE}</p>
+          {/* <p>Suggested People</p> */}
           <hr className="partition-style" />
         </div>
         <div className="img-group">
@@ -103,7 +103,8 @@ const CustomFaceOption = ({
             </div>
           ))}
         </div>
-
+        { others && (
+          <>
         <div className="separator">
           <hr className="partition-style" />
           <p>{OTHER_PEOPLE}</p>
@@ -121,6 +122,8 @@ const CustomFaceOption = ({
             </div>
           ))}
         </div>
+        </>
+        )}
       </div>
 
       <div className="button_flex">
