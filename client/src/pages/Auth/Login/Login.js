@@ -1,14 +1,14 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Webcam from "react-webcam";
-import logo from "../../../media/images/logoCropped.png";
+// import logo from "../../../media/images/logoCropped.png";
 import { toast } from "react-toastify";
 import { useLocation, useParams } from "react-router-dom";
 import API_UTIL from "../../../services/AuthIntereptor";
 import CountryCodes from "../../../media/json/CountryCodes.json";
 import Select, { components } from "react-select";
 import "./login.css";
-import * as faceapi from 'face-api.js';
+// import * as faceapi from 'face-api.js';
 import Header from "../../../components/Header/Header";
 
 const CustomOption = ({ children, ...props }) => {
@@ -42,11 +42,10 @@ const CustomControl = ({ children, ...props }) => {
   );
 };
 
-const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+// const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
 
 function Login({ name, onLoginSuccess }) {
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [error] = useState("");
   const { eventName } = useParams();
   const [isNewUser, setIsNewUser] = useState(false);
   const [isPhoneNumberValid, setIsPhoneNumberValid] = useState(false);
@@ -57,7 +56,7 @@ function Login({ name, onLoginSuccess }) {
   const [imgSrc, setImgSrc] = useState(null);
   const [termsAccepted, setTermsAccepted] = useState(true);
   const isToastDisp = useRef(false);
-  const [step, setStep] = useState(0); // 0: move head, 1: blink, 2: ready to capture
+  const [setStep] = useState(0); // 0: move head, 1: blink, 2: ready to capture
   const [isCaptureEnabled, setIsCaptureEnabled] = useState(true);
 
   const videoConstraints = {
@@ -77,18 +76,20 @@ function Login({ name, onLoginSuccess }) {
     isToastDisp.current = true;
   }, []);
 
-  const from = location.state?.from || "/event";
+  const fromUrl = location.state?.from?.pathname || "/event";
+  console.log(fromUrl);
+  
 
-  useEffect(() => {
-    const loadModels = async () => {
-      await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-      await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-      await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-      await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
-    };
+  // useEffect(() => {
+  //   const loadModels = async () => {
+  //     await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+  //     await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+  //     await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+  //     await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
+  //   };
 
-    loadModels();
-  }, []);
+  //   loadModels();
+  // }, []);
 
   // useEffect(() => {
   //   const intervalId = setInterval(async () => {
@@ -180,7 +181,6 @@ function Login({ name, onLoginSuccess }) {
     if (isCaptureEnabled) {
       const imageSrc = webcamRef.current.getScreenshot();
       setImgSrc(imageSrc);
-      setMessage("Image captured. Please proceed.");
     }
   };
 
@@ -194,18 +194,25 @@ function Login({ name, onLoginSuccess }) {
     event.preventDefault();
     const fullPhoneNumber = countryCode + phoneNumber;
     let userSource = "flashback";
+    let role = "user";
     // if (from.includes("photos")) {
     //   userSource = "flashback-pro";
     // }
-    if (typeof from === 'string' && from.includes("photos")) {
+    if (typeof fromUrl === 'string' && fromUrl.includes("photos")) {
       userSource = "flashback-pro";
+    }
+    if (typeof fromUrl === 'string' && fromUrl.includes("DataSet")) {
+      role = "dataOwner"
+    }
+    if (typeof fromUrl === 'string' && fromUrl.includes("model")) {
+      role = "modelOwner"
     }
     
     const response = await API_UTIL.post(`/createUser`, {
       username: fullPhoneNumber,
       eventName: eventName,
       userSource: userSource,
-      role: "user"
+      role: role
     });
     setIsPhoneNumberValid(true);
     if (response.status === 201) {
@@ -224,28 +231,30 @@ function Login({ name, onLoginSuccess }) {
         onLoginSuccess(fullPhoneNumber);
       }
       else {
-        navigate(from);
+        navigate(fromUrl);
       }
       
 
-      if (typeof from === 'string' && from.includes("photos")) {
+      if (typeof fromUrl === 'string' && fromUrl.includes("photos")) {
         try {
-          const urlArray = from.split("/");
+          const urlArray = fromUrl.split("/");
           const response = await API_UTIL.post(`/userIdPhoneNumberMapping`, {
             phoneNumber: fullPhoneNumber,
             eventName: urlArray[urlArray.length - 2],
             userId: urlArray[urlArray.length - 1],
           });
-          if (response.status == 200) {
+          if (response.status === 200) {
+            sessionStorage.setItem('userphoneNumber', fullPhoneNumber);
+            
             console.log("Succesfully mapped the userId and phoneNumber");
-            navigate(from);
+            navigate(fromUrl);
           }
         } catch (error) {
           console.log("error in mapping the userId and phone number");
-          navigate(`${location.pathname}`, { state: { from } });
+          navigate(`${location.pathname}`, { state: { fromUrl } });
         }
       } else {
-        navigate(eventName ? `/login/${eventName}/rsvp` : from);
+        navigate(eventName ? `/login/${eventName}/rsvp` : fromUrl);
       }
       sessionStorage.setItem('userphoneNumber', fullPhoneNumber);
       toast(
@@ -268,24 +277,26 @@ function Login({ name, onLoginSuccess }) {
             "Content-Type": "multipart/form-data",
           },
         });
-        if (from.includes("photos")) {
+        sessionStorage.setItem('userphoneNumber', fullPhoneNumber);
+        if (typeof fromUrl === 'string' && fromUrl.includes("photos")) {
           try {
-            const urlArray = from.split("/");
+            const urlArray = fromUrl.split("/");
             const response = await API_UTIL.post(`/userIdPhoneNumberMapping`, {
               phoneNumber: fullPhoneNumber,
               eventName: urlArray[urlArray.length - 2],
               userId: urlArray[urlArray.length - 1],
             });
-            if (response.status == 200) {
-              console.log(from)
+            if (response.status === 200) {
+              
+              console.log(fromUrl)
               console.log("Succesfully mapped the userId and phoneNumber");
-              navigate(from);
+              navigate(fromUrl);
             }
           } catch (error) {
             console.log("error in mapping the userId and phone number");
           }
         } else {
-          navigate(from);
+          navigate(fromUrl);
         }
       } catch (error) {
         console.error("Error uploading image:", error);

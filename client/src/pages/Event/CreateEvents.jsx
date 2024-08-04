@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './CreateEvents.css';
 import API_UTIL from '../../services/AuthIntereptor';
 import { toast } from 'react-toastify';
-import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 const CreateEventForm = () => {
 

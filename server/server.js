@@ -112,6 +112,8 @@ const projectsTable = 'projects_data';
 const indexedDataTableName = 'indexed_data'
 const formDataTableName = 'selectionFormData'; 
 const recokgImages = 'RekognitionImageProperties';
+const datasetTable = 'datasets'
+const modelsTable = 'models'
 const proShareDataTable = 'pro_share_data';
 
 
@@ -4746,6 +4748,220 @@ app.get("/getAllImages/:eventName", async(req,res) =>{
 
 });
 
+
+// This is the code for the protocol backend 
+app.get("/getDatasets/:orgName", async (req, res) => {
+  
+  const orgName = req.params.orgName; // Adjust based on your token payload
+  logger.info(`Fetching Dataset details for ${orgName}`)
+  try {
+    const eventParams = {
+      TableName: datasetTable,
+      FilterExpression: "org_name = :orgName",
+      ExpressionAttributeValues: {
+        ":orgName": orgName
+      }
+
+    };
+
+
+    const result = await docClient.scan(eventParams).promise();
+
+    if (result.Items && result.Items.length > 0) {
+      logger.info(`Fetched event details for ${orgName}`)
+      res.status(200).send(result.Items);
+    } 
+  } catch (err) {
+    logger.info(err.message);
+    res.status(500).send(err.message);
+  }
+});
+
+app.get("/getDatasets", async (req, res) => {
+  logger.info(`Fetching all dataset entries`);
+  
+  try {
+    const eventParams = {
+      TableName: datasetTable,
+    };
+
+    const result = await docClient.scan(eventParams).promise();
+
+    if (result.Items && result.Items.length > 0) {
+      logger.info(`Fetched ${result.Items.length} dataset entries`);
+      res.status(200).send(result.Items);
+    } else {
+      logger.info(`No datasets found`);
+      res.status(404).send({ message: "No datasets found" });
+    }
+  } catch (err) {
+    logger.error(`Error fetching datasets: ${err.message}`);
+    res.status(500).send(err.message);
+  }
+});
+
+app.get("/getDatasetDetails/:orgName/:datasetName", async (req, res) => {
+  
+  const orgName = req.params.orgName.trim(); // Adjust based on your token payload
+  const datasetName = req.params.datasetName.trim();
+  logger.info(`Fetching Dataset details for ${orgName} and ${datasetName}`)
+  try {
+    const eventParams = {
+      TableName: datasetTable,
+      KeyConditionExpression: "org_name = :orgName and dataset_name = :datasetName",
+      ExpressionAttributeValues: {
+        ":orgName": orgName,
+        ":datasetName": datasetName
+      }
+    };
+
+    logger.info(eventParams)
+
+    const result = await docClient.query(eventParams).promise();
+
+    if (result.Items && result.Items.length > 0) {
+      logger.info(`Fetched event details for ${orgName} and ${datasetName}`);
+      res.status(200).send(result.Items);
+    } else {
+      logger.info(`No dataset details found for ${orgName} and ${datasetName}`);
+      res.status(404).send({ message: "Dataset details not found" });
+    }
+
+  } catch (err) {
+    logger.error(err.message);
+    res.status(500).send(err.message);
+  }
+});
+
+
+app.post("/saveDatasetDetails", async (req, res) => {
+  const item = req.body;
+  try {
+    // Initialize item with necessary attributes
+    const newItem = {
+      'dataset_name': item.dataset_name,
+      'org_name': item.org_name,
+      // Add any other necessary fields here
+    };
+    
+    logger.info(`Saving item with dataset_name: ${item.dataset_name} and org_name: ${item.org_name}`);
+
+    // Iterate over the keys of the item to add them to the newItem object
+    for (const key in item) {
+      if (key !== 'dataset_name' && key !== 'org_name') {
+        newItem[key] = item[key];
+      }
+    }
+
+    const params = {
+      TableName: datasetTable,
+      Item: newItem
+    };
+
+    // Save the new item
+    const data = await docClient.put(params).promise();
+    logger.info(`Successfully saved item with dataset_name: ${item.dataset_name} and org_name: ${item.org_name}`);
+    res.send(data);
+  } catch (error) {
+    logger.error(error.message);
+    res.status(500).send(error.message);
+  }
+});
+
+app.get("/getModels/:orgName", async (req, res) => {
+  
+  const orgName = req.params.orgName; // Adjust based on your token payload
+  logger.info(`Fetching Dataset details for ${orgName}`)
+  try {
+    const eventParams = {
+      TableName: modelsTable,
+      FilterExpression: "org_name = :orgName",
+      ExpressionAttributeValues: {
+        ":orgName": orgName
+      }
+
+    };
+
+
+    const result = await docClient.scan(eventParams).promise();
+
+    if (result.Items && result.Items.length > 0) {
+      logger.info(`Fetched event details for ${orgName}`)
+      res.status(200).send(result.Items);
+    } 
+  } catch (err) {
+    logger.info(err.message);
+    res.status(500).send(err.message);
+  }
+});
+
+app.get("/getModelDetails/:orgName/:modelName", async (req, res) => {
+  
+  const orgName = req.params.orgName.trim(); // Adjust based on your token payload
+  const modelName = req.params.modelName.trim();
+  logger.info(`Fetching Dataset details for ${orgName} and ${modelName}`)
+  try {
+    const modelParams = {
+      TableName: modelsTable,
+      KeyConditionExpression: "org_name = :orgName and model_name = :modelName",
+      ExpressionAttributeValues: {
+        ":orgName": orgName,
+        ":modelName": modelName
+      }
+    };
+
+    logger.info(modelParams)
+
+    const result = await docClient.query(modelParams).promise();
+
+    if (result.Items && result.Items.length > 0) {
+      logger.info(`Fetched model details for ${orgName} and ${modelName}`);
+      res.status(200).send(result.Items);
+    } else {
+      logger.info(`No model details found for ${orgName} and ${modelName}`);
+      res.status(404).send({ message: "Model details not found" });
+    }
+
+  } catch (err) {
+    logger.error(err.message);
+    res.status(500).send(err.message);
+  }
+});
+
+
+app.post("/saveModelDetails", async (req, res) => {
+  const item = req.body;
+  try {
+    // Initialize item with necessary attributes
+    const newItem = {
+      'model_name': item.model_name,
+      'org_name': item.org_name,
+      // Add any other necessary fields here
+    };
+    
+   logger.info(`Saving item with dataset_name: ${item.dataset_name} and org_name: ${item.org_name}`);
+
+    // Iterate over the keys of the item to add them to the newItem object
+    for (const key in item) {
+      if (key !== 'model_name' && key !== 'org_name') {
+        newItem[key] = item[key];
+      }
+    }
+
+    const params = {
+      TableName: modelsTable,
+      Item: newItem
+    };
+
+    // Save the new item
+    const data = await docClient.put(params).promise();
+    logger.info(`Successfully saved item with dataset_name: ${item.dataset_name} and org_name: ${item.org_name}`);
+    res.send(data);
+  } catch (error) {
+    logger.error(error.message);
+    res.status(500).send(error.message);
+  }
+});
 
   const httpsServer = https.createServer(credentials, app);
 

@@ -1,12 +1,12 @@
 import Login from "../pages/Auth/Login/Login";
 import CreatorLogin from "../pages/Auth/Login/CreatorLogin";
-import ForgotPassword from "../pages/Auth/ForgotPassword/ForgotPassword";
-import Registration from "../pages/Auth/Register/Registration";
-import Admin from "../pages/Admin/Admin";
-import ShareEvents from "../pages/Admin/ShareEvents/ShareEvents";
+// import ForgotPassword from "../pages/Auth/ForgotPassword/ForgotPassword";
+// import Registration from "../pages/Auth/Register/Registration";
+// import Admin from "../pages/Admin/Admin";
+// import ShareEvents from "../pages/Admin/ShareEvents/ShareEvents";
 import Home from "../pages/Home/Home";
-import CreateFlashBack from "../pages/CreateFlashback/CreateFlashBack";
-import Profile from "../pages/Profile/Profile";
+// import CreateFlashBack from "../pages/CreateFlashback/CreateFlashBack";
+// import Profile from "../pages/Profile/Profile";
 import ImagesPage from "../pages/ImagesPage/ImagesPage";
 import Pro from "../pages/Pro/ProShare/Pro";
 import TermsAndConditions from "../pages/TermsAndConditions/TermsAndConditions";
@@ -19,11 +19,17 @@ import Event from "../pages/Event/Event";
 import CreateEventForm from "../pages/CreateEvent/CreateEvent";
 import { LoginEvent } from "../pages/LoginEvent/LoginEvent";
 import About from "../pages/About/About";
-import EventMain from "../pages/Event/EventMain";
+// import EventMain from "../pages/Event/EventMain";
 import EventSelector from "../pages/Event/EventSelector";
 import CreateEvents from "../pages/Event/CreateEvents";
 import EventDetails from "../pages/Event/EventDetails/EventDetails";
 import Portfolio from "../pages/Portfolio/Portfolio";
+import Dataset from "../pages/Dataset/Dataset/Dataset";
+import DatasetForm from "../pages/Dataset/DatasetForm/DatasetForm";
+import DatasetDetails from "../pages/Dataset/DatasetDetails/DatasetDetails";
+import Model from "../pages/Model/Model/Model";
+import ModelDetails from "../pages/Model/ModelDetails/ModelDetails"
+import ModelForm from "../pages/Model/ModelForm/ModelForm";
 
 
 const ROUTES=[
@@ -213,7 +219,46 @@ const ROUTES=[
         exact:false,
         protected:false,
         component:Portfolio,
+    },
+
+
+    // This routes are for protocol - dataset
+    {
+        path:"/dataset",
+        exact:false,
+        protected:true,
+        component:Dataset, 
+    },
+    {
+        path:"/DatasetForm/:orgName",
+        exact:false,
+        protected:true,
+        component:DatasetForm, 
+    },
+    {
+        path:"/datasetDetails/:orgName/:datasetName",
+        exact:false,
+        protected:true,
+        component:DatasetDetails, 
+    }, {
+        path:"/model",
+        exact:false,
+        protected:true,
+        component:Model, 
+    },
+    {
+        path:"/modelForm/:orgName",
+        exact:false,
+        protected:true,
+        component:ModelForm, 
+    },
+    {
+        path:"modelDetails/:orgName/:modelName",
+        exact:false,
+        protected:true,
+        component:ModelDetails, 
     }
+
 
 ]
 
