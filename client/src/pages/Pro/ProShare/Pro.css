@@ -99,6 +99,7 @@
 }
 
 .toolbar {
+  display: none;
   margin-bottom: 1em;
 }
 
