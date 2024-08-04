@@ -24,6 +24,7 @@ import EventSelector from "../pages/Event/EventSelector";
 import CreateEvents from "../pages/Event/CreateEvents";
 import EventDetails from "../pages/Event/EventDetails/EventDetails";
 import Portfolio from "../pages/Portfolio/Portfolio";
+import Fallback from "../pages/Fallback/Fallback";
 import Dataset from "../pages/Dataset/Dataset/Dataset";
 import DatasetForm from "../pages/Dataset/DatasetForm/DatasetForm";
 import DatasetDetails from "../pages/Dataset/DatasetDetails/DatasetDetails";
@@ -220,6 +221,12 @@ const ROUTES=[
         protected:false,
         component:Portfolio,
     },
+    {
+        path:"*",
+        exact:false,
+        protected:false,
+        component:Fallback,
+    },
 
 
     // This routes are for protocol - dataset
@@ -258,7 +265,6 @@ const ROUTES=[
         protected:true,
         component:ModelDetails, 
     }
-
 
 ]
 

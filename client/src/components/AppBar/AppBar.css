@@ -1,0 +1,35 @@
+.app-bar {
+    height: 4.375rem;
+    width: 100%;
+    background-color: black;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.app-bar-logo {
+    display: flex;
+    gap: 0.3125rem;
+    height: 1.875rem;
+    align-items: center;
+    > img {
+        height: 1.25rem;
+    }
+    > span {
+        font-size: 1.25rem;
+        font-weight: bold;
+    }
+}
+
+.app-bar-socials {
+    display: flex;
+    gap: 1.75rem;
+    > a {
+        margin-left: 0px;
+        width: 1.75rem;
+        height: 1.75rem;
+        display: grid;
+        justify-content: center;
+        align-items: center;
+    }
+}

@@ -1,0 +1,39 @@
+.app-mini-hero {
+    height: 252px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    row-gap: 1.5rem;
+    > span {
+      font-size: 3.875rem;
+      font-family: 'Dahlia';
+      color: #ffffff;
+    }
+  }
+
+  .app-mini-hero::before {
+    content: "";
+    position: absolute;
+    top: inherit;
+    left: inherit;
+    width: inherit;
+    height: inherit;
+    background-image: url('../../../public/assets/Images/portfolio-bg.png');
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: space;
+    filter: grayscale(100%);
+    z-index: -1; /* Place the image behind the content */
+}
+
+.social-icons {
+    display: flex;
+    gap: 2rem;
+  }
+
+  .social-link {
+    margin: 0 0.1em;
+    text-decoration: none;
+  }

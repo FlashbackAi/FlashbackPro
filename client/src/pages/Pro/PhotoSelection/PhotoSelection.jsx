@@ -10,6 +10,8 @@ import LoadingSpinner from "../../../components/Loader/LoadingSpinner";
 import { LazyLoadImage } from 'react-lazy-load-image-component';
 import { Heart } from 'lucide-react';
 import Modal from "../../../components/ImageModal/ImageModalNew";
+import AppBar from "../../../components/AppBar/AppBar";
+import Footer from "../../../components/Footer/Footer";
 
 const PhotoSelection = () => {
   const isDataFetched = useRef(false);
@@ -1036,6 +1038,7 @@ const handleSelectTab = async (key) => {
 
   return (
     <>
+    <AppBar/>
       <section>
         {formData.isFacesSelectionDone && !isPhotosSelectionStarted && (
           <motion.div
@@ -1181,6 +1184,7 @@ const handleSelectTab = async (key) => {
           </>
         )}
       </section>
+      {/* <Footer/> */}
     </>
   );
 };

@@ -11,6 +11,8 @@ import { Heart } from "lucide-react";
 import Footer from "../../components/Footer/Footer";
 import "../../components/Footer/Footer.css"; // Import the updated CSS
 import "./ImagePage.css";
+import AppBar from "../../components/AppBar/AppBar";
+import MiniHeroComponent from "../../components/MiniHeroComponent/MiniHeroComponent";
 
 function ImagesPage() {
   const [lastEvaluatedKey, setLastEvaluatedKey] = useState(undefined);
@@ -255,7 +257,8 @@ function ImagesPage() {
         <LoadingSpinner />
       ) : (
         <>
-          <Header clientObj={clientObj} userObj={userObj} eventName={eventName} />
+          <AppBar/>
+          <MiniHeroComponent/>
           <div className="content-wrap">
             {images.length > 0 ? (
               <div className="ip-wrapper">
