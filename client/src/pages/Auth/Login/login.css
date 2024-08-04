@@ -68,6 +68,7 @@
 
 @media (max-width: 768px) {
   .loginBody {
+    margin-top: 1em;
     padding: 10px;
     z-index: 12;
   }
