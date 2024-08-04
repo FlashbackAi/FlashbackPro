@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import "./Portfolio.css";
 import Modal from "react-modal";
 import Footer from "../../components/Footer/Footer";
+import AppBar from "../../components/AppBar/AppBar";
+import MiniHeroComponent from "../../components/MiniHeroComponent/MiniHeroComponent";
 
 const photos = [
   "assets/Images/img1.jpg",
@@ -20,21 +22,7 @@ const photos = [
   // Add more photo URLs here
 ];
 
-const socialMediaLinks = {
-  instagram: {
-    url: "https://www.instagram.com/aarvi_media/",
-    icon: "assets/Images/icon-instagram.svg", // Replace with your Instagram icon URL
-  },
-  youtube: {
-    url: "https://www.youtube.com/@aarvimedia",
-    icon: "assets/Images/icon-youtube.svg", // Replace with your YouTube icon URL
-  },
-  facebook: {
-    url: "https://www.facebook.com/mediaaarvi",
-    icon: "assets/Images/icon-facebook.svg", // Replace with your Facebook icon URL
-  },
-  // Add more social media links and icons here
-};
+
 
 const Portfolio = () => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(null);
@@ -61,26 +49,8 @@ const Portfolio = () => {
 
   return (
     <div className="portfolio-container">
-      <div className="portfolio-header">
-        <span>Aarvi Media</span>
-        <div className="social-icons">
-          {Object.keys(socialMediaLinks).map((platform) => (
-            <a
-              key={platform}
-              href={socialMediaLinks[platform].url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="social-link"
-            >
-              <img
-                src={socialMediaLinks[platform].icon}
-                alt={`${platform} icon`}
-                className="social-icon"
-              />
-            </a>
-          ))}
-        </div>
-      </div>
+      <AppBar/>
+      <MiniHeroComponent />
       <div id="portfolio-body">
         <main className="gallery">
           {photos.map((photo, index) => (
@@ -98,17 +68,6 @@ const Portfolio = () => {
           ))}
         </main>
       </div>
-      {/* <div className="footer" id="portfolio-footer">
-        <div className="footer-texts">
-          <span> {CONTACT} </span>
-          <span> {PHONE_NUMBER} </span>
-          <span> {EMAIL} </span>
-        </div>
-        <div className="footer-texts">
-          <span>{COMPANY_NAME} {" "  + YEAR}</span>
-          <span>{ALL_RIGHTS_RESERVED}</span>
-        </div>
-      </div> */}
       <Footer></Footer>
       {selectedImageIndex !== null && (
         <Modal

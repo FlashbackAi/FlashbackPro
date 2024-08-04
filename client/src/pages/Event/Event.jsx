@@ -8,6 +8,8 @@ import axios from 'axios';
 import QRCode from 'qrcode.react';
 import './Event.css'; // Import the new CSS file
 import { useNavigate } from 'react-router-dom';
+import AppBar from '../../components/AppBar/AppBar';
+import Footer from '../../components/Footer/Footer';
 
 const Event = ({ eventName, eventDate, folderName }) => {
   const [events, setEvents] = useState([]);
@@ -362,6 +364,8 @@ const Event = ({ eventName, eventDate, folderName }) => {
   if (error) return <div className="loading-screen">Error: {error}</div>;
 
   return (
+    <>
+    <AppBar/>
     <div className="event-container">
       <h1 className="event-title">My Events</h1>
       <ul className="event-list">
@@ -462,6 +466,8 @@ const Event = ({ eventName, eventDate, folderName }) => {
         </div>
       </Modal>
     </div>
+    <Footer></Footer>
+    </>
   );
 }
 
