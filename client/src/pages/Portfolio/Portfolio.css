@@ -15,36 +15,6 @@
     display: none;
   }
 
-  .portfolio-header {
-    height: 252px;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    row-gap: 1.5rem;
-    > span {
-      font-size: 62px;
-      font-family: 'Dahlia';
-      color: #ffffff;
-    }
-  }
-
-  .portfolio-header::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: inherit;
-    height: inherit;
-    background-image: url('../../../public/assets/Images/portfolio-bg.png');
-    background-size: 100% 100%;
-    background-position: center;
-    background-repeat: space;
-    filter: grayscale(100%);
-    z-index: -1; /* Place the image behind the content */
-}
-
   .main-header {
     color: white;
     padding: 0.2em 0;

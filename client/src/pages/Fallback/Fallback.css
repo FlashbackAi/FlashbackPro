@@ -1,0 +1,29 @@
+.fallback-page {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #b48e75;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.error-image {
+    display: flex;
+    align-items: center;
+    line-height: 200px;
+    > span {
+        color: #b48e75;
+        font-size: 200px;
+        font-family: cursive
+    };
+    > img {
+        height: 200px;
+        width: 200px;
+    };
+}
+
+.error-message {
+    font-family: sans-serif;
+}

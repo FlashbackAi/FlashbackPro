@@ -24,6 +24,7 @@ import EventSelector from "../pages/Event/EventSelector";
 import CreateEvents from "../pages/Event/CreateEvents";
 import EventDetails from "../pages/Event/EventDetails/EventDetails";
 import Portfolio from "../pages/Portfolio/Portfolio";
+import Fallback from "../pages/Fallback/Fallback";
 
 
 const ROUTES=[
@@ -213,8 +214,13 @@ const ROUTES=[
         exact:false,
         protected:false,
         component:Portfolio,
+    },
+    {
+        path:"*",
+        exact:false,
+        protected:false,
+        component:Fallback,
     }
-
 ]
 
 export default ROUTES

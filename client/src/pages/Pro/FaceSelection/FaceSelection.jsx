@@ -11,6 +11,7 @@ import LoadingSpinner from "../../../components/Loader/LoadingSpinner";
 import Modal from '../../../components/Modal/Modal';
 import Footer from "../../../components/Footer/Footer";
 import "../../../components/Footer/Footer.css";
+import AppBar from "../../../components/AppBar/AppBar";
 
 const FaceSelection = () => {
   const isDataFetched = useRef(false);
@@ -950,6 +951,7 @@ const FaceSelection = () => {
 
   return (
     <>
+    <AppBar/>
       <section className="albumSelectionForm">
         {!isCharacterSelected && (
           <motion.div
