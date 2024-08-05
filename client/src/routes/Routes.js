@@ -35,7 +35,7 @@ import ModelForm from "../pages/Model/ModelForm/ModelForm";
 
 const ROUTES=[
     {
-        path:"/about",
+        path:"/",
         exact:false,
         protected:false,
         component:About
@@ -46,12 +46,12 @@ const ROUTES=[
         protected:false,
         component:Login
     },
-    {
-        path:"/",
-        exact:false,
-        protected:false,
-        component:Login
-    },
+    // {
+    //     path:"/",
+    //     exact:false,
+    //     protected:false,
+    //     component:Login
+    // },
     {
         path:"/login/:eventName",
         exact:false,
