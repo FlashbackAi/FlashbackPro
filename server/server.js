@@ -5107,13 +5107,13 @@ app.post("/updateRequestStatus", async (req, res) => {
 
 
 
-  // const httpsServer = https.createServer(credentials, app);
+  const httpsServer = https.createServer(credentials, app);
 
-  // httpsServer.listen(PORT, () => {
-  //   logger.info(`Server is running on https://localhost:${PORT}`);
-  //   httpsServer.keepAliveTimeout = 60000; // Increase keep-alive timeout
-  //   httpsServer.headersTimeout = 65000; // Increase headers timeout
-  // });
+  httpsServer.listen(PORT, () => {
+    logger.info(`Server is running on https://localhost:${PORT}`);
+    httpsServer.keepAliveTimeout = 60000; // Increase keep-alive timeout
+    httpsServer.headersTimeout = 65000; // Increase headers timeout
+  });
   
   
 
