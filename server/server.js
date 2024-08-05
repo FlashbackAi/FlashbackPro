@@ -5080,7 +5080,7 @@ app.post("/updateRequestStatus", async (req, res) => {
   const params = {
     TableName: modelToDatsetReqTable,
     Key: key,
-    UpdateExpression: "set #status = :status and #updated_date = :updated_date",
+    UpdateExpression: "set #status = :status , #updated_date = :updated_date",
     ExpressionAttributeNames: {
       "#status": "status",
        "#updated_date": "updated_date"
