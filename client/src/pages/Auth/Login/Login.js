@@ -70,9 +70,7 @@ function Login({ name, onLoginSuccess }) {
 
   useEffect(() => {
     if (isToastDisp.current) return;
-    toast("Register to view pictures, provide accurate mobile number so we can share you the pictures", {
-      position: "top-center"
-    });
+    toast("Register to view pictures, provide accurate mobile number so we can share you the pictures");
     isToastDisp.current = true;
   }, []);
 
@@ -217,14 +215,11 @@ function Login({ name, onLoginSuccess }) {
     setIsPhoneNumberValid(true);
     if (response.status === 201) {
       setIsNewUser(true);
-      toast("Click a selfie to register, don't worry we won't save your selfie.", {
-        position: "top-center",
-      });
+      toast("Click a selfie to register, don't worry we won't save your selfie.");
     } else if (response.status === 200) {
       sessionStorage.setItem('userphoneNumber', fullPhoneNumber);
       toast(
-        `Hey ${fullPhoneNumber}, you already exist. Have a great event ahead..`,
-        { position: "top-center" }
+        `Hey ${fullPhoneNumber}, you already exist. Have a great event ahead..`
       );
       if(name) {
         navigate(`/login/${name}/rsvp`);
@@ -258,8 +253,7 @@ function Login({ name, onLoginSuccess }) {
       }
       sessionStorage.setItem('userphoneNumber', fullPhoneNumber);
       toast(
-        `hey ${fullPhoneNumber}, you already exist. Have a great event ahead..`,
-        { position: "top-center" }
+        `hey ${fullPhoneNumber}, you already exist. Have a great event ahead..`
       );
     }
   };
