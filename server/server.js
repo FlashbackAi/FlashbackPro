@@ -115,6 +115,7 @@ const recokgImages = 'RekognitionImageProperties';
 const datasetTable = 'datasets'
 const modelsTable = 'models'
 const proShareDataTable = 'pro_share_data';
+const modelToDatsetReqTable ='model_dataset_requests'
 
 
 const ClientId = '6goctqurrumilpurvtnh6s4fl1'
@@ -4962,6 +4963,147 @@ app.post("/saveModelDetails", async (req, res) => {
     res.status(500).send(error.message);
   }
 });
+
+  app.post("/requestDatasetAccess", async (req, res) => {
+    const item = req.body;
+      // Initialize item with necessary attributes
+      const newItem = {
+        'model': item.model_name+'-'+item.model_org_name,
+        'dataset': item.dataset_name+'-'+item.dataset_org_name,
+        'created_date':new Date().toISOString()
+        // Add any other necessary fields here
+      };
+      
+    logger.info(`Saving Request from model_name: ${item.model_name} and org_name: ${item.model_org_name} for the dataset_name: ${item.dataset_name} and org_name: ${item.dataset_org_name}`);
+
+      // Iterate over the keys of the item to add them to the newItem object
+      for (const key in item) {
+          newItem[key] = item[key];
+        
+      }
+
+      const params = {
+        TableName: modelToDatsetReqTable,
+        Item: newItem,
+        ConditionExpression: 'attribute_not_exists(#pk) AND attribute_not_exists(#sk)',
+        ExpressionAttributeNames: {
+          '#pk': 'model', // Replace with your primary key attribute name
+          '#sk': 'dataset' // Replace with your sort key attribute name (if applicable)
+        }
+      };
+      
+      try {
+        const data = await docClient.put(params).promise();
+        logger.info(data);
+        logger.info(`Successfully Saved Request from model_name: ${item.model_name} and org_name: ${item.model_org_name} for the dataset_name: ${item.dataset_name} and org_name: ${item.dataset_org_name}`);
+        res.send(data);
+      } catch (error) {
+        logger.info(error.message)
+        if (error.code === 'ConditionalCheckFailedException') {
+          res.status(400).send('Item with the same primary and sort key already exists.');
+        } else {
+          logger.error(error.message);
+          res.status(500).send(error.message);
+        }
+      }
+      
+  });
+
+app.get("/getDatasetRequests/:dataset", async (req, res) => {
+  const { dataset } = req.params;
+  logger.info("Fetching dataset requests for dataset:",dataset)
+  const params = {
+    TableName: modelToDatsetReqTable,
+    FilterExpression: "#datasetKey = :datasetValue and #status = :status",
+    ExpressionAttributeNames: {
+      "#datasetKey": "dataset",
+      "#status": "status"
+    },
+    ExpressionAttributeValues: {
+      ":datasetValue": dataset,
+      ":status":"pending"
+    }
+  };
+
+  try {
+    const data = await docClient.scan(params).promise();
+    if (data.Items.length >= 0) {
+      res.json(data.Items);
+    } else {
+     throw new Error('No requests found for the specified dataset.');
+    }
+  } catch (error) {
+    logger.error(error.message);
+    res.status(500).send('Error retrieving dataset requests.');
+  }
+});
+
+app.get("/getDatasetRequestsbyModel/:model", async (req, res) => {
+  const { model } = req.params;
+  logger.info("Fetching dataset requests by model:",model)
+  const params = {
+    TableName: modelToDatsetReqTable,
+    FilterExpression: "#modelKey = :modelValue and #status = :status",
+    ExpressionAttributeNames: {
+      "#modelKey": "model",
+      "#status": "status"
+    },
+    ExpressionAttributeValues: {
+      ":modelValue": model,
+      ":status":"pending"
+    }
+  };
+
+  try {
+    const data = await docClient.scan(params).promise();
+    if (data.Items.length >= 0) {
+      res.json(data.Items);
+    } else {
+     throw new Error('No requests found for the specified dataset.');
+    }
+  } catch (error) {
+    logger.error(error.message);
+    res.status(500).send('Error retrieving dataset requests.');
+  }
+});
+
+
+app.post("/updateRequestStatus", async (req, res) => {
+  const { model_name, model_org_name, dataset_name, dataset_org_name, status } = req.body;
+
+  // Composite keys for identifying the item to update
+  const key = {
+    'model': model_name + '-' + model_org_name,
+    'dataset': dataset_name + '-' + dataset_org_name
+  };
+
+  const params = {
+    TableName: modelToDatsetReqTable,
+    Key: key,
+    UpdateExpression: "set #status = :status and #updated_date = :updated_date",
+    ExpressionAttributeNames: {
+      "#status": "status",
+       "#updated_date": "updated_date"
+    },
+    ExpressionAttributeValues: {
+      ":status": status,
+      ":updated_date": new Date().toISOString()
+    },
+    ReturnValues: "UPDATED_NEW"
+  };
+
+  try {
+    const data = await docClient.update(params).promise();
+    logger.info(`Successfully updated status for model: ${model_name}, dataset: ${dataset_name}`);
+    res.send(data.Attributes);
+  } catch (error) {
+    logger.error(`Failed to update status for model: ${model_name}, dataset: ${dataset_name}, Error: ${error.message}`);
+    res.status(500).send(error.message);
+  }
+});
+
+
+
 
   const httpsServer = https.createServer(credentials, app);
 

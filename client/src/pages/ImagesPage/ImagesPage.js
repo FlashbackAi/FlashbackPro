@@ -5,7 +5,7 @@ import Modal from "../../components/ImageModal/ImageModal";
 import { useNavigate, useLocation } from "react-router-dom";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import PlaceholderImage from "../../media/images/blurredLogo.png";
-import Header from "../../components/Header/Header";
+// import Header from "../../components/Header/Header";
 import API_UTIL from "../../services/AuthIntereptor";
 import { Heart } from "lucide-react";
 import Footer from "../../components/Footer/Footer";
