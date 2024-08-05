@@ -35,13 +35,19 @@ import ModelForm from "../pages/Model/ModelForm/ModelForm";
 
 const ROUTES=[
     {
-        path:"/",
+        path:"/about",
         exact:false,
         protected:false,
         component:About
     },
     {
         path:"/login",
+        exact:false,
+        protected:false,
+        component:Login
+    },
+    {
+        path:"/",
         exact:false,
         protected:false,
         component:Login
@@ -237,7 +243,7 @@ const ROUTES=[
         component:Dataset, 
     },
     {
-        path:"/DatasetForm/:orgName",
+        path:"/datasetForm/:orgName",
         exact:false,
         protected:true,
         component:DatasetForm, 

@@ -1,11 +1,11 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import API_UTIL from '../../services/AuthIntereptor';
-import { Link } from 'react-router-dom';
+// import { Link } from 'react-router-dom';
 import Modal from 'react-modal';
 import { toast } from 'react-toastify';
-import {useDropzone} from 'react-dropzone';
-import axios from 'axios';
-import QRCode from 'qrcode.react';
+// import {useDropzone} from 'react-dropzone';
+// import axios from 'axios';
+// import QRCode from 'qrcode.react';
 import './Event.css'; // Import the new CSS file
 import { useNavigate } from 'react-router-dom';
 import AppBar from '../../components/AppBar/AppBar';
@@ -15,19 +15,19 @@ const Event = ({ eventName, eventDate, folderName }) => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editData, setEditData] = useState(null);
+  // const [selectedEvent] = useState(null);
+  // const [isModalOpen, setIsModalOpen] = useState(false);
+  // const [editData, setEditData] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [eventToDelete, setEventToDelete] = useState(null);
-  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
-  const [isUploadFilesModelOpen, setUploadFilesModeOpen] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState({});
-  const [files, setFiles] = useState([]);
-  const [uploadStatus, setUploadStatus] = useState('');
-  const [uploadFilesModalStatus, setUploadFilesModalStatus] = useState('');
-  const [isUploadFilesFailed, setIsUploadFilesFailed] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  // const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  // const [isUploadFilesModelOpen, setUploadFilesModeOpen] = useState(false);
+  // const [uploadProgress, setUploadProgress] = useState({});
+  // const [files, setFiles] = useState([]);
+  // const [uploadStatus, setUploadStatus] = useState('');
+  // const [uploadFilesModalStatus, setUploadFilesModalStatus] = useState('');
+  // const [isUploadFilesFailed, setIsUploadFilesFailed] = useState(false);
+  // const [uploading, setUploading] = useState(false);
   const [userDetails, setUserDetails] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [studioName, setStudioName] = useState('');
@@ -37,105 +37,105 @@ const Event = ({ eventName, eventDate, folderName }) => {
 
 
 
-  const qrRef = useRef();
+  // const qrRef = useRef();
   const navigate = useNavigate();
 
-  const CHUNK_SIZE = 5 * 1024 * 1024; //Chunks of 5MB for file upload  
+  // const CHUNK_SIZE = 5 * 1024 * 1024; //Chunks of 5MB for file upload  
 
-  const onDrop = useCallback((acceptedFiles) => {
-    setFiles(acceptedFiles);
-    setUploadProgress({});
-    setUploadStatus('');
-  }, []);
+  // const onDrop = useCallback((acceptedFiles) => {
+  //   setFiles(acceptedFiles);
+  //   setUploadProgress({});
+  //   setUploadStatus('');
+  // }, []);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop: useCallback((acceptedFiles) => {
-      setFiles(acceptedFiles);
-      setUploadProgress({});
-      setUploadStatus('');
-      setUploading(false); // Reset uploading state when files are dropped
-    }, []),
-  });
+  // const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  //   onDrop: useCallback((acceptedFiles) => {
+  //     setFiles(acceptedFiles);
+  //     setUploadProgress({});
+  //     setUploadStatus('');
+  //     setUploading(false); // Reset uploading state when files are dropped
+  //   }, []),
+  // });
 
-  const uploadChunk = async (file, chunk, chunkIndex, totalChunks) => {
-    const formData = new FormData();
-    formData.append('files', chunk, file.name);
-    formData.append('eventName', eventName);
-    formData.append('eventDate', eventDate);
-    formData.append('folderName', folderName);
-    formData.append('chunkNumber', chunkIndex);
-    formData.append('totalChunks', totalChunks);
+  // const uploadChunk = async (file, chunk, chunkIndex, totalChunks) => {
+  //   const formData = new FormData();
+  //   formData.append('files', chunk, file.name);
+  //   formData.append('eventName', eventName);
+  //   formData.append('eventDate', eventDate);
+  //   formData.append('folderName', folderName);
+  //   formData.append('chunkNumber', chunkIndex);
+  //   formData.append('totalChunks', totalChunks);
 
-    try {
-      const response = await API_UTIL.post(`/uploadFiles/${selectedEvent.event_name}/${selectedEvent.event_date}/${selectedEvent.folder_name}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          setUploadProgress(prev => ({
-            ...prev,
-            [file.name]: {
-              ...prev[file.name],
-              [chunkIndex]: percentCompleted
-            }
-          }));
-        },
-      });
-      return response.data;
-    } catch (error) {
-      console.error(`Error uploading chunk ${chunkIndex} of ${file.name}:`, error);
-      throw error;
-    }
-  };
+  //   try {
+  //     const response = await API_UTIL.post(`/uploadFiles/${selectedEvent.event_name}/${selectedEvent.event_date}/${selectedEvent.folder_name}`, formData, {
+  //       headers: { 'Content-Type': 'multipart/form-data' },
+  //       onUploadProgress: (progressEvent) => {
+  //         const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+  //         setUploadProgress(prev => ({
+  //           ...prev,
+  //           [file.name]: {
+  //             ...prev[file.name],
+  //             [chunkIndex]: percentCompleted
+  //           }
+  //         }));
+  //       },
+  //     });
+  //     return response.data;
+  //   } catch (error) {
+  //     console.error(`Error uploading chunk ${chunkIndex} of ${file.name}:`, error);
+  //     throw error;
+  //   }
+  // };
 
-  const uploadFile = async (file) => {
-    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-    const fileId = `${file.name}`;
+  // const uploadFile = async (file) => {
+  //   const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+  //   const fileId = `${file.name}`;
 
-    for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
-      const start = chunkIndex * CHUNK_SIZE;
-      const end = Math.min(start + CHUNK_SIZE, file.size);
-      const chunk = file.slice(start, end);
+  //   for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+  //     const start = chunkIndex * CHUNK_SIZE;
+  //     const end = Math.min(start + CHUNK_SIZE, file.size);
+  //     const chunk = file.slice(start, end);
 
-      try {
-        await uploadChunk(file, chunk, chunkIndex, totalChunks);
-      } catch (error) {
-        // If chunk upload fails, we could implement retry logic here
-        console.error(`Failed to upload chunk ${chunkIndex} of ${file.name}`);
-        throw error;
-      }
-    }
+  //     try {
+  //       await uploadChunk(file, chunk, chunkIndex, totalChunks);
+  //     } catch (error) {
+  //       // If chunk upload fails, we could implement retry logic here
+  //       console.error(`Failed to upload chunk ${chunkIndex} of ${file.name}`);
+  //       throw error;
+  //     }
+  //   }
 
-    // Check if all chunks are uploaded
-    // const status = await API_UTIL.get(`/upload-status/${fileId}`);
-    // if (status.data.status !== 'completed') {
-    //   throw new Error(`Failed to upload ${file.name}`);
-    // }
-  };
+  //   // Check if all chunks are uploaded
+  //   // const status = await API_UTIL.get(`/upload-status/${fileId}`);
+  //   // if (status.data.status !== 'completed') {
+  //   //   throw new Error(`Failed to upload ${file.name}`);
+  //   // }
+  // };
 
-  const uploadFiles = async () => {
-    if (files.length === 0) {
-      setUploadStatus('Please select files to upload');
-      return;
-    }
-    setUploading(true);
-    setUploadStatus('Uploading...');
-    setUploadFilesModalStatus('Uploading...');
-    setIsUploadFilesFailed(false);
+  // const uploadFiles = async () => {
+  //   if (files.length === 0) {
+  //     setUploadStatus('Please select files to upload');
+  //     return;
+  //   }
+  //   setUploading(true);
+  //   setUploadStatus('Uploading...');
+  //   setUploadFilesModalStatus('Uploading...');
+  //   setIsUploadFilesFailed(false);
   
 
-    try {
-      await Promise.all(files.map(uploadFile));
-      setUploadStatus('Upload completed successfully');
-      setFiles([]);
-    } catch (error) {
-      console.error('Upload failed:', error);
-      setUploadStatus('Upload failed. Please try again.');
-      // setUploadFilesModalStatus('Upload failed. Please try again.');
-    } finally {
-      setUploading(false);
-    }
-      //setIsUploadFilesFailed(true);
-  };
+  //   try {
+  //     await Promise.all(files.map(uploadFile));
+  //     setUploadStatus('Upload completed successfully');
+  //     setFiles([]);
+  //   } catch (error) {
+  //     console.error('Upload failed:', error);
+  //     setUploadStatus('Upload failed. Please try again.');
+  //     // setUploadFilesModalStatus('Upload failed. Please try again.');
+  //   } finally {
+  //     setUploading(false);
+  //   }
+  //     //setIsUploadFilesFailed(true);
+  // };
 
   useEffect(() => {
         const fetchEventData = async (userName) => {
@@ -201,7 +201,8 @@ const Event = ({ eventName, eventDate, folderName }) => {
       social_media: {
         instagram : instaUrl,
         youtube : youtubeUrl,
-      }
+      },
+      org_name:studioName
     };
   
     try {
@@ -371,7 +372,7 @@ const Event = ({ eventName, eventDate, folderName }) => {
       <ul className="event-list">
         <li className="event-item" onClick={handleLinkClick}>
           <div className="event-card">
-            <img src="https://img.icons8.com/B48E75/stamp/2x/add.png" alt="add-Image" className="add-event-image" />
+            <img src="https://img.icons8.com/B48E75/stamp/2x/add.png" alt="img" className="add-event-image" />
             <div className="event-card-footer">
               <h2 className="event-name">Click here to Add Projects</h2>
             </div>
@@ -388,7 +389,7 @@ const Event = ({ eventName, eventDate, folderName }) => {
                   alt="Delete"
                 />
               </div>
-              <img src={event.event_image} alt="Image" className="event-image" />
+              <img src={event.event_image} alt="img" className="event-image" />
               <div className="event-card-footer">
                 <h2 className="event-name">{formatEventName(event?.event_name)}</h2>
               </div>
@@ -471,13 +472,13 @@ const Event = ({ eventName, eventDate, folderName }) => {
   );
 }
 
-const dropzoneStyle = {
-  border: '2px dashed #cccccc',
-  borderRadius: '4px',
-  padding: '20px',
-  textAlign: 'center',
-  cursor: 'pointer',
-};
+// const dropzoneStyle = {
+//   border: '2px dashed #cccccc',
+//   borderRadius: '4px',
+//   padding: '20px',
+//   textAlign: 'center',
+//   cursor: 'pointer',
+// };
 
 
 export default Event;

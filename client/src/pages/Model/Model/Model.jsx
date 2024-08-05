@@ -136,7 +136,7 @@ const Model = () => {
   };
 
   const onModelClick = (modelName) => {
-    navigate(`/ModelDetails/${userDetails.org_name}/${modelName}`, { state: { userDetails } });
+    navigate(`/ModelDetails/${userDetails.user_name}/${modelName}`, { state: { userDetails } });
   };
 
   if (loading) return <div className="loading-screen">Loading...</div>;
