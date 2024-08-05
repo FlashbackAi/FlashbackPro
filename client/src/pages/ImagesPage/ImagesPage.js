@@ -72,7 +72,7 @@ function ImagesPage() {
       }
     } catch (error) {
       if( error?.response?.status === 700){;
-        history(`/login/${eventName}`, { state: { from: location.pathname } });
+        history(`/login/${eventName}`, { state: { from: location } });
       }
       console.error("Error fetching images:", error);
     } finally {

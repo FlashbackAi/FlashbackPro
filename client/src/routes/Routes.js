@@ -17,7 +17,7 @@ import PhotoSelectionNew from "../pages/Pro/PhotoSelection/PhotoSelectionNew";
 import FaceSelection from "../pages/Pro/FaceSelection/FaceSelection";
 import Event from "../pages/Event/Event";
 import CreateEventForm from "../pages/CreateEvent/CreateEvent";
-import { LoginEvent } from "../pages/LoginEvent/LoginEvent";
+// import { LoginEvent } from "../pages/LoginEvent/LoginEvent";
 import About from "../pages/About/About";
 // import EventMain from "../pages/Event/EventMain";
 import EventSelector from "../pages/Event/EventSelector";
@@ -57,14 +57,14 @@ const ROUTES=[
         exact:false,
         protected:false,
         //component:Login
-        component:LoginEvent,
+        component:Login,
     },
-    {
-        path: "/login/:eventName/rsvp",
-        exact: true,
-        protected: false,
-        component: LoginEvent // or another component if the questionnaire is different
-    },
+    // {
+    //     path: "/login/:eventName/rsvp",
+    //     exact: true,
+    //     protected: false,
+    //     component: LoginEvent // or another component if the questionnaire is different
+    // },
     // {
     //     path:"/registration",
     //     exact:false,

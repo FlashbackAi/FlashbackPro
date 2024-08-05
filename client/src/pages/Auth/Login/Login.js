@@ -221,13 +221,13 @@ function Login({ name, onLoginSuccess }) {
       toast(
         `Hey ${fullPhoneNumber}, you already exist. Have a great event ahead..`
       );
-      if(name) {
-        navigate(`/login/${name}/rsvp`);
-        onLoginSuccess(fullPhoneNumber);
-      }
-      else {
+      // if(name) {
+      //   navigate(`/login/${name}/rsvp`);
+      //   onLoginSuccess(fullPhoneNumber);
+      // }
+      // else {
         navigate(fromUrl);
-      }
+      // }
       
 
       if (typeof fromUrl === 'string' && fromUrl.includes("photos")) {
@@ -249,7 +249,8 @@ function Login({ name, onLoginSuccess }) {
           navigate(`${location.pathname}`, { state: { fromUrl } });
         }
       } else {
-        navigate(eventName ? `/login/${eventName}/rsvp` : fromUrl);
+        // navigate(eventName ? `/login/${eventName}/rsvp` : fromUrl);
+        navigate(fromUrl);
       }
       sessionStorage.setItem('userphoneNumber', fullPhoneNumber);
       toast(
