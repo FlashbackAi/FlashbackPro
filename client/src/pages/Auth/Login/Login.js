@@ -193,24 +193,29 @@ function Login({ name, onLoginSuccess }) {
     const fullPhoneNumber = countryCode + phoneNumber;
     let userSource = "flashback";
     let role = "user";
+    let reward_points =50;
     // if (from.includes("photos")) {
     //   userSource = "flashback-pro";
     // }
     if (typeof fromUrl === 'string' && fromUrl.includes("photos")) {
       userSource = "flashback-pro";
     }
-    if (typeof fromUrl === 'string' && fromUrl.includes("DataSet")) {
-      role = "dataOwner"
+    if (typeof fromUrl === 'string' && fromUrl.includes("dataset")) {
+      role = "dataOwner";
+      reward_points = 100000
     }
     if (typeof fromUrl === 'string' && fromUrl.includes("model")) {
       role = "modelOwner"
+      reward_points = 100000
     }
     
     const response = await API_UTIL.post(`/createUser`, {
       username: fullPhoneNumber,
       eventName: eventName,
       userSource: userSource,
-      role: role
+      role: role,
+      reward_points:reward_points
+
     });
     setIsPhoneNumberValid(true);
     if (response.status === 201) {

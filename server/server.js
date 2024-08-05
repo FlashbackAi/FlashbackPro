@@ -2130,6 +2130,7 @@ app.post('/downloadImage', async (req, res) => {
         let eventName = req.body.eventName;
         const userSource = req.body.userSource;
         const role = req.body.role;
+        const reward_points  = req.body.reward_points
         logger.info("creating user "+username);
       
         try {
@@ -2156,7 +2157,7 @@ app.post('/downloadImage', async (req, res) => {
           }
       
           // Create a new user entry in DynamoDB
-          await createUser(username,userSource,role);
+          await createUser(username,userSource,role,reward_points);
           console.log("created sucessfulyy ->"+username)
 
           const updateParamsUserEvent = {
@@ -2196,7 +2197,7 @@ app.post('/downloadImage', async (req, res) => {
   }
       
       // Function to create a new user in DynamoDB
-      async function createUser(username,userSource,role) {
+      async function createUser(username,userSource,role,reward_points) {
         const unique_uid = `${username}_Flash_${Math.floor(Math.random() * 1000)}`;
         const params = {
           TableName: userrecordstable,
@@ -2206,7 +2207,8 @@ app.post('/downloadImage', async (req, res) => {
             unique_uid: unique_uid,
             created_date: new Date().toISOString(),
             user_source:userSource,
-            role:role
+            role:role,
+            reward_points:reward_points
           }
         };
       
@@ -5105,13 +5107,13 @@ app.post("/updateRequestStatus", async (req, res) => {
 
 
 
-  const httpsServer = https.createServer(credentials, app);
+  // const httpsServer = https.createServer(credentials, app);
 
-  httpsServer.listen(PORT, () => {
-    logger.info(`Server is running on https://localhost:${PORT}`);
-    httpsServer.keepAliveTimeout = 60000; // Increase keep-alive timeout
-    httpsServer.headersTimeout = 65000; // Increase headers timeout
-  });
+  // httpsServer.listen(PORT, () => {
+  //   logger.info(`Server is running on https://localhost:${PORT}`);
+  //   httpsServer.keepAliveTimeout = 60000; // Increase keep-alive timeout
+  //   httpsServer.headersTimeout = 65000; // Increase headers timeout
+  // });
   
   
 
