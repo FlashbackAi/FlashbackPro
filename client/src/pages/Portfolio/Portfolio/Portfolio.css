@@ -1,0 +1,250 @@
+/* Portfolio.css */
+
+.portfolio-container body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  
+  .portfolio-container {
+    text-align: center;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+  .main-header {
+    color: white;
+    padding: 0.2em 0;
+  }
+  
+  .main-header h1 {
+    margin: 0;
+    font-size: 2.5em;
+  }
+  
+  .secondary-header {
+    color: white;
+    padding: 0.1em 0;
+    display: flex !important;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    height: 2em;
+  }
+  
+  .social-link {
+    margin: 0 0.1em;
+    text-decoration: none;
+  }
+  
+  .social-icon {
+    height: 2.75rem;
+    width: 2.75rem;
+  }
+
+  .social-icons {
+    display: flex;
+    gap: 2rem;
+  }
+  
+  .gallery {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 20px;
+    background-color: #FFFFFF;
+  }
+  
+  .photo-container {
+    margin: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    width: 25em;
+  }
+
+  .photo-container :hover{
+    transform: scale(1.05);
+  }
+  
+  .gallery-photo {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+  
+  .portfolio-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    /* background-color: rgb(43, 42, 42); */
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+  }
+  
+  .overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+  }
+  
+  .portfolio-modal-content {
+    position: relative;
+    padding: 2em;
+  }
+  
+  .portfolio-modal-close,
+  .portfolio-modal-prev,
+  .portfolio-modal-next {
+    position: absolute;
+    background: none;
+    border: none;
+    font-size: 2em;
+    cursor: pointer;
+    color: white;
+  }
+  
+  .portfolio-modal-close {
+    bottom: 0.05em;
+    right: 10em;
+    padding: 0.1em;
+  }
+  
+  .portfolio-modal-prev {
+    top: 50%;
+    left: 10px;
+    transform: translateY(-50%);
+    padding: 0;
+  }
+  
+  .portfolio-modal-next {
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    padding: 0;
+  }
+  
+  .portfolio-modal-image {
+    max-width: 100% !important;
+    height: auto;
+    padding: 2.5em;
+    object-fit: cover;
+    border-radius: 5%;
+  }
+  
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .main-header h1 {
+    font-size: 1.8em;
+  }
+
+  .secondary-header {
+    height: auto;
+    padding: 0.5em 0;
+  }
+
+  .social-icon {
+    height: 1.5em;
+    width: 1.5em;
+  }
+
+  .photo-container {
+    width: 100%;
+    margin: 5px;
+  }
+
+  .gallery {
+    padding: 10px;
+  }
+
+  .portfolio-modal {
+    width: 90%;
+    height: 90%;
+  }
+
+  .portfolio-modal-close {
+    right: 1em;
+  }
+
+  .portfolio-modal-prev {
+    left: 5px;
+  }
+
+  .portfolio-modal-next {
+    right: 5px;
+  }
+
+  .portfolio-modal-image {
+    padding: 1em;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-header h1 {
+    font-size: 1.5em;
+  }
+
+  .social-icon {
+    height: 1.2em;
+    width: 1.2em;
+  }
+
+  .portfolio-modal-content {
+    padding: 1em;
+  }
+
+  .portfolio-modal-image {
+    padding: 0.5em;
+  }
+  /* Position the dropdown container */
+.folder-dropdown {
+  position: relative;
+  display: inline-block;
+  float: right; /* Align dropdown to the right */
+}
+
+/* Style the dropdown button */
+.folder-dropdown select {
+  background-color: #f5f5f5;
+  color: #333;
+  padding: 0.625em; /* Equivalent to 10px */
+  font-size: 1em; /* Typically equivalent to 16px */
+  border: 0.0625em solid #ccc; /* Equivalent to 1px */
+  border-radius: 0.25em; /* Equivalent to 4px */
+  cursor: pointer;
+  width: 9.375em; /* Equivalent to 150px */
+}
+
+/* Style the dropdown content */
+.folder-dropdown select option {
+  background-color: #fff;
+  color: #333;
+  padding: 0.625em; /* Equivalent to 10px */
+  font-size: 0.875em; /* Equivalent to 14px */
+  display: block;
+  border-bottom: 0.0625em solid #ddd; /* Equivalent to 1px */
+}
+
+/* Styling for option icons (if using icons within the options) */
+.folder-dropdown select option::before {
+  /* content: url('path-to-your-icon'); Add an icon here if needed */
+  margin-right: 0.625em; /* Equivalent to 10px */
+}
+
+/* Additional styling for hover effects */
+.folder-dropdown select option:hover {
+  background-color: #f0f0f0;
+}
+
+}

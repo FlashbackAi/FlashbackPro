@@ -4755,30 +4755,81 @@ app.get("/getAllImages/:eventName", async(req,res) =>{
 
 
 // This code is for Portfolio 
-app.post('/uploadPortfolioImages', upload.array('images', 100), async (req, res) => {
+// app.post('/uploadPortfolioImages', upload.array('images', 100), async (req, res) => {
+//   try {
+//     const { org_name, user_name } = req.body;
+//     const files = req.files;
+
+//     logger.info("Uploading Portfolio Images of orgName: "+org_name+" userName: "+user_name);
+
+//     if (!files || files.length === 0) {
+//       return res.status(400).json({ message: 'No files uploaded' });
+//     }
+
+//     const folderName = `${org_name}-${user_name}`;
+
+//     const uploadPromises = files.map((file) => {
+//       const uniqueFileName = `${folderName}/${Date.now()}-${path.basename(file.originalname)}`;
+//       const params = {
+//         Bucket: portfolioBucketName,
+//         Key: uniqueFileName,
+//         Body: file.buffer,
+//         ContentType: file.mimetype,
+//       };
+
+//       return s3.upload(params).promise();
+//     });
+
+//     const uploadResults = await Promise.all(uploadPromises);
+
+//     res.status(200).json({
+//       message: 'Files uploaded successfully',
+//       files: uploadResults.map(result => ({
+//         fileName: result.Key,
+//         location: result.Location,
+//       }))
+//     });
+//   } catch (error) {
+//     console.error('Error uploading files to S3:', error);
+//     res.status(500).json({ message: 'Error uploading files to S3', error: error.message });
+//   }
+// });
+
+app.post('/uploadPortfolioImages', upload.any(), async (req, res) => {
   try {
     const { org_name, user_name } = req.body;
     const files = req.files;
 
-    logger.info("Uploading Portfolio Images of orgName: "+org_name+" userName: "+user_name);
+    logger.info(`Uploading Portfolio Images of orgName: ${org_name}, userName: ${user_name}`);
 
     if (!files || files.length === 0) {
       return res.status(400).json({ message: 'No files uploaded' });
     }
 
-    const folderName = `${org_name}-${user_name}`;
+    const uploadPromises = [];
 
-    const uploadPromises = files.map((file) => {
-      const uniqueFileName = `${folderName}/${Date.now()}-${path.basename(file.originalname)}`;
-      const params = {
-        Bucket: portfolioBucketName,
-        Key: uniqueFileName,
-        Body: file.buffer,
-        ContentType: file.mimetype,
-      };
+    // Group files by folder names based on the field names in the request
+    const folders = files.reduce((acc, file) => {
+      const folderName = file.fieldname.replace('_images', ''); // Strip '_images' from the folder name
+      if (!acc[folderName]) acc[folderName] = [];
+      acc[folderName].push(file);
+      return acc;
+    }, {});
 
-      return s3.upload(params).promise();
-    });
+    // Loop through each folder and upload the files
+    for (const [folderName, folderFiles] of Object.entries(folders)) {
+      folderFiles.forEach(file => {
+        const uniqueFileName = `${org_name}-${user_name}/${folderName}/${Date.now()}-${path.basename(file.originalname)}`;
+        const params = {
+          Bucket: portfolioBucketName,
+          Key: uniqueFileName,
+          Body: file.buffer,
+          ContentType: file.mimetype,
+        };
+
+        uploadPromises.push(s3.upload(params).promise());
+      });
+    }
 
     const uploadResults = await Promise.all(uploadPromises);
 
@@ -4794,6 +4845,47 @@ app.post('/uploadPortfolioImages', upload.array('images', 100), async (req, res)
     res.status(500).json({ message: 'Error uploading files to S3', error: error.message });
   }
 });
+
+
+// app.get('/getPortfolioImages/:org_name/:user_name', async (req, res) => {
+//   try {
+//     const { org_name, user_name } = req.params;
+
+//     if (!org_name || !user_name) {
+//       return res.status(400).json({ message: 'org_name and user_name are required' });
+//     }
+
+//     const folderName = `${org_name}-${user_name}`;
+//     const params = {
+//       Bucket: portfolioBucketName,
+//       Prefix: folderName,
+//     };
+
+//     const s3Data = await s3.listObjectsV2(params).promise();
+
+//     if (!s3Data.Contents || s3Data.Contents.length === 0) {
+//       return res.status(404).json({ message: 'No images found' });
+//     }
+
+//     const images = s3Data.Contents.map(item => ({
+//       fileName: item.Key,
+//       url: `https://${portfolioBucketName}.s3.amazonaws.com/${item.Key}`,
+//     }));
+
+//     res.status(200).json({
+//       message: 'Images retrieved successfully',
+//       images,
+//     });
+//   } catch (error) {
+//     console.error('Error retrieving images from S3:', error);
+//     res.status(500).json({ message: 'Error retrieving images from S3', error: error.message });
+//   }
+// });
+
+
+
+
+// This is the code for the protocol backend 
 
 app.get('/getPortfolioImages/:org_name/:user_name', async (req, res) => {
   try {
@@ -4815,14 +4907,25 @@ app.get('/getPortfolioImages/:org_name/:user_name', async (req, res) => {
       return res.status(404).json({ message: 'No images found' });
     }
 
-    const images = s3Data.Contents.map(item => ({
-      fileName: item.Key,
-      url: `https://${portfolioBucketName}.s3.amazonaws.com/${item.Key}`,
-    }));
+    const folderWiseImages = {};
+
+    s3Data.Contents.forEach(item => {
+      const fullPath = item.Key;
+      const parts = fullPath.split('/');
+      const folder = parts.length > 2 ? parts[1] : 'Uncategorized'; // Assuming folder is the second part in the key structure
+      const fileName = parts[parts.length - 1];
+      const url = `https://${portfolioBucketName}.s3.amazonaws.com/${item.Key}`;
+
+      if (!folderWiseImages[folder]) {
+        folderWiseImages[folder] = [];
+      }
+
+      folderWiseImages[folder].push({ fileName, url });
+    });
 
     res.status(200).json({
       message: 'Images retrieved successfully',
-      images,
+      images: folderWiseImages,
     });
   } catch (error) {
     console.error('Error retrieving images from S3:', error);
@@ -4831,9 +4934,6 @@ app.get('/getPortfolioImages/:org_name/:user_name', async (req, res) => {
 });
 
 
-
-
-// This is the code for the protocol backend 
 app.get("/getDatasets/:orgName", async (req, res) => {
   
   const orgName = req.params.orgName; // Adjust based on your token payload

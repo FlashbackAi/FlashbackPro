@@ -1,0 +1,149 @@
+header {
+  padding: 0.5em 1rem;
+  /* font-size: 1em; */
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8em;
+  left: 0;
+  z-index: 12;
+  background-color: #1c1c1c;
+  /* background-color: red; */
+}
+
+.stickToTop{
+  position: sticky;
+  top: 0;
+  padding-bottom: 1em;
+}
+
+.m_Bottom_Low {
+  margin-bottom: 0.5em !important;
+}
+
+header h2 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1em;
+  color: #bbb6b6;
+  font-size: 1.5em;
+  position: relative;
+  width: fit-content;
+}
+
+header h2::after {
+  content: "Auto Curate & Instant Share Memories";
+  position: absolute;
+  bottom: -1.2em;
+  display: block;
+  text-align: center;
+  font-size: 30%;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+header img {
+  width: 1.1em;
+  height: 1em;
+}
+
+header h3 {
+  /* display: flex; */
+  align-items: center;
+  justify-content: center;
+  color: #bbb6b6;
+  font-size: 0.6em;
+  /* font-weight: 300; */
+  /* position: relative; */
+  width: fit-content;
+}
+
+/* CSS for SecondHeader component */
+.second-header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  /* padding: 10px; */
+  position: sticky;
+  z-index: 12;
+  background-color: #5a5959;
+  padding: 0.5em;
+  margin: 0.5em;
+}
+
+.second-header-container h1 {
+  margin: 0 10px;
+  font-size: 1.2em !important;
+}
+
+.second-header-container div,
+.second-header-container a {
+  display: inline-block;
+  align-items: center;
+}
+
+.second-header-container img {
+  width: 1.25em;
+  height: auto;
+  margin-left: 10px;
+  margin-top: 0.25em;
+}
+
+.redeem-points {
+  font-size: 0.6em;
+  cursor: pointer;
+  color: #bbb6b6;
+  font-weight: bold;
+}
+
+.popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.popup-content {
+  background: #1c1c1c !important;
+  padding: 1em;
+  border-radius: 1em;
+  text-align: center;
+}
+
+.popup-content h2 {
+  padding: 1em;
+  color: #bbb6b6;
+}
+
+.popup-content h4 {
+  color: #bbb6b6;
+}
+
+
+.popup-content p {
+  color: #bbb6b6;
+}
+
+.popup-content button {
+  margin-top: 3em;
+  padding: 0.25em 0.25em;
+  background: #b48e75;
+  color: inherit;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* .second-header-container {
+  display: none;
+} */
