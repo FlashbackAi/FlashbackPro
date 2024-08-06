@@ -2,7 +2,7 @@ import React,{ useState } from 'react';
 import './ModelForm.css';
 import API_UTIL from '../../../services/AuthIntereptor';
 import { toast } from 'react-toastify';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation} from 'react-router-dom';
 
 const ModalForm = () => {
 
@@ -13,8 +13,11 @@ const ModalForm = () => {
     model_category: '',
     model_url: '',
     model_desc: '',
+    dataset_size:''
   });
   const navigate = useNavigate();
+  const location = useLocation();
+  const userDetails = location.state?.userDetails;
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -29,19 +32,39 @@ const ModalForm = () => {
     try {
       const response = await API_UTIL.post('/saveModelDetails', formData)
 
-      if (response.status !== 200) {
-        throw new Error('Failed to save the Dataset');
-      }
-      // toast.success('Events created successfully');
+      if (response.status === 200) {
+        // toast.success('Events created successfully');
+      await updateRewardPoints()
       setTimeout(() => {
         navigate('/model');
       }, 1000);
-      return response;
+      }else{
+        throw new Error('Failed to save the Dataset');
+      }
+      
     } catch (error) {
       console.error('Error saving form data to backend:', error);
       toast.error('Failed to save the dataset. Please try again.');
     } 
   };
+  const updateRewardPoints = async () => {
+
+    try {
+      const requestData = {
+        user_phone_number: userDetails.user_phone_number,
+        reward_points: userDetails.reward_points - formData.dataset_size,
+      };
+
+      console.log('Sending request to server with data:', requestData);
+
+       await API_UTIL.post("/updateUserDetails", requestData);
+    } catch (error) {
+      console.error("Error in registering the model:", error);
+      if (error.response) {
+        toast.error("Error im creating Model")
+      }
+    }
+};  
 
   return (
     <div className="create-event-container">
@@ -100,9 +123,21 @@ const ModalForm = () => {
             required
           />
         </div>
-        <button className="submit-button" type="submit" >
-          {/* {uploading ? 'Creating...' : 'Create'} */}
-          Create
+        <div className="form-group">
+          <label htmlFor="event-location">Training Dataset size:</label>
+          <input
+            type="number"
+            id="event-location"
+            name="dataset_size"
+            placeholder="Provide data set size req for model"
+            value={formData.dataset_size}
+            onChange={handleInputChange}
+            required
+          />
+        </div>
+        <button className="submit-button" type="submit" >Create
+          {formData.dataset_size ? ` [Pay ${formData.dataset_size} coins]` : ''}
+          
         </button>
       </form>
     </div>

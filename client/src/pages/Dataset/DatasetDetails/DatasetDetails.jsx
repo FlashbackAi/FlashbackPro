@@ -71,8 +71,11 @@ const DataSetDetails = () => {
       console.error(`Error updating request status: ${error.message}`);
     }
   };
-  const handleTabChange = (tab) => {
+  const handleTabChange = async (tab) => {
     setActiveTab(tab);
+    if(tab === 'requests'){
+      await fetchDatasetRequests();
+    }
 
   };
   
@@ -99,6 +102,7 @@ const DataSetDetails = () => {
                 <div className="ed-form-group">
                   <p className="ed-form-value">Dataset Category: {datasetDetails.dataset_category}</p>
                   <p className="ed-form-value">Dataset Url: {datasetDetails.dataset_url}</p>
+                  <p className="ed-form-value">Dataset size: {datasetDetails.dataset_size}</p>
                 </div>
               </div>
             )}

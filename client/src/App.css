@@ -1,3 +1,6 @@
+@import url("https://fonts.googleapis.com/css2?family=Open+Sans:wght@700&display=swap");
+
+
 /* Toast Start */
 
 .Toastify__close-button {
@@ -615,7 +618,7 @@ p {
   height: 1em;
 }
 
-@import url("https://fonts.googleapis.com/css2?family=Open+Sans:wght@700&display=swap");
+
 .loginLogo {
   font-family: "Open Sans", sans-serif; /* This is a placeholder; you'd need the actual font used by Facebook */
   color: #1877f2; /* This is the Facebook blue */

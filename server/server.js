@@ -4790,13 +4790,10 @@ app.get("/getDatasets", async (req, res) => {
 
     const result = await docClient.scan(eventParams).promise();
 
-    if (result.Items && result.Items.length > 0) {
+    if (result.Items && result.Items.length >= 0) {
       logger.info(`Fetched ${result.Items.length} dataset entries`);
       res.status(200).send(result.Items);
-    } else {
-      logger.info(`No datasets found`);
-      res.status(404).send({ message: "No datasets found" });
-    }
+    } 
   } catch (err) {
     logger.error(`Error fetching datasets: ${err.message}`);
     res.status(500).send(err.message);
@@ -4987,11 +4984,11 @@ app.post("/saveModelDetails", async (req, res) => {
       const params = {
         TableName: modelToDatsetReqTable,
         Item: newItem,
-        ConditionExpression: 'attribute_not_exists(#pk) AND attribute_not_exists(#sk)',
-        ExpressionAttributeNames: {
-          '#pk': 'model', // Replace with your primary key attribute name
-          '#sk': 'dataset' // Replace with your sort key attribute name (if applicable)
-        }
+        // ConditionExpression: 'attribute_not_exists(#pk) AND attribute_not_exists(#sk)',
+        // ExpressionAttributeNames: {
+        //   '#pk': 'model', // Replace with your primary key attribute name
+        //   '#sk': 'dataset' // Replace with your sort key attribute name (if applicable)
+        // }
       };
       
       try {
@@ -5104,7 +5101,45 @@ app.post("/updateRequestStatus", async (req, res) => {
   }
 });
 
+app.delete('/deleteModel/:model_name/:org_name', async (req, res) => {
+  const { model_name, org_name } = req.params;
 
+  const params = {
+    TableName: modelsTable,
+    Key: {
+      model_name: model_name,
+      org_name: org_name,
+    }
+  };
+  logger.info("Deletion Started",model_name);
+  try {
+    const result = await docClient.delete(params).promise();
+    res.status(200).json({ message: 'Model deleted successfully', result });
+    logger.info("Model deletion done model_name :",model_name);
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting Model', error: error.message });
+  }
+});
+
+app.delete('/deleteDataset/:dataset_name/:org_name', async (req, res) => {
+  const { dataset_name, org_name } = req.params;
+
+  const params = {
+    TableName: datasetTable,
+    Key: {
+      dataset_name: dataset_name,
+      org_name: org_name,
+    }
+  };
+  logger.info("Deletion Started");
+  try {
+    const result = await docClient.delete(params).promise();
+    res.status(200).json({ message: 'Dataset deleted successfully', result });
+    logger.info("Dataset deletion done :",dataset_name);
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting Dataset', error: error.message });
+  }
+});
 
 
   const httpsServer = https.createServer(credentials, app);

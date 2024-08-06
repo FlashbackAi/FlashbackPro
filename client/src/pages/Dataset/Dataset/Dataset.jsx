@@ -4,6 +4,7 @@ import Modal from 'react-modal';
 import { toast } from 'react-toastify';
 import './Dataset.css'; // Import the new CSS file
 import { useNavigate } from 'react-router-dom';
+import OrgHeader from '../../../components/OrgHeader/OrgHeader';
 
 const Dataset = () => {
   const [datasetList, setDatasetList] = useState([]);
@@ -13,6 +14,7 @@ const Dataset = () => {
   const [datasetToDelete, setDatasetToDelete] = useState(null);
   const [userDetails, setUserDetails] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const userPhoneNumber = sessionStorage.getItem('userphoneNumber');
 
   const [formData, setFormData] = useState({
     org_name: '',
@@ -43,7 +45,7 @@ const Dataset = () => {
     const fetchUserDetails = async () => {
       try {
         setLoading(true);
-        const userPhoneNumber = sessionStorage.getItem('userphoneNumber');
+        
         const response = await API_UTIL.get(`/fetchUserDetails/${userPhoneNumber}`);
         setUserDetails(response.data.data);
         if (sessionStorage.getItem('userphoneNumber') !== response.data.data.user_name) {
@@ -57,7 +59,7 @@ const Dataset = () => {
 
     fetchUserDetails();
 
-  }, []);
+  }, [userPhoneNumber]);
 
   const handleLinkClick = () => {
     const clientName = userDetails.user_name;
@@ -65,7 +67,7 @@ const Dataset = () => {
     if (clientName === sessionNumber) {
       openIsDetailsModalOpen();
     } else {
-      navigate(`/DatasetForm/${userDetails.user_name}`);
+      navigate(`/datasetForm/${userDetails.user_name}`,  { state: { userDetails } })
     }
   };
 
@@ -103,7 +105,7 @@ const Dataset = () => {
       if (response.status === 200) {
         setUserDetails(response.data.data);
         toast.success("User details updated successfully");
-        navigate(`/DatasetForm/${response.data.data.user_name}`);
+        navigate(`/datasetForm/${response.data.data.user_name}`, { state: { userDetails } });
       } else {
         toast.error("Failed to update user details. Please try again.");
       }
@@ -128,7 +130,7 @@ const Dataset = () => {
       await API_UTIL.delete(`/deleteDataset/${datasetName}/${orgName}`);
       setDatasetList(datasetList.filter(dataset => !(dataset.dataset_name === datasetName && dataset.org_name === orgName)));
       setIsDeleteModalOpen(false);
-      toast.success('Event deleted successfully');
+      toast.success('Dataset deleted successfully');
     } catch (error) {
       console.error("Error deleting event:", error);
       toast.error('Failed to delete the event. Please try again.');
@@ -136,13 +138,16 @@ const Dataset = () => {
   };
 
   const onDataSetClick = (datasetName) => {
-    navigate(`/DataSetDetails/${userDetails.org_name}/${datasetName}`, { state: { userDetails } });
+    navigate(`/datasetDetails/${userDetails.org_name}/${datasetName}`, { state: { userDetails } });
   };
 
   if (loading) return <div className="loading-screen">Loading...</div>;
   if (error) return <div className="loading-screen">Error: {error}</div>;
 
   return (
+    <>
+    {userDetails.org_name && <OrgHeader orgObj={userDetails}/>}
+    
     <div className="event-container">
       <h1 className="event-title">My Datasets</h1>
       <ul className="event-list">
@@ -308,6 +313,7 @@ const Dataset = () => {
         </div>
       </Modal>
     </div>
+    </>
   );
 }
 

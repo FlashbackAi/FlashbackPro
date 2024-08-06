@@ -4,6 +4,7 @@ import Modal from 'react-modal';
 import { toast } from 'react-toastify';
 import './Model.css'; // Import the new CSS file
 import { useNavigate } from 'react-router-dom';
+import OrgHeader from '../../../components/OrgHeader/OrgHeader';
 
 const Model = () => {
   const [modelsList, setModelsList] = useState([]);
@@ -65,7 +66,7 @@ const Model = () => {
     if (clientName === sessionNumber) {
       openIsDetailsModalOpen();
     } else {
-      navigate(`/ModelForm/${userDetails.user_name}`);
+      navigate(`/modelForm/${userDetails.user_name}`, { state: { userDetails } });
     }
   };
 
@@ -103,7 +104,7 @@ const Model = () => {
       if (response.status === 200) {
         setUserDetails(response.data.data);
         toast.success("User details updated successfully");
-        navigate(`/ModelForm/${response.data.data.user_name}`);
+        navigate(`/modelForm/${response.data.data.user_name}`, { state: { userDetails } });
       } else {
         toast.error("Failed to update user details. Please try again.");
       }
@@ -125,10 +126,10 @@ const Model = () => {
 
   const deleteModel = async (modelName, orgName) => {
     try {
-      await API_UTIL.delete(`/deleteDataset/${modelName}/${orgName}`);
-      setModelsList(modelsList.filter(dataset => !(dataset.dataset_name === modelName && dataset.org_name === orgName)));
+      await API_UTIL.delete(`/deleteModel/${modelName}/${orgName}`);
+      setModelsList(modelsList.filter(model => !(model.model_name === modelName && model.org_name === orgName)));
       setIsDeleteModalOpen(false);
-      toast.success('Event deleted successfully');
+      toast.success('Model deleted successfully');
     } catch (error) {
       console.error("Error deleting event:", error);
       toast.error('Failed to delete the event. Please try again.');
@@ -136,13 +137,15 @@ const Model = () => {
   };
 
   const onModelClick = (modelName) => {
-    navigate(`/ModelDetails/${userDetails.user_name}/${modelName}`, { state: { userDetails } });
+    navigate(`/modelDetails/${userDetails.user_name}/${modelName}`, { state: { userDetails } });
   };
 
   if (loading) return <div className="loading-screen">Loading...</div>;
   if (error) return <div className="loading-screen">Error: {error}</div>;
 
   return (
+    <>
+    {userDetails.org_name && <OrgHeader orgObj={userDetails}/>}
     <div className="event-container">
       <h1 className="event-title">My Models</h1>
       <ul className="event-list">
@@ -302,12 +305,13 @@ const Model = () => {
           <h2 className="modal-title">Confirm Delete</h2>
           <p className="modal-body">Do you want to delete this Model?</p>
           <div className="modal-footer">
-            <button className="delete-button" onClick={() => deleteModel(modelToDelete.dataset_name, modelToDelete.org_name)}>Confirm</button>
+            <button className="delete-button" onClick={() => deleteModel(modelToDelete.model_name, modelToDelete.org_name)}>Confirm</button>
             <button className="cancel-button" onClick={closeDeleteModal}>Cancel</button>
           </div>
         </div>
       </Modal>
     </div>
+    </>
   );
 }
 

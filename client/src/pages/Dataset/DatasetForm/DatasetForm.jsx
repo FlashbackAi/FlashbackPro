@@ -2,7 +2,8 @@ import React,{ useState } from 'react';
 import './DatasetForm.css';
 import API_UTIL from '../../../services/AuthIntereptor';
 import { toast } from 'react-toastify';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+
 
 const DatasetForm = () => {
 
@@ -14,14 +15,36 @@ const DatasetForm = () => {
     dataset_category: '',
     dataset_url: '',
     dataset_acceskey: '',
+    dataset_size:''
   });
   const navigate = useNavigate();
+  const location = useLocation();
+  const userDetails = location.state?.userDetails;
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
+
+  const updateRewardPoints = async () => {
+
+    try {
+      const requestData = {
+        user_phone_number: userDetails.user_phone_number,
+        reward_points: userDetails.reward_points - formData.dataset_size/10,
+      };
+
+      console.log('Sending request to server with data:', requestData);
+
+       await API_UTIL.post("/updateUserDetails", requestData);
+    } catch (error) {
+      console.error("Error in registering the model:", error);
+      if (error.response) {
+        toast.error("Error im creating Model")
+      }
+    }
+};  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,6 +57,7 @@ const DatasetForm = () => {
         throw new Error('Failed to save the Dataset');
       }
       // toast.success('Events created successfully');
+      await updateRewardPoints();
       setTimeout(() => {
         navigate('/dataset');
       }, 1000);
@@ -113,8 +137,22 @@ const DatasetForm = () => {
             required
           />
         </div>
+
+        <div className="form-group">
+          <label htmlFor="event-location">Dataset Size:</label>
+          <input
+            type="text"
+            id="event-location"
+            name="dataset_size"
+            placeholder="provide your dataset size"
+            value={formData.dataset_size}
+            onChange={handleInputChange}
+            required
+          />
+        </div>
+
         <button className="submit-button" type="submit" >
-          {/* {uploading ? 'Creating...' : 'Create'} */}
+        {formData.dataset_size ? ` [Pay ${formData.dataset_size/10} coins]` : ''}
           Create
         </button>
       </form>

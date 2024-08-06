@@ -34,8 +34,13 @@ const DataSetDetails = () => {
     fetchEventData();
   }, [orgName, modelName]);
 
-  const handleTabChange = (tab) => {
+  const handleTabChange = async (tab) => {
     setActiveTab(tab);
+    if(tab === 'requests'){
+      // Fetch requests made by the model
+      const requestsResponse = await API_UTIL.get(`/getDatasetRequestsbyModel/${modelName}-${orgName}`);
+      setRequests(requestsResponse.data);
+    }
   };
 
   const openDatasetDetailsModal = async (dataset) => {
@@ -52,7 +57,6 @@ const DataSetDetails = () => {
   };
 
   const onClickRequest = async (dataset) => {
-    console.log("Request clicked");
     try {
       let formDataToSend = {
         model_name: modelDetails.model_name,
@@ -65,17 +69,17 @@ const DataSetDetails = () => {
       const response = await API_UTIL.post('/requestDatasetAccess', formDataToSend);
 
       if (response.status === 200) {
-        toast.success("Successfully sent the request");
+        toast.success("Successfully sent the request", {autoClose: 2000 });
 
         // Refresh the requests list after a new request is made
         const requestsResponse = await API_UTIL.get(`/getDatasetRequests/${modelName}-${orgName}`);
         setRequests(requestsResponse.data);
-      } else {
-        throw new Error("Unexpected response status");
+      } else if(response.status === 400) {
+        toast.success("Request Already Exists",{autoClose: 1500 });
       }
     } catch (err) {
       console.error(err);
-      toast.error("Failed to send the request");
+      toast.error("Failed to send the request",{autoClose: 1500 });
     }
   };
 
@@ -90,6 +94,7 @@ const DataSetDetails = () => {
               <p className="ed-form-value">Model Category: {modelDetails.model_category || 'Not available'}</p>
               <p className="ed-form-value">Model Url: {modelDetails.model_url || 'Not available'}</p>
               <p className="ed-form-value">Model Description: {modelDetails.model_desc || 'Not available'}</p>
+              <p className="ed-form-value">Required Dataset Size: {modelDetails.dataset_size}</p>
             </div>
           </div>
         )}
@@ -145,7 +150,7 @@ const DataSetDetails = () => {
           className={`tab-link ${activeTab === 'requests' ? 'active' : ''}`} 
           onClick={() => handleTabChange('requests')}
         >
-          Requests
+          My Requests
         </span>
       </div>
 
@@ -166,6 +171,7 @@ const DataSetDetails = () => {
               <div className="ed-form-group">
                 <p className="ed-form-value">Dataset Category: {clickedDataset.dataset_category}</p>
                 <p className="ed-form-value">Dataset Url: {clickedDataset.dataset_url}</p>
+                <p className="ed-form-value"> Dataset Size: {clickedDataset.dataset_size}</p>
               </div>
             </div>
           </div>
