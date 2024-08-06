@@ -74,7 +74,7 @@ function Login({ name, onLoginSuccess }) {
     isToastDisp.current = true;
   }, []);
 
-  const fromUrl = location.state?.from?.pathname || "/home";
+  const fromUrl = location.state?.from?.pathname || "/portfolio";
   console.log(fromUrl);
   
 

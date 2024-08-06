@@ -23,7 +23,7 @@ import About from "../pages/About/About";
 import EventSelector from "../pages/Event/EventSelector";
 import CreateEvents from "../pages/Event/CreateEvents";
 import EventDetails from "../pages/Event/EventDetails/EventDetails";
-import Portfolio from "../pages/Portfolio/Portfolio";
+import Portfolio from "../pages/Portfolio/Portfolio/Portfolio";
 import Fallback from "../pages/Fallback/Fallback";
 import Dataset from "../pages/Dataset/Dataset/Dataset";
 import DatasetForm from "../pages/Dataset/DatasetForm/DatasetForm";
@@ -31,6 +31,7 @@ import DatasetDetails from "../pages/Dataset/DatasetDetails/DatasetDetails";
 import Model from "../pages/Model/Model/Model";
 import ModelDetails from "../pages/Model/ModelDetails/ModelDetails"
 import ModelForm from "../pages/Model/ModelForm/ModelForm";
+import PortfolioForm from "../pages/Portfolio/PortfolioForm/PortfolioForm";
 
 
 const ROUTES=[
@@ -224,7 +225,7 @@ const ROUTES=[
     {
         path:"/portfolio",
         exact:false,
-        protected:false,
+        protected:true,
         component:Portfolio,
     },
     {
@@ -233,7 +234,13 @@ const ROUTES=[
         protected:false,
         component:Fallback,
     },
-
+    {
+        path:"/portfolioForm",
+        exact:false,
+        protected:true,
+        component:PortfolioForm,
+    },
+    
 
     // This routes are for protocol - dataset
     {

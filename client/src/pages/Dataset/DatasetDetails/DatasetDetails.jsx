@@ -120,8 +120,10 @@ const DataSetDetails = () => {
                         <div key={request.id} className="request-item">
                           <p>Model: {request.model_name}</p>
                           <p>Owner: {request.model_org_name}</p>
-                          <button onClick={() => handleAccept(request.id)}>Accept</button>
+                          <div>
+                           <button onClick={() => handleAccept(request.id)}>Accept</button>
                           <button onClick={() => handleReject(request.id)}>Reject</button>
+                          </div>
                         </div>
                       ))}
                     </div>

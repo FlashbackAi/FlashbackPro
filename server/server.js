@@ -90,6 +90,7 @@ const bucketName = 'flashbackuseruploads';
 const userBucketName='flashbackuserthumbnails';
 const indexBucketName = 'flashbackusercollection';
 const imagesBucketName = 'flashbackusercollection';
+const portfolioBucketName = 'flashbackportfoliouploads';
 
 const rekognition = new AWS.Rekognition({ region: 'ap-south-1' });
 
@@ -4750,6 +4751,86 @@ app.get("/getAllImages/:eventName", async(req,res) =>{
 }
 
 });
+
+
+
+// This code is for Portfolio 
+app.post('/uploadPortfolioImages', upload.array('images', 100), async (req, res) => {
+  try {
+    const { org_name, user_name } = req.body;
+    const files = req.files;
+
+    logger.info("Uploading Portfolio Images of orgName: "+org_name+" userName: "+user_name);
+
+    if (!files || files.length === 0) {
+      return res.status(400).json({ message: 'No files uploaded' });
+    }
+
+    const folderName = `${org_name}-${user_name}`;
+
+    const uploadPromises = files.map((file) => {
+      const uniqueFileName = `${folderName}/${Date.now()}-${path.basename(file.originalname)}`;
+      const params = {
+        Bucket: portfolioBucketName,
+        Key: uniqueFileName,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+      };
+
+      return s3.upload(params).promise();
+    });
+
+    const uploadResults = await Promise.all(uploadPromises);
+
+    res.status(200).json({
+      message: 'Files uploaded successfully',
+      files: uploadResults.map(result => ({
+        fileName: result.Key,
+        location: result.Location,
+      }))
+    });
+  } catch (error) {
+    console.error('Error uploading files to S3:', error);
+    res.status(500).json({ message: 'Error uploading files to S3', error: error.message });
+  }
+});
+
+app.get('/getPortfolioImages/:org_name/:user_name', async (req, res) => {
+  try {
+    const { org_name, user_name } = req.params;
+
+    if (!org_name || !user_name) {
+      return res.status(400).json({ message: 'org_name and user_name are required' });
+    }
+
+    const folderName = `${org_name}-${user_name}`;
+    const params = {
+      Bucket: portfolioBucketName,
+      Prefix: folderName,
+    };
+
+    const s3Data = await s3.listObjectsV2(params).promise();
+
+    if (!s3Data.Contents || s3Data.Contents.length === 0) {
+      return res.status(404).json({ message: 'No images found' });
+    }
+
+    const images = s3Data.Contents.map(item => ({
+      fileName: item.Key,
+      url: `https://${portfolioBucketName}.s3.amazonaws.com/${item.Key}`,
+    }));
+
+    res.status(200).json({
+      message: 'Images retrieved successfully',
+      images,
+    });
+  } catch (error) {
+    console.error('Error retrieving images from S3:', error);
+    res.status(500).json({ message: 'Error retrieving images from S3', error: error.message });
+  }
+});
+
+
 
 
 // This is the code for the protocol backend 
