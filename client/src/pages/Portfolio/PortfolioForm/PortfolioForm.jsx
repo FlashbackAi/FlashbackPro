@@ -1,29 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './PortfolioForm.css';
 import API_UTIL from '../../../services/AuthIntereptor';
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
+import {  useNavigate } from 'react-router-dom';
+import LoadingSpinner from '../../../components/Loader/LoadingSpinner';
 
 const PortfolioForm = () => {
   const userPhoneNumber = sessionStorage.getItem('userphoneNumber');
 
   const [formData, setFormData] = useState({
     user_phone_number: userPhoneNumber,
-    user_name: '',
     social_media: {
       instagram: '',
       youtube: '',
+      facebook:''
     },
     org_name: '',
   });
 
-  const [folders, setFolders] = useState([]);
+  const [folders, setFolders] = useState([{ folderName: 'Banner', images: [] }]);
   const navigate = useNavigate();
-
+  const [isLoading, setIsLoading] = useState(true);
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
+
+  useEffect(() => {
+
+    const fetchUserDetails = async () => {
+      try {
+        const userPhoneNumber = sessionStorage.getItem('userphoneNumber');
+        console.log(userPhoneNumber);
+        const response = await API_UTIL.get(`/fetchUserDetails/${userPhoneNumber}`);
+        setIsLoading(false)
+        if (sessionStorage.getItem('userphoneNumber') !== response.data.data.user_name && response.data.data.hasOwnProperty('org_name')) {
+          navigate(`/portfolio/${response.data.data.user_name}`)
+        }
+      } catch (error) {
+        console.error('Error fetching user details:', error);
+      }
+    };
+
+    fetchUserDetails();
+  }, [navigate]);
 
   const handleFolderNameChange = (index, event) => {
     const { value } = event.target;
@@ -43,15 +63,15 @@ const PortfolioForm = () => {
     setFolders([...folders, { folderName: '', images: [] }]);
   };
 
-  const saveUploadedImages = async () => {
+  const saveUploadedImages = async (user_name) => {
     const data = new FormData();
     data.append('user_phone_number', formData.user_phone_number);
-    data.append('user_name', formData.user_name);
     data.append('org_name', formData.org_name);
+    data.append('user_name',user_name);
 
     folders.forEach((folder) => {
       folder.images.forEach((image) => {
-        data.append(`${folder.folderName}_images`, image); // Include folder name in the form data
+        data.append(`${folder.folderName}_images`, image);
       });
     });
 
@@ -85,10 +105,10 @@ const PortfolioForm = () => {
 
       console.log('Sending request to server with data:', requestData);
 
-      const res = await API_UTIL.post("/updateUserDetails", requestData);
+      const res = await API_UTIL.post("/updatePortfolioDetails", requestData);
       if (res.status === 200) {
-        await saveUploadedImages();
-        navigate(`/portfolio`);
+        await saveUploadedImages(res.data.data.user_name);
+        navigate(`/portfolio/${res.data.data.user_name}`);
       }
     } catch (error) {
       console.error("Error in registering the model:", error);
@@ -110,6 +130,11 @@ const PortfolioForm = () => {
   };
 
   return (
+    <>
+    {
+      isLoading ? (
+        <LoadingSpinner/>
+      ) : (
     <div className="create-event-container">
       <h1 className="form-title">Create Model</h1>
       <form className="invitation-form" id="invitation-form" onSubmit={handleSubmit}>
@@ -125,18 +150,7 @@ const PortfolioForm = () => {
             required
           />
         </div>
-        <div className="form-group">
-          <label htmlFor="event-name">User Name:</label>
-          <input
-            type="text"
-            id="event-name"
-            name="user_name"
-            placeholder="Enter your Name"
-            value={formData.user_name}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
+
         <div className="form-group">
           <label htmlFor="event-date">Instagram URL:</label>
           <input
@@ -163,20 +177,43 @@ const PortfolioForm = () => {
         </div>
 
         <div className="form-group">
-          <button type="button" onClick={addFolder} className="add-folder-button">Add Folder</button>
+          <label htmlFor="event-date">Facebook URL:</label>
+          <input
+            type="text"
+            id="event-date"
+            name="facebook"
+            placeholder="Provide your Instagram URL"
+            value={formData.social_media.facebook}
+            onChange={handleSocialMediaChange}
+            required
+          />
+        </div>
+        {/* Banner Image Upload Section */}
+        <div className="folder-section">
+          <div className="form-group">
+            <label className="form-label">Upload Banner Image:</label>
+            <input
+              type="file"
+              multiple
+              onChange={(e) => handleImageUpload(0, e)} // Index 0 for the banner folder
+              className="form-input"
+            />
+          </div>
         </div>
 
-        {folders.map((folder, index) => (
-          <div key={index} className="folder-section">
+       
+
+        {folders.slice(1).map((folder, index) => (
+          <div key={index + 1} className="folder-section">
             <div className="form-group">
-              <label htmlFor={`folder-name-${index}`}>Folder Name:</label>
+              <label htmlFor={`folder-name-${index + 1}`}>Folder Name:</label>
               <input
                 type="text"
-                id={`folder-name-${index}`}
-                name={`folder_name_${index}`}
+                id={`folder-name-${index + 1}`}
+                name={`folder_name_${index + 1}`}
                 placeholder="Enter folder name"
                 value={folder.folderName}
-                onChange={(e) => handleFolderNameChange(index, e)}
+                onChange={(e) => handleFolderNameChange(index + 1, e)}
                 required
               />
             </div>
@@ -185,16 +222,23 @@ const PortfolioForm = () => {
               <input
                 type="file"
                 multiple
-                onChange={(e) => handleImageUpload(index, e)}
+                onChange={(e) => handleImageUpload(index + 1, e)}
                 className="form-input"
               />
             </div>
           </div>
         ))}
 
+        <div className="form-group">
+          <button type="button" onClick={addFolder} className="add-folder-button">Add Folder</button>
+        </div>
+
         <button className="submit-button" type="submit">Create</button>
       </form>
     </div>
+    )
+  }
+  </>
   );
 };
 

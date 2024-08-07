@@ -74,7 +74,7 @@ function Login({ name, onLoginSuccess }) {
     isToastDisp.current = true;
   }, []);
 
-  const fromUrl = location.state?.from?.pathname || "/portfolio";
+  const fromUrl = location.state?.from?.pathname || "/portfolioForm";
   console.log(fromUrl);
   
 
@@ -223,9 +223,9 @@ function Login({ name, onLoginSuccess }) {
       toast("Click a selfie to register, don't worry we won't save your selfie.");
     } else if (response.status === 200) {
       sessionStorage.setItem('userphoneNumber', fullPhoneNumber);
-      toast(
-        `Hey ${fullPhoneNumber}, you already exist. Have a great event ahead..`
-      );
+      // toast(
+      //   `Hey ${fullPhoneNumber}, you already exist. Have a great event ahead..`
+      // );
       // if(name) {
       //   navigate(`/login/${name}/rsvp`);
       //   onLoginSuccess(fullPhoneNumber);

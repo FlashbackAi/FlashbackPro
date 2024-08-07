@@ -229,6 +229,12 @@ const ROUTES=[
         component:Portfolio,
     },
     {
+        path:"/portfolio/:userName",
+        exact:false,
+        protected:false,
+        component:Portfolio,
+    },
+    {
         path:"*",
         exact:false,
         protected:false,

@@ -6,7 +6,7 @@
   }
   
   .portfolio-container {
-    text-align: center;
+    /* text-align: center; */
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
@@ -216,7 +216,7 @@
 
 /* Style the dropdown button */
 .folder-dropdown select {
-  background-color: #f5f5f5;
+  /* background-color: #f5f5f5; */
   color: #333;
   padding: 0.625em; /* Equivalent to 10px */
   font-size: 1em; /* Typically equivalent to 16px */

@@ -5,7 +5,9 @@ import Footer from "../../../components/Footer/Footer";
 import AppBar from "../../../components/AppBar/AppBar";
 import MiniHeroComponent from "../../../components/MiniHeroComponent/MiniHeroComponent";
 import API_UTIL from '../../../services/AuthIntereptor';
-import { useNavigate } from "react-router";
+import {  useParams } from "react-router";
+
+import LoadingSpinner from "../../../components/Loader/LoadingSpinner";
 
 const Portfolio = () => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(null);
@@ -13,7 +15,10 @@ const Portfolio = () => {
   const [portfolioImages, setPortfolioImages] = useState({});
   const [folderNames, setFolderNames] = useState([]);
   const [selectedFolder, setSelectedFolder] = useState('');
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
+  const {userName} = useParams();
+  const [isLoading, setLoading] = useState(true);
+  const [bannerImg, setBannerImg] = useState('');
 
   useEffect(() => {
     const fetchPortfolioImages = async (user_name, org_name) => {
@@ -22,7 +27,9 @@ const Portfolio = () => {
         if (response.status === 200) {
           const images = response.data.images;
           setPortfolioImages(images);
-          const folders = Object.keys(images);
+          setBannerImg(response.data.images.Banner[0].url.replace(/ /g, "%20"));
+          // Filter out the 'banner' folder
+          const folders = Object.keys(images).filter(folder => folder.toLowerCase() !== 'banner');
           setFolderNames(folders);
           setSelectedFolder(folders[0] || '');
         }
@@ -30,25 +37,22 @@ const Portfolio = () => {
         console.error('Error fetching portfolio images:', error);
       }
     };
-
+  
     const fetchUserDetails = async () => {
       try {
-        const userPhoneNumber = sessionStorage.getItem('userphoneNumber');
-        console.log(userPhoneNumber);
-        const response = await API_UTIL.get(`/fetchUserDetails/${userPhoneNumber}`);
+        const response = await API_UTIL.get(`/fetchUserDetailsByUserName/${userName}`);
         setUserDetails(response.data.data);
-
-        if (sessionStorage.getItem('userphoneNumber') === response.data.data.user_name || !response.data.data.hasOwnProperty('org_name')) {
-          navigate(`/portfolioForm`)
-        }
         await fetchPortfolioImages(response.data.data.user_name, response.data.data.org_name);
       } catch (error) {
         console.error('Error fetching user details:', error);
+      } finally {
+        setLoading(false);
       }
     };
-
+  
     fetchUserDetails();
-  }, [navigate]);
+  }, [userName]);
+  
 
   const openModal = (index) => {
     setSelectedImageIndex(index);
@@ -75,65 +79,82 @@ const Portfolio = () => {
   };
 
   return (
-    <div className="portfolio-container">
-      <AppBar />
-      <MiniHeroComponent />
-      <div id="portfolio-body">
-        <div className="folder-dropdown">
-          <label htmlFor="folder-select">Select Event: </label>
-          <select id="folder-select" value={selectedFolder} onChange={handleFolderChange}>
-            {folderNames.map((folder, index) => (
-              <option key={index} value={folder}>
-                {folder}
-              </option>
-            ))}
-          </select>
-        </div>
-        <main className="gallery">
-          {selectedFolder && portfolioImages[selectedFolder] && portfolioImages[selectedFolder].map((photo, index) => (
-            <div
-              key={index}
-              className="photo-container"
-              onClick={() => openModal(index)}
-            >
-              <img
-                src={photo.url}
-                alt={`Gallery photo ${index + 1}`}
-                className="gallery-photo"
-              />
-            </div>
-          ))}
-        </main>
-      </div>
-      <Footer />
-      {selectedImageIndex !== null && (
-        <Modal
-          isOpen={selectedImageIndex !== null}
-          onRequestClose={closeModal}
-          contentLabel="Image Modal"
-          className="portfolio-modal"
-          overlayClassName="overlay"
-        >
-          <div className="portfolio-modal-content">
-            <button className="portfolio-modal-close" onClick={closeModal}>
-              &times;
-            </button>
-            <button className="portfolio-modal-prev" onClick={showPrevImage}>
-              &lt;
-            </button>
-            <img
-              src={portfolioImages[selectedFolder][selectedImageIndex]?.url}
-              alt={`Gallery photo ${selectedImageIndex + 1}`}
-              className="portfolio-modal-image"
-            />
-            <button className="portfolio-modal-next" onClick={showNextImage}>
-              &gt;
-            </button>
+    <>
+      {isLoading === false ? (
+        <div className="portfolio-container">
+          <AppBar />
+          { userDetails.org_name && (
+          <MiniHeroComponent
+            orgName={userDetails.org_name}
+            socialMediaLinks={userDetails.social_media}
+            // 
+            backdropImage={bannerImg}
+          />
+        )}
+          <div id="portfolio-body">
+          <div className="folder-dropdown">
+            <label htmlFor="folder-select">Select Event: </label>
+            <select id="folder-select" value={selectedFolder} onChange={handleFolderChange}>
+              {folderNames
+                .filter(folder => folder.toLowerCase() !== 'banner') // Exclude the 'banner' folder
+                .map((folder, index) => (
+                  <option key={index} value={folder}>
+                    {folder}
+                  </option>
+                ))}
+            </select>
           </div>
-        </Modal>
+          <main className="gallery">
+            {selectedFolder && portfolioImages[selectedFolder] && portfolioImages[selectedFolder].map((photo, index) => (
+              <div
+                key={index}
+                className="photo-container"
+                onClick={() => openModal(index)}
+              >
+                <img
+                  src={photo.url}
+                  alt={`Galleryphoto ${index + 1}`}
+                  className="gallery-photo"
+                />
+              </div>
+            ))}
+          </main>
+        </div>
+
+          <Footer />
+          {selectedImageIndex !== null && (
+            <Modal
+              isOpen={selectedImageIndex !== null}
+              onRequestClose={closeModal}
+              contentLabel="Image Modal"
+              className="portfolio-modal"
+              overlayClassName="overlay"
+            >
+              <div className="portfolio-modal-content">
+                <button className="portfolio-modal-close" onClick={closeModal}>
+                  &times;
+                </button>
+                <button className="portfolio-modal-prev" onClick={showPrevImage}>
+                  &lt;
+                </button>
+                <img
+                  src={portfolioImages[selectedFolder][selectedImageIndex]?.url}
+                  alt={`Galleryphoto ${selectedImageIndex + 1}`}
+                  className="portfolio-modal-image"
+                />
+                <button className="portfolio-modal-next" onClick={showNextImage}>
+                  &gt;
+                </button>
+              </div>
+            </Modal>
+          )}
+        </div>
+      ) : (
+        <LoadingSpinner />
       )}
-    </div>
+    </>
   );
+  
 };
 
 export default Portfolio;

@@ -1373,6 +1373,27 @@ async function getUserObjectByUserId(userId){
   }
 }
 
+async function getUserObjectByUserName(userName){
+  try{
+    logger.info("getting user info for userName : "+userName);
+    params = {
+      TableName: userrecordstable,
+      FilterExpression: "user_name = :userName",
+      ExpressionAttributeValues: {
+        ":userName": userName
+      }
+    };
+    const result = await docClient.scan(params).promise();
+
+    
+    logger.info("user details fetched successfully");
+    return result.Items;
+  } catch (error) {
+    console.error("Error getting user object:", error);
+    throw error;
+  }
+}
+
 async function getUserObjectByUserPhoneNumber(userPhoneNumber){
   try{
     logger.info("getting user info for userPhoneNumber : "+userPhoneNumber);
@@ -4208,6 +4229,20 @@ app.get("/fetchUserDetails/:userPhoneNumber",async (req,res)=>{
   }
 })
 
+app.get("/fetchUserDetailsByUserName/:userName", async (req, res) => {
+  try {
+    const userName = req.params.userName;
+    const result = await getUserObjectByUserName(userName); // Updated function call
+    if (result.length === 0) {
+      throw new Error("userName not found");
+    }
+    res.send({ "message": "Successfully fetched user details", "data": result[0] });
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+
 app.post("/updateUserDetails", async (req, res) => {
   const { user_phone_number, ...updateFields } = req.body;
 
@@ -4795,6 +4830,80 @@ app.get("/getAllImages/:eventName", async(req,res) =>{
 //   }
 // });
 
+app.post("/updatePortfolioDetails", async (req, res) => {
+  const { user_phone_number, org_name, social_media } = req.body;
+
+  logger.info("Updating portfolio details for the user_phone_number: ", user_phone_number);
+
+  if (!user_phone_number) {
+    return res.status(400).json({ error: "User phone number is required" });
+  }
+
+  // Initialize the update fields object
+  let updateFields = {};
+
+  // Convert org_name to lowercase, remove spaces, and handle the username generation
+  if (org_name) {
+    let username = org_name.toLowerCase().replace(/\s+/g, '');
+    logger.info(username)
+
+    // Check if the generated username already exists and create a unique one if necessary
+    let isUsernameTaken = true;
+    let counter = 1;
+    let baseUsername = username;
+
+    while (isUsernameTaken) {
+      const existingUser = await getUserObjectByUserName(username);
+      logger.info(existingUser)
+      if (existingUser.length!==0) {
+        username = `${baseUsername}${counter}`;
+        counter++;
+      } else {
+        isUsernameTaken = false;
+      }
+    }
+
+    updateFields.user_name = username; // Add the generated username to update fields
+  }
+
+  // Add other fields to the updateFields object
+  if (social_media) {
+    updateFields.social_media = social_media;
+  }
+  if (org_name) {
+    updateFields.org_name = org_name;
+  }
+
+  const updateExpressions = [];
+  const expressionAttributeNames = {};
+  const expressionAttributeValues = {};
+
+  Object.keys(updateFields).forEach(key => {
+    updateExpressions.push(`#${key} = :${key}`);
+    expressionAttributeNames[`#${key}`] = key;
+    expressionAttributeValues[`:${key}`] = updateFields[key];
+  });
+
+  const params = {
+    TableName: userrecordstable,
+    Key: {
+      user_phone_number: user_phone_number
+    },
+    UpdateExpression: `SET ${updateExpressions.join(', ')}`,
+    ExpressionAttributeNames: expressionAttributeNames,
+    ExpressionAttributeValues: expressionAttributeValues,
+    ReturnValues: 'ALL_NEW'
+  };
+
+  try {
+    const result = await docClient.update(params).promise();
+    res.status(200).json({ message: "Portfolio details updated successfully", data: result.Attributes });
+  } catch (error) {
+    console.error("Error updating portfolio details:", error);
+    res.status(500).json({ error: "Could not update portfolio details" });
+  }
+});
+
 app.post('/uploadPortfolioImages', upload.any(), async (req, res) => {
   try {
     const { org_name, user_name } = req.body;
@@ -4818,17 +4927,35 @@ app.post('/uploadPortfolioImages', upload.any(), async (req, res) => {
 
     // Loop through each folder and upload the files
     for (const [folderName, folderFiles] of Object.entries(folders)) {
-      folderFiles.forEach(file => {
+      for (const file of folderFiles) {
+        // Define unique file names for original and thumbnail versions
         const uniqueFileName = `${org_name}-${user_name}/${folderName}/${Date.now()}-${path.basename(file.originalname)}`;
-        const params = {
+        const thumbnailFileName = `${org_name}-${user_name}/thumbnails/${folderName}/${Date.now()}-${path.basename(file.originalname)}`;
+
+        // Upload original image
+        const originalParams = {
           Bucket: portfolioBucketName,
           Key: uniqueFileName,
           Body: file.buffer,
           ContentType: file.mimetype,
         };
 
-        uploadPromises.push(s3.upload(params).promise());
-      });
+        uploadPromises.push(s3.upload(originalParams).promise());
+
+        // Compress and upload the thumbnail image
+        const compressedBuffer = await sharp(file.buffer)
+          .resize(600, 600) // Adjust the size as needed for your thumbnails
+          .toBuffer();
+
+        const thumbnailParams = {
+          Bucket: portfolioBucketName,
+          Key: thumbnailFileName,
+          Body: compressedBuffer,
+          ContentType: file.mimetype,
+        };
+
+        uploadPromises.push(s3.upload(thumbnailParams).promise());
+      }
     }
 
     const uploadResults = await Promise.all(uploadPromises);
@@ -4898,7 +5025,7 @@ app.get('/getPortfolioImages/:org_name/:user_name', async (req, res) => {
     const folderName = `${org_name}-${user_name}`;
     const params = {
       Bucket: portfolioBucketName,
-      Prefix: folderName,
+      Prefix: folderName+'/thumbnails',
     };
 
     const s3Data = await s3.listObjectsV2(params).promise();
@@ -4912,7 +5039,7 @@ app.get('/getPortfolioImages/:org_name/:user_name', async (req, res) => {
     s3Data.Contents.forEach(item => {
       const fullPath = item.Key;
       const parts = fullPath.split('/');
-      const folder = parts.length > 2 ? parts[1] : 'Uncategorized'; // Assuming folder is the second part in the key structure
+      const folder = parts.length > 2 ? parts[2] : 'Uncategorized'; // Assuming folder is the second part in the key structure
       const fileName = parts[parts.length - 1];
       const url = `https://${portfolioBucketName}.s3.amazonaws.com/${item.Key}`;
 
