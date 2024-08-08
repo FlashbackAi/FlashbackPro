@@ -5,8 +5,8 @@ import Footer from "../../../components/Footer/Footer";
 import AppBar from "../../../components/AppBar/AppBar";
 import MiniHeroComponent from "../../../components/MiniHeroComponent/MiniHeroComponent";
 import API_UTIL from '../../../services/AuthIntereptor';
-import {  useParams } from "react-router";
-
+import { useParams } from "react-router";
+import Gallery from "react-photo-gallery";
 import LoadingSpinner from "../../../components/Loader/LoadingSpinner";
 
 const Portfolio = () => {
@@ -15,12 +15,32 @@ const Portfolio = () => {
   const [portfolioImages, setPortfolioImages] = useState({});
   const [folderNames, setFolderNames] = useState([]);
   const [selectedFolder, setSelectedFolder] = useState('');
-  // const navigate = useNavigate();
-  const {userName} = useParams();
+  const { userName } = useParams();
   const [isLoading, setLoading] = useState(true);
   const [bannerImg, setBannerImg] = useState('');
+  const [gridImages, setGridImages] = useState({});
 
   useEffect(() => {
+    const convertImagesForGridGallery = async (imagesByFolder) => {
+      const gridImagesByFolder = {};
+      
+      for (const [folderName, images] of Object.entries(imagesByFolder)) {
+        const imgs = await Promise.all(
+          images.map(async (photo) => {
+            const { width, height } = await loadImageDimensions(photo.url);
+            return {
+              src: photo.url,
+              thumbnail: photo.url,
+              width: Math.floor(width) || 320,
+              height: Math.floor(height) || 250,
+            };
+          })
+        );
+        gridImagesByFolder[folderName] = imgs;
+      }
+  
+      return gridImagesByFolder;
+    };
     const fetchPortfolioImages = async (user_name, org_name) => {
       try {
         const response = await API_UTIL.get(`/getPortfolioImages/${org_name}/${user_name}`);
@@ -28,16 +48,19 @@ const Portfolio = () => {
           const images = response.data.images;
           setPortfolioImages(images);
           setBannerImg(response.data.images.Banner[0].url.replace(/ /g, "%20"));
-          // Filter out the 'banner' folder
+          
           const folders = Object.keys(images).filter(folder => folder.toLowerCase() !== 'banner');
           setFolderNames(folders);
           setSelectedFolder(folders[0] || '');
+
+          const gridImages = await convertImagesForGridGallery(images);
+          setGridImages(gridImages);
         }
       } catch (error) {
         console.error('Error fetching portfolio images:', error);
       }
     };
-  
+
     const fetchUserDetails = async () => {
       try {
         const response = await API_UTIL.get(`/fetchUserDetailsByUserName/${userName}`);
@@ -49,13 +72,16 @@ const Portfolio = () => {
         setLoading(false);
       }
     };
-  
+
     fetchUserDetails();
-  }, [userName]);
-  
+  }, [  userName]);
 
   const openModal = (index) => {
     setSelectedImageIndex(index);
+  };
+
+  const handleClick = (event, { photo, index }) => {
+    openModal(index);
   };
 
   const closeModal = () => {
@@ -66,60 +92,65 @@ const Portfolio = () => {
     setSelectedImageIndex(
       (prevIndex) => (prevIndex - 1 + portfolioImages[selectedFolder].length) % portfolioImages[selectedFolder].length
     );
-    console.log("Previous Image");
   };
 
   const showNextImage = () => {
     setSelectedImageIndex((prevIndex) => (prevIndex + 1) % portfolioImages[selectedFolder].length);
-    console.log("Next Image");
   };
 
   const handleFolderChange = (e) => {
     setSelectedFolder(e.target.value);
   };
 
+  const loadImageDimensions = (url) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = url;
+      img.onload = () => {
+        resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      };
+    });
+  };
+
+ 
+
   return (
     <>
       {isLoading === false ? (
         <div className="portfolio-container">
           <AppBar />
-          { userDetails.org_name && (
-          <MiniHeroComponent
-            orgName={userDetails.org_name}
-            socialMediaLinks={userDetails.social_media}
-            // 
-            backdropImage={bannerImg}
-          />
-        )}
+          {userDetails.org_name && (
+            <MiniHeroComponent
+              orgName={userDetails.org_name}
+              socialMediaLinks={userDetails.social_media}
+              backdropImage={bannerImg}
+            />
+          )}
           <div id="portfolio-body">
-          <div className="folder-dropdown">
-            <label htmlFor="folder-select">Select Event: </label>
-            <select id="folder-select" value={selectedFolder} onChange={handleFolderChange}>
-              {folderNames
-                .filter(folder => folder.toLowerCase() !== 'banner') // Exclude the 'banner' folder
-                .map((folder, index) => (
+            <div className="dropdown">
+              <label className="dropdown-label" >Event: </label>
+              <select className="dropdown-select"  value={selectedFolder} onChange={handleFolderChange}>
+                {folderNames.map((folder, index) => (
                   <option key={index} value={folder}>
                     {folder}
                   </option>
                 ))}
-            </select>
-          </div>
-          <main className="gallery">
-            {selectedFolder && portfolioImages[selectedFolder] && portfolioImages[selectedFolder].map((photo, index) => (
-              <div
-                key={index}
-                className="photo-container"
-                onClick={() => openModal(index)}
-              >
-                <img
-                  src={photo.url}
-                  alt={`Galleryphoto ${index + 1}`}
-                  className="gallery-photo"
+              </select>
+            </div>
+            <div>
+            <main className="gallery">
+              {selectedFolder && gridImages[selectedFolder] && (
+                <Gallery
+                  photos={gridImages[selectedFolder]}
+                  direction="row"
+                  // columns={Math.min(gridImages[selectedFolder].length, 3)}
+                  columns={2}
+                  margin={3}
                 />
-              </div>
-            ))}
-          </main>
-        </div>
+              )}
+            </main>
+            </div>
+          </div>
 
           <Footer />
           {selectedImageIndex !== null && (
@@ -154,7 +185,6 @@ const Portfolio = () => {
       )}
     </>
   );
-  
 };
 
 export default Portfolio;

@@ -5025,7 +5025,8 @@ app.get('/getPortfolioImages/:org_name/:user_name', async (req, res) => {
     const folderName = `${org_name}-${user_name}`;
     const params = {
       Bucket: portfolioBucketName,
-      Prefix: folderName+'/thumbnails',
+      // Prefix: folderName+'/thumbnails',
+      Prefix: folderName
     };
 
     const s3Data = await s3.listObjectsV2(params).promise();
@@ -5039,7 +5040,7 @@ app.get('/getPortfolioImages/:org_name/:user_name', async (req, res) => {
     s3Data.Contents.forEach(item => {
       const fullPath = item.Key;
       const parts = fullPath.split('/');
-      const folder = parts.length > 2 ? parts[2] : 'Uncategorized'; // Assuming folder is the second part in the key structure
+      const folder = parts.length > 2 ? parts[1] : 'Uncategorized'; // Assuming folder is the second part in the key structure
       const fileName = parts[parts.length - 1];
       const url = `https://${portfolioBucketName}.s3.amazonaws.com/${item.Key}`;
 
