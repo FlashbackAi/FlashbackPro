@@ -31,6 +31,7 @@ function ImagesPage() {
   const location = useLocation();
   const [clientObj, setClientObj] = useState();
   const [userObj,setUserObj] = useState();
+  const [bannerImg, setBannerImg]  = useState();
 
   const handleClick = (item, index) => {
     setClickedImg(item.original);
@@ -52,6 +53,7 @@ function ImagesPage() {
       );
       if (response.status === 200) {
         setClientObj(response.data.clientObj);
+        await fetchPortfolioImages(response.data.clientObj.user_name,response.data.clientObj.org_name)
         setUserObj(response.data.userObj); //alternative for login
         const formattedImages = response.data.images.map((img) => ({
           original: img.url,
@@ -115,8 +117,21 @@ function ImagesPage() {
     }
   };
 
+  const fetchPortfolioImages = async (user_name, org_name) => {
+    try {
+      const response = await API_UTIL.get(`/getPortfolioImages/${org_name}/${user_name}`);
+      if (response.status === 200) {
+        setBannerImg(response.data.images.Banner[0].url.replace(/ /g, "%20"));
+  
+      }
+    } catch (error) {
+      console.error('Error fetching portfolio images:', error);
+    }
+  };
+
   const fetchAllImages = async () => {
     fetchFavouriteImages()
+    
   };
 
   useEffect(() => {
@@ -258,7 +273,11 @@ function ImagesPage() {
       ) : (
         <>
           <AppBar/>
-          <MiniHeroComponent/>
+          <MiniHeroComponent 
+            orgName={clientObj.org_name}
+              socialMediaLinks={clientObj.social_media}
+              backdropImage={bannerImg}
+            />
           <div className="content-wrap">
             {images.length > 0 ? (
               <div className="ip-wrapper">
