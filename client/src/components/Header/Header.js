@@ -160,7 +160,7 @@ const Header = ({ clientObj, userObj, eventName, dontshowredeem }) => {
   return (
     <>
       <header className="stickToTop">
-        <h2>FlashBack</h2>
+        <h2>Flashback</h2>
         {clientObj &&
             
         <div className="second-header-container">

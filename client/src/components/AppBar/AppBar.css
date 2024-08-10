@@ -5,6 +5,9 @@
     display: flex;
     justify-content: space-around;
     align-items: center;
+    border-bottom: 2px solid ;
+    border-image: linear-gradient(90deg,#66D3FF 0%, #9A6AFF 38%,  #EE75CB 71%, #FD4D77 100%);
+    border-image-slice: 1;
 }
 
 .app-bar-logo {
