@@ -1331,7 +1331,7 @@ async function getClientObject(eventName) {
     logger.info("fetched clientName"+clientName)
     params = {
       TableName: userrecordstable,
-      FilterExpression: "user_name = :clientName",
+      FilterExpression: "org_name = :clientName",
       ExpressionAttributeValues: {
         ":clientName": clientName
       }
