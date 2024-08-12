@@ -208,7 +208,7 @@
 }
 
 .analyze-button:hover:not(:disabled) {
-  background-image: linear-gradient(90deg, #fd4d77 71%, #66d3ff, #9a6aff, #ee75cb 38%);
+  background-image: linear-gradient(90deg, #fd4d77 , #66d3ff, #9a6aff 71%, #ee75cb 38%);
   border: white;
 }
 
