@@ -35,7 +35,7 @@
   transition: border-color 0.3s ease;
   background-color: rgb(12, 11, 11);
   width: 100%;
-  max-width: 500px;
+  max-width: 20em;
 }
 
 .upload-area:hover {
@@ -103,6 +103,7 @@
   border-radius: 1em;
   padding: 1em;
   margin-top: 1em;
+  max-width: 100%;
 }
 
 .results-grid {
@@ -115,9 +116,11 @@
 .rekognition-results,
 .flashback-vision {
   background-color: rgb(7, 7, 7);
-  padding: 1em;
+  padding: 0.25em;
   border-radius: 0.5em;
   box-shadow: 0 0.25em 0.5em rgba(0, 0, 0, 0.1);
+  width: 10em;
+  min-width: 0em;
 }
 
 .results-header {
@@ -189,7 +192,7 @@
 
 .flashback-vision p {
   color: #f8f5f5;
-  font-size: 4em;
+  font-size: 3em;
 }
 
 .analyze-button {
@@ -206,7 +209,7 @@
 }
 
 .analyze-button:hover:not(:disabled) {
-  background-color: #2563eb;
+  background-color: #000000;
 }
 
 .analyze-button:disabled {
