@@ -205,7 +205,9 @@ const Vision = () => {
                   </div>
                 </div>
                 <div className="flashback-vision">
+                <div className="results-header">
                   <h2>Flashback Machine Vision</h2>
+                  </div>
                   <p>Coming soon...</p>
                 </div>
               </div>

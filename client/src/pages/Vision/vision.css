@@ -21,7 +21,7 @@
 .tagline{
   font-weight: 600;
   margin-bottom: 1em;
-  color: #1f2937;
+  color: #ffffff;
   top: 1rem;
 
 }
@@ -33,7 +33,7 @@
   text-align: center;
   cursor: pointer;
   transition: border-color 0.3s ease;
-  background-color: white;
+  background-color: rgb(12, 11, 11);
   width: 100%;
   max-width: 500px;
 }
@@ -64,7 +64,7 @@
 
 .file-hint {
   font-size: 0.75em;
-  color: #6b7280;
+  color: #fbfcfd;
   margin-top: 0.5em;
 }
 
@@ -114,7 +114,7 @@
 
 .rekognition-results,
 .flashback-vision {
-  background-color: white;
+  background-color: rgb(7, 7, 7);
   padding: 1em;
   border-radius: 0.5em;
   box-shadow: 0 0.25em 0.5em rgba(0, 0, 0, 0.1);
@@ -130,7 +130,7 @@
 .results-header h2 {
   font-size: 1.25em;
   font-weight: 600;
-  color: #1f2937;
+  color: #ffffff;
   margin: 0;
 }
 
@@ -145,7 +145,7 @@
 .copy-button svg {
   width: 1.5em;
   height: 1.5em;
-  color: #6b7280;
+  color: #ffffff;
 }
 
 .copy-button:hover svg {
@@ -169,13 +169,13 @@
 .json-output {
   max-height: 50vh;
   overflow-y: auto;
-  background-color: #f3f4f6;
+  background-color: #121213;
   border-radius: 0.25em;
   padding: 0.5em;
 }
 
 .json-output pre {
-  font-size: 0.75em;
+  font-size: 1em;
   white-space: pre-wrap;
   word-wrap: break-word;
 }
@@ -184,12 +184,12 @@
   text-align: center;
   padding: 1em;
   font-style: italic;
-  color: #6b7280;
+  color: #ffffff;
 }
 
 .flashback-vision p {
-  color: #000000;
-  font-size: 2em;
+  color: #f8f5f5;
+  font-size: 4em;
 }
 
 .analyze-button {
@@ -210,7 +210,7 @@
 }
 
 .analyze-button:disabled {
-  background-color: #9ca3af;
+  background-color: #ffffff;
   cursor: not-allowed;
 }
 
