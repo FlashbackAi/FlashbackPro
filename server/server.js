@@ -2926,7 +2926,7 @@ app.post('/downloadImage', async (req, res) => {
           const params = {
             TableName: recokgImages,
             Key: { image_id: imageId },
-            ProjectionExpression: 's3_url, user_ids, image_id, selected'
+            ProjectionExpression: 's3_url, user_ids, image_id, selected,DateTimeOriginal'
           };
           return docClient.get(params).promise();
         });
@@ -3241,7 +3241,7 @@ app.post('/downloadImage', async (req, res) => {
           const params = {
             TableName: recokgImages,
             Key: { image_id: imageId },
-            ProjectionExpression: 's3_url, user_ids, image_id, selected'
+            ProjectionExpression: 's3_url, user_ids, image_id, selected,DateTimeOriginal'
           };
           return docClient.get(params).promise();
         });
@@ -5458,8 +5458,6 @@ app.delete('/deleteDataset/:dataset_name/:org_name', async (req, res) => {
     httpsServer.keepAliveTimeout = 60000; // Increase keep-alive timeout
     httpsServer.headersTimeout = 65000; // Increase headers timeout
   });
-  
-  
 
 //**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
 //  const server = app.listen(PORT ,() => {

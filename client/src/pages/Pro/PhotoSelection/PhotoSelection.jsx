@@ -11,6 +11,7 @@ import { LazyLoadImage } from 'react-lazy-load-image-component';
 import { Heart } from 'lucide-react';
 import Modal from "../../../components/ImageModal/ImageModalNew";
 import AppBar from "../../../components/AppBar/AppBar";
+import Select from 'react-select';
 import Footer from "../../../components/Footer/Footer";
 
 const PhotoSelection = () => {
@@ -70,8 +71,65 @@ const PhotoSelection = () => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [activeMainTab, setActiveMainTab] = useState();
   const [fetchTimeout, setFetchTimeout] = useState(false);
-  
 
+  const sortingOptions = [
+    { value: 'users-asc', label: 'Sort by Users Asc' },
+    { value: 'users-desc', label: 'Sort by Users Desc' },
+    { value: 'captured-asc', label: 'Sort by Captured Time Asc', isDateTimeDependent: true },
+    { value: 'captured-desc', label: 'Sort by Captured Time Desc', isDateTimeDependent: true }
+  ];
+
+  const handleSortChange = (selectedOption) => {
+    const imagesCopy = [...imagesData[activeMainTab].images];
+  
+    // Helper function to parse the custom date format
+    const parseCustomDate = (dateString) => {
+      // Split date and time
+      const [datePart, timePart] = dateString.split(' ');
+      
+      // Replace colons in date with hyphens to make it compatible
+      const formattedDate = datePart.replace(/:/g, '-');
+      
+      // Combine the formatted date with time
+      const dateTimeString = `${formattedDate} ${timePart}`;
+  
+      // Create and return a Date object
+      return new Date(dateTimeString);
+    };
+  
+    switch (selectedOption.value) {
+      case 'users-asc':
+        imagesCopy.sort((a, b) => a.user_ids.length - b.user_ids.length);
+        break;
+      case 'users-desc':
+        imagesCopy.sort((a, b) => b.user_ids.length - a.user_ids.length);
+        break;
+      case 'captured-asc':
+        if (hasDateTimeOriginal()) {
+          imagesCopy.sort((a, b) => parseCustomDate(a.DateTimeOriginal) - parseCustomDate(b.DateTimeOriginal));
+        }
+        break;
+      case 'captured-desc':
+        if (hasDateTimeOriginal()) {
+          imagesCopy.sort((a, b) => parseCustomDate(b.DateTimeOriginal) - parseCustomDate(a.DateTimeOriginal));
+        }
+        break;
+      default:
+        break;
+    }
+  
+    setImagesData((prevState) => ({
+      ...prevState,
+      [activeMainTab]: {
+        ...prevState[activeMainTab],
+        images: imagesCopy,
+      }
+    }));
+  };
+  
+  
+  
+  
   const handleMainTabClick = async (key) => {
     setActiveMainTab(key);
     await handleSelectTab(key);
@@ -217,8 +275,6 @@ const PhotoSelection = () => {
     setImagesData(imagesData);
   };
   
-  
-
   const fetchFormData = async () => {
     try {
       const response = await API_UTIL.get(`/getSelectionFormData/${eventName}/${form_owner}`);
@@ -261,7 +317,6 @@ const PhotoSelection = () => {
       console.error("Error saving favorite:", error);
     }
   };
-  
 
   async function getSolos(personType, formData) {
     const imagePath = formData[personType].image;
@@ -291,7 +346,6 @@ const PhotoSelection = () => {
       console.log(err);
     }
   }
-  
 
   async function getKidsImages(keys, formData) {
     let allData = [];
@@ -325,8 +379,6 @@ const PhotoSelection = () => {
   
     return allData;
   }
-  
-  
 
   const fetchCombinedImages = async () => {
     let userIds = [];
@@ -387,7 +439,7 @@ const PhotoSelection = () => {
           !groomSolos.some(groomImg => groomImg.image_id === img.image_id) &&
           (!kidsImages || !kidsImages.some(kidImg => kidImg.image_id === img.image_id))
         );
-  
+
         setImagesData((prevState) => ({
           ...prevState,
           [key]: {
@@ -403,19 +455,7 @@ const PhotoSelection = () => {
       return err;
     }
   };
-  
-  // const fetchFamilyImagesold = async (key, userIds) => {
-  //   try {
-  //     const response = await API_UTIL.post(`/getCombinationImagesWithUserIds`, { 'userIds': userIds, 'eventName': eventName });
-  //     if (response.status === 200) {
-  //       return response.data;
-  //     }
-  //   } catch (err) {
-  //     console.log(err);
-  //   }
-  //   return [];
-  // };
-  
+
   const extractId = (url) => {
     const parts = url.split("/");
     return parts[parts.length - 1].split(".")[0];
@@ -500,6 +540,11 @@ const extractIds = async (obj) => {
 
   recursiveExtract(obj);
   return result;
+};
+
+// Function to check if any image in the current tab has DateTimeOriginal key
+const hasDateTimeOriginal = () => {
+  return imagesData[activeMainTab]?.images.some((image) => image.DateTimeOriginal);
 };
 
 const handleSelectTab = async (key) => {
@@ -985,7 +1030,6 @@ const handleSelectTab = async (key) => {
           }
           break;
           
-    
     default:
       if (key.startsWith("Groom Father Sibling") || key.startsWith("Groom Mother Sibling")||key.startsWith("Bride Father Sibling")||key.startsWith("Bride Mother Sibling")) {
         if (imagesData[key].images.length === 0) {
@@ -1050,17 +1094,17 @@ const handleSelectTab = async (key) => {
             }}
             className="entry"
           >
-            <Header />
+            {/* <Header /> */}
             <h2>Let's Start with Photos selection Process</h2>
             <button onClick={handlePhotoSelectionStart}>Start</button>
           </motion.div>
         )}
         {formData.isFacesSelectionDone && isPhotosSelectionStarted && (
           <>
-            <Header />
+            {/* <Header /> */}
             <div className="container">
             <div className="sidebar">
-            <ul>
+            <ul className="list">
               {Object.keys(imagesData).map((key, index) => (
                 <li 
                   key={index} 
@@ -1090,6 +1134,13 @@ const handleSelectTab = async (key) => {
                     <LoadingSpinner />
                   ) : imagesData[tab].images.length > 0 ? (
                     <div className="horizontal-sections-wrapper">
+         
+                         {/* React Select Dropdown for Sorting */}
+                            <Select
+                            options={sortingOptions.filter(option => !option.isDateTimeDependent || hasDateTimeOriginal())}
+                            onChange={handleSortChange}
+                            placeholder="Sort images..."
+                          />
                       <div className="horizontal-section-selected">
                         <h3>Selected Images</h3>
                         <div className="image-row">
@@ -1174,7 +1225,7 @@ const handleSelectTab = async (key) => {
                   ) : fetchTimeout ? (
                     <p>No images to display</p>
                   ) : (
-                    <p>Failed to load images</p>
+                    <p>No images to display</p>
                   )}
                 </div>
               ))}

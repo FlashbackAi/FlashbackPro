@@ -162,7 +162,7 @@ export const LoginEvent = () => {
                     <img src={matchingEvent.event_image} alt={matchingEvent.event_name} />
                 </div>
             )} */}
-            <Header />
+            {/* <Header /> */}
             <form className="rsvp-form" onSubmit={handleFormSubmit}>
                 <div className='rsvp-heading'>You are Invited to {formatEventName(eventName)} </div>
                 <div className='rsvp-container'>

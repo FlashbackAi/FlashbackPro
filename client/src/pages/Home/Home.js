@@ -129,7 +129,7 @@ function Home () {
 
     <Confetti opacity="0.7" friction="0.95 "
     />
-     <Header dontshowredeem={true}/>
+     {/* <Header dontshowredeem={true}/> */}
     {/* <p className="loginLogo">Flashback<p className="logoCaption">Create & share memories</p></p> */}
     <p className="Congrats"> Congratulations!! <br/><br/>You are successfully registered for the event!  </p>
         <p> </p>

@@ -953,14 +953,14 @@ const handleSelectTab = async (key) => {
             }}
             className="entry"
           >
-            <Header />
+            {/* <Header /> */}
             <h2>Let's Start with Photos selection Process</h2>
             <button onClick={handlePhotoSelectionStart}>Start</button>
           </motion.div>
         )}
         {formData.isFacesSelectionDone && isPhotosSelectionStarted && (
           <>
-            <Header />
+            {/* <Header /> */}
             <div className="container">
             <div className="sidebar">
             <ul>

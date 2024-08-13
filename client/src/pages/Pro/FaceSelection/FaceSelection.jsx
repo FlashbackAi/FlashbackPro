@@ -963,7 +963,8 @@ const FaceSelection = () => {
             }}
             className="entry"
           >
-            <Header/>
+            {/* <Header/> */}
+            <AppBar/>
             <h2>Please Select the Album type</h2>
             <div style={{ display: 'flex', justifyContent: 'space-around' }}>
               
@@ -1187,7 +1188,7 @@ const FaceSelection = () => {
         )}
       </section>
 
-      <Footer/>
+      {/* <Footer/> */}
 
       <Modal isOpen={showMaritalStatusModal} onClose={handleCloseMaritalStatusModal}>
         <div className="marital-status">
