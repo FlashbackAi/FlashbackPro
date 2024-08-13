@@ -964,7 +964,7 @@ const FaceSelection = () => {
             className="entry"
           >
             {/* <Header/> */}
-            <AppBar/>
+            {/*<AppBar/>*/}
             <h2>Please Select the Album type</h2>
             <div style={{ display: 'flex', justifyContent: 'space-around' }}>
               
