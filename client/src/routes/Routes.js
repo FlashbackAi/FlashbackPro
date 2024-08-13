@@ -32,6 +32,7 @@ import Model from "../pages/Model/Model/Model";
 import ModelDetails from "../pages/Model/ModelDetails/ModelDetails"
 import ModelForm from "../pages/Model/ModelForm/ModelForm";
 import PortfolioForm from "../pages/Portfolio/PortfolioForm/PortfolioForm";
+import Vision from "../pages/Vision/vision"
 
 
 const ROUTES=[
@@ -245,6 +246,12 @@ const ROUTES=[
         exact:false,
         protected:true,
         component:PortfolioForm,
+    },
+    {
+        path:"/vision",
+        exact:false,
+        protected:true,
+        component:Vision,
     },
     
 

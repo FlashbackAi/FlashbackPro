@@ -5430,6 +5430,88 @@ app.delete('/deleteModel/:model_name/:org_name', async (req, res) => {
   }
 });
 
+// const visionUpload = multer({
+//   storage: multerS3({
+//     s3: s3,
+//     bucket: 'flashbackvisionanalysis',
+//     key: function (req, file, cb) {
+//       const  folder_name = 'VisionAnalysisData'
+//       cb(null, `${folder_name}/${file.originalname}`);
+//     }
+//   })
+// });
+
+const visionUpload = multer({storage: multer.memoryStorage() });
+app.post('/vision', visionUpload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file uploaded' });
+    }
+
+    const imagePath = 'ComparedData/' + Date.now().toString() + '-' + req.file.originalname;
+    console.log(imagePath);
+
+    const visionparams = {
+      Bucket: 'flashbackvisionanalysis',
+      Key: imagePath,         // Include the folder name if needed
+      Body: req.file.buffer,  // The file's buffer
+      ContentType: req.file.mimetype // Optional: Set the correct MIME type
+    };
+
+    await s3.putObject(visionparams).promise();
+    
+    // Call Rekognition APIs
+    const indexFacesParams = {
+      Image: {
+        S3Object: {
+          Bucket: 'flashbackvisionanalysis',
+          Name: imagePath
+        }
+      },
+      CollectionId: 'FlashbackBetaCollection',
+      DetectionAttributes: ['ALL']
+    };
+    
+    const detectLabelsParams = {
+      Image: {
+        S3Object: {
+          Bucket: 'flashbackvisionanalysis',
+          Name: imagePath
+        }
+      },
+      MaxLabels: 25    
+    };
+
+    const [indexFacesResponse, detectLabelsResponse] = await Promise.all([
+      rekognition.indexFaces(indexFacesParams).promise(),
+      rekognition.detectLabels(detectLabelsParams).promise()
+    ]);
+
+    // Store results in DynamoDB
+    const dynamoParams = {
+      TableName: 'VisionAnalysis',
+      Item: {
+        id: Date.now().toString(),
+        imagePath,
+        imageurl: `https://flashbackvisionanalysis.s3.amazonaws.com/${imagePath}`,
+        indexFaces: indexFacesResponse,
+        detectLabels: detectLabelsResponse
+      }
+    };
+
+    await docClient.put(dynamoParams).promise();
+
+    // Send response back to frontend
+    res.json({
+      indexFaces: indexFacesResponse,
+      detectLabels: detectLabelsResponse
+    });
+  } catch (error) {
+    console.error('Error in /vision endpoint:', error);
+    res.status(500).json({ error: 'An error occurred during processing', details: error.message });
+  }
+});
+
 app.delete('/deleteDataset/:dataset_name/:org_name', async (req, res) => {
   const { dataset_name, org_name } = req.params;
 
