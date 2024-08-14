@@ -7,6 +7,7 @@ import './About.css';
 import backgroundVideo from './Flashback logo spinning loop.mp4'; // Ensure you provide the correct path to your video file
 import Footer from '../../components/Footer/Footer';
 import WeddingAlbums from './WeddingAlbums';
+import AppBar from "../../components/AppBar/AppBar";
 
 Modal.setAppElement('#root'); // Set the app root element for accessibility
 
@@ -22,6 +23,7 @@ const About = () => {
   };
   return (
     <>
+        <AppBar/>
       <header className='header-background'>
         <div className="video-container">
           <video className="background-video" src={backgroundVideo} autoPlay loop muted />
