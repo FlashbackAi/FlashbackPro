@@ -17,9 +17,11 @@ html::-webkit-scrollbar {
 
 .albumSelectionForm {
   display: ruby-text;
+  height: 100%;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  margin-top: 10em;
 }
 
 .button_flex {
@@ -82,7 +84,7 @@ section {
 }
 
 .entry h2 {
-  color: #c1c1c1;
+  color: white;
   letter-spacing: 0.04em;
   margin-top: 1em;
 }
@@ -465,5 +467,18 @@ button {
   height: auto;
   justify-content: center;
   object-fit: cover; 
+}
+
+.app-bar{
+  /*position: fixed;*/
+}
+
+.albumSelectionForm{
+  /*background-color: white;*/
+  /*color: black;*/
+}
+
+.card{
+  margin: 1em;
 }
 

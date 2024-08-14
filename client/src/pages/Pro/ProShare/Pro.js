@@ -11,6 +11,7 @@ import Footer from "../../../components/Footer/Footer";
 import "../../../components/Footer/Footer.css"; // Import your CSS file
 import MergeDuplicateUsers from "./MergeHandler/MergeDuplicateUsers";
 import "./Pro.css";
+import AppBar from "../../../components/AppBar/AppBar";
 
 function Pro() {
   const { eventName } = useParams();
@@ -200,9 +201,10 @@ function Pro() {
         <LoadingSpinner />
       ) : (
         <>
-         {userDetails.user_phone_number && (
-          <Header clientObj={clientDetails} userObj={userDetails} eventName={eventName} />
-         )}
+          <AppBar/>
+         {/*{userDetails.user_phone_number && (*/}
+         {/* <Header clientObj={clientDetails} userObj={userDetails} eventName={eventName} />*/}
+         {/*)}*/}
           <div className="content-wrap">
             <div className="statsSections">
             <div className="toolbar">
