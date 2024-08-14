@@ -226,7 +226,7 @@ footer {
     max-width: 25em;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     z-index: 1000;
-    overflow: hidden; /* Ensure the modal does not overflow */
+    overflow: visible; /* Ensure the modal does not overflow */
   }
   
   .overlay {
