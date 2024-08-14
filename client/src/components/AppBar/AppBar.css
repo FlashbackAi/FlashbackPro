@@ -1,4 +1,5 @@
 .app-bar {
+    padding-top: env(safe-area-inset-top);
     height: 4.375rem;
     width: 100%;
     background-color: black;
