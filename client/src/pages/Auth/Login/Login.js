@@ -310,7 +310,9 @@ function Login({ name, onLoginSuccess }) {
 
   return (
     <div>
-      <Header dontshowredeem={true}/>
+      {/*<Header dontshowredeem={true}/>*/}
+      <h1>Flashback</h1>
+      <h4>Auto Curate & Instant Share Memories</h4>
       <div className="loginBody">
       <div className="loginLeft">
         <div className="login-form-container">

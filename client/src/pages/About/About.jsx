@@ -26,7 +26,9 @@ const About = () => {
         <AppBar/>
       <header className='header-background'>
         <div className="video-container">
-          <video className="background-video" src={backgroundVideo} autoPlay loop muted />
+            <img className="background-video" src="https://flashbackportfoliouploads.s3.amazonaws.com/Aarvi Media-aarvimedia/Wedding/1723054857157-S_Y03064 copy.jpg" />
+          {/*  background-image: url();*/}
+          {/*<video className="background-video" src={backgroundVideo} autoPlay loop muted />*/}
         </div>
         <div className="container header-content">
           <h1 className='header-h1'>Flashback Inc</h1>

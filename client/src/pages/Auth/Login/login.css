@@ -69,7 +69,7 @@
 @media (max-width: 768px) {
   .loginBody {
     margin-top: 1em;
-    padding: 10px;
+    /*padding: 10px;*/
     z-index: 12;
   }
 
@@ -90,4 +90,25 @@
   .submit, .takePhoto {
     font-size: 0.9rem;
   }
+}
+
+h1, h4{
+    color: black;
+}
+
+.privacyNotice{
+    color: black;
+    font-size: 0.75em;
+}
+
+.phoneOuter{
+    padding: 0.1em;
+    border: 0.1em solid;
+    border-color: #969696;
+    border-radius: 0.5em;
+    max-width: 20em;
+}
+
+.submit{
+    background-image: linear-gradient(90deg, #66d3ff, #9a6aff 38%, #ee75cb 71%, #fd4d77);
 }
