@@ -10,6 +10,7 @@ import Select, { components } from "react-select";
 import "./login.css";
 // import * as faceapi from 'face-api.js';
 import Header from "../../../components/Header/Header";
+import AppBar from "../../../components/AppBar/AppBar";
 
 const CustomOption = ({ children, ...props }) => {
   return (
@@ -44,7 +45,7 @@ const CustomControl = ({ children, ...props }) => {
 
 // const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
 
-function Login({ name, onLoginSuccess }) {
+function Login({ name, onLoginSuccess, showAppBar=true }) {
   const [error] = useState("");
   const { eventName } = useParams();
   const [isNewUser, setIsNewUser] = useState(false);
@@ -309,10 +310,19 @@ function Login({ name, onLoginSuccess }) {
   };
 
   return (
-    <div>
+    <div className="login-root">
       {/*<Header dontshowredeem={true}/>*/}
+      <div className="login-page-appbar">
+
+      {showAppBar && <div >
+         <AppBar></AppBar> </div>
+      
+}
+<>
       <h1>Flashback</h1>
       <h4>Auto Curate & Instant Share Memories</h4>
+      </>
+      </div>
       <div className="loginBody">
       <div className="loginLeft">
         <div className="login-form-container">
