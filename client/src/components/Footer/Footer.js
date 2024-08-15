@@ -9,7 +9,7 @@ import { ALL_RIGHTS_RESERVED,
 
 const Footer = () => {
   return (
-    <footer className="footer">
+    <div className="footer">
         <div className="contactus">
           <span > {CONTACT} </span>
           <a href={`tel:${PHONE_NUMBER}`}> {PHONE_NUMBER} </a>
@@ -27,7 +27,7 @@ const Footer = () => {
           <span>{COMPANY_NAME} {" "  + YEAR}</span>
           <span>{ALL_RIGHTS_RESERVED}</span>
         </div>
-    </footer>
+    </div>
   );
 };
 

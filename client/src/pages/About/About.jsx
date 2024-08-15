@@ -58,7 +58,7 @@ const About = () => {
         overlayClassName="overlay"
       >
         <button onClick={closeModal} className="close-modal-button">&times;</button>
-        <div className='login-container'><Login /></div>
+        <div className='login-container'><Login showAppBar={false} /></div>
       </Modal>
     </>
   );

@@ -247,6 +247,7 @@ footer {
     border: none;
     font-size: 24px;
     cursor: pointer;
+    color: black;
   }
 
   @media (max-width: 768px) {
@@ -256,7 +257,8 @@ footer {
       font-size: 20px;
       padding: 0.1em 0.1em;
       width: 10%;
-    }
+        color: black;
+}
   }
 
 
