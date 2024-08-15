@@ -1583,10 +1583,10 @@ app.get('/userThumbnails/:eventName', async (req, res) => {
       ExpressionAttributeValues: {
         ':eventName': eventName
       },
-      ProjectionExpression: 'userThumbnails'
     };
 
     const scanResult = await docClient.scan(scanParams).promise();
+    logger.info(scanResult)
     if (scanResult.Items.length > 0 && scanResult.Items[0].userThumbnails) {
       logger.info("User thumbnails found in db for event: " + eventName);
       return res.json(scanResult.Items[0].userThumbnails);
@@ -1655,17 +1655,25 @@ app.get('/userThumbnails/:eventName', async (req, res) => {
     logger.info("Total number of user thumbnails fetched: " + thumbnailObject.length);
 
     // Step 3: Store the result in EventTable
-    const storeParams = {
+   
+    
+    const updateParams = {
       TableName: eventsTable,
-      Item: {
+      Key: {
         event_name: eventName,
-        event_date:'09-06-2024',
-        userThumbnails: thumbnailObject
-      }
-    };
+        event_date: scanResult.Items[0].event_date
+      },
+      UpdateExpression: 'set userThumbnails = :thumbnails',
+      ExpressionAttributeValues: {
+          ':thumbnails': thumbnailObject
+      },
+      ReturnValues: 'UPDATED_NEW'
+  };
 
-    await docClient.put(storeParams).promise();
+
+    await docClient.update(updateParams).promise();
     logger.info("User thumbnails saved for event: " + eventName);
+    logger.info(scanResult.Items[0].client_name,);
 
     res.json(thumbnailObject);
   } catch (err) {
