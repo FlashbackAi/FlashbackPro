@@ -1,3 +1,17 @@
+.login-root {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  background-color: white;
+  height: 100%;
+}
+
+.login-page-appbar {
+  width: 100%;
+  /* margin-bottom: 5rem; */
+  text-align: center;
+}
+
 .caution{
     font-size: 0.7rem;
     letter-spacing: 1px;

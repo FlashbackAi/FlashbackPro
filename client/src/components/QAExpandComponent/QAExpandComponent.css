@@ -1,0 +1,25 @@
+.QA-question-box {
+  display: flex;
+  justify-content: space-between;
+  .question {
+    font-weight: 600;
+    font-size: 20px;
+    line-height: 24px;
+  }
+}
+
+.answer {
+  padding-top: 12px;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.line {
+  margin: 20px 0 20px 0 !important;
+  background-color: #000000;
+  border-width: 0;
+  height: 1px;
+}
+
+
