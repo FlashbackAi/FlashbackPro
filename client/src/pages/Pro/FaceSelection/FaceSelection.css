@@ -84,7 +84,7 @@ section {
 }
 
 .entry h2 {
-  color: white;
+  color: black;
   letter-spacing: 0.04em;
   margin-top: 1em;
 }
@@ -426,7 +426,7 @@ button {
   border-radius: 0.2em;
   font-size: 1.2em;
   color: white;
-  background: #b48e75;
+  background-image: linear-gradient(90deg, #66d3ff, #9a6aff 38%, #ee75cb 71%, #fd4d77);
   outline: none;
   border: none;
 }
