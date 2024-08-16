@@ -2168,6 +2168,7 @@ app.post('/downloadImage', async (req, res) => {
           if(!eventName)
             {
               eventName = 'MeenuSree_Mukesh_Wedding_Aarvi_Media'
+              
             }
           const existingUser = await getUser(username);
           logger.info("existingUser"+ existingUser);
