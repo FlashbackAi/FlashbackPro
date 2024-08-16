@@ -1092,7 +1092,7 @@ const handleSelectTab = async (key) => {
               duration: 0.8,
               ease: [0, 0.71, 0.2, 1.01],
             }}
-            className="entry"
+            className="photoSelectionEntry"
           >
             {/* <Header /> */}
             <h2>Let's Start with Photos selection Process</h2>

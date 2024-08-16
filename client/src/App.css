@@ -3,27 +3,24 @@
 
 /* Toast Start */
 
+.Toastify__toast {
+  font-family: Advent Pro !important;
+}
+
+
 .Toastify__close-button {
-  width: max-content;
-  height: auto;
-  align-self: center !important;
+width: max-content;
+height: auto;
+align-self: center !important;
 }
 
 .Toastify__toast-icon img {
-  width: 100%;
-  height: auto;
+width: 100%;
+height: auto;
 }
 
 .Toastify__progress-bar-theme--light {
-  background: linear-gradient(
-    to right,
-    #b48e75,
-    #db8f5d,
-    #d07030,
-    #72350c,
-    #502305,
-    #54290b
-  ) !important;
+background: linear-gradient(to right, 90deg,#66d3ff,#9a6aff 38%,#ee75cb 71%,#fd4d77) !important;
 }
 
 /* Toast End */
@@ -637,8 +634,7 @@ p {
 }
 
 .Congrats {
-  font-family: Arial, sans-serif; /* This is a placeholder; you'd need the actual font used by Facebook */
-
+  font-family: Advent Pro !important;
   font-size: 2em; /* Adjust the size as needed */
   font-weight: 700; /* Facebook's logo is bold */
   letter-spacing: -0.05em; /* Adjust letter spacing to closely match the logo */
@@ -648,8 +644,7 @@ p {
 }
 
 .CongratsMessage {
-  font-family: Arial, sans-serif; /* This is a placeholder; you'd need the actual font used by Facebook */
-
+  font-family: Advent Pro !important;
   font-size: 1em; /* Adjust the size as needed */
   font-weight: 700; /* Facebook's logo is bold */
   letter-spacing: -0.05em; /* Adjust letter spacing to closely match the logo */
