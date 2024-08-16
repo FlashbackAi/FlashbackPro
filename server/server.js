@@ -1327,13 +1327,13 @@ async function getClientObject(eventName) {
       },    
     };
     const res = await docClient.query(params).promise();
-    let clientName = res.Items[0].client_name;
+    const clientName = res.Items[0].client_name;
     logger.info("fetched clientName"+clientName)
     params = {
       TableName: userrecordstable,
       FilterExpression: "org_name = :clientName",
       ExpressionAttributeValues: {
-        ":clientName": clientName
+        ":clientName":clientName
       }
     };
 
@@ -1586,7 +1586,6 @@ app.get('/userThumbnails/:eventName', async (req, res) => {
     };
 
     const scanResult = await docClient.scan(scanParams).promise();
-    logger.info(scanResult)
     if (scanResult.Items.length > 0 && scanResult.Items[0].userThumbnails) {
       logger.info("User thumbnails found in db for event: " + eventName);
       return res.json(scanResult.Items[0].userThumbnails);
@@ -2168,7 +2167,7 @@ app.post('/downloadImage', async (req, res) => {
           if(!eventName)
             {
               eventName = 'MeenuSree_Mukesh_Wedding_Aarvi_Media'
-              
+
             }
           const existingUser = await getUser(username);
           logger.info("existingUser"+ existingUser);
