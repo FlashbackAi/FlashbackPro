@@ -2167,7 +2167,7 @@ app.post('/downloadImage', async (req, res) => {
           // Check if the user already exists
           if(!eventName)
             {
-              eventName = 'Swetha_Harish_Engagement_Aarvi_Media'
+              eventName = 'MeenuSree_Mukesh_Wedding_Aarvi_Media'
             }
           const existingUser = await getUser(username);
           logger.info("existingUser"+ existingUser);
