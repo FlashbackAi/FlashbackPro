@@ -950,7 +950,10 @@ async function updateEventFlashbackStatus(eventName, status) {
         'event_name': { S: eventName },
         'event_date': { S: eventDate }
       },
-      UpdateExpression: 'SET status = :status',
+      UpdateExpression: 'SET #s = :status',
+      ExpressionAttributeNames: {
+        '#s': 'status'
+      },
       ExpressionAttributeValues: {
         ':status': { S: status }
       }

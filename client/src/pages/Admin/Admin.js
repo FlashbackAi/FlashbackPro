@@ -143,8 +143,9 @@ function Admin() {
   };
 
   return (
+    
     <div className="admin-container">
-      <AppBar/>
+      <div className="admin-app-bar"><AppBar/></div>
       <div className="admin-header">
         <h1>Flashback Admin Portal</h1>
       </div>
