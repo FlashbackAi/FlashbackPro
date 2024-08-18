@@ -13,6 +13,11 @@ AWS.config.update({
     
 });
 
+const whatsapp = {
+  WHATSAPP_ACCESS_TOKEN:'EAAfgEXyItdIBO1AvBNxloieHLC4mjAZCJSSmsXbrWOj9mdUMB7hMFqZAPPxMql7HiZCK3PE1MwMsYhZCsYlJZBVZCMEBNA1mqLF4vfAX5WVZAajHrCcibVuNbgQrFQpAHgZA9ZBd1ZBkl43eUUZBS31KX8GHO0DSEYfBZCJKRSKj5KZBq8wtF53YUYbVTpZBhoMrNRE10XJwZDZD',
+  WHATSAPP_PHONE_NUMBER_ID:'421479604375270',
+};
+
 // Set up Amazon Cognito User Pool
 const poolData = {
   UserPoolId: 'ap-south-1_rTy0HL6Gk',
@@ -25,4 +30,5 @@ module.exports = {
   AmazonCognitoIdentity: AmazonCognitoIdentity,
   userPool: userPool,
   poolData: poolData,
+  whatsapp: whatsapp
 };
