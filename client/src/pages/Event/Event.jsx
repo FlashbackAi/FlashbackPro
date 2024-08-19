@@ -365,110 +365,160 @@ const Event = ({ eventName, eventDate, folderName }) => {
   if (error) return <div className="loading-screen">Error: {error}</div>;
 
   return (
-    <>
-    <AppBar/>
-    <div className="event-container">
-      <h1 className="event-title">My Events</h1>
-      <ul className="event-list">
-        <li className="event-item" onClick={handleLinkClick}>
-          <div className="event-card">
-            <img src="https://img.icons8.com/B48E75/stamp/2x/add.png" alt="img" className="add-event-image" />
-            <div className="event-card-footer">
-              <h2 className="event-name">Click here to Add Projects</h2>
+    <div className='events-page-root'>
+      <AppBar />
+      <div className="events-page-event-container">
+        <h1 className="events-page-event-title">My Events</h1>
+        <div className="events-page-event-list">
+          <div className="events-page-create-event-card" onClick={handleLinkClick}>
+            <div className="events-page-add-event-image-div">
+              <img
+                src="assets\Images\icon-plus.svg"
+                alt="img"
+              />
             </div>
+              <span >Click here to Add Project</span>
           </div>
-        </li>
-        {events.map((event) => (
-          <li key={event.event_name} className="event-item">
-            <div className="event-card" onClick={()=>onEventClick(event.event_name)}>
-              <div className="event-card-header">
+          {events.map((event) => (
+            <div className='events-page-event-card' onClick={() => onEventClick(event.event_name)}>
+                <img src={event.event_image}></img>
+                <div className='event-name'>
+                  <span>
+                  {formatEventName(event?.event_name)}
+                  </span>
+                </div>
+            </div>
+          ))}
+
+
+
+          {/* {events.map((event) => (
+            <div key={event.event_name} className="event-item">
+              <div
+                className="event-card"
+                onClick={() => onEventClick(event.event_name)}
+              >
+                <div className="event-card-header">
+                  <img
+                    src="https://img.icons8.com/BB271A/m_rounded/2x/filled-trash.png"
+                    className="delete-icon"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openDeleteModal(event);
+                    }}
+                    alt="Delete"
+                  />
+                </div>
                 <img
-                  src="https://img.icons8.com/BB271A/m_rounded/2x/filled-trash.png"
-                  className="delete-icon"
-                  onClick={(e) => { e.stopPropagation(); openDeleteModal(event); }}
-                  alt="Delete"
+                  src={event.event_image}
+                  alt="img"
+                  className="event-image"
                 />
+                <div className="event-card-footer">
+                  <h2 className="event-name">
+                    {formatEventName(event?.event_name)}
+                  </h2>
+                </div>
               </div>
-              <img src={event.event_image} alt="img" className="event-image" />
-              <div className="event-card-footer">
-                <h2 className="event-name">{formatEventName(event?.event_name)}</h2>
-              </div>
+              {event.invitation_url && (
+                <a
+                  href={event.invitation_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="event-link"
+                >
+                  View Invitation
+                </a>
+              )}
             </div>
-            {event.invitation_url && (
-              <a href={event.invitation_url} target="_blank" rel="noopener noreferrer" className="event-link">
-                View Invitation
-              </a>
-            )}
-          </li>
-        ))}
-      </ul>
-
-      <Modal
-        isOpen={isDetailModalOpen}
-        onRequestClose={() => setIsDetailModalOpen(false)}
-        contentLabel="Event Details"
-        className="modal-content"
-        overlayClassName="modal-overlay"
-      >
-        <div className="modal-header">
-          <h2 className="modal-title">Event Details</h2>
-          <button className="close-button" onClick={() => setIsDetailModalOpen(false)}>x</button>
+          ))} */}
         </div>
-        <form onSubmit={handleDetailFormSubmit} className="modal-body">
-          <div className="form-group">
-            <label className="form-label">User Name:</label>
-            <input
-              type="text"
-              value={studioName}
-              onChange={(e) => setStudioName(e.target.value)}
-              placeholder='Please enter your Photography name'
-              className="form-input"
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Instagram URL:</label>
-            <input
-              type="text"
-              value={instaUrl}
-              onChange={(e) => setInstaUrl(e.target.value)}
-              className="form-input"
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">YouTube URL:</label>
-            <input
-              type="text"
-              value={youtubeUrl}
-              onChange={(e) => setYoutubeUrl(e.target.value)}
-              className="form-input"
-              required
-            />
-          </div>
-          <button type="submit" className="save-button">Submit</button>
-        </form>
-      </Modal>
 
-      <Modal
-        isOpen={isDeleteModalOpen}
-        onRequestClose={closeDeleteModal}
-        contentLabel="Delete Confirmation"
-        className="delete-modal-content"
-        overlayClassName="modal-overlay"
-      >
-        <div className='delete-modal-bg'>
-          <h2 className="modal-title">Confirm Delete</h2>
-          <p className="modal-body">Do you want to delete this event?</p>
-          <div className="modal-footer">
-            <button className="delete-button" onClick={() => deleteEvent(eventToDelete.event_name, eventToDelete.project_name)}>Confirm</button>
-            <button className="cancel-button" onClick={closeDeleteModal}>Cancel</button>
+        <Modal
+          isOpen={isDetailModalOpen}
+          onRequestClose={() => setIsDetailModalOpen(false)}
+          contentLabel="Event Details"
+          className="modal-content"
+          overlayClassName="modal-overlay"
+        >
+          <div className="modal-header">
+            <h2 className="modal-title">Event Details</h2>
+            <button
+              className="close-button"
+              onClick={() => setIsDetailModalOpen(false)}
+            >
+              x
+            </button>
           </div>
-        </div>
-      </Modal>
+          <form onSubmit={handleDetailFormSubmit} className="modal-body">
+            <div className="form-group">
+              <label className="form-label">User Name:</label>
+              <input
+                type="text"
+                value={studioName}
+                onChange={(e) => setStudioName(e.target.value)}
+                placeholder="Please enter your Photography name"
+                className="form-input"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Instagram URL:</label>
+              <input
+                type="text"
+                value={instaUrl}
+                onChange={(e) => setInstaUrl(e.target.value)}
+                className="form-input"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">YouTube URL:</label>
+              <input
+                type="text"
+                value={youtubeUrl}
+                onChange={(e) => setYoutubeUrl(e.target.value)}
+                className="form-input"
+                required
+              />
+            </div>
+            <button type="submit" className="save-button">
+              Submit
+            </button>
+          </form>
+        </Modal>
+
+        <Modal
+          isOpen={isDeleteModalOpen}
+          onRequestClose={closeDeleteModal}
+          contentLabel="Delete Confirmation"
+          className="delete-modal-content"
+          overlayClassName="modal-overlay"
+        >
+          <div className="delete-modal-bg">
+            <h2 className="modal-title">Confirm Delete</h2>
+            <p className="modal-body">Do you want to delete this event?</p>
+            <div className="modal-footer">
+              <button
+                className="delete-button"
+                onClick={() =>
+                  deleteEvent(
+                    eventToDelete.event_name,
+                    eventToDelete.project_name
+                  )
+                }
+              >
+                Confirm
+              </button>
+              <button className="cancel-button" onClick={closeDeleteModal}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </Modal>
+      </div>
+      <Footer></Footer>
     </div>
-    <Footer></Footer>
-    </>
   );
 }
 
