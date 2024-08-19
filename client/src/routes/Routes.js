@@ -2,7 +2,7 @@ import Login from "../pages/Auth/Login/Login";
 import CreatorLogin from "../pages/Auth/Login/CreatorLogin";
 // import ForgotPassword from "../pages/Auth/ForgotPassword/ForgotPassword";
 // import Registration from "../pages/Auth/Register/Registration";
-// import Admin from "../pages/Admin/Admin";
+import Admin from "../pages/Admin/Admin";
 // import ShareEvents from "../pages/Admin/ShareEvents/ShareEvents";
 import Home from "../pages/Home/Home";
 // import CreateFlashBack from "../pages/CreateFlashback/CreateFlashBack";
@@ -79,12 +79,12 @@ const ROUTES=[
     //     protected:false,
     //     component:ForgotPassword
     // },
-    // {
-    //     path:"/admin",
-    //     exact:false,
-    //     protected:false,
-    //     component:Admin
-    // },
+    {
+        path:"/admin",
+        exact:false,
+        protected:true,
+        component:Admin
+    },
     // {
     //     path:"/admin/shareEvents",
     //     exact:true,

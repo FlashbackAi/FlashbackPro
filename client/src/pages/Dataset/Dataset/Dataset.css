@@ -332,7 +332,7 @@
   justify-content: flex-end;
   align-items: center;
   width: 100%;
-  background: linear-gradient(to bottom, #000000, transparent);
+  /*background: linear-gradient(to bottom, #000000, transparent);*/
   color: #ffffff;
   padding: 0.5rem;
 }
