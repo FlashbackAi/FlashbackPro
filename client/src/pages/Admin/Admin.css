@@ -21,7 +21,6 @@ body {
 .admin-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2em;
 }
 
 .admin-page-appbar {
@@ -90,7 +89,7 @@ body {
   white-space: nowrap;
 }
 .custom-select {
-  width: 100%;
+  max-width: 100%;
   padding: 0.75em;
   font-size: 1em;
   background-color: black;
@@ -314,3 +313,4 @@ body {
     font-size: 0.9em;
   }
 }
+

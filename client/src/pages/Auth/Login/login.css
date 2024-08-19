@@ -126,3 +126,9 @@ h1, h4{
 .submit{
     background-image: linear-gradient(90deg, #66d3ff, #9a6aff 38%, #ee75cb 71%, #fd4d77);
 }
+
+.loginbox{
+    display: grid;
+    justify-content: center;
+
+}

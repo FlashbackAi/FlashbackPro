@@ -144,8 +144,9 @@ function Admin() {
 
   return (
     
-    <div className="admin-container">
+    <div className="admin-wrapper">
       <div className="admin-app-bar"><AppBar/></div>
+      <div className="admin-container">
       <div className="admin-header">
         <h1>Flashback Admin Portal</h1>
       </div>
@@ -250,6 +251,7 @@ function Admin() {
           </tbody>
         </table>
       </div>
+    </div>
     </div>
   );
 }

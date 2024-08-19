@@ -372,10 +372,15 @@ const Event = ({ eventName, eventDate, folderName }) => {
       <ul className="event-list">
         <li className="event-item" onClick={handleLinkClick}>
           <div className="event-card">
-            <img src="https://img.icons8.com/B48E75/stamp/2x/add.png" alt="img" className="add-event-image" />
-            <div className="event-card-footer">
-              <h2 className="event-name">Click here to Add Projects</h2>
-            </div>
+            {/*<img src="https://img.icons8.com/B48E75/stamp/2x/add.png" alt="img" className="add-event-image" />*/}
+            {/*<button className="plus-button">+</button>>*/}
+              <div className="icon-container">
+                <div className="plus-icon">+</div>
+              </div>
+              <p>Click here to add Project</p>
+            {/*<div className="event-card-footer">*/}
+            {/*  <h2 className="event-name">Click here to Add Projects</h2>*/}
+            {/*</div>*/}
           </div>
         </li>
         {events.map((event) => (
