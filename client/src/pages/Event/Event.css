@@ -375,6 +375,7 @@
     max-height: 218px;
     box-sizing: border-box;
     padding: 2px;
+    object-fit: cover;
   }
   .event-name {
     position: absolute;
