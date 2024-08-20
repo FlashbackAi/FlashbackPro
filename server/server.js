@@ -117,7 +117,7 @@ const userEventTableName='user_event_mapping';
 const userOutputTable='user_outputs';
 const userClientInteractionTable ='user_client_interaction';
 const eventsTable = 'events';
-const eventsDataTable = 'events_data';
+const eventsDetailsTable = 'event_details';
 const projectsTable = 'projects_data';
 const indexedDataTableName = 'indexed_data'
 const formDataTableName = 'selectionFormData'; 
@@ -3680,7 +3680,6 @@ app.post('/saveProjectDetails', async (req, res) => {
 
 app.post('/saveEventDetails', upload.single('eventImage'), async (req, res) => {
   const file = req.file;
-  //  logger.info(file);
   const {
     eventName,
     eventDate,
@@ -3691,14 +3690,15 @@ app.post('/saveEventDetails', upload.single('eventImage'), async (req, res) => {
     invitation_url
   } = req.body;
 
-  logger.info('Event Location:', eventLocation); 
+  logger.info('Event Location:', eventLocation);
 
- 
+  // Generate a unique eventId
+  const eventId = uuidv4();
+  logger.info('Generated Event ID:', eventId);
 
   const eventNameWithoutSpaces = eventName.replace(/\s+/g, '_');
   const clientNameWithoutSpaces = clientName.replace(/\s+/g, '_');
-  const CreateUploadFolderName = `${eventNameWithoutSpaces}_${clientNameWithoutSpaces}`;
-  logger.info('CreateUploadFolderName:', CreateUploadFolderName);
+  const CreateUploadFolderName = `${eventNameWithoutSpaces}_${clientNameWithoutSpaces}_${eventId}`;
   const fileKey = `${CreateUploadFolderName}.jpg`;
 
   const createfolderparams = {
@@ -3714,32 +3714,26 @@ app.post('/saveEventDetails', upload.single('eventImage'), async (req, res) => {
     ContentType: file.mimetype,
   };
 
-
   try {
-    s3.putObject(createfolderparams).promise();
+    await s3.putObject(createfolderparams).promise();
     logger.info('Folder created successfully:', CreateUploadFolderName);
   } catch (s3Error) {
     logger.info('S3 error details:', JSON.stringify(s3Error, null, 2));
-    throw new Error(`Failed to create S3 folder: ${s3Error.message}`);
+    return res.status(500).json({ error: `Failed to create S3 folder: ${s3Error.message}` });
   }
 
   try {
     // Upload image to S3
-
     const data = await s3.upload(params).promise();
     const imageUrl = data.Location;
 
     // Save event details to DynamoDB
-    const eventNameWithoutSpaces = eventName.replace(/\s+/g, '_');
-    const clientNameWithoutSpaces = clientName.replace(/\s+/g, '_');
-    const CreateUploadFolderName = `${eventNameWithoutSpaces}_${clientNameWithoutSpaces}`;
-    logger.info('CreateUploadFolderName:', CreateUploadFolderName);
-  
     const eventParams = {
-      TableName: eventsDataTable,
+      TableName: eventsDetailsTable,
       Item: {
-        event_name: CreateUploadFolderName,
-        project_name:projectName,
+        event_id: eventId, // Save the generated eventId
+        event_name: eventNameWithoutSpaces,
+        project_name: projectName,
         client_name: clientName,
         event_date: eventDate,
         event_location: eventLocation,
@@ -3752,12 +3746,13 @@ app.post('/saveEventDetails', upload.single('eventImage'), async (req, res) => {
 
     const putResult = await docClient.put(eventParams).promise();
     logger.info('Event Created Successfully: ' + eventName);
-    res.status(200).send({ message: 'Event Created Successfully', data: putResult });
+    res.status(200).send({ message: 'Event Created Successfully', data: eventParams.Item });
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Error creating event' });
   }
 });
+
 
 app.get("/getClientEventDetails/:clientName", async (req, res) => {
   
@@ -3765,7 +3760,7 @@ app.get("/getClientEventDetails/:clientName", async (req, res) => {
   logger.info(`Fetching event details for ${clientName}`)
   try {
     const eventParams = {
-      TableName: eventsDataTable,
+      TableName: eventsDetailsTable,
       FilterExpression: "client_name = :clientName",
       ExpressionAttributeValues: {
         ":clientName": clientName
@@ -3969,9 +3964,8 @@ app.get("/getUserDetails/:userPhoneNumber", async (req, res) => {
 //   }
 // });
 
-
-app.put('/updateEvent/:eventName/:projectName', async (req, res) => {
-  const {eventName , projectName} = req.params;
+app.put('/updateEvent/:eventId', async (req, res) => {
+  const {eventId} = req.params;
   const {
     invitationNote,
     eventLocation,
@@ -3984,10 +3978,9 @@ app.put('/updateEvent/:eventName/:projectName', async (req, res) => {
   } = req.body;
 
   const updateParams = {
-    TableName: eventsDataTable,
+    TableName: eventsDetailsTable,
     Key: {
-      event_name: eventName,
-      project_name: projectName,
+      event_id:eventId
     },
     UpdateExpression: "set event_location = :eventLocation, invitation_note = :invitationNote",
     // ExpressionAttributeNames: {
@@ -4007,7 +4000,7 @@ app.put('/updateEvent/:eventName/:projectName', async (req, res) => {
 
   try {
     const result = await docClient.update(updateParams).promise();
-    logger.info(`Updated event: ${eventName} on ${eventDate}`);
+    logger.info(`Updated event: ${eventId}`);
     res.status(200).send(result.Attributes);
   } catch (err) {
     logger.info(err.message);
@@ -4015,16 +4008,16 @@ app.put('/updateEvent/:eventName/:projectName', async (req, res) => {
   }
 });
 
-app.get("/getEventDetails/:eventName", async (req, res) => {
+app.get("/getEventDetails/:eventId", async (req, res) => {
   
-  const eventName = req.params.eventName; // Adjust based on your token payload
-  logger.info(`Fetching event details for ${eventName}`)
+  const eventId = req.params.eventId; // Adjust based on your token payload
+  logger.info(`Fetching event details for ${eventId}`)
   try {
     const eventParams = {
-      TableName: eventsDataTable,
-      FilterExpression: "event_name = :eventName",
+      TableName: eventsDetailsTable,
+      FilterExpression: "event_id = :eventId",
       ExpressionAttributeValues: {
-        ":eventName": eventName
+        ":eventId": eventId
       }
 
     };
@@ -4033,7 +4026,7 @@ app.get("/getEventDetails/:eventName", async (req, res) => {
     const result = await docClient.scan(eventParams).promise();
 
     if (result.Items && result.Items.length > 0) {
-      logger.info(`Fetched event details for ${eventName}`)
+      logger.info(`Fetched event details for ${eventId}`)
       res.status(200).send(result.Items[0]);
     } else {
       res.status(404).send({ message: "Event not found" });
@@ -4091,14 +4084,13 @@ app.get("/getEventDetails/:eventName", async (req, res) => {
 // });
 
 // API endpoint to delete an event
-app.delete('/deleteEvent/:eventName/:projectName', async (req, res) => {
-  const { eventName, projectName } = req.params;
+app.delete('/deleteEvent/:eventId', async (req, res) => {
+  const { eventId} = req.params;
 
   const params = {
-    TableName: eventsDataTable,
+    TableName: eventsDetailsTable,
     Key: {
-      event_name: eventName,
-      project_name: projectName,
+      event_id: eventId
     }
   };
   logger.info(params.Key)
@@ -4141,7 +4133,7 @@ app.get("/getProjectDetails/:clientName", async (req, res) => {
 });
 
 
-app.get("/getEventDetails/:projectName", async (req, res) => {
+app.get("/getEventDetailsByProjectName/:projectName", async (req, res) => {
   
   const projectName = req.params.projectName; // Adjust based on your token payload
   logger.info(`Fetching event details for ${projectName}`)
@@ -4194,6 +4186,7 @@ const imageUpload = multer({
     }
   })
 });
+
 
 app.post('/uploadFiles/:eventName/:eventDate/:folder_name', upload.array('files', 2000), async (req, res) => {
   try {

@@ -1,224 +1,103 @@
 import React, { useEffect, useState } from 'react';
 import API_UTIL from '../../services/AuthIntereptor';
-// import { Link } from 'react-router-dom';
 import Modal from 'react-modal';
 import { toast } from 'react-toastify';
-// import {useDropzone} from 'react-dropzone';
-// import axios from 'axios';
-// import QRCode from 'qrcode.react';
-import './Event.css'; // Import the new CSS file
 import { useNavigate } from 'react-router-dom';
 import AppBar from '../../components/AppBar/AppBar';
 import Footer from '../../components/Footer/Footer';
+import './Event.css'; // Import the new CSS file
 
-const Event = ({ eventName, eventDate, folderName }) => {
+const Event = () => {
   const [events, setEvents] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // const [selectedEvent] = useState(null);
-  // const [isModalOpen, setIsModalOpen] = useState(false);
-  // const [editData, setEditData] = useState(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isUserDetailsModalOpen, setIsUserDetailsModalOpen] = useState(false);
+  const [showNewProjectInput, setShowNewProjectInput] = useState(false);
+  const [userDetails, setUserDetails] = useState([]);
+  const [displayNone, setDisplayNone] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const userPhoneNumber = sessionStorage.getItem('userphoneNumber');
   const [eventToDelete, setEventToDelete] = useState(null);
-  // const [isQrModalOpen, setIsQrModalOpen] = useState(false);
-  // const [isUploadFilesModelOpen, setUploadFilesModeOpen] = useState(false);
-  // const [uploadProgress, setUploadProgress] = useState({});
-  // const [files, setFiles] = useState([]);
-  // const [uploadStatus, setUploadStatus] = useState('');
-  // const [uploadFilesModalStatus, setUploadFilesModalStatus] = useState('');
-  // const [isUploadFilesFailed, setIsUploadFilesFailed] = useState(false);
-  // const [uploading, setUploading] = useState(false);
-  const [userDetails, setUserDetails] = useState(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [studioName, setStudioName] = useState('');
-  const [instaUrl, setInstaUrl] = useState('');
-  const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [formData, setFormData] = useState({
+    eventName: '',
+    eventDate: '',
+    eventTime: '',
+    eventLocation: '',
+    projectName: '',
+    invitationNote: '',
+    eventImage: null
+  });
   
-
-
-
-  // const qrRef = useRef();
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [userFormData, setUserFormData] = useState({
+    user_name: '',
+    social_media: {
+      instagram: '',
+      youtube: ''
+    },
+    org_name: ''
+  });
+  const [newProjectName, setNewProjectName] = useState('');
+  const [uploading, setUploading] = useState(false);
   const navigate = useNavigate();
 
-  // const CHUNK_SIZE = 5 * 1024 * 1024; //Chunks of 5MB for file upload  
-
-  // const onDrop = useCallback((acceptedFiles) => {
-  //   setFiles(acceptedFiles);
-  //   setUploadProgress({});
-  //   setUploadStatus('');
-  // }, []);
-
-  // const { getRootProps, getInputProps, isDragActive } = useDropzone({
-  //   onDrop: useCallback((acceptedFiles) => {
-  //     setFiles(acceptedFiles);
-  //     setUploadProgress({});
-  //     setUploadStatus('');
-  //     setUploading(false); // Reset uploading state when files are dropped
-  //   }, []),
-  // });
-
-  // const uploadChunk = async (file, chunk, chunkIndex, totalChunks) => {
-  //   const formData = new FormData();
-  //   formData.append('files', chunk, file.name);
-  //   formData.append('eventName', eventName);
-  //   formData.append('eventDate', eventDate);
-  //   formData.append('folderName', folderName);
-  //   formData.append('chunkNumber', chunkIndex);
-  //   formData.append('totalChunks', totalChunks);
-
-  //   try {
-  //     const response = await API_UTIL.post(`/uploadFiles/${selectedEvent.event_name}/${selectedEvent.event_date}/${selectedEvent.folder_name}`, formData, {
-  //       headers: { 'Content-Type': 'multipart/form-data' },
-  //       onUploadProgress: (progressEvent) => {
-  //         const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-  //         setUploadProgress(prev => ({
-  //           ...prev,
-  //           [file.name]: {
-  //             ...prev[file.name],
-  //             [chunkIndex]: percentCompleted
-  //           }
-  //         }));
-  //       },
-  //     });
-  //     return response.data;
-  //   } catch (error) {
-  //     console.error(`Error uploading chunk ${chunkIndex} of ${file.name}:`, error);
-  //     throw error;
-  //   }
-  // };
-
-  // const uploadFile = async (file) => {
-  //   const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-  //   const fileId = `${file.name}`;
-
-  //   for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
-  //     const start = chunkIndex * CHUNK_SIZE;
-  //     const end = Math.min(start + CHUNK_SIZE, file.size);
-  //     const chunk = file.slice(start, end);
-
-  //     try {
-  //       await uploadChunk(file, chunk, chunkIndex, totalChunks);
-  //     } catch (error) {
-  //       // If chunk upload fails, we could implement retry logic here
-  //       console.error(`Failed to upload chunk ${chunkIndex} of ${file.name}`);
-  //       throw error;
-  //     }
-  //   }
-
-  //   // Check if all chunks are uploaded
-  //   // const status = await API_UTIL.get(`/upload-status/${fileId}`);
-  //   // if (status.data.status !== 'completed') {
-  //   //   throw new Error(`Failed to upload ${file.name}`);
-  //   // }
-  // };
-
-  // const uploadFiles = async () => {
-  //   if (files.length === 0) {
-  //     setUploadStatus('Please select files to upload');
-  //     return;
-  //   }
-  //   setUploading(true);
-  //   setUploadStatus('Uploading...');
-  //   setUploadFilesModalStatus('Uploading...');
-  //   setIsUploadFilesFailed(false);
-  
-
-  //   try {
-  //     await Promise.all(files.map(uploadFile));
-  //     setUploadStatus('Upload completed successfully');
-  //     setFiles([]);
-  //   } catch (error) {
-  //     console.error('Upload failed:', error);
-  //     setUploadStatus('Upload failed. Please try again.');
-  //     // setUploadFilesModalStatus('Upload failed. Please try again.');
-  //   } finally {
-  //     setUploading(false);
-  //   }
-  //     //setIsUploadFilesFailed(true);
-  // };
-
   useEffect(() => {
-        const fetchEventData = async (userName) => {
-          try {
-            const response = await API_UTIL.get(`/getClientEventDetails/${userName}`);
-            console.log(response.data);
-            setEvents(response.data);
-            setLoading(false);
-          } catch (error) {
-            setError(error.message);
-            setLoading(false);
-          }
-        };
-    
-        const fetchUserDetails = async () => {
-          try {
-            setLoading(true);
-            const userPhoneNumber = sessionStorage.getItem('userphoneNumber');
-            console.log(userPhoneNumber);
-            const response = await API_UTIL.get(`/fetchUserDetails/${userPhoneNumber}`);
-            setUserDetails(response.data.data);
-            if(sessionStorage.getItem('userphoneNumber') !== response.data.data.user_name){
-              fetchEventData(response.data.data.user_name);
-            }
-            setLoading(false)
-          } catch (error) {
-            console.error('Error fetching user details:', error);
-          }
-        };
-        
-        fetchUserDetails();
-    
-      }, []);
-    
-  
-  const handleLinkClick = () => {
-    const clientName = userDetails.user_name;
-    const sessionNumber = sessionStorage.getItem('userphoneNumber')
-    if (clientName === sessionNumber) {
-      openIsDetailsModalOpen();
-    } else {
-      console.log(clientName);
-      navigate(`/createEventForm/${userDetails.user_name}`);
-    }
-  };
-  const openIsDetailsModalOpen = () => {
-    setIsDetailModalOpen(true);
-  }
-
-    const handleDetailFormSubmit = async (e) => {
-    e.preventDefault();
-  
-    const userPhoneNumber = sessionStorage.getItem('userphoneNumber');
-  
-    if (!userPhoneNumber) {
-      toast.error("User phone number is missing from session.");
-      return;
-    }
-  
-    const updateData = {
-      user_phone_number: userPhoneNumber,
-      user_name: studioName,
-      social_media: {
-        instagram : instaUrl,
-        youtube : youtubeUrl,
-      },
-      org_name:studioName
-    };
-  
-    try {
-      const response = await API_UTIL.post('/updateUserDetails', updateData);
-      if (response.status === 200) {
-        setUserDetails(response.data.data);
-        toast.success("User details updated successfully");
-        navigate(`/createEventForm/${userDetails.user_name}`);
-      } else {
-        toast.error("Failed to update user details. Please try again.");
+    const fetchEventData = async (userName) => {
+      try {
+        const response = await API_UTIL.get(`/getClientEventDetails/${userName}`);
+        setEvents(response.data);
+        setLoading(false);
+      } catch (error) {
+        setError(error.message);
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Error updating user details:", error);
-      toast.error("An error occurred. Please try again.");
-    }
+    };
+
+    const fetchUserDetails = async () => {
+      try {
+        setLoading(true);
+       
+        const response = await API_UTIL.get(`/fetchUserDetails/${userPhoneNumber}`);
+        setUserDetails(response.data.data);
+
+        if (response.data.data.user_name === userPhoneNumber) {
+          setIsUserDetailsModalOpen(true); // Open the modal to collect user details
+        } else {
+          fetchEventData(response.data.data.user_name);
+          fetchProjects(response.data.data.user_name);
+        }
+
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching user details:', error);
+        setLoading(false);
+      }
+    };
+
+   
+    const fetchProjects = async (clientName) => {
+      try {
+        const response = await API_UTIL.get(`/getProjectDetails/${clientName}`);
+        if (response.status === 200) {
+          setProjects(response.data);
+        } else {
+          setProjects([]);
+        }
+      } catch (error) {
+        console.error('Error fetching projects:', error);
+        setProjects([]);
+      }
+    };
+
+    fetchUserDetails();
+  }, [userPhoneNumber]);
+
+  const onEventClick = (event_id) => {
+    navigate(`/eventDetails/${event_id}`, { state: { userDetails } })
   };
+
   const openDeleteModal = (event) => {
     setEventToDelete(event);
     setIsDeleteModalOpen(true);
@@ -229,10 +108,10 @@ const Event = ({ eventName, eventDate, folderName }) => {
     setEventToDelete(null);
   };
 
-  const deleteEvent = async (eventName, projectName) => {
+  const deleteEvent = async (eventId) => {
     try {
-      await API_UTIL.delete(`/deleteEvent/${eventName}/${projectName}`);
-      setEvents(events.filter(event => !(event.event_name === eventName && event.project_name === projectName)));
+      await API_UTIL.delete(`/deleteEvent/${eventId}`);
+      setEvents(events.filter(event => !(event.event_id === eventId)));
       setIsDeleteModalOpen(false);
       toast.success('Event deleted successfully');
     } catch (error) {
@@ -241,125 +120,123 @@ const Event = ({ eventName, eventDate, folderName }) => {
     }
   };
 
-  const onEventClick = (eventName) => {
-    navigate(`/eventDetails/${eventName}`, { state: { userDetails } })
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
   };
 
-  // const closeModal = () => {
-  //   setIsModalOpen(false);
-  //   setSelectedEvent(null);
-  //   setEditData(null);
-  // };
-
-  // const openQrModal = () => {
-  //   setIsQrModalOpen(true);
-  // };
-
-  // const closeQrModal = () => {
-  //   setIsQrModalOpen(false);
-  // };
-
-  // const openUploadFilesModal = () => {
-  //   setUploadFilesModeOpen(true);
-  // }
-
-  // const closeUploadFilesModal = () => {
-  //   setUploadFilesModeOpen(false);
-  //   setFiles([]);
-  //   setUploadProgress({});
-  //   setUploadStatus('');
-  //   setUploading(false);
-  // }
-
-  // const handleEditClick = () => {
-  //   setEditData({
-  //     eventName: selectedEvent.event_name,
-  //     eventDate: selectedEvent.event_date.split(' ')[0],
-  //     eventTime: selectedEvent.event_date.split(' ')[1],
-  //     invitationNote: selectedEvent.invitation_note,
-  //     eventLocation: selectedEvent.event_location,
-  //     street: selectedEvent.street,
-  //     city: selectedEvent.city,
-  //     state: selectedEvent.state,
-  //     pinCode: selectedEvent.pin_code,
-  //     invitation_url: selectedEvent.invitation_url,
-  //   });
-  // };
-
-  // const handleInputChange = (e) => {
-  //   const { name, value } = e.target;
-  //   setEditData({ ...editData, [name]: value });
-  // };
-
-  // const handleFormSubmit = async (e) => {
-  //   e.preventDefault();
-  //   try {
-  //     const response = await API_UTIL.put(`/updateEvent/${selectedEvent.event_name}/${selectedEvent.event_date}`, {
-  //       invitationNote: editData.invitationNote,
-  //       eventLocation: editData.eventLocation,
-  //       street: editData.street,
-  //       city: editData.city,
-  //       state: editData.state,
-  //       pinCode: editData.pinCode,
-  //       invitation_url: editData.invitation_url
-  //     });
-  //     if (response.status === 200) {
-  //       toast.success('Event updated successfully');
-  //       const updatedEvents = events.map(event =>
-  //         event.event_name === selectedEvent.event_name && event.event_date === selectedEvent.event_date
-  //           ? { ...event, ...editData }
-  //           : event
-  //       );
-  //       setEvents(updatedEvents);
-  //       closeModal();
-  //     }
-  //   } catch (error) {
-  //     console.error('Error updating event:', error);
-  //     toast.error('Failed to update the event. Please try again.');
-  //   }
-  // };
-   const formatEventName = (name) => {
-    let event = name.replace(/_/g, ' ');
-    console.log(userDetails.user_name)
-    event.replace(userDetails.user_name, '');
-    console.log(event)
-    return event;
+  const handleFileChange = (e) => {
+    setSelectedFile(e.target.files[0])
   };
 
- 
+  const handleCreateEvent = async (e) => {
+    e.preventDefault();
 
-  // function getFormattedDate(datetime) {
-  //   const date = new Date(datetime);
-  //   const day = String(date.getDate()).padStart(2, '0');
-  //   const month = String(date.getMonth() + 1).padStart(2, '0');
-  //   const year = date.getFullYear();
-  //   return `${day}-${month}-${year}`;
-  // }
+    // // Parse the time
+    // let [time, modifier] = formData.eventTime.split(' ');
+    // let [hours, minutes] = time.split(':');
 
-  // function getFormattedTime(datetime) {
-  //   const date = new Date(datetime);
-  //   let hours = date.getHours();
-  //   const minutes = String(date.getMinutes()).padStart(2, '0');
-  //   const ampm = hours >= 12 ? 'PM' : 'AM';
-  //   hours = hours % 12;
-  //   hours = hours ? String(hours).padStart(2, '0') : '12'; // the hour '0' should be '12'
-  //   return `${hours}:${minutes} ${ampm}`;
-  // }
+    // if (hours === '12') {
+    //   hours = '00';
+    // }
+    // if (modifier === 'PM') {
+    //   hours = parseInt(hours, 10) + 12;
+    // }
 
-  // const sendWhatsAppMessage = () => {
-  //   const message = `Check out this event: ${selectedEvent.event_name} on ${getFormattedDate(selectedEvent.event_date)} at ${getFormattedTime(selectedEvent.event_date)}. Location: ${selectedEvent.event_location} , Url: https://flashback.inc/login/${selectedEvent.event_name}`;
-  //   const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
-  //   window.open(url, '_blank');
-  // };
+    // // Ensure both hours and minutes are two digits
+    // hours = String(hours).padStart(2, '0');
+    // minutes = String(minutes).padStart(2, '0');
 
-  // const downloadQRCode = () => {
-  //   const qrCanvas = qrRef.current.querySelector('canvas');
-  //   const qrImage = qrCanvas.toDataURL('image/png');
-  //   const downloadLink = document.createElement('a');
-  //   downloadLink.href = qrImage;
-  //   downloadLink.download = `${selectedEvent.event_name}_QR.png`;
-  //   downloadLink.click();
-  // };
+    const combinedDateTime = `${formData.eventDate}T${formData.eventTime}:00`;
+
+    setUploading(true);
+
+    const formDataToSend = new FormData();
+    formDataToSend.append('eventName', formData.eventName);
+    formDataToSend.append('eventDate', combinedDateTime);
+    formDataToSend.append('eventLocation', formData.eventLocation);
+    formDataToSend.append('projectName', formData.projectName);
+    formDataToSend.append('clientName', userDetails.user_name);
+    formDataToSend.append('invitationNote', formData.invitationNote);
+    if (selectedFile) {
+      formDataToSend.append('eventImage', selectedFile);
+    }
+
+    console.log(formDataToSend);
+
+    try {
+      const response = await API_UTIL.post('/saveEventDetails', formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.status !== 200) {
+        throw new Error('Failed to save the event');
+      }
+      toast.success('Events created successfully');
+      setEvents([...events, response.data.data]);
+      setTimeout(() => {
+       setIsCreateModalOpen(false);
+      }, 1000);
+      return response;
+    } catch (error) {
+      console.error('Error saving form data to backend:', error);
+      toast.error('Failed to save the events. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+
+  const handleNewProjectChange = (e) => {
+    setNewProjectName(e.target.value);
+  };
+
+  const handleCreateProject = async () => {
+    if (!newProjectName) {
+      toast.error('Please enter a project name.');
+      return;
+    }
+
+    try {
+      const response = await API_UTIL.post('/saveProjectDetails', { projectName: newProjectName, clientName: userDetails.user_name });
+      setProjects([response.data.data, ...projects]);
+      setFormData({ ...formData, projectName: response.data.data.project });
+      setNewProjectName('');
+      setShowNewProjectInput(false);
+      console.log(projects);
+      toast.success('Project created successfully');
+    } catch (error) {
+      console.error('Error creating project:', error);
+      toast.error('Failed to create project. Please try again.');
+    } finally {
+      setDisplayNone(!displayNone);
+    }
+  };
+
+  const handleUserDetailsSubmit = async (e) => {
+      e.preventDefault();
+      try {
+        
+        const requestData = {
+          user_phone_number: userPhoneNumber,
+          ...userFormData
+        };
+  
+        console.log('Sending request to server with data:', requestData);
+  
+        const res = await API_UTIL.post("/updatePortfolioDetails", requestData);
+        if (res.status === 200) {
+          setIsUserDetailsModalOpen(false);
+        }
+      } catch (error) {
+        console.error("Error in registering the model:", error);
+        if (error.response) {
+          toast.error("Error in creating Model");
+        }
+      }
+    };
 
   if (loading) return <div className="loading-screen">Loading...</div>;
   if (error) return <div className="loading-screen">Error: {error}</div>;
@@ -370,7 +247,7 @@ const Event = ({ eventName, eventDate, folderName }) => {
       <div className="events-page-event-container">
         <h1 className="events-page-event-title">My Events</h1>
         <div className="events-page-event-list">
-          <div className="events-page-create-event-card" onClick={handleLinkClick}>
+          <div className="events-page-create-event-card" onClick={() => setIsCreateModalOpen(true)}>
             <div className="events-page-add-event-image-div">
               <img
                 src="assets\Images\icon-plus.svg"
@@ -380,11 +257,22 @@ const Event = ({ eventName, eventDate, folderName }) => {
               <span >Click here to Add Project</span>
           </div>
           {events.map((event) => (
-            <div className='events-page-event-card' onClick={() => onEventClick(event.event_name)}>
-                <img src={event.event_image}></img>
+            <div className='events-page-event-card' onClick={() => onEventClick(event.event_id)}>
+               <div className="event-card-header">
+                  <img
+                    src="https://img.icons8.com/BB271A/m_rounded/2x/filled-trash.png"
+                    className="delete-icon"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openDeleteModal(event);
+                    }}
+                    alt="Delete"
+                  />
+                </div>
+                <img src={event.event_image} alt="img"></img>
                 <div className='event-name'>
                   <span>
-                  {formatEventName(event?.event_name)}
+                  {event?.event_name}
                   </span>
                 </div>
             </div>
@@ -434,61 +322,66 @@ const Event = ({ eventName, eventDate, folderName }) => {
           ))} */}
         </div>
 
+        {/* Modal to update user details */}
         <Modal
-          isOpen={isDetailModalOpen}
-          onRequestClose={() => setIsDetailModalOpen(false)}
-          contentLabel="Event Details"
-          className="modal-content"
-          overlayClassName="modal-overlay"
-        >
-          <div className="modal-header">
-            <h2 className="modal-title">Event Details</h2>
-            <button
-              className="close-button"
-              onClick={() => setIsDetailModalOpen(false)}
-            >
-              x
-            </button>
-          </div>
-          <form onSubmit={handleDetailFormSubmit} className="modal-body">
-            <div className="form-group">
-              <label className="form-label">User Name:</label>
-              <input
-                type="text"
-                value={studioName}
-                onChange={(e) => setStudioName(e.target.value)}
-                placeholder="Please enter your Photography name"
-                className="form-input"
-                required
-              />
+            isOpen={isUserDetailsModalOpen}
+            onRequestClose={() => setIsUserDetailsModalOpen(false)}
+            contentLabel="User Details"
+            className="modal-content"
+            overlayClassName="modal-overlay"
+          >
+            <div className="modal-header">
+              <h2 className="modal-title">User Details</h2>
+              <button className="close-button" onClick={() => setIsUserDetailsModalOpen(false)}>x</button>
             </div>
-            <div className="form-group">
-              <label className="form-label">Instagram URL:</label>
-              <input
-                type="text"
-                value={instaUrl}
-                onChange={(e) => setInstaUrl(e.target.value)}
-                className="form-input"
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">YouTube URL:</label>
-              <input
-                type="text"
-                value={youtubeUrl}
-                onChange={(e) => setYoutubeUrl(e.target.value)}
-                className="form-input"
-                required
-              />
-            </div>
-            <button type="submit" className="save-button">
-              Submit
-            </button>
-          </form>
-        </Modal>
-
-        <Modal
+            <form className="modal-body" onSubmit={handleUserDetailsSubmit}>
+              <div className="form-group">
+                <label htmlFor="userName">User Name:</label>
+                <input
+                  type="text"
+                  id="userName"
+                  name="userName"
+                  value={userFormData.org_name}
+                  onChange={(e) => setUserFormData({ ...userFormData, org_name: e.target.value })}
+                  placeholder="Enter your photography name"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="instagram">Instagram URL:</label>
+                <input
+                  type="text"
+                  id="instagram"
+                  name="instagram"
+                  value={userFormData.social_media.instagram}
+                  onChange={(e) => setUserFormData({ ...userFormData, social_media: { ...userFormData.social_media, instagram: e.target.value } })}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="youtube">YouTube URL:</label>
+                <input
+                  type="text"
+                  id="youtube"
+                  name="youtube"
+                  value={userFormData.social_media.youtube}
+                  onChange={(e) => setUserFormData({ ...userFormData, social_media: { ...userFormData.social_media, youtube: e.target.value } })}
+                />
+              </div>
+              <button type="submit" className="save-button">Save</button>
+              
+              <div style={{ textAlign: 'center', margin: '10px 0' }}>or</div>
+              
+              <button 
+                type="button" 
+                className="create-portfolio-button" 
+                onClick={() => navigate('/portfolioForm')}
+              >
+                Create Portfolio
+              </button>
+            </form>
+          </Modal>
+           {/* Modal to delete event*/}
+          <Modal
           isOpen={isDeleteModalOpen}
           onRequestClose={closeDeleteModal}
           contentLabel="Delete Confirmation"
@@ -503,8 +396,7 @@ const Event = ({ eventName, eventDate, folderName }) => {
                 className="delete-button"
                 onClick={() =>
                   deleteEvent(
-                    eventToDelete.event_name,
-                    eventToDelete.project_name
+                    eventToDelete.event_id
                   )
                 }
               >
@@ -516,695 +408,142 @@ const Event = ({ eventName, eventDate, folderName }) => {
             </div>
           </div>
         </Modal>
+      
+
+        {/* Create Event Modal */}
+        <Modal
+          isOpen={isCreateModalOpen}
+          onRequestClose={() => setIsCreateModalOpen(false)}
+          contentLabel="Create Event"
+          className="modal-content"
+          overlayClassName="modal-overlay"
+        >
+          <div className="modal-header">
+            <h2 className="modal-title">Create Event</h2>
+            <button className="close-button" onClick={() => setIsCreateModalOpen(false)}>x</button>
+          </div>
+          <div className="create-event-container">
+            <form className="invitation-form" id="invitation-form" onSubmit={handleCreateEvent}>
+              <div className="form-group">
+                <label htmlFor="event-name">Event Name:</label>
+                <input
+                  type="text"
+                  id="event-name"
+                  name="eventName"
+                  placeholder="Event Name"
+                  value={formData.eventName}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="event-date">Event Date:</label>
+                <input
+                  type="date"
+                  id="event-date"
+                  name="eventDate"
+                  value={formData.eventDate}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="event-time">Event Time:</label>
+                <input
+                  type="time"
+                  id="event-time"
+                  name="eventTime"
+                  value={formData.eventTime}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="event-location">Event Location:</label>
+                <input
+                  type="text"
+                  id="event-location"
+                  name="eventLocation"
+                  placeholder="Event Location"
+                  value={formData.eventLocation}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="project-name">Project Name:</label>
+                <select
+                  id="project-name"
+                  name="projectName"
+                  value={formData.projectName}
+                  onChange={handleInputChange}
+                  required
+                >
+                  <option value="">Select Project</option>
+                  {projects.map((project, index) => (
+                    <option key={index} value={project}>
+                      {project}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Create New Project</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowNewProjectInput(!showNewProjectInput);
+                    setDisplayNone(!displayNone);
+                  }}
+                  className={`add-project-button${displayNone ? "hide" : ""}`}
+                >
+                  +
+                </button>
+                {showNewProjectInput && (
+                  <div className="new-project-input">
+                    <input
+                      type="text"
+                      placeholder="New Project Name"
+                      value={newProjectName}
+                      onChange={handleNewProjectChange}
+                    />
+                    <button type="button" onClick={handleCreateProject} className="save-project-button">
+                      Save
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="form-group">
+                <label htmlFor="invitation-note">Invitation Note:</label>
+                <textarea
+                  id="invitation-note"
+                  name="invitationNote"
+                  placeholder="Invitation Note"
+                  value={formData.invitationNote}
+                  onChange={handleInputChange}
+                  required
+                ></textarea>
+              </div>
+              <div className="form-group">
+                <label htmlFor="event-image">Upload Image:</label>
+                <input
+                  type="file"
+                  id="event-image"
+                  name="eventImage"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                />
+              </div>
+              <button className="submit-button" type="submit" disabled={uploading}>
+                {uploading ? 'Creating...' : 'Create'}
+              </button>
+            </form>
+          </div>
+        </Modal>
       </div>
-      <Footer></Footer>
+      <Footer />
     </div>
   );
 }
 
-// const dropzoneStyle = {
-//   border: '2px dashed #cccccc',
-//   borderRadius: '4px',
-//   padding: '20px',
-//   textAlign: 'center',
-//   cursor: 'pointer',
-// };
-
-
 export default Event;
-
-// import React, { useEffect, useState, useRef, useCallback } from 'react';
-// import API_UTIL from '../../services/AuthIntereptor';
-// import { useNavigate } from 'react-router-dom';
-// import Modal from 'react-modal';
-// import { toast } from 'react-toastify';
-// import {useDropzone} from 'react-dropzone';
-// import QRCode from 'qrcode.react';
-// import './Event.css'; // Import the new CSS file
-
-// const Event = ({ eventName, eventDate, folderName }) => {
-//   const [events, setEvents] = useState([]);
-//   const [loading, setLoading] = useState(false);
-//   const [error, setError] = useState(null);
-//   const [selectedEvent, setSelectedEvent] = useState(null);
-//   const [isModalOpen, setIsModalOpen] = useState(false);
-//   const [editData, setEditData] = useState(null);
-//   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-//   const [eventToDelete, setEventToDelete] = useState(null);
-//   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
-//   const [isUploadFilesModelOpen, setUploadFilesModeOpen] = useState(false);
-//   const [uploadProgress, setUploadProgress] = useState({});
-//   const [files, setFiles] = useState([]);
-//   const [uploadStatus, setUploadStatus] = useState('');
-//   const [uploadFilesModalStatus, setUploadFilesModalStatus] = useState('');
-//   const [isUploadFilesFailed, setIsUploadFilesFailed] = useState(false);
-//   const [uploading, setUploading] = useState(false);
-//   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-//   const [studioName, setStudioName] = useState('');
-//   const [instaUrl, setInstaUrl] = useState('');
-//   const [youtubeUrl, setYoutubeUrl] = useState('');
-//   const [userDetails, setUserDetails] = useState(null);
-
-//   const qrRef = useRef();
-//   const navigate = useNavigate();
-
-//   //const clientName = "DummyClient";
-
-//   const CHUNK_SIZE = 5 * 1024 * 1024; //Chunks of 5MB for file upload  
-
-//   const onDrop = useCallback((acceptedFiles) => {
-//     setFiles(acceptedFiles);
-//     setUploadProgress({});
-//     setUploadStatus('');
-//   }, []);
-
-//   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-//     onDrop: useCallback((acceptedFiles) => {
-//       setFiles(acceptedFiles);
-//       setUploadProgress({});
-//       setUploadStatus('');
-//       setUploading(false); // Reset uploading state when files are dropped
-//     }, []),
-//   });
-
-//   const uploadChunk = async (file, chunk, chunkIndex, totalChunks) => {
-//     const formData = new FormData();
-//     formData.append('files', chunk, file.name);
-//     formData.append('eventName', eventName);
-//     formData.append('eventDate', eventDate);
-//     formData.append('folderName', folderName);
-//     formData.append('chunkNumber', chunkIndex);
-//     formData.append('totalChunks', totalChunks);
-
-//     try {
-//       const response = await API_UTIL.post(`/uploadFiles/${selectedEvent.event_name}/${selectedEvent.event_date}/${selectedEvent.folder_name}`, formData, {
-//         headers: { 'Content-Type': 'multipart/form-data' },
-//         onUploadProgress: (progressEvent) => {
-//           const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-//           setUploadProgress(prev => ({
-//             ...prev,
-//             [file.name]: {
-//               ...prev[file.name],
-//               [chunkIndex]: percentCompleted
-//             }
-//           }));
-//         },
-//       });
-//       return response.data;
-//     } catch (error) {
-//       console.error(`Error uploading chunk ${chunkIndex} of ${file.name}:`, error);
-//       throw error;
-//     }
-//   };
-
-//   const uploadFile = async (file) => {
-//     const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-//     const fileId = `${file.name}`;
-
-//     for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
-//       const start = chunkIndex * CHUNK_SIZE;
-//       const end = Math.min(start + CHUNK_SIZE, file.size);
-//       const chunk = file.slice(start, end);
-
-//       try {
-//         await uploadChunk(file, chunk, chunkIndex, totalChunks);
-//       } catch (error) {
-//         // If chunk upload fails, we could implement retry logic here
-//         console.error(`Failed to upload chunk ${chunkIndex} of ${file.name}`);
-//         throw error;
-//       }
-//     }
-
-//     // Check if all chunks are uploaded
-//     // const status = await API_UTIL.get(`/upload-status/${fileId}`);
-//     // if (status.data.status !== 'completed') {
-//     //   throw new Error(`Failed to upload ${file.name}`);
-//     // }
-//   };
-
-//   const uploadFiles = async () => {
-//     if (files.length === 0) {
-//       setUploadStatus('Please select files to upload');
-//       return;
-//     }
-//     setUploading(true);
-//     setUploadStatus('Uploading...');
-//     setUploadFilesModalStatus('Uploading...');
-//     setIsUploadFilesFailed(false);
-  
-
-//     try {
-//       await Promise.all(files.map(uploadFile));
-//       setUploadStatus('Upload completed successfully');
-//       setFiles([]);
-//     } catch (error) {
-//       console.error('Upload failed:', error);
-//       setUploadStatus('Upload failed. Please try again.');
-//       // setUploadFilesModalStatus('Upload failed. Please try again.');
-//     } finally {
-//       setUploading(false);
-//     }
-//       //setIsUploadFilesFailed(true);
-//   };
-
-//   useEffect(() => {
-//     const fetchEventData = async (userName) => {
-//       try {
-//         const response = await API_UTIL.get(`/getProjectDetails/${userName}`);
-//         console.log(response.data);
-//         setEvents(response.data);
-//         setLoading(false);
-//       } catch (error) {
-//         setError(error.message);
-//         setLoading(false);
-//       }
-//     };
-
-//     const fetchUserDetails = async () => {
-//       try {
-//         const userPhoneNumber = sessionStorage.getItem('userphoneNumber');
-//         console.log(userPhoneNumber);
-//         const response = await API_UTIL.get(`/fetchUserDetails/${userPhoneNumber}`);
-//         setUserDetails(response.data.data);
-//         if(sessionStorage.getItem('userphoneNumber') !== response.data.data.user_name){
-//           fetchEventData(response.data.data.user_name);
-//         }
-//       } catch (error) {
-//         console.error('Error fetching user details:', error);
-//       }
-//     };
-    
-//     fetchUserDetails();
-
-//   }, []);
-
-//   const openDeleteModal = (event) => {
-//     setEventToDelete(event);
-//     setIsDeleteModalOpen(true);
-//   };
-
-//   const closeDeleteModal = () => {
-//     setIsDeleteModalOpen(false);
-//     setEventToDelete(null);
-//   };
-
-//   const deleteEvent = async (eventName, eventDate) => {
-//     try {
-//       await API_UTIL.delete(`/deleteEvent/${eventName}/${eventDate}`);
-//       setEvents(events.filter(event => !(event.event_name === eventName && event.event_date === eventDate)));
-//       setIsDeleteModalOpen(false);
-//       toast.success('Event deleted successfully');
-//     } catch (error) {
-//       console.error("Error deleting event:", error);
-//       toast.error('Failed to delete the event. Please try again.');
-//     }
-//   };
-
-//   const openModal = (event) => {
-//     setSelectedEvent(event);
-//     setIsModalOpen(true);
-//   };
-
-//   const closeModal = () => {
-//     setIsModalOpen(false);
-//     setSelectedEvent(null);
-//     setEditData(null);
-//   };
-
-//   const openQrModal = () => {
-//     setIsQrModalOpen(true);
-//   };
-
-//   const closeQrModal = () => {
-//     setIsQrModalOpen(false);
-//   };
-
-//   const openUploadFilesModal = () => {
-//     setUploadFilesModeOpen(true);
-//   }
-
-//   const closeUploadFilesModal = () => {
-//     setUploadFilesModeOpen(false);
-//     setFiles([]);
-//     setUploadProgress({});
-//     setUploadStatus('');
-//     setUploading(false);
-//   }
-
-//   const openIsDetailsModalOpen = () => {
-//     setIsDetailModalOpen(true);
-//   }
-
-//   const handleEditClick = () => {
-//     setEditData({
-//       eventName: selectedEvent.event_name,
-//       eventDate: selectedEvent.event_date.split(' ')[0],
-//       eventTime: selectedEvent.event_date.split(' ')[1],
-//       invitationNote: selectedEvent.invitation_note,
-//       eventLocation: selectedEvent.event_location,
-//       street: selectedEvent.street,
-//       city: selectedEvent.city,
-//       state: selectedEvent.state,
-//       pinCode: selectedEvent.pin_code,
-//       invitation_url: selectedEvent.invitation_url,
-//     });
-//   };
-
-//   const handleInputChange = (e) => {
-//     const { name, value } = e.target;
-//     setEditData({ ...editData, [name]: value });
-//   };
-
-//   const handleFormSubmit = async (e) => {
-//     e.preventDefault();
-//     try {
-//       const response = await API_UTIL.put(`/updateEvent/${selectedEvent.event_name}/${selectedEvent.event_date}`, {
-//         invitationNote: editData.invitationNote,
-//         eventLocation: editData.eventLocation,
-//         street: editData.street,
-//         city: editData.city,
-//         state: editData.state,
-//         pinCode: editData.pinCode,
-//         invitation_url: editData.invitation_url
-//       });
-//       if (response.status === 200) {
-//         toast.success('Event updated successfully');
-//         const updatedEvents = events.map(event =>
-//           event.event_name === selectedEvent.event_name && event.event_date === selectedEvent.event_date
-//             ? { ...event, ...editData }
-//             : event
-//         );
-//         setEvents(updatedEvents);
-//         closeModal();
-//       }
-//     } catch (error) {
-//       console.error('Error updating event:', error);
-//       toast.error('Failed to update the event. Please try again.');
-//     }
-//   };
-
-//   const handleDetailFormSubmit = async (e) => {
-//     e.preventDefault();
-  
-//     const userPhoneNumber = sessionStorage.getItem('userphoneNumber');
-  
-//     if (!userPhoneNumber) {
-//       toast.error("User phone number is missing from session.");
-//       return;
-//     }
-  
-//     const updateData = {
-//       user_phone_number: userPhoneNumber,
-//       user_name: studioName,
-//       social_media: {
-//         instagram : instaUrl,
-//         youtube : youtubeUrl,
-//       }
-//     };
-  
-//     try {
-//       const response = await API_UTIL.post('/updateUserDetails', updateData);
-//       if (response.status === 200) {
-//         setUserDetails(response.data.data);
-//         toast.success("User details updated successfully");
-//         navigate('/eventSelector', { state: { userName: userDetails.user_name } });
-//       } else {
-//         toast.error("Failed to update user details. Please try again.");
-//       }
-//     } catch (error) {
-//       console.error("Error updating user details:", error);
-//       toast.error("An error occurred. Please try again.");
-//     }
-//   };
-  
-
-//   const handleLinkClick = () => {
-//     const clientName = userDetails.user_name;
-//     const sessionNumber = sessionStorage.getItem('userphoneNumber')
-//     if (clientName === sessionNumber) {
-//       openIsDetailsModalOpen();
-//     } else {
-//       //navigate('/eventSelector');
-//       console.log(clientName);
-//       navigate('/eventSelector', { state: { userName: clientName} });
-    
-//     }
-//   };
-
-//   const formatEventName = (name) => {
-//     return name.replace(/_/g, ' ');
-//   };
-
-//   function getFormattedDate(datetime) {
-//     const date = new Date(datetime);
-//     const day = String(date.getDate()).padStart(2, '0');
-//     const month = String(date.getMonth() + 1).padStart(2, '0');
-//     const year = date.getFullYear();
-//     return `${day}-${month}-${year}`;
-//   }
-
-//   function getFormattedTime(datetime) {
-//     const date = new Date(datetime);
-//     let hours = date.getHours();
-//     const minutes = String(date.getMinutes()).padStart(2, '0');
-//     const ampm = hours >= 12 ? 'PM' : 'AM';
-//     hours = hours % 12;
-//     hours = hours ? String(hours).padStart(2, '0') : '12'; // the hour '0' should be '12'
-//     return `${hours}:${minutes} ${ampm}`;
-//   }
-
-//   const sendWhatsAppMessage = () => {
-//     const message = `Check out this event: ${selectedEvent.event_name} on ${getFormattedDate(selectedEvent.event_date)} at ${getFormattedTime(selectedEvent.event_date)}. Location: ${selectedEvent.event_location} , Url: https://flashback.inc/login/${selectedEvent.event_name}`;
-//     const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
-//     window.open(url, '_blank');
-//   };
-
-//   const downloadQRCode = () => {
-//     const qrCanvas = qrRef.current.querySelector('canvas');
-//     const qrImage = qrCanvas.toDataURL('image/png');
-//     const downloadLink = document.createElement('a');
-//     downloadLink.href = qrImage;
-//     downloadLink.download = `${selectedEvent.event_name}_QR.png`;
-//     downloadLink.click();
-//   };
-
-//   //if (loading) return <div className="loading-screen">Loading...</div>;
-//   if (error) return <div className="loading-screen">Error: {error}</div>;
-
-//   return (
-//     <div className="event-container">
-//       <h1 className="event-title">My Projects</h1>
-//         <ul className="event-list">
-//             <li className="event-item" onClick={handleLinkClick}>
-//               <div className="event-card">
-//                 <img src="https://img.icons8.com/B48E75/stamp/2x/add.png" alt="add-Image" className="add-event-image" />
-//                 <div className="event-card-footer">
-//                   <h2 className="event-name">Click here to Add Projects</h2>
-//                 </div>
-//               </div>
-//             </li>
-//           {events.length > 0 ? (events.map((event) => (
-//             <li key={event.event_name} className="event-item">
-//               {/* <div className="event-card" onClick={() => openModal(event)}> */}
-//               <div className="event-card">
-//                 <div className="event-card-header">
-//                   <img
-//                     src="https://img.icons8.com/BB271A/m_rounded/2x/filled-trash.png"
-//                     className="delete-icon"
-//                     onClick={(e) => { e.stopPropagation(); openDeleteModal(event); }}
-//                     alt="Delete"
-//                   />
-//                 </div>
-//                 <img src={event?.project_image} alt="Image" className="event-image" />
-//                 <div className="event-card-footer">
-//                   <h2 className="event-name">{formatEventName(event?.project_name)}</h2>
-//                 </div>
-//               </div>
-//               {event.invitation_url && (
-//                 <a href={event.invitation_url} target="_blank" rel="noopener noreferrer" className="event-link">
-//                   View Invitation
-//                 </a>
-//               )}
-//             </li>
-//           ))
-//       ) : (
-//         <p className="no-events">No events found. Click on + to add events</p>
-//       )}
-//       </ul>
-
-//       <Modal
-//         isOpen={isModalOpen}
-//         onRequestClose={closeModal}
-//         contentLabel="Event Details"
-//         className="modal-content"
-//         overlayClassName="modal-overlay"
-//       >
-//         {selectedEvent && (
-//           <div>
-//             <div className="modal-header">
-//               <h2 className="modal-title">{formatEventName(selectedEvent?.event_name)}</h2>
-//               <button className="close-button" onClick={closeModal}>x</button>
-//             </div>
-//             <div className="modal-body">
-//               <img 
-//                 src="https://img.icons8.com/ffffff/android/2x/edit.png" 
-//                 alt="Edit" 
-//                 className="edit-icon" 
-//                 onClick={handleEditClick}
-//               />
-//               <img 
-//                 src={selectedEvent.event_image} 
-//                 alt="Event" 
-//                 className="modal-image" 
-//               />
-//             </div>
-//             {editData ? (
-//               <form onSubmit={handleFormSubmit} className="edit-form">
-//                 <div className="form-group">
-//                   <p className="form-label">Event Name: {formatEventName(editData?.eventName)}</p>
-//                   <div className="form-group">
-//                     <label className="form-label">Date:</label>
-//                     <p className="form-value">{getFormattedDate(editData.eventDate)}</p>
-//                   </div>
-//                   <label className="form-label">Invitation Note:</label>
-//                   <textarea 
-//                     name="invitationNote" 
-//                     value={editData.invitationNote} 
-//                     onChange={handleInputChange} 
-//                     className="form-input"
-//                   />
-//                   <label className="form-label">Location:</label>
-//                   <input 
-//                     type="text" 
-//                     name="eventLocation" 
-//                     value={editData.eventLocation} 
-//                     onChange={handleInputChange} 
-//                     className="form-input"
-//                   />
-//                   <label className="form-label">Street:</label>
-//                   <input 
-//                     type="text" 
-//                     name="street" 
-//                     value={editData.street} 
-//                     onChange={handleInputChange} 
-//                     className="form-input"
-//                   />
-//                   <label className="form-label">City:</label>
-//                   <input 
-//                     type="text" 
-//                     name="city" 
-//                     value={editData.city} 
-//                     onChange={handleInputChange} 
-//                     className="form-input"
-//                   />
-//                   <label className="form-label">State:</label>
-//                   <input 
-//                     type="text" 
-//                     name="state" 
-//                     value={editData.state} 
-//                     onChange={handleInputChange} 
-//                     className="form-input"
-//                   />
-//                   <label className="form-label">Pin Code:</label>
-//                   <input 
-//                     type="text" 
-//                     name="pinCode" 
-//                     value={editData.pinCode} 
-//                     onChange={handleInputChange} 
-//                     className="form-input"
-//                     pattern="^\d{6}$"
-//                     title="Please enter a valid 6-digit PIN code"
-//                     required
-//                   />
-//                   <label className="form-label">Invitation URL:</label>
-//                   <input 
-//                     type="text" 
-//                     name="invitation_url" 
-//                     value={editData.invitation_url} 
-//                     onChange={handleInputChange} 
-//                     className="form-input"
-//                   />
-//                 </div>
-//                 <button type="submit" className="save-button">Save Changes</button>
-//               </form>
-//             ) : (
-//               <div className="form-group">
-//                 <div className="form-group">
-//                   <p className="form-value">Date: {getFormattedDate(selectedEvent.event_date)}</p>
-//                   <p className="form-value">Time: {getFormattedTime(selectedEvent.event_date)}</p>
-//                   <p className="form-value">Invitation Note: {selectedEvent.invitation_note}</p>
-//                   <p className="form-value">Location: {selectedEvent.event_location}</p>
-//                   <p className="form-value">Street: {selectedEvent.street},</p>
-//                   <p className="form-value">City: {selectedEvent.city},</p>
-//                   <p className="form-value">State: {selectedEvent.state},</p>
-//                   <p className="form-value">Pin Code: {selectedEvent.pin_code}</p>
-//                   <p className='form-value'>Folder: {selectedEvent.folder_name}</p>
-//                 </div>
-//                 <div className='form-footer'>
-//                   <button className='footer-buttons' onClick={sendWhatsAppMessage}>WhatsApp</button>
-//                   <button className='footer-buttons' onClick={openQrModal}>Generate QR</button>
-//                   <button className='footer-buttons' onClick={openUploadFilesModal}>Upload Files</button>
-//                 </div>
-//               </div>
-//             )}
-//             {selectedEvent.invitation_url && (
-//               <a href={selectedEvent.invitation_url} target="_blank" rel="noopener noreferrer" className="event-link">
-//                 View Invitation
-//               </a>
-//             )}
-//           </div>
-//         )}
-//       </Modal>
-
-//       <Modal
-//         isOpen={isQrModalOpen}
-//         onRequestClose={closeQrModal}
-//         contentLabel="QR Code"
-//         className="qr-modal-content"
-//         overlayClassName="modal-overlay"
-//       >
-//         {selectedEvent && (
-//           <div>
-//             <div className="modal-header">
-//               <h2 className="modal-title">QR Code for {formatEventName(selectedEvent?.event_name)}</h2>
-//               <button className="close-button" onClick={closeQrModal}>x</button>
-//             </div>
-//             <div className="qr-modal-body">
-//               <div ref={qrRef} style={{ marginBottom: '20px' }}>
-//                 <QRCode value={`https://flashback.inc/login/${selectedEvent?.event_name}`} size={256} />
-//               </div>
-//               <button className='qr-footer-buttons' onClick={downloadQRCode}>Download QR</button>
-//             </div>
-//           </div>
-//         )}
-//       </Modal>
-
-//       <Modal
-//         isOpen={isUploadFilesModelOpen}
-//         onRequestClose={closeUploadFilesModal}
-//         contentLabel="Upload Files"
-//         className="uploadfiles-modal-content"
-//         overlayClassName="modal-overlay"
-//       >
-//         <div>
-//           <div className="uploadfiles-modal-header">
-//             <h2 className="uploadfiles-modal-title">Upload Files</h2>
-//             <button className="close-button" onClick={closeUploadFilesModal}>x</button>
-//           </div>
-//           <div className="modal-body">
-//           <div {...getRootProps()} className={`dropzone ${isDragActive ? 'active' : ''}`} style={dropzoneStyle}>
-//           <input {...getInputProps()} />
-//           {isDragActive ? (
-//               <p>Drop the files here ...</p> 
-//            ) : (
-//               <p>Drag 'n' drop files here, or click to select files from your machine</p>
-//           )}
-//         </div>
-//         {files.length > 0 && (
-//           <div className='file-status-table'>
-//             <table>
-//               <thead>
-//                 <tr>
-//                   <th>File Name</th>
-//                   <th>Progress</th>
-//                 </tr>
-//               </thead>
-//               <tbody>
-//               {files.map((file, index) => (
-//                 <tr key={index}>
-//                   <td>{file.name}</td>
-//                   <td>
-//                 {uploadProgress[file.name] && (
-//                   <div className="progress-bar">
-//                     <span style={{ width: `${Object.values(uploadProgress[file.name]).reduce((a, b) => a + b, 0) / Object.keys(uploadProgress[file.name]).length}%` }}></span>
-//                   </div>
-//                 )}</td>
-//                 </tr>
-//               ))}
-//             </tbody>
-//             </table>
-//           </div>
-//         )}
-//         <button onClick={uploadFiles} className="upload-button">Upload</button>
-//         {uploadStatus && <p>{uploadStatus}</p>}
-//       </div>
-//     </div>
-//       </Modal>
-
-
-//       <Modal
-//         isOpen={isDeleteModalOpen}
-//         onRequestClose={closeDeleteModal}
-//         contentLabel="Delete Confirmation"
-//         className="delete-modal-content"
-//         overlayClassName="modal-overlay"
-//       >
-//         <div className='delete-modal-bg'>
-//           <h2 className="modal-title">Confirm Delete</h2>
-//           <p className="modal-body">Do you want to delete this event?</p>
-//           <div className="modal-footer">
-//             <button className="delete-button" onClick={() => deleteEvent(eventToDelete.event_name, eventToDelete.event_date)}>Confirm</button>
-//             <button className="cancel-button" onClick={closeDeleteModal}>Cancel</button>
-//           </div>
-//         </div>
-//       </Modal>
-
-//       <Modal
-//         isOpen={isDetailModalOpen}
-//         onRequestClose={() => setIsDetailModalOpen(false)}
-//         contentLabel="Event Details"
-//         className="modal-content"
-//         overlayClassName="modal-overlay"
-//       >
-//         <div className="modal-header">
-//           <h2 className="modal-title">Event Details</h2>
-//           <button className="close-button" onClick={() => setIsDetailModalOpen(false)}>x</button>
-//         </div>
-//         <form onSubmit={handleDetailFormSubmit} className="modal-body">
-//           <div className="form-group">
-//             <label className="form-label">User Name:</label>
-//             <input
-//               type="text"
-//               value={studioName}
-//               onChange={(e) => setStudioName(e.target.value)}
-//               placeholder='Please enter your Photography name'
-//               className="form-input"
-//               required
-//             />
-//           </div>
-//           <div className="form-group">
-//             <label className="form-label">Instagram URL:</label>
-//             <input
-//               type="text"
-//               value={instaUrl}
-//               onChange={(e) => setInstaUrl(e.target.value)}
-//               className="form-input"
-//               required
-//             />
-//           </div>
-//           <div className="form-group">
-//             <label className="form-label">YouTube URL:</label>
-//             <input
-//               type="text"
-//               value={youtubeUrl}
-//               onChange={(e) => setYoutubeUrl(e.target.value)}
-//               className="form-input"
-//               required
-//             />
-//           </div>
-//           <button type="submit" className="save-button">Submit</button>
-//         </form>
-//       </Modal>
-//     </div>
-//   );
-// };
-
-// const dropzoneStyle = {
-//   border: '2px dashed #cccccc',
-//   borderRadius: '4px',
-//   padding: '20px',
-//   textAlign: 'center',
-//   cursor: 'pointer',
-// };
-
-// export default Event;

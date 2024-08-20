@@ -136,7 +136,7 @@ const PortfolioForm = () => {
         <LoadingSpinner/>
       ) : (
     <div className="create-event-container">
-      <h1 className="form-title">Create Model</h1>
+      <h1 className="form-title">Create Portfolio</h1>
       <form className="invitation-form" id="invitation-form" onSubmit={handleSubmit}>
         <div className="form-group">
           <label htmlFor="event-name">Photography Name:</label>

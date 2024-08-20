@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect, useCallback} from 'react';
-import {useDropzone} from 'react-dropzone';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useDropzone } from 'react-dropzone';
 import Modal from 'react-modal';
 import QRCode from 'qrcode.react';
 import { toast } from 'react-toastify';
@@ -12,8 +12,7 @@ const EventDetails = () => {
   const { eventName } = useParams();
   const [error, setError] = useState(null);
   const [editData, setEditData] = useState(null);
-  const [event,setEvent] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [event, setEvent] = useState([]);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [isUploadFilesModelOpen, setUploadFilesModeOpen] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({});
@@ -22,11 +21,12 @@ const EventDetails = () => {
   const [uploadFilesModalStatus, setUploadFilesModalStatus] = useState('');
   const [isUploadFilesFailed, setIsUploadFilesFailed] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [toggleEdit,setToggleEdit] = useState(false);
+  const [toggleEdit, setToggleEdit] = useState(false);
   const qrRef = useRef();
   const userDetails = location.state?.userDetails; // Retrieve userDetails from location state
   const navigate = useNavigate();
-  
+  const [fileCount, setFileCount] = useState(0);
+
   console.log(userDetails);
 
   useEffect(() => {
@@ -40,24 +40,17 @@ const EventDetails = () => {
       }
     };
 
-
     fetchEventData(eventName);
-
-  }, []);
+  }, [eventName]);
 
   const handleEditClick = () => {
-    if(!toggleEdit){
+    if (!toggleEdit) {
       setEditData({
         eventName: event.event_name,
-        eventDate: event.event_date.split(' ')[0],
-        eventTime: event.event_date.split(' ')[1],
+        eventDate: event.event_date.split('T')[0], // Assuming event_date is in ISO 8601 format
+        eventTime: event.event_date.split('T')[1].slice(0, 5), // Extract time portion, assuming format HH:MM:SS
         invitationNote: event.invitation_note,
         eventLocation: event.event_location,
-        street: event.street,
-        city: event.city,
-        state: event.state,
-        pinCode: event.pin_code,
-        invitation_url: event.invitation_url,
       });
     }
     setToggleEdit(!toggleEdit);
@@ -70,17 +63,16 @@ const EventDetails = () => {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
+    const combinedDateTime = `${editData.eventDate}T${editData.eventTime}:00`;
+
     try {
-      const response = await API_UTIL.put(`/updateEvent/${event.event_name}/${event.project_name}`, {
+      const response = await API_UTIL.put(`/updateEvent/${event.event_id}`, {
+        eventName: editData.eventName,
+        eventDate: combinedDateTime,
         invitationNote: editData.invitationNote,
         eventLocation: editData.eventLocation,
-        eventDate: editData.eventDate,
-        // street: editData.street,
-        // city: editData.city,
-        // state: editData.state,
-        // pinCode: editData.pinCode,
-        //invitation_url: editData.invitation_url
       });
+
       if (response.status === 200) {
         toast.success('Event updated successfully');
         navigate('/event');
@@ -110,7 +102,7 @@ const EventDetails = () => {
 
   const openUploadFilesModal = () => {
     setUploadFilesModeOpen(true);
-  }
+  };
 
   const closeUploadFilesModal = () => {
     setUploadFilesModeOpen(false);
@@ -118,22 +110,20 @@ const EventDetails = () => {
     setUploadProgress({});
     setUploadStatus('');
     setUploading(false);
-  }
+  };
 
-  const CHUNK_SIZE = 5 * 1024 * 1024; //Chunks of 5MB for file upload  
+  const CHUNK_SIZE = 5 * 1024 * 1024; // Chunks of 5MB for file upload
 
   const onDrop = useCallback((acceptedFiles) => {
     setFiles(acceptedFiles);
+    setFileCount(acceptedFiles.length); // Set the file count
     setUploadProgress({});
     setUploadStatus('');
+    setUploading(false); // Reset uploading state when files are dropped
   }, []);
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop: useCallback((acceptedFiles) => {
-      setFiles(acceptedFiles);
-      setUploadProgress({});
-      setUploadStatus('');
-      setUploading(false); // Reset uploading state when files are dropped
-    }, []),
+    onDrop,
   });
 
   const uploadChunk = async (file, chunk, chunkIndex, totalChunks) => {
@@ -150,12 +140,12 @@ const EventDetails = () => {
         headers: { 'Content-Type': 'multipart/form-data' },
         onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          setUploadProgress(prev => ({
+          setUploadProgress((prev) => ({
             ...prev,
             [file.name]: {
               ...prev[file.name],
-              [chunkIndex]: percentCompleted
-            }
+              [chunkIndex]: percentCompleted,
+            },
           }));
         },
       });
@@ -191,7 +181,6 @@ const EventDetails = () => {
     // }
   };
 
-
   const uploadFiles = async () => {
     if (files.length === 0) {
       setUploadStatus('Please select files to upload');
@@ -201,7 +190,6 @@ const EventDetails = () => {
     setUploadStatus('Uploading...');
     setUploadFilesModalStatus('Uploading...');
     setIsUploadFilesFailed(false);
-  
 
     try {
       await Promise.all(files.map(uploadFile));
@@ -214,28 +202,23 @@ const EventDetails = () => {
     } finally {
       setUploading(false);
     }
-      //setIsUploadFilesFailed(true);
+    // setIsUploadFilesFailed(true);
   };
 
   const sendInvite = () => {
-        const message = editData ? `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(editData?.eventDate)} at ${getFormattedTime(editData?.eventDate)}. Location: ${editData?.eventLocation} , Url: https://flashback.inc/login/${event?.event_name}`
-                        : `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(event.event_date)} at ${getFormattedTime(event.event_date)}. Location: ${event.event_location} , Url: https://flashback.inc/login/${event?.event_name}`;
-        const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
-        window.open(url, '_blank');
-  }
+    const message = editData
+      ? `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(editData?.eventDate)} at ${getFormattedTime(editData?.eventDate)}. Location: ${editData?.eventLocation} , Url: https://flashback.inc/login/${event?.event_name}`
+      : `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(event.event_date)} at ${getFormattedTime(event.event_date)}. Location: ${event.event_location} , Url: https://flashback.inc/login/${event?.event_name}`;
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
 
-  // const formattedName = (name) => {
-  //   let event = name.replace(userDetails.user_name, '');
-  //   console.log(event)
-  //   return event;
-  // };
- 
   const formatEventName = (name) => {
     let event = name.replace(/_/g, ' ');
     console.log(userDetails.user_name);
     console.log(event);
     event = event.replace(userDetails.user_name, '');
-    console.log(event)
+    console.log(event);
     return event;
   };
 
@@ -257,207 +240,165 @@ const EventDetails = () => {
     return `${hours}:${minutes} ${ampm}`;
   }
 
+  const sendCollab = async () => {
+    try {
+      const collabLink = `https://flashback.inc/collab/${event.event_id}`;
+      const message = `Join the collaboration for the event: ${formatEventName(event?.event_name)}. Collaborate using the following link: ${collabLink}`;
+      const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+  
+      // Open WhatsApp with the message pre-filled
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error('Error generating collaboration link:', error);
+      toast.error('Failed to generate collaboration link. Please try again.');
+    }
+  };
+
   if (!event) {
     return <div>Loading Event Info</div>;
   }
 
   return (
     <>
-    { event.event_name && (
-    <div className="event-details-container">
-      <h1 className="event-details-title">{formatEventName(event?.event_name)}</h1>
-      <div className="event-details-content">
-        {/* <img 
-          src="https://img.icons8.com/ffffff/android/2x/edit.png" 
-          alt="Edit" 
-          className="edit-icon" 
-          onClick={handleEditClick}
-        /> */}
-        
-        <div className='edit-option' onClick={handleEditClick}>
-          {toggleEdit ? "Disable Edit" : "Enable Edit"}
-        </div>
-        <img 
-          src={event.event_image} 
-          alt="Event" 
-          className="modal-image" 
-        />
-        {toggleEdit ? (
-          <form onSubmit={handleFormSubmit} className="edit-form">
-            <div className="eo-form-group">
-              <p className="ed-form-label">Event Name: {formatEventName(editData?.eventName)}</p>
-              <div className="eo-form-group">
-                <label className="ed-form-label">Date:</label>
-                <p className="ed-form-value">{getFormattedDate(editData.eventDate)}</p>
-              </div>
-              <label className="ed-form-label">Invitation Note:</label>
-              <textarea 
-                name="invitationNote" 
-                value={editData.invitationNote} 
-                onChange={handleInputChange} 
-                className="ed-form-input"
-              />
-              <label className="ed-form-label">Location:</label>
-              <input 
-                type="text" 
-                name="eventLocation" 
-                value={editData.eventLocation} 
-                onChange={handleInputChange} 
-                className="ed-form-input"
-              />
-              {/* <label className="ed-form-label">Street:</label>
-              <input 
-                type="text" 
-                name="street" 
-                value={editData.street} 
-                onChange={handleInputChange} 
-                className="ed-form-input"
-              />
-              <label className="ed-form-label">City:</label>
-              <input 
-                type="text" 
-                name="city" 
-                value={editData.city} 
-                onChange={handleInputChange} 
-                className="ed-form-input"
-              />
-              <label className="ed-form-label">State:</label>
-              <input 
-                type="text" 
-                name="state" 
-                value={editData.state} 
-                onChange={handleInputChange} 
-                className="ed-form-input"
-              />
-              <label className="ed-form-label">Pin Code:</label>
-              <input 
-                type="text" 
-                name="pinCode" 
-                value={editData.pinCode} 
-                onChange={handleInputChange} 
-                className="ed-form-input"
-                pattern="^\d{6}$"
-                title="Please enter a valid 6-digit PIN code"
-                required
-              /> */}
-              {/* <label className="ed-form-label">Invitation URL:</label>
-              <input 
-                type="text" 
-                name="invitation_url" 
-                value={editData.invitation_url} 
-                onChange={handleInputChange} 
-                className="ed-form-input"
-              /> */}
+      {event.event_name && (
+        <div className="event-details-container">
+          <h1 className="event-details-title">{formatEventName(event?.event_name)}</h1>
+          <div className="event-details-content">
+            <div className="edit-option" onClick={handleEditClick}>
+              {toggleEdit ? 'Disable Edit' : 'Enable Edit'}
             </div>
-            <button type="submit" className="save-button">Save Changes</button>
-          </form>
-        ) : (
-          <div className="ed-form-group">
-            <div className="ed-form-group">
-              <p className="ed-form-value">Date: {getFormattedDate(event.event_date)}</p>
-              <p className="ed-form-value">Time: {getFormattedTime(event.event_date)}</p>
-              <p className="ed-form-value">Invitation Note: {event.invitation_note}</p>
-              <p className="ed-form-value">Location: {event.event_location}</p>
-              {/* <p className="ed-form-value">Street: {event.street},</p>
-              <p className="ed-form-value">City: {event.city},</p>
-              <p className="ed-form-value">State: {event.state},</p>
-              <p className="ed-form-value">Pin Code: {event.pin_code}</p> */}
-              <p className='ed-form-value'>Folder: {event.folder_name}</p>
-            </div>
-            <div className='ed-form-footer'>
-            <button className='footer-buttons' onClick={openQrModal}>Generate QR</button>
-            <button className='footer-buttons' onClick={openUploadFilesModal}>Upload Files</button>
-            <button className='footer-buttons' onClick={sendInvite}>Invite</button>
-            </div>
-          </div>
-        )}
-        {event.invitation_url && (
-          <a href={event.invitation_url} target="_blank" rel="noopener noreferrer" className="event-link">
-            View Invitation
-          </a>
-        )}
-      </div>
-
-      <Modal
-        isOpen={isQrModalOpen}
-        onRequestClose={closeQrModal}
-        contentLabel="QR Code"
-        className="qr-modal-content"
-        overlayClassName="modal-overlay"
-      >
-        {event && (
-          <div>
-            <div className="modal-header">
-              <h2 className="modal-title">QR Code for {formatEventName(event?.event_name)}</h2>
-              <button className="close-button" onClick={closeQrModal}>x</button>
-            </div>
-            <div className="qr-modal-body">
-              <div ref={qrRef} style={{ marginBottom: '20px' }}>
-                <QRCode value={`https://flashback.inc/login/${event?.event_name}`} size={256} />
-              </div>
-              <button className='qr-footer-buttons' onClick={downloadQRCode}>Download QR</button>
-            </div>
-          </div>
-        )}
-      </Modal>
-
-      <Modal
-        isOpen={isUploadFilesModelOpen}
-        onRequestClose={closeUploadFilesModal}
-        contentLabel="Upload Files"
-        className="uploadfiles-modal-content"
-        overlayClassName="modal-overlay"
-      >
-        <div>
-          <div className="uploadfiles-modal-header">
-            <h2 className="uploadfiles-modal-title">Upload Files</h2>
-            <button className="close-button" onClick={closeUploadFilesModal}>x</button>
-          </div>
-          <div className="modal-body">
-          <div {...getRootProps()} className={`dropzone ${isDragActive ? 'active' : ''}`} style={dropzoneStyle}>
-          <input {...getInputProps()} />
-          {isDragActive ? (
-              <p>Drop the files here ...</p> 
-           ) : (
-              <p>Drag 'n' drop files here, or click to select files from your machine</p>
-          )}
-        </div>
-        {files.length > 0 && (
-          <div className='file-status-table'>
-            <table>
-              <thread>
-                <tr>
-                  <th>File Name</th>
-                  <th>Progress</th>
-                </tr>
-                </thread>
-                <tbody>
-              {files.map((file, index) => (
-                <tr key={index}>
-                  <td>{file.name}</td>
-                  <td>
-                {uploadProgress[file.name] && (
-                  <div className="progress-bar">
-                                  <span style={{ width: `${Object.values(uploadProgress[file.name]).reduce((a, b) => a + b, 0) / Object.keys(uploadProgress[file.name]).length}%` }}></span>
+            <img src={event.event_image} alt="Event" className="modal-image" />
+            {toggleEdit ? (
+              <form onSubmit={handleFormSubmit} className="edit-form">
+                <div className="eo-form-group">
+                  <label className="ed-form-label">Event Name:</label>
+                  <input
+                    type="text"
+                    name="eventName"
+                    value={editData.eventName}
+                    onChange={handleInputChange}
+                    className="ed-form-input"
+                    required
+                  />
                 </div>
-                )}</td>
-                </tr>
-              ))}
-            </tbody>
-            </table>
+                <div className="eo-form-group">
+                  <label className="ed-form-label">Date:</label>
+                  <input
+                    type="date"
+                    name="eventDate"
+                    value={editData.eventDate}
+                    onChange={handleInputChange}
+                    className="ed-form-input"
+                    required
+                  />
+                </div>
+                <div className="eo-form-group">
+                  <label className="ed-form-label">Time:</label>
+                  <input
+                    type="time"
+                    name="eventTime"
+                    value={editData.eventTime}
+                    onChange={handleInputChange}
+                    className="ed-form-input"
+                    required
+                  />
+                </div>
+                <div className="eo-form-group">
+                  <label className="ed-form-label">Invitation Note:</label>
+                  <textarea
+                    name="invitationNote"
+                    value={editData.invitationNote}
+                    onChange={handleInputChange}
+                    className="ed-form-input"
+                  />
+                </div>
+                <div className="eo-form-group">
+                  <label className="ed-form-label">Location:</label>
+                  <input
+                    type="text"
+                    name="eventLocation"
+                    value={editData.eventLocation}
+                    onChange={handleInputChange}
+                    className="ed-form-input"
+                  />
+                </div>
+                <button type="submit" className="save-button">Save Changes</button>
+              </form>
+            ) : (
+              <div className="ed-form-group">
+                <p className="ed-form-value">Event Name: {event.event_name}</p>
+                <p className="ed-form-value">Date: {getFormattedDate(event.event_date)}</p>
+                <p className="ed-form-value">Time: {getFormattedTime(event.event_date)}</p>
+                <p className="ed-form-value">Invitation Note: {event.invitation_note}</p>
+                <p className="ed-form-value">Location: {event.event_location}</p>
+              </div>
+            )}
+            <div className="ed-form-footer">
+              <button className="footer-buttons" onClick={openQrModal}>Generate QR</button>
+              <button className="footer-buttons" onClick={openUploadFilesModal}>Upload Files</button>
+              <button className="footer-buttons" onClick={sendInvite}>Invite</button>
+              <button className="footer-buttons" onClick={sendCollab}>Collab</button>
+            </div>
+            {event.invitation_url && (
+              <a href={event.invitation_url} target="_blank" rel="noopener noreferrer" className="event-link">
+                View Invitation
+              </a>
+            )}
           </div>
-        )}
-        <button onClick={uploadFiles} className="upload-button">Upload</button>
-        {uploadStatus && <p>{uploadStatus}</p>}
-      </div>
-    </div>
-      </Modal>
-    </div>
-    )}
-      {/* // ):(
-      //   <div>Loading Event Info</div>
-      // ) */}
-      </>
+
+          <Modal
+            isOpen={isQrModalOpen}
+            onRequestClose={closeQrModal}
+            contentLabel="QR Code"
+            className="qr-modal-content"
+            overlayClassName="modal-overlay"
+          >
+            {event && (
+              <div>
+                <div className="modal-header">
+                  <h2 className="modal-title">QR Code for {formatEventName(event?.event_name)}</h2>
+                  <button className="close-button" onClick={closeQrModal}>x</button>
+                </div>
+                <div className="qr-modal-body">
+                  <div ref={qrRef} style={{ marginBottom: '20px' }}>
+                    <QRCode value={`https://flashback.inc/login/${event?.event_name}`} size={256} />
+                  </div>
+                  <button className="qr-footer-buttons" onClick={downloadQRCode}>Download QR</button>
+                </div>
+              </div>
+            )}
+          </Modal>
+
+          <Modal
+            isOpen={isUploadFilesModelOpen}
+            onRequestClose={closeUploadFilesModal}
+            contentLabel="Upload Files"
+            className="uploadfiles-modal-content"
+            overlayClassName="modal-overlay"
+          >
+            <div>
+              <div className="uploadfiles-modal-header">
+                <h2 className="uploadfiles-modal-title">Upload Files</h2>
+                <button className="close-button" onClick={closeUploadFilesModal}>x</button>
+              </div>
+              <div className="modal-body">
+                <div {...getRootProps()} className={`dropzone ${isDragActive ? 'active' : ''}`} style={dropzoneStyle}>
+                  <input {...getInputProps()} />
+                  {isDragActive ? (
+                    <p>Drop the files here ...</p>
+                  ) : (
+                    <p>Drag 'n' drop files here, or click to select files from your machine</p>
+                  )}
+                </div>
+                {fileCount > 0 && <p>{fileCount} file(s) selected</p>} {/* Display file count */}
+                <button onClick={uploadFiles} className="upload-button">Upload</button>
+                {uploadStatus && <p>{uploadStatus}</p>}
+              </div>
+            </div>
+          </Modal>
+        </div>
+      )}
+    </>
   );
 };
 
