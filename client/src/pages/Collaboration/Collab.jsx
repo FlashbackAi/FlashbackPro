@@ -2,14 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import API_UTIL from '../../services/AuthIntereptor';
 import { toast } from 'react-toastify';
+import AppBar from '../../components/AppBar/AppBar';
+import './Collab.css';
+
 
 const Collab = () => {
   const { eventId } = useParams();
   const [event, setEvent] = useState(null);
   const [userDetails, setUserDetails] = useState(null);
   const [userName, setUserName] = useState('');
-  const [isUserNameEditable, setIsUserNameEditable] = useState(false);
+  const [isUserNameExists, setIsUserNameExists] = useState(false);
   const navigate = useNavigate();
+  const userPhoneNumber = sessionStorage.getItem('userphoneNumber');
 
   useEffect(() => {
     const fetchEventData = async () => {
@@ -24,13 +28,12 @@ const Collab = () => {
 
     const fetchUserDetails = async () => {
       try {
-        const userPhoneNumber = sessionStorage.getItem('userphoneNumber');
         const response = await API_UTIL.get(`/fetchUserDetails/${userPhoneNumber}`);
         setUserDetails(response.data.data);
 
         // Check if the user_name equals user_phone_number
-        if (response.data.data.user_name === userPhoneNumber) {
-          setIsUserNameEditable(true); // Allow user to edit the user_name
+        if (response.data.data.user_name !== userPhoneNumber) {
+          setIsUserNameExists(true); // User name already exists
         }
         setUserName(response.data.data.user_name);
       } catch (error) {
@@ -41,66 +44,61 @@ const Collab = () => {
 
     fetchUserDetails();
     fetchEventData();
-  }, [eventId]);
+  }, [eventId, userPhoneNumber]);
 
-  const handleAccept = async () => {
+  const updateCollabStatus = async (status) => {
     try {
-      if (isUserNameEditable && !userName) {
+      if ((!isUserNameExists && !userName) || userName === userPhoneNumber) {
         toast.error('Please enter a valid user name.');
         return;
       }
 
       // Update user details before accepting the collaboration
-      await updateUserDetails();
+      let user_name = userName;
+      if (!isUserNameExists) {
+         const response = await updateUserDetails();
+         user_name = response.data.data.user_name
+      }
 
-      // Accept the collaboration
-      await API_UTIL.put(`/acceptCollab/${eventId}`, { userName, status: 'accept' });
+      // Accept or reject the collaboration
+      await API_UTIL.put(`/acceptCollab/${eventId}`, { userName:user_name, status });
 
-      toast.success('Collaboration accepted successfully');
+      toast.success(`Collaboration ${status.toLowerCase()}ed successfully`);
       navigate('/event');
     } catch (error) {
-      console.error('Error accepting collaboration:', error);
-      toast.error('Failed to accept collaboration. Please try again.');
+      console.error(`Error ${status.toLowerCase()}ing collaboration:`, error);
+      toast.error(`Failed to ${status.toLowerCase()} collaboration. Please try again.`);
     }
   };
 
   const updateUserDetails = async () => {
     try {
-      const userPhoneNumber = sessionStorage.getItem('userphoneNumber');
       const org_name = userName; // Assume that userName is equivalent to org_name
 
-      await API_UTIL.post('/updatePortfolioDetails', {
+      const response = await API_UTIL.post('/updatePortfolioDetails', {
         user_phone_number: userPhoneNumber,
         org_name: org_name,
         social_media: userDetails.social_media, // Retain the existing social media details
       });
 
-      toast.success('User details updated successfully');
+      // toast.success('User details updated successfully');
+      return response;
     } catch (error) {
       console.error('Error updating user details:', error);
       toast.error('Failed to update user details.');
     }
   };
 
-  const handleReject = async () => {
-    try {
-      await API_UTIL.put(`/acceptCollab/${eventId}`, { userName, status: 'reject' });
-      toast.success('Collaboration rejected successfully');
-      navigate('/event');
-    } catch (error) {
-      console.error('Error rejecting collaboration:', error);
-      toast.error('Failed to reject collaboration. Please try again.');
-    }
-  };
-
   if (!event) return <div>Loading...</div>;
 
   return (
+    <>
+    <AppBar/>
     <div className="collab-page-container">
       <h1>Collaboration Invitation</h1>
       <p>You have been invited to collaborate on the event: {event.event_name}</p>
 
-      {isUserNameEditable && (
+      {!isUserNameExists && (
         <div className="form-group">
           <label htmlFor="userName">User Name:</label>
           <input
@@ -116,10 +114,12 @@ const Collab = () => {
       )}
 
       <div>
-        <button onClick={handleAccept}>Accept</button>
-        <button onClick={handleReject}>Reject</button>
+        <button onClick={() => updateCollabStatus('Accept')}>Accept</button>
+        <button onClick={() => updateCollabStatus('Reject')}>Reject</button>
       </div>
     </div>
+    {/* <footer/> */}
+    </>
   );
 };
 

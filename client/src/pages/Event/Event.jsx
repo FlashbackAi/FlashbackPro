@@ -61,10 +61,11 @@ const Event = () => {
     const fetchEventData = async (userName) => {
       try {
         const response = await API_UTIL.get(`/getClientEventDetails/${userName}`);
-        setEvents(response.data);
+        
   
         // Fetch collaboration-accepted events
         const collabResponse = await API_UTIL.get(`/getCollabEvents/${userName}`);
+        setEvents(response.data);
         setEvents(prevEvents => [...prevEvents, ...collabResponse.data]);
   
         setLoading(false);

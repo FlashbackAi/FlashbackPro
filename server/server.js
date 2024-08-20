@@ -3773,7 +3773,7 @@ app.get("/getClientEventDetails/:clientName", async (req, res) => {
 
     const result = await docClient.scan(eventParams).promise();
 
-    if (result.Items && result.Items.length > 0) {
+    if (result.Items && result.Items.length >= 0) {
       logger.info(`Fetched event details for ${clientName}`)
       res.status(200).send(result.Items);
     } 
@@ -3844,16 +3844,18 @@ app.put('/acceptCollab/:eventId', async (req, res) => {
 app.get('/getCollabEvents/:userName', async (req, res) => {
   const { userName } = req.params;
 
+  logger.info("fetching collab of events for user:"+userName);
   const params = {
     TableName: EventCollabs,
     IndexName: 'user_name-collab_status-index',  // Assuming you have an index on user_name
     KeyConditionExpression: 'user_name = :userName AND collab_status = :status',
     ExpressionAttributeValues: {
       ':userName': userName,
-      ':status': 'accepted',
+      ':status': 'Accept',
     },
   };
 
+  logger.info(params)
   try {
     const data = await docClient.query(params).promise();
     const eventIds = data.Items.map(item => item.event_id);
@@ -3861,7 +3863,7 @@ app.get('/getCollabEvents/:userName', async (req, res) => {
     // Now fetch the events based on the event IDs
     const events = await Promise.all(eventIds.map(async eventId => {
       const eventParams = {
-        TableName: 'events',
+        TableName: eventsDetailsTable,
         Key: {
           event_id: eventId,
         },
