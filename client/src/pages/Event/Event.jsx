@@ -65,8 +65,17 @@ const Event = () => {
   
         // Fetch collaboration-accepted events
         const collabResponse = await API_UTIL.get(`/getCollabEvents/${userName}`);
-        setEvents(response.data);
-        setEvents(prevEvents => [...prevEvents, ...collabResponse.data]);
+        const allEvents = [...response.data, ...collabResponse.data];
+        const uniqueEvents = allEvents.reduce((acc, current) => {
+          const x = acc.find(item => item.event_id === current.event_id);
+          if (!x) {
+            return acc.concat([current]);
+          } else {
+            return acc;
+          }
+        }, []);
+  
+        setEvents(uniqueEvents);
   
         setLoading(false);
       } catch (error) {

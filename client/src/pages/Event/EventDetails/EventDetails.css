@@ -300,3 +300,20 @@
     max-width: 80em;
     margin-bottom: 15px;
   }
+
+
+  /* Add this CSS for the spinner */
+.spinner {
+  border: 0.25em solid rgba(0, 0, 0, 0.1);
+  border-top: 0.25em solid #007bff; /* Blue color similar to the image */
+  border-radius: 50%;
+  width: 1.5em; /* Adjust size as needed */
+  height: 1.5em; /* Adjust size as needed */
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

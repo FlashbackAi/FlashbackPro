@@ -247,7 +247,7 @@ function Pro() {
                   </div>
                 ))}
 
-                {showRewardPointsPopUp && (
+                {/* {showRewardPointsPopUp && (
                 <div className="popup">
                   <div className="popup-content">
                     <h2>Congratulations!</h2>
@@ -255,7 +255,7 @@ function Pro() {
                     <button onClick={handleClosePopup}>X</button>
                   </div>
                 </div>
-              )}
+              )} */}
               </div>
               </>
             ) : fetchTimeout ? (

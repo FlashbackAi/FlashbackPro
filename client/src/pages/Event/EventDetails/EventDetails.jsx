@@ -28,6 +28,7 @@ const EventDetails = () => {
   const userDetails = location.state?.userDetails; // Retrieve userDetails from location state
   const navigate = useNavigate();
   const [fileCount, setFileCount] = useState(0);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   console.log(userDetails);
 
@@ -256,6 +257,44 @@ const EventDetails = () => {
     }
   };
 
+  const publishImages = async () => {
+    try {
+      setIsPublishing(true); // Start publishing
+  
+      const eventName = event.event_name;
+      const folderName = event.folder_name;
+  
+      // Trigger both flashback and image resize in parallel
+      const triggerFlashbackPromise = API_UTIL.post('/trigger-flashback', { eventName, folderName });
+      const resizeImagesPromise = API_UTIL.post('/api/resize-copy-images', { sourceFolder: folderName });
+  
+      // Wait for both promises to complete
+      const [triggerFlashbackResponse, resizeImagesResponse] = await Promise.all([
+        triggerFlashbackPromise,
+        resizeImagesPromise
+      ]);
+  
+      // After both operations are complete, send flashbacks
+      if (triggerFlashbackResponse.status === 200 && resizeImagesResponse.status === 200) {
+        const sendFlashbacksResponse = await API_UTIL.post('/send-flashbacks', { eventName });
+  
+        if (sendFlashbacksResponse.status === 200) {
+          toast.success('Images published and flashbacks sent successfully!');
+        } else {
+          throw new Error('Failed to send flashbacks.');
+        }
+      } else {
+        throw new Error('Failed to trigger flashback or resize images.');
+      }
+    } catch (error) {
+      console.error('Error Publishing Images', error);
+      toast.error('Failed to Publish Images');
+    } finally {
+      setIsPublishing(false); // End publishing
+    }
+  };
+  
+
   if (!event) {
     return <div>Loading Event Info</div>;
   }
@@ -359,6 +398,14 @@ const EventDetails = () => {
               <button className="footer-buttons" onClick={openUploadFilesModal}>Upload Files</button>
               <button className="footer-buttons" onClick={sendInvite}>Invite</button>
               <button className="footer-buttons" onClick={sendCollab}>Collab</button>
+              <button className="footer-buttons" onClick={()=>{navigate(`/pro-new/${event?.event_id}`, { state: { event } })}}>Attendees</button>
+              <button className="footer-buttons" onClick={publishImages} disabled={isPublishing}>
+                
+                {isPublishing ? 'Publishing...' : 'Publish'}
+                {/* {isPublishing && <div className="spinner"></div>} */}
+              </button>
+              <button className="footer-buttons" onClick={()=>{navigate(`/relations/${event?.event_name}`)}} disabled = {true}>Relation Mapping</button>
+
             </div>
             {event.invitation_url && (
               <a href={event.invitation_url} target="_blank" rel="noopener noreferrer" className="event-link">

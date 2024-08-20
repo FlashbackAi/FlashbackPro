@@ -9,6 +9,7 @@ import Home from "../pages/Home/Home";
 // import Profile from "../pages/Profile/Profile";
 import ImagesPage from "../pages/ImagesPage/ImagesPage";
 import Pro from "../pages/Pro/ProShare/Pro";
+import ProNew from "../pages/Pro/ProShare-new/Pro";
 import TermsAndConditions from "../pages/TermsAndConditions/TermsAndConditions";
 import Collage from "../pages/Edit/Collage/Collage";
 import SharedImage from "../pages/ImagesPage/SharedImage";
@@ -34,6 +35,7 @@ import ModelForm from "../pages/Model/ModelForm/ModelForm";
 import PortfolioForm from "../pages/Portfolio/PortfolioForm/PortfolioForm";
 import Vision from "../pages/Vision/vision"
 import Collab from "../pages/Collaboration/Collab";
+import ImagesPageNew from "../pages/ImagesPage-new/ImagesPage-new";
 
 
 const ROUTES=[
@@ -122,6 +124,12 @@ const ROUTES=[
         protected:false,
         component:ImagesPage
     },
+    {
+        path:"/photos-new/:eventName/:userId",
+        exact:false,
+        protected:false,
+        component:ImagesPageNew
+    },
     // {
     //     path:"/pictures/:eventName/:userId",
     //     exact:false,
@@ -133,6 +141,12 @@ const ROUTES=[
         exact:false,
         protected:true,
         component:Pro
+    },
+    {
+        path:"/pro-new/:eventId",
+        exact:false,
+        protected:true,
+        component:ProNew
     },
     {
         path:"/TermsAndConditions",

@@ -61,7 +61,7 @@ app.get("/share/:eventName/:userId", async(req, res) => {
       redirectUrl=`sharedImage/${eventName}/${userId}.jpg`
     }
     else{
-      redirectUrl = `photos/${eventName}/${userId}`;
+      redirectUrl = `photos-new/${eventName}/${userId}`;
     } 
     const image = `https://rekognitionuserfaces.s3.amazonaws.com/thumbnails/${userId}.jpg`
     res.render("index",{eventName:req.params.eventName,userId:req.params.userId,image,redirectUrl}); // Assuming you have an "index.ejs" file in the "views" directory
@@ -429,7 +429,9 @@ app.get('/fetch-events', async (req, res) => {
 app.post('/trigger-flashback', async (req, res) => {
   try {
     const result ={};
-    const { eventName } = req.body;
+    // 
+    const  eventName  = req.body.eventName;
+    const  folderName = req.body.folderName;
     
      logger.info("Images are being fetched for event : " +eventName);
 
@@ -439,7 +441,8 @@ app.post('/trigger-flashback', async (req, res) => {
       ProjectionExpression: 'user_id, image_id,s3_url,folder_name,faces_in_image',
       KeyConditionExpression: 'folder_name = :folderName',
       ExpressionAttributeValues: {
-        ':folderName': eventName
+        // ':folderName': eventName
+        ':folderName': folderName
       }        
     };
 
@@ -1263,70 +1266,66 @@ async function addFolderToUser(folderName,username,files_length){
 
 
 
-app.post('/images/:eventName/:userId', async (req, res) => {
+app.post('/images-new/:eventId/:userId', async (req, res) => {
   try {
    
-     const eventName = req.params.eventName;
+    
+     const eventId = req.params.eventId;
      const userId = req.params.userId;
+     const isFavourites = req.body.isFavourites;
      const lastEvaluatedKey = req.body.lastEvaluatedKey;
-     logger.info("Image are being fetched for event of pageNo -> "+eventName+"; userId -> "+userId +"; pageNo -> "+lastEvaluatedKey);
 
-    //  const pageSize = 21;
-    //  const start = (pageNo - 1) * pageSize;
-    //  const end = start + pageSize;
+     const eventDetails = await getEventDetailsById(eventId);
+     let isUserRegistered ;
+     let clientName;
+     let clientObject;
+     let userObject;
+     if(!oldEvents.includes(eventDetails.event_name))
+      {
+        isUserRegistered = await checkIsUserRegistered(userId);
+      }
+      else{
+        isUserRegistered =true;
+        logger.info("old event user");
+      }
+     // isUserRegistered = await checkIsUserRegistered(userId);
+     logger.info("isUserRegistered: "+ isUserRegistered);
+     if(!isUserRegistered)
+      {
+        logger.info("user doesnot exists... navigate to login page");
+          res.status(700).send({"message":"Oh! You are not registered, please register to view photographs"})
+      }else{
+      logger.info("user exists:"+userId);
+     logger.info("Image are being fetched for event of pageNo -> "+eventDetails.event_name+"; userId -> "+userId +"; isFavourites -> "+isFavourites);
 
-    //  const params = {
-    //   TableName: userOutputTable,
-    //   IndexName: 'user_outputs_GSI', // Specify the GSI name
-    //   KeyConditionExpression: 'user_phone_number = :partitionKey AND event_name = :sortKey', // Specify the GSI partition and sort key
-    //   ExpressionAttributeValues: {
-    //     ':partitionKey': userId, // Specify the value for the partition key
-    //     ':sortKey': eventName // Specify the value for the sort key
-    //   }
-    // };
- // logger.info(params)
-    const result = await userEventImages(eventName,userId,lastEvaluatedKey);
-      const imagesPromises = result.Items.map(async file => {
-      //   try {
-      //     const imagekey=file.s3_url.split("amazonaws.com/")[1];
-      //     const imageData = await s3.getObject({
-      //         Bucket: imagesBucketName,
-      //         Key:imagekey
-      //     }).promise();
-
-      // const resizedImageBuffer = await sharp(imageData.Body)
-      // .resize(500,500)
-      // .jpeg({ quality: 90, force: true })
-      // .toBuffer();
-        
-
-        // // Convert the image to base64 with updated metadata
-        // const base64Image = await sharp(imageBuffer)
-        //     .withMetadata() // Ensure metadata preservation
-        //     .toFormat('jpeg') // Convert to JPEG format (or 'png' if needed)
-        //     .toBuffer(); // Convert to buffer
-
-        //logger.info(resizedImageData)
-        // Convert image data to base64
+     const folder = eventDetails.event_name+"_"+eventDetails.client_name+"_"+eventId;
+    const result = await userEventImagesNew(folder,userId,lastEvaluatedKey,isFavourites);
+    logger.info("total"+result.Items.length)
+    if(!lastEvaluatedKey && isFavourites){
+      clientObject = await getClientObjectNew(eventId);
+      userObject = await getUserObjectByUserId(userId);
+    }
        
-           // Convert image data to base64
+    
+    result.Items.sort((a, b) => a.faces_in_image - b.faces_in_image);
+      const imagesPromises = result.Items.map(async file => {
         const base64ImageData =  {
+          "facesCount":file.faces_in_image,
           "thumbnailUrl":"https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/"+file.s3_url.split("amazonaws.com/")[1]
         }
-         if(eventName === 'Convocation_PrathimaCollege'){
+         if(eventDetails.event_name === 'Convocation_PrathimaCollege'){
            base64ImageData.url = "https://flashbackprathimacollection.s3.ap-south-1.amazonaws.com/"+file.s3_url.split("amazonaws.com/")[1];
- 
          }
          else{
            base64ImageData.url = file.s3_url;
          }
-         //console.log(base64ImageData.url);
           return base64ImageData;
       
     });
       const images = await Promise.all(imagesPromises);
-      logger.info("Sucessfully fetched images");
-      res.json({"images":images, 'totalImages':result.Count,'lastEvaluatedKey':result.LastEvaluatedKey});
+      logger.info('total images fetched for the user -> '+userId+'  in event -> '+eventDetails.event_name +"isFavourites -> "+isFavourites+' : '+result.Count);
+      res.json({"images":images, 'totalImages':result.Count,'lastEvaluatedKey':result.LastEvaluatedKey,'clientObj':clientObject,'userObj':userObject});
+  }
   } catch (err) {
      logger.info("Error in S3 get", err);
       res.status(500).send('Error getting images from S3');
@@ -1363,7 +1362,7 @@ async function userEventImages(eventName,userId,lastEvaluatedKey){
 }
 
 
-app.post('/images-new/:eventName/:userId', async (req, res) => {
+app.post('/images/:eventName/:userId', async (req, res) => {
   try {
    
      const eventName = req.params.eventName;
@@ -1482,7 +1481,7 @@ async function getClientObject(eventName) {
       },    
     };
     const res = await docClient.query(params).promise();
-    const clientName = res.Items[0].client_name;
+    const clientName = res.Items[0]?.client_name;
     logger.info("fetched clientName"+clientName)
     params = {
       TableName: userrecordstable,
@@ -1504,6 +1503,43 @@ async function getClientObject(eventName) {
     throw error;
   }
 }
+
+
+async function getClientObjectNew(eventId) {
+
+  try {
+    logger.info("fetching client info for eventId -> "+eventId);
+    let params = {
+      TableName: eventsDetailsTable,
+      KeyConditionExpression: 'event_id = :eventId',
+      ExpressionAttributeValues: {
+        ':eventId': eventId
+      },    
+    };
+    const res = await docClient.query(params).promise();
+    const clientName = res.Items[0]?.client_name;
+    logger.info("fetched clientName"+clientName)
+    params = {
+      TableName: userrecordstable,
+      FilterExpression: "user_name = :clientName",
+      ExpressionAttributeValues: {
+        ":clientName":clientName
+      }
+    };
+
+    const result = await docClient.scan(params).promise();
+
+    if (result.Items.length === 0) {
+      throw new Error("Client not found");
+    }
+    logger.info("client details fetched successfully");
+    return result.Items[0];
+  } catch (error) {
+    console.error("Error getting client object:", error);
+    throw error;
+  }
+}
+
 
 async function getUserObjectByUserId(userId){
   try{
@@ -1836,6 +1872,127 @@ app.get('/userThumbnails/:eventName', async (req, res) => {
   }
 });
 
+app.get('/userThumbnailsByEventId/:eventId', async (req, res) => {
+  const eventId = req.params.eventId;
+
+  try {
+    logger.info("Thumbnails are being fetched for event ID: " + eventId);
+
+    // Step 1: Fetch event details and check if thumbnails already exist in the eventsDetailsTable using eventId
+    const eventDetailsParams = {
+      TableName: eventsDetailsTable,
+      Key: {
+        event_id: eventId
+      },
+      ProjectionExpression: 'event_name, client_name, userThumbnails'
+    };
+
+    const eventDetailsResult = await docClient.get(eventDetailsParams).promise();
+
+    if (!eventDetailsResult.Item) {
+      logger.info("No event details found for event ID: " + eventId);
+      return res.status(404).send('Event not found');
+    }
+
+    if (eventDetailsResult.Item.userThumbnails) {
+      logger.info("User thumbnails found in db for event ID: " + eventId);
+      return res.json(eventDetailsResult.Item.userThumbnails);
+    }
+
+    const eventName = eventDetailsResult.Item.event_name;
+    const clientName = eventDetailsResult.Item.client_name;
+
+    // Create folder name using event_name + client_name + event_id
+    const folderName = `${eventName}_${clientName}_${eventId}`;
+
+    logger.info("Constructed folder name: " + folderName);
+
+    // Step 2: Query indexedDataTableName to get imageIds associated with the constructed folder name
+    const params = {
+      TableName: indexedDataTableName,
+      IndexName: 'folder_name-user_id-index',
+      ProjectionExpression: 'user_id, image_id, Gender_Value, AgeRange_Low, AgeRange_High',
+      KeyConditionExpression: 'folder_name = :folderName',
+      ExpressionAttributeValues: {
+        ':folderName': folderName
+      }
+    };
+
+    let items = [];
+    let lastEvaluatedKey = null;
+    do {
+      if (lastEvaluatedKey) {
+        params.ExclusiveStartKey = lastEvaluatedKey;
+      }
+
+      const data = await docClient.query(params).promise();
+      items = items.concat(data.Items);
+      lastEvaluatedKey = data.LastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    const userCountMap = new Map();
+
+    items.forEach(item => {
+      const userId = item.user_id;
+      const gender = item.Gender_Value;
+      const ageLow = item.AgeRange_Low;
+      const ageHigh = item.AgeRange_High;
+      if (!userCountMap.has(userId)) {
+        // Initialize the map with an object containing userId, count, and gender
+        userCountMap.set(userId, { userId, count: 0, gender, age: 0 });
+      }
+
+      // Increment the count for this userId
+      const userInfo = userCountMap.get(userId);
+      userInfo.count += 1;
+      // Age average
+      if (ageLow && ageHigh) {
+        userInfo.age = (userInfo.age + ((ageLow + ageHigh) / 2)) / 2;
+      }
+      // Update the map with the new object
+      userCountMap.set(userId, userInfo);
+    });
+
+    logger.info("Total number of user userIds fetched: " + userCountMap.size);
+    const usersIds = Array.from(userCountMap.keys());
+    const keys = usersIds.map(userId => ({ user_id: userId }));
+
+    const thumbnailObject = await getThumbanailsForUserIds(keys);
+    thumbnailObject.forEach(item => {
+      item.count = userCountMap.get(item.user_id).count;
+      item.gender = userCountMap.get(item.user_id).gender;
+      item.avgAge = userCountMap.get(item.user_id).age;
+    });
+    thumbnailObject.sort((a, b) => b.count - a.count);
+
+    logger.info("Total number of user thumbnails fetched: " + thumbnailObject.length);
+
+    // Step 3: Store the result in eventsDetailsTable using eventId
+
+    const updateParams = {
+      TableName: eventsDetailsTable,
+      Key: {
+        event_id: eventId,
+        event_date: eventDetailsResult.Item.event_date // Ensure you fetch event_date in the ProjectionExpression if needed
+      },
+      UpdateExpression: 'set userThumbnails = :thumbnails',
+      ExpressionAttributeValues: {
+        ':thumbnails': thumbnailObject
+      },
+      ReturnValues: 'UPDATED_NEW'
+    };
+
+    await docClient.update(updateParams).promise();
+    logger.info("User thumbnails saved for event ID: " + eventId);
+
+    res.json(thumbnailObject);
+  } catch (err) {
+    logger.error("Error in fetching thumbnails for event ID: " + eventId, err);
+    res.status(500).send('Error getting thumbnails for the event ID: ' + eventId);
+  }
+});
+
+
 
 async function getThumbanailsForUserIds(keys){
 
@@ -1872,6 +2029,7 @@ async function getThumbanailsForUserIds(keys){
 
 async function userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites){
     
+  logger.info(eventName+"--------"+userId);
    logger.info(isFavourites)
     try {
     let params = {}
@@ -1893,11 +2051,11 @@ async function userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites
         TableName: userOutputTable,
         IndexName: 'unique_uid-event_name-index', 
         KeyConditionExpression: 'unique_uid = :partitionKey AND event_name = :sortKey',
-        FilterExpression : "is_favourite <> :isFav",
+        // FilterExpression : "is_favourite <> :isFav",
         ExpressionAttributeValues: {
           ':partitionKey': userId, // Specify the value for the partition key
           ':sortKey': eventName,
-          ':isFav':  true// Specify the value for the sort key
+          // ':isFav':  true// Specify the value for the sort key
         },
         Limit : 100,        
       };
@@ -4083,33 +4241,44 @@ app.put('/updateEvent/:eventId', async (req, res) => {
 });
 
 app.get("/getEventDetails/:eventId", async (req, res) => {
+  const eventId = req.params.eventId;
+  logger.info(`Fetching event details for ${eventId}`);
   
-  const eventId = req.params.eventId; // Adjust based on your token payload
-  logger.info(`Fetching event details for ${eventId}`)
   try {
-    const eventParams = {
-      TableName: eventsDetailsTable,
-      FilterExpression: "event_id = :eventId",
-      ExpressionAttributeValues: {
-        ":eventId": eventId
-      }
+    const eventDetails = await getEventDetailsById(eventId);
 
-    };
-
-
-    const result = await docClient.scan(eventParams).promise();
-
-    if (result.Items && result.Items.length > 0) {
-      logger.info(`Fetched event details for ${eventId}`)
-      res.status(200).send(result.Items[0]);
+    if (eventDetails) {
+      logger.info(`Fetched event details for ${eventId}`);
+      res.status(200).send(eventDetails);
     } else {
       res.status(404).send({ message: "Event not found" });
     }
   } catch (err) {
     logger.info(err.message);
-    res.status(500).send(err.message);
+    res.status(500).send({ message: err.message });
   }
 });
+const getEventDetailsById = async (eventId) => {
+  const eventParams = {
+    TableName: eventsDetailsTable,
+    FilterExpression: "event_id = :eventId",
+    ExpressionAttributeValues: {
+      ":eventId": eventId
+    }
+  };
+
+  try {
+    const result = await docClient.scan(eventParams).promise();
+    if (result.Items && result.Items.length > 0) {
+      return result.Items[0]; // Return the first item found
+    } else {
+      return null; // Return null if no event is found
+    }
+  } catch (err) {
+    throw new Error(`Error fetching event details: ${err.message}`);
+  }
+};
+
 
 
 
@@ -5260,7 +5429,8 @@ app.get('/getPortfolioImages/:org_name/:user_name', async (req, res) => {
     const s3Data = await s3.listObjectsV2(params).promise();
 
     if (!s3Data.Contents || s3Data.Contents.length === 0) {
-      return res.status(404).json({ message: 'No images found' });
+      // return res.status(404).json({ message: 'No images found' });
+      return res.status(200).json({ message: 'No images found' });
     }
 
     const folderWiseImages = {};

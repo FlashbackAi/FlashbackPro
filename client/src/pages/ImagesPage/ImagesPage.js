@@ -46,7 +46,7 @@ function ImagesPage() {
     setIsLoading(true);
     try {
       const response = await API_UTIL.post(
-        `/images-new/${eventName}/${userId}`,
+        `/images/${eventName}/${userId}`,
         {
           isFavourites: true
         }
@@ -86,7 +86,7 @@ function ImagesPage() {
     if (images.length === 0) setIsLoading(true);
     try {
       const response = await API_UTIL.post(
-        `/images-new/${eventName}/${userId}  `,
+        `/images/${eventName}/${userId}  `,
         {
           isFavourites: false,
           lastEvaluatedKey: lastEvaluatedKey
@@ -274,8 +274,8 @@ function ImagesPage() {
         <>
           <AppBar/>
           <MiniHeroComponent 
-            orgName={clientObj.org_name}
-              socialMediaLinks={clientObj.social_media}
+            orgName={clientObj?.org_name}
+              socialMediaLinks={clientObj?.social_media}
               backdropImage={bannerImg}
             />
           <div className="content-wrap">
