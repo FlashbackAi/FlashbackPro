@@ -1,0 +1,9 @@
+.label-text-field {
+    >span {
+        color: #000000;
+    font-size: 1rem;
+    font-weight: bold;
+    padding-left: 2px;
+    }
+    margin-bottom: 1.5rem;
+}

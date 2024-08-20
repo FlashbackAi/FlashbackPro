@@ -6,6 +6,8 @@ import { toast } from 'react-toastify';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import API_UTIL from '../../../services/AuthIntereptor';
 import './EventDetails.css';
+import AppBar from '../../../components/AppBar/AppBar';
+import LabelAndInput from '../../../components/molecules/LabelAndInput/LabelAndInput';
 
 const EventDetails = () => {
   const location = useLocation();
@@ -259,18 +261,30 @@ const EventDetails = () => {
   }
 
   return (
-    <>
+    <div className="event-details-page-root">
+      <AppBar></AppBar>
       {event.event_name && (
         <div className="event-details-container">
-          <h1 className="event-details-title">{formatEventName(event?.event_name)}</h1>
-          <div className="event-details-content">
-            <div className="edit-option" onClick={handleEditClick}>
-              {toggleEdit ? 'Disable Edit' : 'Enable Edit'}
+          <h1 className="event-details-title">
+            {formatEventName(event?.event_name)}
+          </h1>
+            <div className="invitation-image">
+              <img
+                src={event.event_image}
+                alt="Event"
+                className="modal-image"
+              />
             </div>
-            <img src={event.event_image} alt="Event" className="modal-image" />
-            {toggleEdit ? (
-              <form onSubmit={handleFormSubmit} className="edit-form">
-                <div className="eo-form-group">
+          <div className="invitation-image-content">
+
+            <div className="event-details-content">
+              {/* <div className="edit-option" onClick={handleEditClick}>
+                {toggleEdit ? "Disable Edit" : "Enable Edit"}
+              </div> */}
+
+              {toggleEdit ? (
+                <form onSubmit={handleFormSubmit} className="edit-form">
+                  <div className="eo-form-group">
                   <label className="ed-form-label">Event Name:</label>
                   <input
                     type="text"
@@ -281,8 +295,8 @@ const EventDetails = () => {
                     required
                   />
                 </div>
-                <div className="eo-form-group">
-                  <label className="ed-form-label">Date:</label>
+                    <div className="eo-form-group">
+                      <label className="ed-form-label">Date:</label>
                   <input
                     type="date"
                     name="eventDate"
@@ -302,37 +316,44 @@ const EventDetails = () => {
                     className="ed-form-input"
                     required
                   />
+                    </div>
+                <div className="eo-form-group">
+                    <label className="ed-form-label">Invitation Note:</label>
+                    <textarea
+                      name="invitationNote"
+                      value={editData.invitationNote}
+                      onChange={handleInputChange}
+                      className="ed-form-input"
+                    />
                 </div>
                 <div className="eo-form-group">
-                  <label className="ed-form-label">Invitation Note:</label>
-                  <textarea
-                    name="invitationNote"
-                    value={editData.invitationNote}
-                    onChange={handleInputChange}
-                    className="ed-form-input"
-                  />
-                </div>
-                <div className="eo-form-group">
-                  <label className="ed-form-label">Location:</label>
-                  <input
-                    type="text"
-                    name="eventLocation"
-                    value={editData.eventLocation}
-                    onChange={handleInputChange}
-                    className="ed-form-input"
-                  />
-                </div>
+                    <label className="ed-form-label">Location:</label>
+                    <input
+                      type="text"
+                      name="eventLocation"
+                      value={editData.eventLocation}
+                      onChange={handleInputChange}
+                      className="ed-form-input"
+                    />
+                  </div>
                 <button type="submit" className="save-button">Save Changes</button>
-              </form>
-            ) : (
-              <div className="ed-form-group">
-                <p className="ed-form-value">Event Name: {event.event_name}</p>
-                <p className="ed-form-value">Date: {getFormattedDate(event.event_date)}</p>
-                <p className="ed-form-value">Time: {getFormattedTime(event.event_date)}</p>
-                <p className="ed-form-value">Invitation Note: {event.invitation_note}</p>
-                <p className="ed-form-value">Location: {event.event_location}</p>
-              </div>
-            )}
+                </form>
+              ) : (
+                <div className="ed-form-group">
+                <LabelAndInput name={"eventName"} label={"Event Name:"} value={event.event_name} type={"text"} handleChange={handleInputChange} isEditable={toggleEdit} ></LabelAndInput>
+                <LabelAndInput name={"eventDate"} label={"Date:"} value={getFormattedDate(event.event_date)} type={"date"} handleChange={handleInputChange} isEditable={toggleEdit} ></LabelAndInput>
+                <LabelAndInput name={"eventTime"} label={"Time:"} value={getFormattedTime(event.event_date)} type={"time"} handleChange={handleInputChange} isEditable={toggleEdit} ></LabelAndInput>
+                <LabelAndInput name={"invitationNote"} label={"Invitation Note:"} value={event.invitation_note} type={"text"} handleChange={handleInputChange} isEditable={toggleEdit} ></LabelAndInput>
+                <LabelAndInput name={"eventLocation"} label={"Location:"} value={event.event_location} type={"text"} handleChange={handleInputChange} isEditable={toggleEdit} ></LabelAndInput>
+                {/* <p className="ed-form-value">Event Name: {event.event_name}</p> */}
+                {/* <p className="ed-form-value">Date: {getFormattedDate(event.event_date)}</p> */}
+                {/* <p className="ed-form-value">Time: {getFormattedTime(event.event_date)}</p> */}
+                {/* <p className="ed-form-value">Invitation Note: {event.invitation_note}</p> */}
+                {/* <p className="ed-form-value">Location: {event.event_location}</p> */}
+                </div>
+              )}
+              
+            </div>
             <div className="ed-form-footer">
               <button className="footer-buttons" onClick={openQrModal}>Generate QR</button>
               <button className="footer-buttons" onClick={openUploadFilesModal}>Upload Files</button>
@@ -341,9 +362,12 @@ const EventDetails = () => {
             </div>
             {event.invitation_url && (
               <a href={event.invitation_url} target="_blank" rel="noopener noreferrer" className="event-link">
-                View Invitation
-              </a>
-            )}
+                  View Invitation
+                </a>
+              )}
+          </div>
+          <div>
+            
           </div>
 
           <Modal
@@ -398,7 +422,7 @@ const EventDetails = () => {
           </Modal>
         </div>
       )}
-    </>
+    </div>
   );
 };
 
