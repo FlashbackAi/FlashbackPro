@@ -33,6 +33,7 @@ import ModelDetails from "../pages/Model/ModelDetails/ModelDetails"
 import ModelForm from "../pages/Model/ModelForm/ModelForm";
 import PortfolioForm from "../pages/Portfolio/PortfolioForm/PortfolioForm";
 import Vision from "../pages/Vision/vision"
+import Collab from "../pages/Collaboration/Collab";
 
 
 const ROUTES=[
@@ -253,6 +254,13 @@ const ROUTES=[
         protected:true,
         component:Vision,
     },
+    {
+        path:"/collab/:eventId",
+        exact:false,
+        protected:true,
+        component:Collab,
+    },
+    
     
 
     // This routes are for protocol - dataset

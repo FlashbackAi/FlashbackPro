@@ -25,6 +25,7 @@ const dotenv = require('dotenv');
 const rateLimit = require('express-rate-limit');
 const WhatsAppSender = require('./WhatsappSender');
 const { v4: uuidv4 } = require('uuid');
+const { log } = require('console');
 //const App = require('..\\client');
 const oldEvents = ["Aarthi_Vinay_19122021","Convocation_PrathimaCollege","KSL_25042024","Jahnavi_Vaishnavi_SC_28042024","KSL_22052024","KSL_16052024","V20_BootCamp_2024","Neha_ShivaTeja_18042024"]
 
@@ -118,6 +119,7 @@ const userOutputTable='user_outputs';
 const userClientInteractionTable ='user_client_interaction';
 const eventsTable = 'events';
 const eventsDetailsTable = 'event_details';
+const EventCollabs = 'event_collabs';
 const projectsTable = 'projects_data';
 const indexedDataTableName = 'indexed_data'
 const formDataTableName = 'selectionFormData'; 
@@ -3806,6 +3808,76 @@ app.get("/getUserDetails/:userPhoneNumber", async (req, res) => {
     res.status(500).send(err.message);
   }
 });
+
+app.put('/acceptCollab/:eventId', async (req, res) => {
+  const { eventId } = req.params;
+  const  userName  = req.body.userName;
+  const status = req.body.status
+
+  logger.info(status)
+
+  const updateParams = {
+    TableName: EventCollabs,
+    Key: {
+      event_id: eventId,
+      user_name: userName,
+    },
+    UpdateExpression: 'SET #status = :status',
+    ExpressionAttributeNames: {
+      '#status': 'collab_status',
+    },
+    ExpressionAttributeValues: {
+      ':status': status,
+    },
+    ReturnValues: 'ALL_NEW',
+  };
+
+  try {
+    const result = await docClient.update(updateParams).promise();
+    res.status(200).send(result.Attributes);
+  } catch (err) {
+    console.error('Error updating collaboration status:', err);
+    res.status(500).send({ error: 'Failed to update collaboration status' });
+  }
+});
+
+app.get('/getCollabEvents/:userName', async (req, res) => {
+  const { userName } = req.params;
+
+  const params = {
+    TableName: EventCollabs,
+    IndexName: 'user_name-collab_status-index',  // Assuming you have an index on user_name
+    KeyConditionExpression: 'user_name = :userName AND collab_status = :status',
+    ExpressionAttributeValues: {
+      ':userName': userName,
+      ':status': 'accepted',
+    },
+  };
+
+  try {
+    const data = await docClient.query(params).promise();
+    const eventIds = data.Items.map(item => item.event_id);
+
+    // Now fetch the events based on the event IDs
+    const events = await Promise.all(eventIds.map(async eventId => {
+      const eventParams = {
+        TableName: 'events',
+        Key: {
+          event_id: eventId,
+        },
+      };
+      const eventData = await docClient.get(eventParams).promise();
+      return eventData.Item;
+    }));
+
+    res.status(200).send(events);
+  } catch (error) {
+    console.error('Error fetching collaboration events:', error);
+    res.status(500).json({ error: 'Failed to fetch collaboration events' });
+  }
+});
+
+
 
 
 // app.post('/saveEventDetails', upload.single('image'), async (req, res) => {

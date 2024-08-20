@@ -44,39 +44,7 @@ const Event = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchEventData = async (userName) => {
-      try {
-        const response = await API_UTIL.get(`/getClientEventDetails/${userName}`);
-        setEvents(response.data);
-        setLoading(false);
-      } catch (error) {
-        setError(error.message);
-        setLoading(false);
-      }
-    };
-
-    const fetchUserDetails = async () => {
-      try {
-        setLoading(true);
-       
-        const response = await API_UTIL.get(`/fetchUserDetails/${userPhoneNumber}`);
-        setUserDetails(response.data.data);
-
-        if (response.data.data.user_name === userPhoneNumber) {
-          setIsUserDetailsModalOpen(true); // Open the modal to collect user details
-        } else {
-          fetchEventData(response.data.data.user_name);
-          fetchProjects(response.data.data.user_name);
-        }
-
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching user details:', error);
-        setLoading(false);
-      }
-    };
-
-   
+    
     const fetchProjects = async (clientName) => {
       try {
         const response = await API_UTIL.get(`/getProjectDetails/${clientName}`);
@@ -90,14 +58,50 @@ const Event = () => {
         setProjects([]);
       }
     };
-
+    const fetchEventData = async (userName) => {
+      try {
+        const response = await API_UTIL.get(`/getClientEventDetails/${userName}`);
+        setEvents(response.data);
+  
+        // Fetch collaboration-accepted events
+        const collabResponse = await API_UTIL.get(`/getCollabEvents/${userName}`);
+        setEvents(prevEvents => [...prevEvents, ...collabResponse.data]);
+  
+        setLoading(false);
+      } catch (error) {
+        setError(error.message);
+        setLoading(false);
+      }
+    };
+  
+    const fetchUserDetails = async () => {
+      try {
+        setLoading(true);
+        const response = await API_UTIL.get(`/fetchUserDetails/${userPhoneNumber}`);
+        setUserDetails(response.data.data);
+  
+        if (response.data.data.user_name === userPhoneNumber) {
+          setIsUserDetailsModalOpen(true); // Open the modal to collect user details
+        } else {
+          fetchEventData(response.data.data.user_name);
+          fetchProjects(response.data.data.user_name);
+        }
+  
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching user details:', error);
+        setLoading(false);
+      }
+    };
+  
     fetchUserDetails();
   }, [userPhoneNumber]);
-
+  
+  
   const onEventClick = (event_id) => {
     navigate(`/eventDetails/${event_id}`, { state: { userDetails } })
   };
-
+  
   const openDeleteModal = (event) => {
     setEventToDelete(event);
     setIsDeleteModalOpen(true);
