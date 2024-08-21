@@ -988,7 +988,7 @@ const handleSelectTab = async (key) => {
               <div className="content">
               {Object.keys(imagesData).map((tab, idx) => (
                 <div key={idx} className={`tab-content ${activeMainTab === tab ? 'active' : ''}`}>
-                  <h2>Select the {tab} Pictures to be added to the Album</h2>
+                  <h2>Select the {tab}</h2>
                   {isLoading ? (
                     <LoadingSpinner />
                   ) : imagesData[tab].images.length > 0 ? (
