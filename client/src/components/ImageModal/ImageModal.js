@@ -324,7 +324,7 @@ const ImageModal = ({
             //       <span className="dFlex alignCenter cursor-pointer dismiss" onClick={handleModalClose}>
             //     Go-Back
             // </span>
-            <ArrowLeft className="back-left-arrow dismiss" onClick={handleBackButton} />
+            <ArrowLeft className="back-left-arrow" onClick={handleBackButton} />
         )}
 
         <img onLoad={onLoad} src={clickedImg} alt="bigger pic" />
