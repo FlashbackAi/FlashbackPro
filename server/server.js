@@ -506,7 +506,7 @@ app.post('/trigger-flashback', async (req, res) => {
         await Promise.all(promises);
         result.IndexDataCount = indexData.length;
         logger.info('All items successfully inserted');
-        const phoneNumbers = await queryUserEventMapping(eventName);
+        const phoneNumbers = await queryUserEventMapping(folderName);
         const totalUsers = phoneNumbers.length;
         result.totalExistingUsers = totalUsers;
         logger.info("total number of users fetched from user-event mapping: "+totalUsers)
@@ -524,7 +524,7 @@ app.post('/trigger-flashback', async (req, res) => {
               continue; // Skip to the next phone number
             }
 
-            const mappedUser = await mapUserIdAndPhoneNumber(phoneNumber,portraitS3Url,eventName,'');
+            const mappedUser = await mapUserIdAndPhoneNumber(phoneNumber,portraitS3Url,folderName,'');
             logger.info(result)
           } catch (error) {
             logger.info("Failure in marking the userId and phone number:", error);
@@ -807,6 +807,7 @@ app.get('/flashback-progress/:taskId', (req, res) => {
 async function sendFlashbacksAsync(taskId, eventName) {
   try {
     const userEventMappings = await getUserEventMappings(eventName);
+    logger.info(userEventMappings)
     const totalUsers = userEventMappings.length;
     let sentUsers = 0;
 
@@ -932,15 +933,15 @@ async function updateEventFlashbackStatus(eventName, status) {
   try {
     // First, query the events table to get the event_date
     const queryParams = {
-      TableName: 'events',
-      KeyConditionExpression: 'event_name = :eventName',
+      TableName: eventsDetailsTable,
+      FilterExpression: 'folder_name = :eventName',
       ExpressionAttributeValues: {
         ':eventName': eventName
       },
       ProjectionExpression: 'event_date'
     };
 
-    const queryResult = await docClient.query(queryParams).promise();
+    const queryResult = await docClient.scan(queryParams).promise();
 
     if (queryResult.Items.length === 0) {
       throw new Error(`Event not found: ${eventName}`);
@@ -950,7 +951,7 @@ async function updateEventFlashbackStatus(eventName, status) {
 
     // Now update the event with the flashback status
     const updateParams = {
-      TableName: 'events',
+      TableName: '',
       Key: {
         'event_name': { S: eventName },
         'event_date': { S: eventDate }
@@ -1266,16 +1267,16 @@ async function addFolderToUser(folderName,username,files_length){
 
 
 
-app.post('/images-new/:eventId/:userId', async (req, res) => {
+app.post('/images-new/:eventName/:userId', async (req, res) => {
   try {
    
     
-     const eventId = req.params.eventId;
+     const eventName = req.params.eventName;
      const userId = req.params.userId;
      const isFavourites = req.body.isFavourites;
      const lastEvaluatedKey = req.body.lastEvaluatedKey;
 
-     const eventDetails = await getEventDetailsById(eventId);
+     const eventDetails = await getEventDetailsByFolderName(eventName);
      let isUserRegistered ;
      let clientName;
      let clientObject;
@@ -1298,11 +1299,11 @@ app.post('/images-new/:eventId/:userId', async (req, res) => {
       logger.info("user exists:"+userId);
      logger.info("Image are being fetched for event of pageNo -> "+eventDetails.event_name+"; userId -> "+userId +"; isFavourites -> "+isFavourites);
 
-     const folder = eventDetails.event_name+"_"+eventDetails.client_name+"_"+eventId;
+     const folder = eventDetails.folder_name;
     const result = await userEventImagesNew(folder,userId,lastEvaluatedKey,isFavourites);
     logger.info("total"+result.Items.length)
     if(!lastEvaluatedKey && isFavourites){
-      clientObject = await getClientObjectNew(eventId);
+      clientObject = await getClientObjectNew(eventDetails.event_id);
       userObject = await getUserObjectByUserId(userId);
     }
        
@@ -4264,6 +4265,27 @@ const getEventDetailsById = async (eventId) => {
     FilterExpression: "event_id = :eventId",
     ExpressionAttributeValues: {
       ":eventId": eventId
+    }
+  };
+
+  try {
+    const result = await docClient.scan(eventParams).promise();
+    if (result.Items && result.Items.length > 0) {
+      return result.Items[0]; // Return the first item found
+    } else {
+      return null; // Return null if no event is found
+    }
+  } catch (err) {
+    throw new Error(`Error fetching event details: ${err.message}`);
+  }
+};
+
+const getEventDetailsByFolderName = async (folderName) => {
+  const eventParams = {
+    TableName: eventsDetailsTable,
+    FilterExpression: "folder_name = :folderName",
+    ExpressionAttributeValues: {
+      ":folderName": folderName
     }
   };
 

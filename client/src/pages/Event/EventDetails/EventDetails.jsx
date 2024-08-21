@@ -276,7 +276,7 @@ const EventDetails = () => {
   
       // After both operations are complete, send flashbacks
       if (triggerFlashbackResponse.status === 200 && resizeImagesResponse.status === 200) {
-        const sendFlashbacksResponse = await API_UTIL.post('/send-flashbacks', { eventName });
+        const sendFlashbacksResponse = await API_UTIL.post('/send-flashbacks', { eventName:event.folder_name });
   
         if (sendFlashbacksResponse.status === 200) {
           toast.success('Images published and flashbacks sent successfully!');
