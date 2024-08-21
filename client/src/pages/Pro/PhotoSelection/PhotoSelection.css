@@ -8,10 +8,11 @@ header{
     flex: 1;
 }
 .sidebar{
-    width:8em;
+    width:6em;
     height: 100vh;;
     overflow-y: auto;
     margin-top: 1em;
+    min-width: 6%;
 }
 
 .content{
@@ -141,10 +142,12 @@ header{
   }
   
   .image-container {
-    flex: 0 0 calc(25% - 20px); /* Three images per row with some margin */
-    margin: 10px; /* Adjust the margin for spacing between images */
+    flex: 0 0 calc(25% -2em); /* Three images per row with some margin */
+    /*margin: 10px; !* Adjust the margin for spacing between images *!*/
     box-sizing: border-box;
     position: relative;
+    display: contents;
+    min-width: 7.75em;
   }
   
   .image_favourite_down {
@@ -192,7 +195,7 @@ header{
 
 .sidebar .list li {
   cursor: pointer;
-  padding: 10px;
+  margin: 0.2em;
   list-style: none;
 }
 
@@ -284,4 +287,10 @@ li{
 .photoSelectionEntry h2{
   color: black;
   padding: 2em;
+}
+
+.lazy-load-image-loaded{
+  /*width: 44%;*/
+  /*height: 8rem;*/
+  /*margin: 0.5rem;*/
 }
