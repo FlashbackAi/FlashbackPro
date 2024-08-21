@@ -1185,10 +1185,12 @@ li {
 .imageToolBox {
   width: 90%;
   display: flex;
-  background: #dbe0e4;
+  /*background: #dbe0e4;*/
+  background-color: rgb(255 255 255 / 75%);
   padding: 1em;
   gap: 1em;
   font-size: 0.8em;
+  font-weight: ;
   color: #1c1c1c;
   /* margin-top: 10px; */
   /* flex-direction: column; */
