@@ -37,3 +37,15 @@
         align-items: center;
     }
 }
+.logout-button {
+    background-color: transparent;
+    border: none;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.logout-button:hover {
+    color: #EE75CB;
+}

@@ -1,9 +1,18 @@
 import React from 'react'
 import './AppBar.css'
 import { COMPANY_NAME } from '../../helpers/constants';
+import { useNavigate } from 'react-router-dom';
 
+const AppBar = ({ showLogout = true }) => {
+  const navigate = useNavigate();
 
-const AppBar = () => {
+  const handleLogout = () => {
+    // Remove session storage
+    sessionStorage.clear();
+
+    // Navigate to the default page '/'
+    navigate('/');
+  };
   return (
     <div className='app-bar'>
       <div className='app-bar-logo'>
@@ -18,6 +27,15 @@ const AppBar = () => {
             <img src="assets/Images/icon-footer-instagram.svg" alt="Instagram" />
           </a>
       </div>
+      {showLogout && (
+      <div className='logout-section'>
+        
+          <button className='logout-button' onClick={handleLogout}>
+            Logout
+          </button>
+       
+      </div>
+       )}
     </div>
   )
 }

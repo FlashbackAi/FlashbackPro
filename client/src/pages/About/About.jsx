@@ -25,7 +25,7 @@ const About = () => {
   };
   return (
     <>
-      <AppBar />
+      <AppBar showLogout={false}/>
       <header className="header-background">
         <div className="video-container">
           <img

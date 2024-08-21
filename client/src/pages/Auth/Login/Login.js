@@ -315,7 +315,7 @@ function Login({ name, onLoginSuccess, showAppBar=true }) {
       <div className="login-page-appbar">
 
       {showAppBar && <div >
-         <AppBar></AppBar> </div>
+         <AppBar showLogout={false}></AppBar> </div>
       
 }
 <>
