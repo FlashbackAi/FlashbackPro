@@ -314,11 +314,19 @@ const ImageModal = ({
     <div className="overlay dismiss" onClick={handleClick} onTouchStart={handleSwipe}>
       <LoadingSpinner />
       <div className="modalOuter lazyImage hidden">
+        {/*{close && (*/}
+        {/*  <span className="dismiss" onClick={handleBackButton}>*/}
+        {/*    X*/}
+        {/*  </span>*/}
+        {/*)}*/}
+
         {close && (
-          <span className="dismiss" onClick={handleBackButton}>
-            X
-          </span>
+            //       <span className="dFlex alignCenter cursor-pointer dismiss" onClick={handleModalClose}>
+            //     Go-Back
+            // </span>
+            <ArrowLeft className="back-left-arrow dismiss" onClick={handleBackButton} />
         )}
+
         <img onLoad={onLoad} src={clickedImg} alt="bigger pic" />
         <div className="imageToolBox">
           {favourite && (
