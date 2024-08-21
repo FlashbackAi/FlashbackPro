@@ -882,8 +882,11 @@ async function getUserEventMappings(eventName) {
     TableName: 'user_event_mapping',
     KeyConditionExpression: 'event_name = :eventName',
     ExpressionAttributeValues: {
-      ':eventName': eventName
-    }
+      ':eventName': eventName,
+      ':delivered': 'delivered',
+      ':flashbackDelivered': 'Flashback_Delivered'
+    },
+    FilterExpression: 'flashback_status <> :delivered AND flashback_status <> :flashbackDelivered'
   };
 
   try {
@@ -938,23 +941,23 @@ async function updateEventFlashbackStatus(eventName, status) {
       ExpressionAttributeValues: {
         ':eventName': eventName
       },
-      ProjectionExpression: 'event_date'
+      ProjectionExpression: 'event_date,event_id'
     };
 
+    logger.info(eventName)
     const queryResult = await docClient.scan(queryParams).promise();
 
     if (queryResult.Items.length === 0) {
       throw new Error(`Event not found: ${eventName}`);
     }
 
-    const eventDate = queryResult.Items[0].event_date;
-
+    const eventId = queryResult.Items[0].event_id;
+   
     // Now update the event with the flashback status
     const updateParams = {
-      TableName: '',
+      TableName: eventsDetailsTable,
       Key: {
-        'event_name': { S: eventName },
-        'event_date': { S: eventDate }
+        'event_id': { S: eventId },
       },
       UpdateExpression: 'SET #s = :status',
       ExpressionAttributeNames: {
@@ -966,7 +969,7 @@ async function updateEventFlashbackStatus(eventName, status) {
     };
 
     await dynamoDB.updateItem(updateParams).promise();
-    console.log(`Successfully updated flashback status for event: ${eventName}, date: ${eventDate}`);
+    console.log(`Successfully updated flashback status for event: ${eventId}`);
   } catch (error) {
     console.error('Error updating event flashback status:', error);
     throw error;
