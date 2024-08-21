@@ -156,11 +156,7 @@ const Modal = ({
   return (
     <div className="overlay dismiss" onClick={handleModalClose}>
       <div className="modalOuter lazyImage" onClick={(e) => e.stopPropagation()}>
-        {close && (
-          <span className="dismiss" onClick={handleModalClose}>
-            X
-          </span>
-        )}
+
         {!imageLoaded && <LoadingSpinner />} {/* Show spinner while image is loading */}
         <img
           src={clickedImg}
@@ -170,6 +166,16 @@ const Modal = ({
         />
         {imageLoaded && ( // Only show the toolbox if the image is loaded
           <div className="imageToolBox">
+
+
+            {close && (
+          //       <span className="dFlex alignCenter cursor-pointer dismiss" onClick={handleModalClose}>
+          //     Go-Back
+          // </span>
+              <ArrowLeft className="back-left-arrow dismiss" onClick={handleModalClose} />
+            )}
+
+
             {(favourite || select) && (
               <div
                 className="dFlex alignCenter cursor-pointer"
@@ -203,6 +209,9 @@ const Modal = ({
                 Share
               </div>
             )}
+
+
+
           </div>
         )}
         <ArrowLeft className="modal-arrow left-arrow" onClick={handlePrevImage} />
