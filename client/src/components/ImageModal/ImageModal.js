@@ -320,15 +320,16 @@ const ImageModal = ({
         {/*  </span>*/}
         {/*)}*/}
 
-        {close && (
-            //       <span className="dFlex alignCenter cursor-pointer dismiss" onClick={handleModalClose}>
-            //     Go-Back
-            // </span>
-            <ArrowLeft className="back-left-arrow" onClick={handleBackButton} />
-        )}
-
         <img onLoad={onLoad} src={clickedImg} alt="bigger pic" />
         <div className="imageToolBox">
+
+          {close && (
+              //       <span className="dFlex alignCenter cursor-pointer dismiss" onClick={handleModalClose}>
+              //     Go-Back
+              // </span>
+              <ArrowLeft className="back-left-arrow dismiss" onClick={handleBackButton} />
+          )}
+
           {favourite && (
             <div
               className="dFlex alignCenter cursor-pointer"
