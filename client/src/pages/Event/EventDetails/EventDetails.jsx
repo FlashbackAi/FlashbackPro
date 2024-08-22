@@ -105,6 +105,7 @@ const EventDetails = () => {
 
   const openUploadFilesModal = () => {
     setUploadFilesModeOpen(true);
+    
   };
 
   const closeUploadFilesModal = () => {
@@ -152,6 +153,7 @@ const EventDetails = () => {
           }));
         },
       });
+    
       return response.data;
     } catch (error) {
       console.error(`Error uploading chunk ${chunkIndex} of ${file.name}:`, error);
@@ -196,6 +198,7 @@ const EventDetails = () => {
 
     try {
       await Promise.all(files.map(uploadFile));
+      await publishImages();
       setUploadStatus('Upload completed successfully');
       setFiles([]);
     } catch (error) {
@@ -276,13 +279,14 @@ const EventDetails = () => {
   
       // After both operations are complete, send flashbacks
       if (triggerFlashbackResponse.status === 200 && resizeImagesResponse.status === 200) {
-        const sendFlashbacksResponse = await API_UTIL.post('/send-flashbacks', { eventName:event.folder_name });
+        // const sendFlashbacksResponse = await API_UTIL.post('/send-flashbacks', { eventName:event.folder_name });
   
-        if (sendFlashbacksResponse.status === 200) {
-          toast.success('Images published and flashbacks sent successfully!');
-        } else {
-          throw new Error('Failed to send flashbacks.');
-        }
+        // if (sendFlashbacksResponse.status === 200) {
+        //   toast.success('Images published and flashbacks sent successfully!');
+        // } else {
+        //   throw new Error('Failed to send flashbacks.');
+        // }
+        toast.success('Images uploaded successfully!');
       } else {
         throw new Error('Failed to trigger flashback or resize images.');
       }
@@ -399,11 +403,11 @@ const EventDetails = () => {
               <button className="footer-buttons" onClick={sendInvite}>Invite</button>
               <button className="footer-buttons" onClick={sendCollab}>Collab</button>
               <button className="footer-buttons" onClick={()=>{navigate(`/pro-new/${event?.event_id}`, { state: { event } })}}>Attendees</button>
-              <button className="footer-buttons" onClick={publishImages} disabled={isPublishing}>
+              {/* <button className="footer-buttons" onClick={publishImages} disabled={isPublishing}>
                 
                 {isPublishing ? 'Publishing...' : 'Publish'}
-                {/* {isPublishing && <div className="spinner"></div>} */}
-              </button>
+                {{isPublishing && <div className="spinner"></div>}
+              </button> */}
               <button className="footer-buttons" onClick={()=>{navigate(`/relations/${event?.event_name}`)}} disabled = {true}>Relation Mapping</button>
 
             </div>

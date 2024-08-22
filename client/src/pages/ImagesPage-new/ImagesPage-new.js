@@ -45,35 +45,34 @@ function ImagesPageNew() {
   const fetchFavouriteImages = async () => {
     setIsLoading(true);
     try {
-      const response = await API_UTIL.post(
-        `/images-new/${eventName}/${userId}`,
-        {
-          isFavourites: true
-        }
-      );
+      const response = await API_UTIL.post(`/images-new/${eventName}/${userId}`, {
+        isFavourites: true,
+      });
+  
       if (response.status === 200) {
         setClientObj(response.data.clientObj);
-        await fetchPortfolioImages(response.data.clientObj.user_name,response.data.clientObj.org_name)
-        setUserObj(response.data.userObj); //alternative for login
-        const formattedImages = response.data.images.map((img) => ({
+        await fetchPortfolioImages(response.data.clientObj.user_name, response.data.clientObj.org_name);
+        setUserObj(response.data.userObj);
+  
+        const favoriteImages = response.data.images.map((img) => ({
           original: img.url,
           thumbnail: img.thumbnailUrl,
           isFavourites: true,
         }));
-        setImages((prevImages) => [...prevImages, ...formattedImages]);
+  
+        setImages((prevImages) => [...prevImages, ...favoriteImages]);
+  
         if (!totalImages) {
           setTotalImages(response.data.totalImages);
         }
         setLastFavIndex(response.data.totalImages - 1);
-        if (images.length >= totalImages) {
-          setIsLoading(false); // Stop fetching more images when all images are fetched
-        }
-        await fetchImages();
+  
+        await fetchImages(favoriteImages); // Pass favorite images to fetchImages
       } else {
         throw new Error("Failed to fetch images");
       }
     } catch (error) {
-      if( error?.response?.status === 700){;
+      if (error?.response?.status === 700) {
         history(`/login/${eventName}`, { state: { from: location } });
       }
       console.error("Error fetching images:", error);
@@ -81,29 +80,37 @@ function ImagesPageNew() {
       setIsLoading(false);
     }
   };
+  
 
-  const fetchImages = async () => {
+  const fetchImages = async (favoriteImages = []) => {
     if (images.length === 0) setIsLoading(true);
     try {
-      const response = await API_UTIL.post(
-        `/images-new/${eventName}/${userId}  `,
-        {
-          isFavourites: false,
-          lastEvaluatedKey: lastEvaluatedKey
-        }
-      );
+      const response = await API_UTIL.post(`/images-new/${eventName}/${userId}`, {
+        isFavourites: false,
+        lastEvaluatedKey: lastEvaluatedKey,
+      });
+  
       if (response.status === 200) {
-        const formattedImages = response.data.images.map((img) => ({
+        // Filter out favorite images
+        const favoriteImageUrls = favoriteImages.map((img) => img.original);
+        const nonFavImages = response.data.images.filter(
+          (img) => !favoriteImageUrls.includes(img.url)
+        );
+  
+        const formattedImages = nonFavImages.map((img) => ({
           original: img.url,
           thumbnail: img.thumbnailUrl,
           isFavourites: false,
         }));
+  
         setImages((prevImages) => [...prevImages, ...formattedImages]);
         console.log(response.data.lastEvaluatedKey);
         setLastEvaluatedKey(response.data.lastEvaluatedKey);
+  
         if (!totalImages) {
           setTotalImages(response.data.totalImages);
         }
+  
         if (images.length >= totalImages) {
           setIsLoading(false); // Stop fetching more images when all images are fetched
         }
@@ -116,6 +123,7 @@ function ImagesPageNew() {
       setIsLoading(false);
     }
   };
+  
 
   const fetchPortfolioImages = async (user_name, org_name) => {
     try {
@@ -242,7 +250,7 @@ function ImagesPageNew() {
       setLastFavIndex((favIndex) => favIndex - 1);
       setImages(tempImages);
     }
-    await API_UTIL.post("/setFavourites", {
+    await API_UTIL.post("/setFavouritesNew", {
       imageUrl,
       userId,
       isFav,

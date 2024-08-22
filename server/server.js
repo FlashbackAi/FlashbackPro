@@ -128,6 +128,7 @@ const datasetTable = 'datasets'
 const modelsTable = 'models'
 const proShareDataTable = 'pro_share_data';
 const modelToDatsetReqTable ='model_dataset_requests'
+const userImageActivityTableName = 'user_image_activity'
 
 
 const ClientId = '6goctqurrumilpurvtnh6s4fl1'
@@ -1301,7 +1302,7 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
           res.status(700).send({"message":"Oh! You are not registered, please register to view photographs"})
       }else{
       logger.info("user exists:"+userId);
-     logger.info("Image are being fetched for event of pageNo -> "+eventDetails.event_name+"; userId -> "+userId +"; isFavourites -> "+isFavourites);
+     logger.info("Image are being fetched for event  -> "+eventDetails.event_name+"; userId -> "+userId +"; isFavourites -> "+isFavourites);
 
      const folder = eventDetails.folder_name;
     const result = await userEventImagesNew(folder,userId,lastEvaluatedKey,isFavourites);
@@ -1337,34 +1338,34 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
   }
 });
 
-async function userEventImages(eventName,userId,lastEvaluatedKey){
+// async function userEventImages(eventName,userId,lastEvaluatedKey){
 
-      try {
-      const params = {
-        TableName: userOutputTable,
-        IndexName: 'unique_uid-event_name-index', // Specify the GSI name
-        KeyConditionExpression: 'unique_uid = :partitionKey AND event_name = :sortKey',
-        FilterExpression: "is_favourite <> :isFav",
-        ExpressionAttributeValues: {
-          ':partitionKey': userId, // Specify the value for the partition key
-          ':sortKey': eventName,
-          ':isFav':  true// Specify the value for the sort key
-        },
-        Limit:20
-      };
-      if(lastEvaluatedKey){
-        params.ExclusiveStartKey = lastEvaluatedKey;
-      }
-      const result = await docClient.query(params).promise();
-      logger.info('total images fetched for the user -> '+userId+'  in event -> '+eventName +' : '+result.Count);
-      return result;
-    }
-    catch (err) {
-      logger.info(err)
-      return err;
-    }
+//       try {
+//       const params = {
+//         TableName: userOutputTable,
+//         IndexName: 'unique_uid-event_name-index', // Specify the GSI name
+//         KeyConditionExpression: 'unique_uid = :partitionKey AND event_name = :sortKey',
+//         FilterExpression: "is_favourite <> :isFav",
+//         ExpressionAttributeValues: {
+//           ':partitionKey': userId, // Specify the value for the partition key
+//           ':sortKey': eventName,
+//           ':isFav':  true// Specify the value for the sort key
+//         },
+//         Limit:20
+//       };
+//       if(lastEvaluatedKey){
+//         params.ExclusiveStartKey = lastEvaluatedKey;
+//       }
+//       const result = await docClient.query(params).promise();
+//       logger.info('total images fetched for the user -> '+userId+'  in event -> '+eventName +' : '+result.Count);
+//       return result;
+//     }
+//     catch (err) {
+//       logger.info(err)
+//       return err;
+//     }
   
-}
+// }
 
 
 app.post('/images/:eventName/:userId', async (req, res) => {
@@ -1396,7 +1397,7 @@ app.post('/images/:eventName/:userId', async (req, res) => {
       logger.info("user exists:"+userId);
      logger.info("Image are being fetched for event of pageNo -> "+eventName+"; userId -> "+userId +"; isFavourites -> "+isFavourites);
 
-    const result = await userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites);
+    const result = await userEventImages(eventName,userId,lastEvaluatedKey,isFavourites);
     logger.info("total"+result.Items.length)
     if(!lastEvaluatedKey && isFavourites){
       clientObject = await getClientObject(eventName);
@@ -2032,7 +2033,7 @@ async function getThumbanailsForUserIds(keys){
  return thumbnailObject;
 }
 
-async function userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites){
+async function userEventImages(eventName,userId,lastEvaluatedKey,isFavourites){
     
   logger.info(eventName+"--------"+userId);
    logger.info(isFavourites)
@@ -2056,11 +2057,11 @@ async function userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites
         TableName: userOutputTable,
         IndexName: 'unique_uid-event_name-index', 
         KeyConditionExpression: 'unique_uid = :partitionKey AND event_name = :sortKey',
-        // FilterExpression : "is_favourite <> :isFav",
+        FilterExpression : "is_favourite <> :isFav",
         ExpressionAttributeValues: {
           ':partitionKey': userId, // Specify the value for the partition key
           ':sortKey': eventName,
-          // ':isFav':  true// Specify the value for the sort key
+           ':isFav':  true// Specify the value for the sort key
         },
         Limit : 100,        
       };
@@ -2078,6 +2079,52 @@ async function userEventImagesNew(eventName,userId,lastEvaluatedKey,isFavourites
     }
   
 }
+
+
+async function userEventImagesNew(eventName, userId, lastEvaluatedKey, isFavourites) {
+  logger.info(eventName + "--------" + userId);
+  logger.info(isFavourites);
+  try {
+    let params = {};
+    if (isFavourites) {
+      // Fetch favorite images directly from user_image_activity
+      params = {
+        TableName: userImageActivityTableName, // Assuming this is the table where favorite images are stored
+        KeyConditionExpression: 'user_id = :userId',
+        FilterExpression: "is_favourite = :isFav",
+        ExpressionAttributeValues: {
+          ':userId': userId,
+          ':isFav': true
+        }
+      };
+    } else {
+      // Fetch non-favorite images from indexedDataTableName
+      params = {
+        TableName: indexedDataTableName,
+        IndexName: 'folder_name-user_id-index',
+        KeyConditionExpression: 'folder_name = :partitionKey AND user_id = :sortKey',
+        FilterExpression: "attribute_not_exists(is_favourite) OR is_favourite <> :isFav",
+        ExpressionAttributeValues: {
+          ':partitionKey': eventName,
+          ':sortKey': userId,
+          ':isFav': true // We want images that are either not favorite or not flagged as favorite
+        },
+        Limit: 100,
+      };
+
+      if (lastEvaluatedKey) {
+        params.ExclusiveStartKey = lastEvaluatedKey;
+      }
+    }
+
+    const result = await docClient.query(params).promise();
+    return result;
+  } catch (err) {
+    logger.info(err);
+    return err;
+  }
+}
+
 
 app.post('/setFavourites', async (req,res) => {
 
@@ -2111,6 +2158,33 @@ app.post('/setFavourites', async (req,res) => {
 }
 
 });
+
+app.post('/setFavouritesNew', async (req, res) => {
+  try {
+    
+    const userId = req.body.userId;
+    const imageUrl = req.body.imageUrl;
+    const isFav = req.body.isFav;
+    logger.info("Selecting Image:"+imageUrl);
+    const params = {
+      TableName: userImageActivityTableName,
+      Item: {
+        user_id: userId,
+        s3_url: imageUrl,
+        is_favourite: isFav
+      }
+    };
+
+    const result = await docClient.put(params).promise();
+    logger.info("Put operation succeeded:", result);
+    res.send(result);
+  } catch (err) {
+    logger.error("Unable to update item. Error JSON:", err);
+    res.status(500).send('Unable to mark the photo as favourite');
+  }
+});
+
+
 app.get('/folders', (req, res) => {
   s3.listObjectsV2({ Bucket: bucketName }, (err, data) => {
     if (err) {
