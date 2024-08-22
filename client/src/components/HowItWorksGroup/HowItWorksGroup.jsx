@@ -10,7 +10,7 @@ const HowItWorksGroup = ({index}) => {
       <hr className="line"></hr>
       <div className="QA-group">
         {QAGroups[index].map((group) => {
-          console.log("hello", group);
+          // console.log("hello", group);
           return <QAExpandComponent group={group}></QAExpandComponent>;
         })}
       </div>

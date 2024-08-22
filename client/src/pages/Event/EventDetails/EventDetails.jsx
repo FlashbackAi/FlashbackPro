@@ -8,8 +8,6 @@ import API_UTIL from '../../../services/AuthIntereptor';
 import './EventDetails.css';
 import AppBar from '../../../components/AppBar/AppBar';
 import LabelAndInput from '../../../components/molecules/LabelAndInput/LabelAndInput';
-import { ProgressBar } from 'react-bootstrap'; // Import the progress bar component from react-bootstrap
-import 'bootstrap/dist/css/bootstrap.min.css';
 
 const EventDetails = () => {
   const location = useLocation();
