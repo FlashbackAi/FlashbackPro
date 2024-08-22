@@ -90,7 +90,7 @@ function ProNew() {
   const shareOnWhatsApp = (item) => {
     const userId = item.user_id;
     const count = item.count;
-    const text = `*Greetings*,\nWe have discovered your *${count}* images captured during the event *"${event.event_name}"*.\nKindly proceed to the provided URL to access and view your photographs:\n${serverIp}/share/${event.event_id}/${userId}\n\nCheers,\n*Flashback*`;
+    const text = `*Greetings*,\nWe have discovered your *${count}* images captured during the event *"${event.event_name}"*.\nKindly proceed to the provided URL to access and view your photographs:\n${serverIp}/share/${event.folder_name}/${userId}\n\nCheers,\n*Flashback*`;
     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
     window.open(whatsappUrl, "_blank");
   };
