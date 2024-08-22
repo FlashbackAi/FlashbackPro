@@ -2504,9 +2504,10 @@ app.post('/downloadImage', async (req, res) => {
           }
       
           // Create a new user entry in DynamoDB
+          if(!existingUser){
           await createUser(username,userSource,role,reward_points);
           console.log("created sucessfulyy ->"+username)
-
+          }
           const updateParamsUserEvent = {
             TableName: userEventTableName,
             Item: {

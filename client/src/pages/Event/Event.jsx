@@ -58,32 +58,6 @@ const Event = () => {
         setProjects([]);
       }
     };
-    const fetchEventData = async (userName) => {
-      try {
-        const response = await API_UTIL.get(`/getClientEventDetails/${userName}`);
-        
-  
-        // Fetch collaboration-accepted events
-        const collabResponse = await API_UTIL.get(`/getCollabEvents/${userName}`);
-        const allEvents = [...response.data, ...collabResponse.data];
-        const uniqueEvents = allEvents.reduce((acc, current) => {
-          const x = acc.find(item => item.event_id === current.event_id);
-          if (!x) {
-            return acc.concat([current]);
-          } else {
-            return acc;
-          }
-        }, []);
-  
-        setEvents(uniqueEvents);
-  
-        setLoading(false);
-      } catch (error) {
-        setError(error.message);
-        setLoading(false);
-      }
-    };
-  
     const fetchUserDetails = async () => {
       try {
         setLoading(true);
@@ -107,7 +81,31 @@ const Event = () => {
     fetchUserDetails();
   }, [userPhoneNumber]);
   
-  
+  const fetchEventData = async (userName) => {
+    try {
+      const response = await API_UTIL.get(`/getClientEventDetails/${userName}`);
+      
+
+      // Fetch collaboration-accepted events
+      const collabResponse = await API_UTIL.get(`/getCollabEvents/${userName}`);
+      const allEvents = [...response.data, ...collabResponse.data];
+      const uniqueEvents = allEvents.reduce((acc, current) => {
+        const x = acc.find(item => item.event_id === current.event_id);
+        if (!x) {
+          return acc.concat([current]);
+        } else {
+          return acc;
+        }
+      }, []);
+
+      setEvents(uniqueEvents);
+
+      setLoading(false);
+    } catch (error) {
+      setError(error.message);
+      setLoading(false);
+    }
+  };
   const onEventClick = (event_id) => {
     navigate(`/eventDetails/${event_id}`, { state: { userDetails } })
   };
@@ -243,6 +241,8 @@ const Event = () => {
         const res = await API_UTIL.post("/updatePortfolioDetails", requestData);
         if (res.status === 200) {
           setIsUserDetailsModalOpen(false);
+          fetchEventData(res.data.data.user_name)
+
         }
       } catch (error) {
         console.error("Error in registering the model:", error);
