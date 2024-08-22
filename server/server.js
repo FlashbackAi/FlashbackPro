@@ -807,7 +807,7 @@ app.get('/flashback-progress/:taskId', (req, res) => {
 async function sendFlashbacksAsync(taskId, eventName) {
   try {
     const userEventMappings = await getUserEventMappings(eventName);
-    logger.info(userEventMappings)
+    logger.info("started sending Whatsapp Messages : "+eventName);
     const totalUsers = userEventMappings.length;
     let sentUsers = 0;
 
@@ -826,7 +826,7 @@ async function sendFlashbacksAsync(taskId, eventName) {
           const progress = Math.round((sentUsers / totalUsers) * 100);
           taskProgress.set(taskId, { progress, status: 'in_progress' });
         } catch (error) {
-          console.error(`Error sending message to ${user_phone_number}:`, error);
+          logger.info(`Error sending message to ${user_phone_number}:`, error);
         }
       }
     }
@@ -836,8 +836,9 @@ async function sendFlashbacksAsync(taskId, eventName) {
 
     // Mark task as completed
     taskProgress.set(taskId, { progress: 100, status: 'completed' });
+    logger.info("Completed sending Whatsapp messages : "+eventName);
   } catch (error) {
-    console.error('Error sending flashbacks:', error);
+    logger.info('Error sending flashbacks:', error);
     taskProgress.set(taskId, { progress: 0, status: 'failed' });
   }
 }
@@ -846,7 +847,7 @@ async function sendFlashbacksAsync(taskId, eventName) {
 async function sendWhatsAppMessage(phoneNumber, eventName, userId) {
   try {
     await whatsappSender.sendMessage(phoneNumber, eventName, userId);
-    console.log(`WhatsApp message sent successfully to ${phoneNumber} for the event: ${eventName}`);
+    logger.info(`WhatsApp message sent successfully to ${phoneNumber} for the event: ${eventName}`);
   } catch (error) {
     console.error(`Error sending WhatsApp message to ${phoneNumber}:`, error);
     throw error;
