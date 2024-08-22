@@ -8,6 +8,8 @@ import API_UTIL from '../../../services/AuthIntereptor';
 import './EventDetails.css';
 import AppBar from '../../../components/AppBar/AppBar';
 import LabelAndInput from '../../../components/molecules/LabelAndInput/LabelAndInput';
+import { ProgressBar } from 'react-bootstrap'; // Import the progress bar component from react-bootstrap
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const EventDetails = () => {
   const location = useLocation();
@@ -28,7 +30,7 @@ const EventDetails = () => {
   const userDetails = location.state?.userDetails; // Retrieve userDetails from location state
   const navigate = useNavigate();
   const [fileCount, setFileCount] = useState(0);
-  const [isPublishing, setIsPublishing] = useState(false);
+  const [overallProgress, setOverallProgress] = useState(30);
 
   console.log(userDetails);
 
@@ -105,7 +107,6 @@ const EventDetails = () => {
 
   const openUploadFilesModal = () => {
     setUploadFilesModeOpen(true);
-    
   };
 
   const closeUploadFilesModal = () => {
@@ -114,17 +115,27 @@ const EventDetails = () => {
     setUploadProgress({});
     setUploadStatus('');
     setUploading(false);
+    setFileCount(0);
   };
 
   const CHUNK_SIZE = 5 * 1024 * 1024; // Chunks of 5MB for file upload
 
   const onDrop = useCallback((acceptedFiles) => {
-    setFiles(acceptedFiles);
-    setFileCount(acceptedFiles.length); // Set the file count
-    setUploadProgress({});
-    setUploadStatus('');
-    setUploading(false); // Reset uploading state when files are dropped
+    const totalFiles = acceptedFiles.length;
+  
+    if (totalFiles > 25) {
+      setFileCount(totalFiles);
+      setUploadStatus(`You have selected ${totalFiles} files. You can upload a maximum of 25 files at a time.`);
+      setUploading(false); // Ensure uploading state is false
+    } else {
+      setFiles(acceptedFiles);
+      setFileCount(totalFiles); // Set the file count
+      setUploadProgress({});
+      setUploadStatus('');
+      setUploading(false); // Reset uploading state when files are dropped
+    }
   }, []);
+  
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -151,9 +162,13 @@ const EventDetails = () => {
               [chunkIndex]: percentCompleted,
             },
           }));
+
+          // Update overall progress
+          // const completedChunks = chunkIndex + 1;
+          // const overallPercent = (completedChunks / totalChunks) * 100;
+          setOverallProgress(75);
         },
       });
-    
       return response.data;
     } catch (error) {
       console.error(`Error uploading chunk ${chunkIndex} of ${file.name}:`, error);
@@ -178,12 +193,6 @@ const EventDetails = () => {
         throw error;
       }
     }
-
-    // Check if all chunks are uploaded
-    // const status = await API_UTIL.get(`/upload-status/${fileId}`);
-    // if (status.data.status !== 'completed') {
-    //   throw new Error(`Failed to upload ${file.name}`);
-    // }
   };
 
   const uploadFiles = async () => {
@@ -191,24 +200,29 @@ const EventDetails = () => {
       setUploadStatus('Please select files to upload');
       return;
     }
+
     setUploading(true);
-    setUploadStatus('Uploading...');
-    setUploadFilesModalStatus('Uploading...');
+    // setUploadStatus('Uploading and finding faces...'); // Start loader text
+    setUploadFilesModalStatus('Uploading and finding faces...');
     setIsUploadFilesFailed(false);
+    setOverallProgress(10); // Reset overall progress
 
     try {
       await Promise.all(files.map(uploadFile));
-      await publishImages();
+
+      // setUploadStatus('Associating images...');
+     
       setUploadStatus('Upload completed successfully');
+    
       setFiles([]);
     } catch (error) {
       console.error('Upload failed:', error);
       setUploadStatus('Upload failed. Please try again.');
-      // setUploadFilesModalStatus('Upload failed. Please try again.');
     } finally {
       setUploading(false);
+      setOverallProgress(100); // Set to 100% on completion
+      setFileCount(0);
     }
-    // setIsUploadFilesFailed(true);
   };
 
   const sendInvite = () => {
@@ -251,7 +265,7 @@ const EventDetails = () => {
       const collabLink = `https://flashback.inc/collab/${event.event_id}`;
       const message = `Join the collaboration for the event: ${formatEventName(event?.event_name)}. Collaborate using the following link: ${collabLink}`;
       const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
-  
+
       // Open WhatsApp with the message pre-filled
       window.open(url, '_blank');
     } catch (error) {
@@ -260,44 +274,20 @@ const EventDetails = () => {
     }
   };
 
-  const publishImages = async () => {
+  const sendWhatsappMsg = async () => {
     try {
-      setIsPublishing(true); // Start publishing
-  
-      const eventName = event.event_name;
-      const folderName = event.folder_name;
-  
-      // Trigger both flashback and image resize in parallel
-      const triggerFlashbackPromise = API_UTIL.post('/trigger-flashback', { eventName, folderName });
-      const resizeImagesPromise = API_UTIL.post('/api/resize-copy-images', { sourceFolder: folderName });
-  
-      // Wait for both promises to complete
-      const [triggerFlashbackResponse, resizeImagesResponse] = await Promise.all([
-        triggerFlashbackPromise,
-        resizeImagesPromise
-      ]);
-  
-      // After both operations are complete, send flashbacks
-      if (triggerFlashbackResponse.status === 200 && resizeImagesResponse.status === 200) {
-        // const sendFlashbacksResponse = await API_UTIL.post('/send-flashbacks', { eventName:event.folder_name });
-  
-        // if (sendFlashbacksResponse.status === 200) {
-        //   toast.success('Images published and flashbacks sent successfully!');
-        // } else {
-        //   throw new Error('Failed to send flashbacks.');
-        // }
-        toast.success('Images uploaded successfully!');
+      const sendFlashbacksResponse = await API_UTIL.post('/send-flashbacks', { eventName: event.folder_name });
+
+      if (sendFlashbacksResponse.status === 200) {
+        toast.success('flashbacks sent successfully!');
       } else {
-        throw new Error('Failed to trigger flashback or resize images.');
+        throw new Error('Failed to send flashbacks.');
       }
     } catch (error) {
       console.error('Error Publishing Images', error);
       toast.error('Failed to Publish Images');
-    } finally {
-      setIsPublishing(false); // End publishing
     }
   };
-  
 
   if (!event) {
     return <div>Loading Event Info</div>;
@@ -311,56 +301,47 @@ const EventDetails = () => {
           <h1 className="event-details-title">
             {formatEventName(event?.event_name)}
           </h1>
-            <div className="invitation-image">
-              <img
-                src={event.event_image}
-                alt="Event"
-                className="modal-image"
-              />
-            </div>
+          <div className="invitation-image">
+            <img src={event.event_image} alt="Event" className="modal-image" />
+          </div>
           <div className="invitation-image-content">
-
             <div className="event-details-content">
-              {/* <div className="edit-option" onClick={handleEditClick}>
-                {toggleEdit ? "Disable Edit" : "Enable Edit"}
-              </div> */}
-
               {toggleEdit ? (
                 <form onSubmit={handleFormSubmit} className="edit-form">
                   <div className="eo-form-group">
-                  <label className="ed-form-label">Event Name:</label>
-                  <input
-                    type="text"
-                    name="eventName"
-                    value={editData.eventName}
-                    onChange={handleInputChange}
-                    className="ed-form-input"
-                    required
-                  />
-                </div>
-                    <div className="eo-form-group">
-                      <label className="ed-form-label">Date:</label>
-                  <input
-                    type="date"
-                    name="eventDate"
-                    value={editData.eventDate}
-                    onChange={handleInputChange}
-                    className="ed-form-input"
-                    required
-                  />
-                </div>
-                <div className="eo-form-group">
-                  <label className="ed-form-label">Time:</label>
-                  <input
-                    type="time"
-                    name="eventTime"
-                    value={editData.eventTime}
-                    onChange={handleInputChange}
-                    className="ed-form-input"
-                    required
-                  />
-                    </div>
-                <div className="eo-form-group">
+                    <label className="ed-form-label">Event Name:</label>
+                    <input
+                      type="text"
+                      name="eventName"
+                      value={editData.eventName}
+                      onChange={handleInputChange}
+                      className="ed-form-input"
+                      required
+                    />
+                  </div>
+                  <div className="eo-form-group">
+                    <label className="ed-form-label">Date:</label>
+                    <input
+                      type="date"
+                      name="eventDate"
+                      value={editData.eventDate}
+                      onChange={handleInputChange}
+                      className="ed-form-input"
+                      required
+                    />
+                  </div>
+                  <div className="eo-form-group">
+                    <label className="ed-form-label">Time:</label>
+                    <input
+                      type="time"
+                      name="eventTime"
+                      value={editData.eventTime}
+                      onChange={handleInputChange}
+                      className="ed-form-input"
+                      required
+                    />
+                  </div>
+                  <div className="eo-form-group">
                     <label className="ed-form-label">Invitation Note:</label>
                     <textarea
                       name="invitationNote"
@@ -368,8 +349,8 @@ const EventDetails = () => {
                       onChange={handleInputChange}
                       className="ed-form-input"
                     />
-                </div>
-                <div className="eo-form-group">
+                  </div>
+                  <div className="eo-form-group">
                     <label className="ed-form-label">Location:</label>
                     <input
                       type="text"
@@ -379,47 +360,101 @@ const EventDetails = () => {
                       className="ed-form-input"
                     />
                   </div>
-                <button type="submit" className="save-button">Save Changes</button>
+                  <button type="submit" className="save-button">
+                    Save Changes
+                  </button>
                 </form>
               ) : (
                 <div className="ed-form-group">
-                <LabelAndInput name={"eventName"} label={"Event Name:"} value={event.event_name} type={"text"} handleChange={handleInputChange} isEditable={toggleEdit} ></LabelAndInput>
-                <LabelAndInput name={"eventDate"} label={"Date:"} value={getFormattedDate(event.event_date)} type={"date"} handleChange={handleInputChange} isEditable={toggleEdit} ></LabelAndInput>
-                <LabelAndInput name={"eventTime"} label={"Time:"} value={getFormattedTime(event.event_date)} type={"time"} handleChange={handleInputChange} isEditable={toggleEdit} ></LabelAndInput>
-                <LabelAndInput name={"invitationNote"} label={"Invitation Note:"} value={event.invitation_note} type={"text"} handleChange={handleInputChange} isEditable={toggleEdit} ></LabelAndInput>
-                <LabelAndInput name={"eventLocation"} label={"Location:"} value={event.event_location} type={"text"} handleChange={handleInputChange} isEditable={toggleEdit} ></LabelAndInput>
-                {/* <p className="ed-form-value">Event Name: {event.event_name}</p> */}
-                {/* <p className="ed-form-value">Date: {getFormattedDate(event.event_date)}</p> */}
-                {/* <p className="ed-form-value">Time: {getFormattedTime(event.event_date)}</p> */}
-                {/* <p className="ed-form-value">Invitation Note: {event.invitation_note}</p> */}
-                {/* <p className="ed-form-value">Location: {event.event_location}</p> */}
+                  <LabelAndInput
+                    name={"eventName"}
+                    label={"Event Name:"}
+                    value={event.event_name}
+                    type={"text"}
+                    handleChange={handleInputChange}
+                    isEditable={toggleEdit}
+                  ></LabelAndInput>
+                  <LabelAndInput
+                    name={"eventDate"}
+                    label={"Date:"}
+                    value={getFormattedDate(event.event_date)}
+                    type={"date"}
+                    handleChange={handleInputChange}
+                    isEditable={toggleEdit}
+                  ></LabelAndInput>
+                  <LabelAndInput
+                    name={"eventTime"}
+                    label={"Time:"}
+                    value={getFormattedTime(event.event_date)}
+                    type={"time"}
+                    handleChange={handleInputChange}
+                    isEditable={toggleEdit}
+                  ></LabelAndInput>
+                  <LabelAndInput
+                    name={"invitationNote"}
+                    label={"Invitation Note:"}
+                    value={event.invitation_note}
+                    type={"text"}
+                    handleChange={handleInputChange}
+                    isEditable={toggleEdit}
+                  ></LabelAndInput>
+                  <LabelAndInput
+                    name={"eventLocation"}
+                    label={"Location:"}
+                    value={event.event_location}
+                    type={"text"}
+                    handleChange={handleInputChange}
+                    isEditable={toggleEdit}
+                  ></LabelAndInput>
                 </div>
               )}
-              
             </div>
             <div className="ed-form-footer">
-              <button className="footer-buttons" onClick={openQrModal}>Generate QR</button>
-              <button className="footer-buttons" onClick={openUploadFilesModal}>Upload Files</button>
-              <button className="footer-buttons" onClick={sendInvite}>Invite</button>
-              <button className="footer-buttons" onClick={sendCollab}>Collab</button>
-              <button className="footer-buttons" onClick={()=>{navigate(`/pro-new/${event?.event_id}`, { state: { event } })}}>Attendees</button>
-              {/* <button className="footer-buttons" onClick={publishImages} disabled={isPublishing}>
-                
-                {isPublishing ? 'Publishing...' : 'Publish'}
-                {{isPublishing && <div className="spinner"></div>}
-              </button> */}
-              <button className="footer-buttons" onClick={()=>{navigate(`/relations/${event?.event_name}`)}} disabled = {true}>Relation Mapping</button>
-
+              <button className="footer-buttons" onClick={openQrModal}>
+                Generate QR
+              </button>
+              <button className="footer-buttons" onClick={openUploadFilesModal}>
+                Upload Files
+              </button>
+              <button className="footer-buttons" onClick={sendInvite}>
+                Invite
+              </button>
+              <button className="footer-buttons" onClick={sendCollab}>
+                Collab
+              </button>
+              <button
+                className="footer-buttons"
+                onClick={() => {
+                  navigate(`/proV1/${event?.event_id}`, { state: { event } });
+                }}
+              >
+                Attendees
+              </button>
+              <button className="footer-buttons" onClick={sendWhatsappMsg}>
+                Send Photos
+              </button>
+              <button
+                className="footer-buttons"
+                onClick={() => {
+                  navigate(`/relations/${event?.event_name}`);
+                }}
+                disabled={true}
+              >
+                Relation Mapping
+              </button>
             </div>
             {event.invitation_url && (
-              <a href={event.invitation_url} target="_blank" rel="noopener noreferrer" className="event-link">
-                  View Invitation
-                </a>
-              )}
+              <a
+                href={event.invitation_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="event-link"
+              >
+                View Invitation
+              </a>
+            )}
           </div>
-          <div>
-            
-          </div>
+          <div></div>
 
           <Modal
             isOpen={isQrModalOpen}
@@ -431,14 +466,23 @@ const EventDetails = () => {
             {event && (
               <div>
                 <div className="modal-header">
-                  <h2 className="modal-title">QR Code for {formatEventName(event?.event_name)}</h2>
-                  <button className="close-button" onClick={closeQrModal}>x</button>
+                  <h2 className="modal-title">
+                    QR Code for {formatEventName(event?.event_name)}
+                  </h2>
+                  <button className="close-button" onClick={closeQrModal}>
+                    x
+                  </button>
                 </div>
                 <div className="qr-modal-body">
-                  <div ref={qrRef} style={{ marginBottom: '20px' }}>
-                    <QRCode value={`https://flashback.inc/login/${event?.event_name}`} size={256} />
+                  <div ref={qrRef} style={{ marginBottom: "20px" }}>
+                    <QRCode
+                      value={`https://flashback.inc/login/${event?.event_name}`}
+                      size={256}
+                    />
                   </div>
-                  <button className="qr-footer-buttons" onClick={downloadQRCode}>Download QR</button>
+                  <button className="qr-footer-buttons" onClick={downloadQRCode}>
+                    Download QR
+                  </button>
                 </div>
               </div>
             )}
@@ -454,20 +498,52 @@ const EventDetails = () => {
             <div>
               <div className="uploadfiles-modal-header">
                 <h2 className="uploadfiles-modal-title">Upload Files</h2>
-                <button className="close-button" onClick={closeUploadFilesModal}>x</button>
+                <button className="close-button" onClick={closeUploadFilesModal}>
+                  x
+                </button>
               </div>
               <div className="modal-body">
-                <div {...getRootProps()} className={`dropzone ${isDragActive ? 'active' : ''}`} style={dropzoneStyle}>
+                <div
+                  {...getRootProps()}
+                  className={`dropzone ${isDragActive ? "active" : ""}`}
+                  style={dropzoneStyle}
+                >
                   <input {...getInputProps()} />
                   {isDragActive ? (
                     <p>Drop the files here ...</p>
                   ) : (
-                    <p>Drag 'n' drop files here, or click to select files from your machine</p>
+                    <p>
+                      Drag 'n' drop files here, or click to select files from your
+                      machine
+                    </p>
                   )}
                 </div>
-                {fileCount > 0 && <p>{fileCount} file(s) selected</p>} {/* Display file count */}
-                <button onClick={uploadFiles} className="upload-button">Upload</button>
+                {fileCount > 0 && <p>{fileCount} file(s) selected</p>}{" "}
+                {/* Display file count */}
                 {uploadStatus && <p>{uploadStatus}</p>}
+                <button 
+                  onClick={uploadFiles} 
+                  className="upload-button" 
+                  disabled={fileCount > 25}
+                >
+                  Upload
+                </button>
+               
+
+                {uploading && (
+                  <div className="processing-bar-container">
+                    <div
+                      className="processing-bar-fill"
+                      style={{ width: `${overallProgress}%` }} // Adjusts the width based on actual progress
+                    ></div>
+                    <div className="processing-bar-text">
+                      {overallProgress < 100 ? `${overallProgress}% Processing...` : 'Completed'}
+                    </div>
+                  </div>
+                )}
+
+
+
               </div>
             </div>
           </Modal>
@@ -478,11 +554,11 @@ const EventDetails = () => {
 };
 
 const dropzoneStyle = {
-  border: '2px dashed #cccccc',
-  borderRadius: '4px',
-  padding: '20px',
-  textAlign: 'center',
-  cursor: 'pointer',
+  border: "2px dashed #cccccc",
+  borderRadius: "4px",
+  padding: "20px",
+  textAlign: "center",
+  cursor: "pointer",
 };
 
 export default EventDetails;

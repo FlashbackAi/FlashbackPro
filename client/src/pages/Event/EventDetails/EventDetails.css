@@ -224,6 +224,14 @@
     cursor: pointer;
     margin-top: 20px;
   }
+  .upload-button:disabled {
+    background: #d3d3d3;
+    color: #a9a9a9;
+    cursor: not-allowed;
+    transform: none; /* Prevents the hover effect */
+    box-shadow: none; /* Removes the shadow when disabled */
+  }
+  
   
   .qr-footer-buttons:hover,
   .upload-button:hover {
@@ -260,19 +268,8 @@
     text-align: left;
     border-bottom: 1px solid #ddd;
   }
-  
-  .progress-bar {
-    width: 100%;
-    background-color: #f1f1f1;
-    border-radius: 4px;
-    overflow: hidden;
-  }
-  
-  .progress-bar span {
-    display: block;
-    height: 10px;
-    background-color: #28a745;
-  }
+
+
 
   .edit-option {
     position: absolute;
@@ -317,3 +314,122 @@
     transform: rotate(360deg);
   }
 }
+
+
+dropzone {
+  border: 2px dashed #007bff;
+  border-radius: 8px;
+  padding: 30px;
+  text-align: center;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: background-color 0.3s, border-color 0.3s;
+  background-color: #f9f9f9;
+}
+
+.dropzone.active {
+  background-color: #e9e9e9;
+  border-color: #0056b3;
+}
+
+.dropzone p {
+  color: #007bff;
+  font-size: 1.1em;
+  margin: 0;
+}
+
+.file-status-table {
+  margin-top: 20px;
+  width: 100%;
+}
+
+.file-status-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.file-status-table th, .file-status-table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.e-progress-bar {
+  width: 100%;
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+  height: 12px;
+  margin-top: 10px;
+}
+
+.e-progress-bar span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(135deg, #42a5f5, #1e88e5);
+  transition: width 0.4s ease;
+}
+
+
+.processing-bar-container {
+  background-color: #e0e0e0;
+  border-radius: 0.625em; /* 10px equivalent */
+  padding: 0.1875em; /* 3px equivalent */
+  margin-top: 1.25em; /* 20px equivalent */
+  width: 100%;
+  height: 1.25em; /* 20px equivalent */
+  position: relative;
+  box-shadow: inset 0 0.125em 0.25em rgba(0, 0, 0, 0.1); /* 2px 4px equivalent */
+  overflow: hidden;
+}
+
+.processing-bar-fill {
+  background-color: #42a5f5;
+  height: 100%;
+  border-radius: 0.4375em; /* 7px equivalent */
+  width: 0; /* Initial width */
+  position: relative;
+  overflow: hidden;
+  transition: width 0.4s ease-in-out;
+}
+
+.processing-bar-fill::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.2),
+    rgba(255, 255, 255, 0.2) 0.625em, /* 10px equivalent */
+    rgba(255, 255, 255, 0.4) 0.625em, /* 10px equivalent */
+    rgba(255, 255, 255, 0.4) 1.25em /* 20px equivalent */
+  );
+  animation: progress-animation 2s linear infinite;
+}
+
+@keyframes progress-animation {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 2.5em 2.5em; /* 40px equivalent */
+  }
+}
+
+.processing-bar-text {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9em;
+  font-weight: bold;
+  color: white;
+}
+

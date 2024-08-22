@@ -9,7 +9,7 @@ import Home from "../pages/Home/Home";
 // import Profile from "../pages/Profile/Profile";
 import ImagesPage from "../pages/ImagesPage/ImagesPage";
 import Pro from "../pages/Pro/ProShare/Pro";
-import ProNew from "../pages/Pro/ProShare-new/Pro";
+import ProNew from "../pages/Pro/ProShare/Pro-new";
 import TermsAndConditions from "../pages/TermsAndConditions/TermsAndConditions";
 import Collage from "../pages/Edit/Collage/Collage";
 import SharedImage from "../pages/ImagesPage/SharedImage";
@@ -35,7 +35,7 @@ import ModelForm from "../pages/Model/ModelForm/ModelForm";
 import PortfolioForm from "../pages/Portfolio/PortfolioForm/PortfolioForm";
 import Vision from "../pages/Vision/vision"
 import Collab from "../pages/Collaboration/Collab";
-import ImagesPageNew from "../pages/ImagesPage-new/ImagesPage-new";
+import ImagesPageNew from "../pages/ImagesPage/ImagesPage-new";
 
 
 const ROUTES=[
@@ -125,7 +125,7 @@ const ROUTES=[
         component:ImagesPage
     },
     {
-        path:"/photos-new/:eventName/:userId",
+        path:"/photosV1/:eventName/:userId",
         exact:false,
         protected:false,
         component:ImagesPageNew
@@ -143,7 +143,7 @@ const ROUTES=[
         component:Pro
     },
     {
-        path:"/pro-new/:eventId",
+        path:"/proV1/:eventId",
         exact:false,
         protected:true,
         component:ProNew

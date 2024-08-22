@@ -255,6 +255,7 @@
 @tailwind utilities; */
 
 /* Base styles */
+/*
 .loading-screen {
   display: flex;
   align-items: center;
@@ -638,7 +639,7 @@
 
 .progress {
   height: 100%;
-  background-color: #00e676;
+  /* background-color: #00e676; */
   border-radius: 10px;
   transition: width 0.3s ease;
 }

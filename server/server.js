@@ -61,7 +61,7 @@ app.get("/share/:eventName/:userId", async(req, res) => {
       redirectUrl=`sharedImage/${eventName}/${userId}.jpg`
     }
     else{
-      redirectUrl = `photos-new/${eventName}/${userId}`;
+      redirectUrl = `photosV1/${eventName}/${userId}`;
     } 
     const image = `https://rekognitionuserfaces.s3.amazonaws.com/thumbnails/${userId}.jpg`
     res.render("index",{eventName:req.params.eventName,userId:req.params.userId,image,redirectUrl}); // Assuming you have an "index.ejs" file in the "views" directory
@@ -100,6 +100,8 @@ const bucketName = 'flashbackuseruploads';
 const userBucketName='flashbackuserthumbnails';
 const indexBucketName = 'flashbackusercollection';
 const imagesBucketName = 'flashbackusercollection';
+// const indexBucketName = 'devtestdnd';
+// const imagesBucketName = 'devtestdnd';
 const portfolioBucketName = 'flashbackportfoliouploads';
 
 const rekognition = new AWS.Rekognition({ region: 'ap-south-1' });
