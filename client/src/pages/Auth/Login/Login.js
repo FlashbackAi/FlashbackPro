@@ -2,14 +2,14 @@ import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Webcam from "react-webcam";
 // import logo from "../../../media/images/logoCropped.png";
-import { toast } from "react-toastify";
+// import { toast } from "react-toastify";
 import { useLocation, useParams } from "react-router-dom";
 import API_UTIL from "../../../services/AuthIntereptor";
 import CountryCodes from "../../../media/json/CountryCodes.json";
 import Select, { components } from "react-select";
 import "./login.css";
 // import * as faceapi from 'face-api.js';
-import Header from "../../../components/Header/Header";
+// import Header from "../../../components/Header/Header";
 import AppBar from "../../../components/AppBar/AppBar";
 
 const CustomOption = ({ children, ...props }) => {
@@ -71,7 +71,7 @@ function Login({ name, onLoginSuccess, showAppBar=true }) {
 
   useEffect(() => {
     if (isToastDisp.current) return;
-    toast("Register to view pictures, provide accurate mobile number so we can share you the pictures");
+    // toast("Register to view pictures, provide accurate mobile number so we can share you the pictures");
     isToastDisp.current = true;
   }, []);
 
@@ -221,7 +221,7 @@ function Login({ name, onLoginSuccess, showAppBar=true }) {
     setIsPhoneNumberValid(true);
     if (response.status === 201) {
       setIsNewUser(true);
-      toast("Click a selfie to register, don't worry we won't save your selfie.");
+      //toast("Click a selfie to register, don't worry we won't save your selfie.");
     } else if (response.status === 200) {
       sessionStorage.setItem('userphoneNumber', fullPhoneNumber);
       // toast(
@@ -259,9 +259,9 @@ function Login({ name, onLoginSuccess, showAppBar=true }) {
         navigate(fromUrl);
       }
       sessionStorage.setItem('userphoneNumber', fullPhoneNumber);
-      toast(
-        `hey ${fullPhoneNumber}, you already exist. Have a great event ahead..`
-      );
+      // toast(
+      //   `hey ${fullPhoneNumber}, you already exist. Have a great event ahead..`
+      // );
     }
   };
 
