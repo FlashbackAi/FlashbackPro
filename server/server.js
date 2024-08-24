@@ -811,7 +811,7 @@ app.get('/flashback-progress/:taskId', (req, res) => {
 async function sendFlashbacksAsync(taskId, eventName) {
   try {
     const userEventMappings = await getUserEventMappings(eventName);
-    logger.info("started sending Whatsapp Messages : "+eventName);
+    logger.info("started sending Whatsapp Messages : "+eventName+" no. of users: "+ userEventMappings.length);
     const totalUsers = userEventMappings.length;
     let sentUsers = 0;
 
@@ -2561,7 +2561,7 @@ app.post('/downloadImage', async (req, res) => {
           // Check if the user already exists
           if(!eventName)
             {
-              eventName = 'Nivedhitha_Mallikarjun_Reddy_Engagement_aarvimedia_b7c785dc-c4fd-4c9c-8309-fd026f7a6543'
+              eventName = 'Nivedhitha_Mallikarjun_Reddy_Engagement'
 
             }
           const existingUser = await getUser(username);
