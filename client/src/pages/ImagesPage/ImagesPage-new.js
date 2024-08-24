@@ -35,6 +35,7 @@ function ImagesPageNew() {
 
   const handleClick = (item, index) => {
     setClickedImg(item.thumbnail);
+    console.log(item.thumbnail)
     setClickedImgIndex(index);
     setClickedImgFavourite(item.isFavourites);
     const imgName = item.original.split("amazonaws.com/")[1];
@@ -273,8 +274,6 @@ function ImagesPageNew() {
     const isFav = !images[index].isFavourites;
     handleFavourite(index, images[index].original, isFav);
   };
-
-  console.log(clientObj);
 
   return (
     <div className="page-container">

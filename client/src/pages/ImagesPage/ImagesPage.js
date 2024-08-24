@@ -34,7 +34,7 @@ function ImagesPage() {
   const [bannerImg, setBannerImg]  = useState();
 
   const handleClick = (item, index) => {
-    setClickedImg(item.original);
+    setClickedImg(item.thumbnail);
     setClickedImgIndex(index);
     setClickedImgFavourite(item.isFavourites);
     const imgName = item.original.split("amazonaws.com/")[1];
