@@ -17,12 +17,11 @@ import PhotoSelection from "../pages/Pro/PhotoSelection/PhotoSelection";
 import PhotoSelectionNew from "../pages/Pro/PhotoSelection/PhotoSelectionNew";
 import FaceSelection from "../pages/Pro/FaceSelection/FaceSelection";
 import Event from "../pages/Event/Event";
-import CreateEventForm from "../pages/CreateEvent/CreateEvent";
 // import { LoginEvent } from "../pages/LoginEvent/LoginEvent";
 import About from "../pages/About/About";
 // import EventMain from "../pages/Event/EventMain";
 import EventSelector from "../pages/Event/EventSelector";
-import CreateEvents from "../pages/Event/CreateEvents";
+// import CreateEvents from "../pages/Event/CreateEvents";
 import EventDetails from "../pages/Event/EventDetails/EventDetails";
 import Portfolio from "../pages/Portfolio/Portfolio/Portfolio";
 import Fallback from "../pages/Fallback/Fallback";
@@ -202,12 +201,12 @@ const ROUTES=[
         protected:false,
         component:CreatorLogin
     },
-    {
-        path:"/CreateEvent",
-        exact:false,
-        protected:false,
-        component:CreateEventForm
-    },
+    // {
+    //     path:"/CreateEvent",
+    //     exact:false,
+    //     protected:false,
+    //     component:CreateEventForm
+    // },
     {
         path:"/Event",
         exact:false,
@@ -220,12 +219,12 @@ const ROUTES=[
         protected:false,
         component:EventSelector,
     },
-    {
-        path:"/createEventForm/:clientName",
-        exact:false,
-        protected:false,
-        component:CreateEvents,
-    },
+    // {
+    //     path:"/createEventForm/:clientName",
+    //     exact:false,
+    //     protected:false,
+    //     component:CreateEvents,
+    // },
     {
         path:"/eventDetails/:eventName",
         exact:false,

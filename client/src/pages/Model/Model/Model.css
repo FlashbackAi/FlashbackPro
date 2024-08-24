@@ -1,4 +1,4 @@
-/* .loading-screen {
+/* /* .loading-screen {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -255,7 +255,7 @@
 @tailwind utilities; */
 
 /* Base styles */
-.loading-screen {
+/* .loading-screen {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -283,8 +283,6 @@
   grid-template-columns: repeat(1, 1fr);
   gap: 0.5rem;
 }
-
-/* Tablet and mobile responsiveness */
 @media (min-width: 640px) {
   .event-title {
       font-size: 2.5rem;
@@ -332,7 +330,6 @@
   justify-content: flex-end;
   align-items: center;
   width: 100%;
-  /*background: linear-gradient(to bottom, #000000, transparent);*/
   color: #ffffff;
   padding: 0.5rem;
 }
@@ -646,7 +643,6 @@
 
 .progress {
   height: 100%;
-  /* background-color: #00e676; */
   border-radius: 10px;
   transition: width 0.3s ease;
 }
@@ -667,13 +663,13 @@
 
 .file-status-table {
   margin-top: 20px;
-  border-collapse: collapse; /* Use collapse for better column alignment */
+  border-collapse: collapse; 
   width: 100%;
 }
 
 .file-status-table table {
   width: 100%;
-  border-collapse: collapse; /* Ensure borders collapse */
+  border-collapse: collapse; 
 }
 
 .file-status-table th, .file-status-table td {
@@ -685,7 +681,7 @@
 
 .file-status-table th {
   background-color: #b48e75;
-  color: white; /* Ensure text is readable on background */
+  color: white;
   position: sticky;
   top: 0;
   z-index: 1;
@@ -693,12 +689,12 @@
 
 .file-status-table th:nth-child(1),
 .file-status-table td:nth-child(1) {
-  width: 60%; /* Adjusted width for better distribution */
+  width: 60%; 
 }
 
 .file-status-table th:nth-child(2),
 .file-status-table td:nth-child(2) {
-  width: 40%; /* Adjusted width for better distribution */
+  width: 40%; 
 }
 
 .file-status-table .progress-bar {
@@ -715,4 +711,4 @@
   text-align: center;
   color: white;
   border-radius: 5px;
-}
+} */ 

@@ -1,4 +1,4 @@
-.create-event-container {
+/* .create-event-container {
     text-align: center;
     margin-top: 50px;
   }
@@ -92,7 +92,6 @@
   body {
     font-family: Arial, sans-serif;
     background-color: #1c1c1c;
-    /* color: #333; */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -133,8 +132,6 @@
   }
   
   .form-group label {
-    /* display: block; */
-    /* margin-bottom: 1rem; */
     margin: auto;
     color: #d1d1d1;
     width: 40%;
@@ -205,7 +202,6 @@
     width: 70%;
   }
 
-  /* Tablet and mobile responsiveness */
   @media (max-width: 1024px) {
     .create-event-container {
         width: 70%;
@@ -251,4 +247,4 @@
     text-align: justify;
   }
   
-  
+   */
