@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import AppBar from '../../components/AppBar/AppBar';
 import Footer from '../../components/Footer/Footer';
+import LoadingSpinner from '../../components/Loader/LoadingSpinner'; // Import the LoadingSpinner component
 import './Event.css'; // Import the new CSS file
 
 const Event = () => {
@@ -70,11 +71,16 @@ const Event = () => {
           fetchEventData(response.data.data.user_name);
           fetchProjects(response.data.data.user_name);
         }
-  
-        setLoading(false);
+        setTimeout(() => {
+          setLoading(false);
+        }, 250);
+        
       } catch (error) {
         console.error('Error fetching user details:', error);
-        setLoading(false);
+        setTimeout(() => {
+          setLoading(false);
+        }, 250);
+        
       }
     };
   
@@ -100,10 +106,9 @@ const Event = () => {
 
       setEvents(uniqueEvents);
 
-      setLoading(false);
     } catch (error) {
       setError(error.message);
-      setLoading(false);
+      throw Error("Error in fetching Events info");
     }
   };
   const onEventClick = (event_id) => {
@@ -125,7 +130,7 @@ const Event = () => {
       await API_UTIL.delete(`/deleteEvent/${eventId}`);
       setEvents(events.filter(event => !(event.event_id === eventId)));
       setIsDeleteModalOpen(false);
-      toast.success('Event deleted successfully');
+      // toast.success('Event deleted successfully');
     } catch (error) {
       console.error("Error deleting event:", error);
       toast.error('Failed to delete the event. Please try again.');
@@ -143,21 +148,6 @@ const Event = () => {
 
   const handleCreateEvent = async (e) => {
     e.preventDefault();
-
-    // // Parse the time
-    // let [time, modifier] = formData.eventTime.split(' ');
-    // let [hours, minutes] = time.split(':');
-
-    // if (hours === '12') {
-    //   hours = '00';
-    // }
-    // if (modifier === 'PM') {
-    //   hours = parseInt(hours, 10) + 12;
-    // }
-
-    // // Ensure both hours and minutes are two digits
-    // hours = String(hours).padStart(2, '0');
-    // minutes = String(minutes).padStart(2, '0');
 
     const combinedDateTime = `${formData.eventDate}T${formData.eventTime}:00`;
 
@@ -186,11 +176,12 @@ const Event = () => {
       if (response.status !== 200) {
         throw new Error('Failed to save the event');
       }
-      toast.success('Events created successfully');
+      // toast.success('Events created successfully');
       setEvents([...events, response.data.data]);
-      setTimeout(() => {
-       setIsCreateModalOpen(false);
-      }, 1000);
+      // setTimeout(() => {
+      //  setIsCreateModalOpen(false);
+      // }, 1000);
+      setIsCreateModalOpen(false);
       return response;
     } catch (error) {
       console.error('Error saving form data to backend:', error);
@@ -252,7 +243,7 @@ const Event = () => {
       }
     };
 
-  if (loading) return <div className="loading-screen">Loading...</div>;
+  if (loading) return <LoadingSpinner />; // Use the LoadingSpinner component here
   if (error) return <div className="loading-screen">Error: {error}</div>;
 
   return (
@@ -291,49 +282,6 @@ const Event = () => {
                 </div>
             </div>
           ))}
-
-
-
-          {/* {events.map((event) => (
-            <div key={event.event_name} className="event-item">
-              <div
-                className="event-card"
-                onClick={() => onEventClick(event.event_name)}
-              >
-                <div className="event-card-header">
-                  <img
-                    src="https://img.icons8.com/BB271A/m_rounded/2x/filled-trash.png"
-                    className="delete-icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openDeleteModal(event);
-                    }}
-                    alt="Delete"
-                  />
-                </div>
-                <img
-                  src={event.event_image}
-                  alt="img"
-                  className="event-image"
-                />
-                <div className="event-card-footer">
-                  <h2 className="event-name">
-                    {formatEventName(event?.event_name)}
-                  </h2>
-                </div>
-              </div>
-              {event.invitation_url && (
-                <a
-                  href={event.invitation_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="event-link"
-                >
-                  View Invitation
-                </a>
-              )}
-            </div>
-          ))} */}
         </div>
 
         {/* Modal to update user details */}

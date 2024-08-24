@@ -657,9 +657,9 @@ async function searchUsersByImage(portraitS3Url, phoneNumber) {
         logger.info("matched user not found: "+phoneNumber);
         logger.info("deleting the S3 url for unmacthed  userId->"+userId);
         const userDeleteParams = {
-          TableName: userrecordstable, // Replace with your table name
+          TableName: userrecordstable, 
           Key: {
-              'user_phone_number': phoneNumber // Replace with your partition key name
+              'user_phone_number': phoneNumber 
           },
           UpdateExpression: 'REMOVE potrait_s3_url',
           ReturnValues: 'UPDATED_NEW'
@@ -671,24 +671,25 @@ async function searchUsersByImage(portraitS3Url, phoneNumber) {
       }
       const matchedUserId = result.matchedUserId[0];
       if(userId && matchedUserId != userId){
-          logger.info("deleting the S3 url for unmacthed  userId->"+userId);
+          logger.info("deleting the S3 url for unmacthed  userId->"+matchedUserId);
             const userDeleteParams = {
-              TableName: userrecordstable, // Replace with your table name
+              TableName: userrecordstable, 
               Key: {
-                  'user_phone_number': phoneNumber // Replace with your partition key name
+                  'user_phone_number': phoneNumber
               },
               UpdateExpression: 'REMOVE potrait_s3_url',
               ReturnValues: 'UPDATED_NEW'
           };
       
           const deltResult = docClient.update(userDeleteParams).promise();
-          logger.info("deleted the s3 url for userId ->"+userId);
+          logger.info("deleted the s3 url for userId ->"+matchedUserId);
+          return;
       }
       logger.info('Matched userId for the phoneNumber: '+phoneNumber+' and imageUrl: '+imageUrl+'is :', matchedUserId);
       const userUpdateParams = {
-        TableName: userrecordstable, // Replace with your table name
+        TableName: userrecordstable,
         Key: {
-          'user_phone_number': phoneNumber // Replace with your partition key name
+          'user_phone_number': phoneNumber
         },
         UpdateExpression: 'set user_id = :userId',
         ExpressionAttributeValues: {
@@ -2560,7 +2561,7 @@ app.post('/downloadImage', async (req, res) => {
           // Check if the user already exists
           if(!eventName)
             {
-              eventName = 'Swetha_Harish_Wedding_Aarvi_Media'
+              eventName = 'Nivedhitha_Mallikarjun_Reddy_Engagement_aarvimedia_b7c785dc-c4fd-4c9c-8309-fd026f7a6543'
 
             }
           const existingUser = await getUser(username);

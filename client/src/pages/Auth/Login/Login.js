@@ -75,7 +75,7 @@ function Login({ name, onLoginSuccess, showAppBar=true }) {
     isToastDisp.current = true;
   }, []);
 
-  const fromUrl = location.state?.from?.pathname || "/event";
+  const fromUrl = location.state?.from?.pathname || "/home";
   console.log(fromUrl);
   
 
@@ -252,7 +252,7 @@ function Login({ name, onLoginSuccess, showAppBar=true }) {
           }
         } catch (error) {
           console.log("error in mapping the userId and phone number");
-          navigate(`${location.pathname}`, { state: { fromUrl } });
+         // navigate(`${location.pathname}`, { state: { fromUrl } });
         }
       } else {
         // navigate(eventName ? `/login/${eventName}/rsvp` : fromUrl);
