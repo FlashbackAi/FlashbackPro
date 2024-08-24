@@ -10,8 +10,6 @@ const LabelAndInput = ({
   type,
   handleChange,
 }) => {
-    console.log(label)
-    console.log(value)
   return (
     <div className="label-text-field">
       <span>{label}</span>
