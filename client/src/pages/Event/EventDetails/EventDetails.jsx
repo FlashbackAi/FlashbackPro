@@ -33,26 +33,37 @@ const EventDetails = () => {
 
   console.log(userDetails);
 
+  const [uploadedFilesCount, setUploadedFilesCount] = useState(0); // State for uploaded files count
+
   useEffect(() => {
     const fetchEventData = async (eventName) => {
       try {
         const response = await API_UTIL.get(`/getEventDetails/${eventName}`);
         console.log(response.data);
         setEvent(response.data);
+        let fileCount=0;
+        if (response.data.uploaded_files) {
+          fileCount = response.data.uploaded_files;
+          setUploadedFilesCount(fileCount);
+        }
         setEditData({
           eventName: response.data.event_name,
-          eventDate: response.data.event_date.split('T')[0], // Assuming event_date is in ISO 8601 format
-          eventTime: response.data.event_date.split('T')[1].slice(0, 5), // Extract time portion, assuming format HH:MM:SS
+          eventDate: response.data.event_date.split('T')[0], 
+          eventTime: response.data.event_date.split('T')[1].slice(0, 5),
           invitationNote: response.data.invitation_note,
-          eventLocation: response.data.event_location,
+          eventLocation: response.data.event_location
         });
+  
+        // Check if uploaded_files key exists and set the count
+       
       } catch (error) {
         setError(error.message);
       }
     };
-
+  
     fetchEventData(eventName);
   }, [eventName]);
+  
 
   const handleEditClick = () => {
     // if (!toggleEdit) {
@@ -61,7 +72,7 @@ const EventDetails = () => {
         eventDate: event.event_date.split('T')[0], // Assuming event_date is in ISO 8601 format
         eventTime: event.event_date.split('T')[1].slice(0, 5), // Extract time portion, assuming format HH:MM:SS
         invitationNote: event.invitation_note,
-        eventLocation: event.event_location,
+        eventLocation: event.event_location
       });
     // }
     setIsEditEnabled(true);
@@ -73,7 +84,7 @@ const EventDetails = () => {
       eventDate: event.event_date.split('T')[0], // Assuming event_date is in ISO 8601 format
       eventTime: event.event_date.split('T')[1].slice(0, 5), // Extract time portion, assuming format HH:MM:SS
       invitationNote: event.invitation_note,
-      eventLocation: event.event_location,
+      eventLocation: event.event_location
     });
     setIsEditEnabled(false)
   }
@@ -93,6 +104,7 @@ const EventDetails = () => {
         eventDate: combinedDateTime,
         invitationNote: editData.invitationNote,
         eventLocation: editData.eventLocation,
+        uploadedFiles:uploadedFilesCount
       });
 
       if (response.status === 200) {
@@ -184,7 +196,7 @@ const EventDetails = () => {
           // Update overall progress
           // const completedChunks = chunkIndex + 1;
           // const overallPercent = (completedChunks / totalChunks) * 100;
-          setOverallProgress(75);
+          setOverallProgress(60);
         },
       });
       return response.data;
@@ -229,6 +241,20 @@ const EventDetails = () => {
       await Promise.all(files.map(uploadFile));
 
       // setUploadStatus('Associating images...');
+      // Update the uploaded files count
+      setOverallProgress(80);
+    const newUploadedFilesCount = uploadedFilesCount + files.length;
+    setUploadedFilesCount(newUploadedFilesCount); // Update the state with new count
+
+    // Update the event with the new uploaded files count
+    await API_UTIL.put(`/updateEvent/${event.event_id}`, {
+      eventName: editData.eventName,
+      eventDate: `${editData.eventDate}T${editData.eventTime}:00`,
+      invitationNote: editData.invitationNote,
+      eventLocation: editData.eventLocation,
+      uploadedFiles:newUploadedFilesCount
+    });
+
      
       setUploadStatus('Upload completed successfully');
     
