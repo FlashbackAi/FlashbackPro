@@ -63,7 +63,7 @@ const ImageModal = ({
     const touchEnd = touch.clientX;
 
     // Calculate swipe threshold in ems (1.25em * baseFontSize = 20px if baseFontSize is 16px)
-    const swipeThresholdInPixels = 1.25 * baseFontSize;
+    const swipeThresholdInPixels = 2 * baseFontSize;
 
     if (touchStartRef.current - touchEnd > swipeThresholdInPixels) {  // Swipe left
       handleNext();
