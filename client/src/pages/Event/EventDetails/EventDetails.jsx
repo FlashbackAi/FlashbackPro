@@ -8,6 +8,7 @@ import API_UTIL from '../../../services/AuthIntereptor';
 import './EventDetails.css';
 import AppBar from '../../../components/AppBar/AppBar';
 import LabelAndInput from '../../../components/molecules/LabelAndInput/LabelAndInput';
+import CustomButton from '../../../components/atoms/CustomButton/CustomButton';
 
 const EventDetails = () => {
   const location = useLocation();
@@ -23,7 +24,7 @@ const EventDetails = () => {
   const [uploadFilesModalStatus, setUploadFilesModalStatus] = useState('');
   const [isUploadFilesFailed, setIsUploadFilesFailed] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [toggleEdit, setToggleEdit] = useState(false);
+  const [isEditEnabled, setIsEditEnabled] = useState(false);
   const qrRef = useRef();
   const userDetails = location.state?.userDetails; // Retrieve userDetails from location state
   const navigate = useNavigate();
@@ -38,6 +39,13 @@ const EventDetails = () => {
         const response = await API_UTIL.get(`/getEventDetails/${eventName}`);
         console.log(response.data);
         setEvent(response.data);
+        setEditData({
+          eventName: response.data.event_name,
+          eventDate: response.data.event_date.split('T')[0], // Assuming event_date is in ISO 8601 format
+          eventTime: response.data.event_date.split('T')[1].slice(0, 5), // Extract time portion, assuming format HH:MM:SS
+          invitationNote: response.data.invitation_note,
+          eventLocation: response.data.event_location,
+        });
       } catch (error) {
         setError(error.message);
       }
@@ -47,7 +55,7 @@ const EventDetails = () => {
   }, [eventName]);
 
   const handleEditClick = () => {
-    if (!toggleEdit) {
+    // if (!toggleEdit) {
       setEditData({
         eventName: event.event_name,
         eventDate: event.event_date.split('T')[0], // Assuming event_date is in ISO 8601 format
@@ -55,9 +63,20 @@ const EventDetails = () => {
         invitationNote: event.invitation_note,
         eventLocation: event.event_location,
       });
-    }
-    setToggleEdit(!toggleEdit);
+    // }
+    setIsEditEnabled(true);
   };
+
+  const handleCancel = () => {
+    setEditData({
+      eventName: event.event_name,
+      eventDate: event.event_date.split('T')[0], // Assuming event_date is in ISO 8601 format
+      eventTime: event.event_date.split('T')[1].slice(0, 5), // Extract time portion, assuming format HH:MM:SS
+      invitationNote: event.invitation_note,
+      eventLocation: event.event_location,
+    });
+    setIsEditEnabled(false)
+  }
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -77,6 +96,7 @@ const EventDetails = () => {
       });
 
       if (response.status === 200) {
+        setIsEditEnabled(false)
         toast.success('Event updated successfully');
         navigate('/event');
       }
@@ -241,6 +261,8 @@ const EventDetails = () => {
   };
 
   function getFormattedDate(datetime) {
+    console.log("inside format" )
+    console.log(datetime)
     const date = new Date(datetime);
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -304,7 +326,7 @@ const EventDetails = () => {
           </div>
           <div className="invitation-image-content">
             <div className="event-details-content">
-              {toggleEdit ? (
+              {/* {toggleEdit ? (
                 <form onSubmit={handleFormSubmit} className="edit-form">
                   <div className="eo-form-group">
                     <label className="ed-form-label">Event Name:</label>
@@ -358,11 +380,9 @@ const EventDetails = () => {
                       className="ed-form-input"
                     />
                   </div>
-                  <button type="submit" className="save-button">
-                    Save Changes
-                  </button>
+                  
                 </form>
-              ) : (
+              ) : ( */}
                 <div className="ed-form-group">
                   <LabelAndInput
                     name={"eventName"}
@@ -370,42 +390,58 @@ const EventDetails = () => {
                     value={event.event_name}
                     type={"text"}
                     handleChange={handleInputChange}
-                    isEditable={toggleEdit}
+                    isEditable={false}
                   ></LabelAndInput>
                   <LabelAndInput
                     name={"eventDate"}
                     label={"Date:"}
-                    value={getFormattedDate(event.event_date)}
+                    defaultValue={getFormattedDate(event.event_date)}
+                    value={editData.eventDate}
                     type={"date"}
                     handleChange={handleInputChange}
-                    isEditable={toggleEdit}
+                    isEditable={isEditEnabled}
                   ></LabelAndInput>
                   <LabelAndInput
                     name={"eventTime"}
                     label={"Time:"}
-                    value={getFormattedTime(event.event_date)}
+                    defaultValue={getFormattedDate(event.event_date)}
+                    value={editData.eventTime}
                     type={"time"}
                     handleChange={handleInputChange}
-                    isEditable={toggleEdit}
+                    isEditable={isEditEnabled}
                   ></LabelAndInput>
                   <LabelAndInput
                     name={"invitationNote"}
                     label={"Invitation Note:"}
-                    value={event.invitation_note}
+                    value={editData.invitationNote}
                     type={"text"}
                     handleChange={handleInputChange}
-                    isEditable={toggleEdit}
+                    isEditable={isEditEnabled}
                   ></LabelAndInput>
                   <LabelAndInput
                     name={"eventLocation"}
                     label={"Location:"}
-                    value={event.event_location}
+                    value={editData.eventLocation}
                     type={"text"}
                     handleChange={handleInputChange}
-                    isEditable={toggleEdit}
+                    isEditable={isEditEnabled}
                   ></LabelAndInput>
                 </div>
-              )}
+              {/* )} */}
+              <div className='edit-actions'>
+                {isEditEnabled ? <>
+                  <button className="save-button cancel-button" onClick={handleCancel}>
+                    Cancel
+                  </button>
+                  <button className="save-button" onClick={handleFormSubmit}>
+                    Save
+                  </button>
+                </> :
+                <button  className="save-button" onClick={handleEditClick}>
+                    Edit
+                  </button>
+                  }
+              </div>
             </div>
             <div className="ed-form-footer">
               <button className="footer-buttons" onClick={openQrModal}>
