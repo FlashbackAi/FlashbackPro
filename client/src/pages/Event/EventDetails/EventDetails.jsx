@@ -8,7 +8,7 @@ import API_UTIL from '../../../services/AuthIntereptor';
 import './EventDetails.css';
 import AppBar from '../../../components/AppBar/AppBar';
 import LabelAndInput from '../../../components/molecules/LabelAndInput/LabelAndInput';
-import CustomButton from '../../../components/atoms/CustomButton/CustomButton';
+// import CustomButton from '../../../components/atoms/CustomButton/CustomButton';
 
 const EventDetails = () => {
   const location = useLocation();
