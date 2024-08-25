@@ -10,6 +10,9 @@ class WhatsAppSender {
 
   async sendMessage(recipientPhoneNumber, eventName, userId) {
     try {
+      const temp = eventName.split('_');
+      const event = temp.slice(0, -2).join(' ');
+
       const response = await axios.post(
         this.apiUrl,
         {
@@ -25,7 +28,7 @@ class WhatsAppSender {
               {
                 type: 'body',
                 parameters: [
-                  { type: 'text', text: eventName },
+                  { type: 'text', text: event.trim() },
                   { type: 'text', text: eventName },
                   { type: 'text', text: userId }
                 ]

@@ -73,14 +73,32 @@ app.get("/share/:eventName/:userId", async(req, res) => {
 
 // SSR ends
 
-// Configuring winston application logger
+// // Configuring winston application logger
 
+// const logger = winston.createLogger({
+//   transports: [
+//     new winston.transports.Console(),
+//     new winston.transports.File({ filename: 'logs/application.log' })
+//    ]
+//  });
+
+
+// Create a format that includes the timestamp
+const logFormat = winston.format.combine(
+  winston.format.timestamp({
+    format: 'YYYY-MM-DD HH:mm:ss'  // This is the default format, you can customize it
+  }),
+  winston.format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`)
+);
+
+// Create the logger
 const logger = winston.createLogger({
+  format: logFormat,  // Apply the log format
   transports: [
     new winston.transports.Console(),
     new winston.transports.File({ filename: 'logs/application.log' })
-   ]
- });
+  ]
+});
 
  // *** Comment these certificates while testing changes in local developer machine. And, uncomment while pushing to mainline***
 const privateKey = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/privkey.pem', 'utf8');
@@ -812,7 +830,7 @@ app.get('/flashback-progress/:taskId', (req, res) => {
 async function sendFlashbacksAsync(taskId, eventName) {
   try {
     const userEventMappings = await getUserEventMappings(eventName);
-    logger.info("started sending Whatsapp Messages : "+eventName);
+    logger.info("started sending Whatsapp Messages : "+eventName+" no. of users: "+ userEventMappings.length);
     const totalUsers = userEventMappings.length;
     let sentUsers = 0;
 
@@ -2675,7 +2693,7 @@ app.post('/downloadImage', async (req, res) => {
           // Check if the user already exists
           if(!eventName)
             {
-              eventName = 'Nivedhitha_Mallikarjun_Reddy_Engagement_aarvimedia_b7c785dc-c4fd-4c9c-8309-fd026f7a6543'
+              eventName = 'Nivedhitha_Mallikarjun_Reddy_Engagement'
 
             }
           const existingUser = await getUser(username);
@@ -4394,35 +4412,25 @@ app.get('/getCollabEvents/:userName', async (req, res) => {
 // });
 
 app.put('/updateEvent/:eventId', async (req, res) => {
-  const {eventId} = req.params;
-  const {
-    invitationNote,
-    eventLocation,
-    eventDate,
-    // street,
-    // city,
-    // state: newState,
-    // pinCode,
-    // invitation_url
-  } = req.body;
+  const { eventId } = req.params;
+  const { invitationNote, eventLocation, eventDate, uploadedFiles } = req.body;
+
+  // Ensure all required fields are present and valid
+  // if (!invitationNote || !eventLocation || !eventDate || ) {
+  //   return res.status(400).send({ error: 'All fields must be provided and valid' });
+  // }
 
   const updateParams = {
     TableName: eventsDetailsTable,
     Key: {
-      event_id:eventId
+      event_id: eventId
     },
-    UpdateExpression: "set event_location = :eventLocation, invitation_note = :invitationNote",
-    // ExpressionAttributeNames: {
-    //   "#st": "state",
-    // },
+    UpdateExpression: "set event_location = :eventLocation,event_date = :eventDate, invitation_note = :invitationNote, uploaded_files = :uploadedFiles",
     ExpressionAttributeValues: {
       ":eventLocation": eventLocation,
       ":invitationNote": invitationNote,
-      // ":street": street,
-      // ":city": city,
-      // ":state": newState,
-      // ":pinCode": pinCode,
-      // ":invitation_url": invitation_url,
+      ":uploadedFiles": uploadedFiles,
+      ":eventDate":eventDate
     },
     ReturnValues: "ALL_NEW",
   };
@@ -4432,10 +4440,11 @@ app.put('/updateEvent/:eventId', async (req, res) => {
     logger.info(`Updated event: ${eventId}`);
     res.status(200).send(result.Attributes);
   } catch (err) {
-    logger.info(err.message);
+    logger.error(`Failed to update event ${eventId}: ${err.message}`);
     res.status(500).send({ error: 'Failed to update the event' });
   }
 });
+
 
 app.get("/getEventDetails/:eventId", async (req, res) => {
   const eventId = req.params.eventId;

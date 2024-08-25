@@ -78,7 +78,7 @@ function Login({ name, onLoginSuccess, showAppBar=true }) {
     isToastDisp.current = true;
   }, []);
 
-  const fromUrl = location.state?.from?.pathname || "/home";
+  const fromUrl = location.state?.from?.pathname || "/event";
   console.log(fromUrl);
   
 

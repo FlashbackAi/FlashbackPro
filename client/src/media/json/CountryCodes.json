@@ -1,5 +1,40 @@
 [
   {
+    "name": "India",
+    "dial_code": "+91",
+    "code": "IN",
+    "label":"+91",
+    "value":"IN +91"
+  },
+  {
+    "name": "United States",
+    "dial_code": "+1",
+    "code": "US",
+    "label":"+1",
+    "value":"US +1"
+  },
+  {
+    "name": "Canada",
+    "dial_code": "+1",
+    "code": "CA",
+    "label":"+1",
+    "value":"CA +1"
+  },
+  {
+    "name": "Nepal",
+    "dial_code": "+977",
+    "code": "NP",
+    "label": "+977",
+    "value": "NP +977"
+  },
+  {
+    "name": "South Korea",
+    "dial_code": "+82",
+    "code": "KR",
+    "label": "+82",
+    "value": "KR +82"
+  },
+  {
     "name": "United Arab Emirates",
     "dial_code": "+971",
     "code": "AE",
@@ -13,13 +48,7 @@
     "label":"+61",
     "value":"AU +61"
   },
-  {
-    "name": "Canada",
-    "dial_code": "+1",
-    "code": "CA",
-    "label":"+1",
-    "value":"CA +1"
-  },
+  
   {
     "name": "France",
     "dial_code": "+33",
@@ -35,24 +64,10 @@
     "value":"GB +44"
   },
   {
-    "name": "India",
-    "dial_code": "+91",
-    "code": "IN",
-    "label":"+91",
-    "value":"IN +91"
-  },
-  {
     "name": "Sri Lanka",
     "dial_code": "+94",
     "code": "LK",
     "label":"+94",
     "value":"LK +94"
-  },
-  {
-    "name": "United States",
-    "dial_code": "+1",
-    "code": "US",
-    "label":"+1",
-    "value":"US +1"
-  }
+  }  
 ]
