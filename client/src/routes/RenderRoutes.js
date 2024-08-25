@@ -18,14 +18,15 @@ const ProtectedRoute = ({ children }) => {
  const isAuthenticated = !!sessionStorage.getItem('userphoneNumber');
  let location = useLocation();
 
-  return isAuthenticated ? (
-    children
-  ) : (
-    <Navigate to="/login" state={{ from: location }} replace />
-  );
+ if (!isAuthenticated) {
+  return <Navigate to="/login" state={{ from: location }} replace />;
+}
+
+return children;
 };
 
 function RenderRoutes({ isLoading = false }) {
+  console.log('Rendering routes');
   return (
     <>
       {isLoading ? (
@@ -35,6 +36,8 @@ function RenderRoutes({ isLoading = false }) {
       ) : (
         <Routes>
           {ROUTES.map((route, i) => {
+            console.log(`Rendering route: ${route.path}`);
+            const RouteComponent = route.component;
             return (
               <Route
                 key={i}

@@ -11,6 +11,7 @@ import "./login.css";
 // import * as faceapi from 'face-api.js';
 // import Header from "../../../components/Header/Header";
 import AppBar from "../../../components/AppBar/AppBar";
+import OTPAuth from "../WhatsappAuth/OTPAuth";
 
 const CustomOption = ({ children, ...props }) => {
   return (
@@ -59,6 +60,8 @@ function Login({ name, onLoginSuccess, showAppBar=true }) {
   const isToastDisp = useRef(false);
   const [setStep] = useState(0); // 0: move head, 1: blink, 2: ready to capture
   const [isCaptureEnabled, setIsCaptureEnabled] = useState(true);
+  const [showOTP, setShowOTP] = useState(false);
+  const [otpSentTime, setOtpSentTime] = useState(null);
 
   const videoConstraints = {
     width: 350,
@@ -192,6 +195,50 @@ function Login({ name, onLoginSuccess, showAppBar=true }) {
   const handleSubmit = async (event) => {
     event.preventDefault();
     const fullPhoneNumber = countryCode + phoneNumber;
+    try {
+      const response = await API_UTIL.post('/sendOTP', { phoneNumber: fullPhoneNumber });
+      if (response.status === 200) {
+        setShowOTP(true);
+        setOtpSentTime(Date.now());
+      }
+    } catch (error) {
+      console.error("Error sending OTP:", error);
+      // Handle error (e.g., show error message to user)
+    }
+  };
+
+  const handleOTPVerify = async (otpString) => {
+    const fullPhoneNumber = countryCode + phoneNumber;
+    try {
+      const response = await API_UTIL.post('/verifyOTP', { phoneNumber: fullPhoneNumber, otp: otpString });
+      if (response.status === 200) {
+        // OTP verified successfully, proceed with user creation or login
+        await createOrLoginUser(fullPhoneNumber);
+        return { success: true};
+      } else {
+        return { success: false};
+      }
+    } catch (error) {
+      console.error("Error verifying OTP:", error);
+      return { success: false};
+    }
+  };
+
+  const handleOTPResend = async () => {
+    const fullPhoneNumber = countryCode + phoneNumber;
+    try {
+      const response = await API_UTIL.post('/sendOTP', { phoneNumber: fullPhoneNumber });
+      if (response.status === 200) {
+        setOtpSentTime(Date.now()); // Update the time when OTP was resent
+      }
+      // Optionally, show a success message to the user
+    } catch (error) {
+      console.error("Error resending OTP:", error);
+      // Handle error (e.g., show error message to user)
+    }
+  };
+
+  const createOrLoginUser = async (fullPhoneNumber) => {
     let userSource = "flashback";
     let role = "user";
     let reward_points =50;
@@ -210,6 +257,7 @@ function Login({ name, onLoginSuccess, showAppBar=true }) {
       reward_points = 100000
     }
     
+    try {
     const response = await API_UTIL.post(`/createUser`, {
       username: fullPhoneNumber,
       eventName: eventName,
@@ -232,10 +280,15 @@ function Login({ name, onLoginSuccess, showAppBar=true }) {
       //   onLoginSuccess(fullPhoneNumber);
       // }
       // else {
-        navigate(fromUrl);
+        handleNavigation(fullPhoneNumber);
       // }
+    }
+  } catch (error) {
+    console.error("Error creating/logging in user:", error);
+  }
+};
       
-
+    const handleNavigation = async (fullPhoneNumber) => {
       if (typeof fromUrl === 'string' && fromUrl.includes("photos")) {
         try {
           const urlArray = fromUrl.split("/");
@@ -251,7 +304,7 @@ function Login({ name, onLoginSuccess, showAppBar=true }) {
             navigate(fromUrl);
           }
         } catch (error) {
-          console.log("error in mapping the userId and phone number");
+          console.log("Error in mapping the userId and phone number");
          // navigate(`${location.pathname}`, { state: { fromUrl } });
         }
       } else {
@@ -262,8 +315,7 @@ function Login({ name, onLoginSuccess, showAppBar=true }) {
       // toast(
       //   `hey ${fullPhoneNumber}, you already exist. Have a great event ahead..`
       // );
-    }
-  };
+    };
 
   const uploadPhoto = async () => {
     if (termsAccepted) {
@@ -279,6 +331,7 @@ function Login({ name, onLoginSuccess, showAppBar=true }) {
           },
         });
         sessionStorage.setItem('userphoneNumber', fullPhoneNumber);
+        handleNavigation(fullPhoneNumber);
         if (typeof fromUrl === 'string' && fromUrl.includes("photos")) {
           try {
             const urlArray = fromUrl.split("/");
@@ -326,7 +379,7 @@ function Login({ name, onLoginSuccess, showAppBar=true }) {
       <div className="loginBody">
       <div className="loginLeft">
         <div className="login-form-container">
-          {!isPhoneNumberValid && (
+          {!isPhoneNumberValid && !showOTP && (
             <form onSubmit={handleSubmit} className="login-form">
               <div className={"phoneOuter " + (phoneNumberError && "error")} style={{ position: "relative" }}>
                 <Select
@@ -361,6 +414,14 @@ function Login({ name, onLoginSuccess, showAppBar=true }) {
               )}
             </form>
           )}
+          {showOTP && (
+              <OTPAuth 
+                phoneNumber={countryCode + phoneNumber}
+                onVerify={handleOTPVerify}
+                onResend={handleOTPResend}
+                otpSentTime={otpSentTime}
+              />
+            )}
           {isNewUser && (
             <div className="login-form-container">
               <p className="caution">Hey, don't worry we won't see your image :)</p>

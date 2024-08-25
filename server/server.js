@@ -396,6 +396,7 @@ app.post('/getPeopleThumbnails', async (req, res) => {
   }
 });
 
+
 app.get('/fetch-events', async (req, res) => {
   try {
     const { type } = req.query; // 'trigger' or 'send'
@@ -1103,6 +1104,119 @@ app.post('/reset-password', (req, res) => {
   });
 });
 
+app.post('/sendOTP', async (req, res) => {
+  const { phoneNumber } = req.body;
+  
+  try {
+    // Generate a 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Save the OTP in your database with an expiration time (7 minutes)
+    await saveOTP(phoneNumber, otp);
+    try {
+    // Send the OTP via WhatsApp
+    await whatsappSender.sendOTP(phoneNumber, otp);
+    res.status(200).json({ message: 'OTP sent successfully' });
+  } catch (whatsappError) {
+    logger.error('Error sending OTP via WhatsApp:', whatsappError);
+    
+    res.status(200).json({ message: 'OTP sent successfully' });
+  }
+  } catch (error) {
+    logger.error('Error sending OTP:', error);
+    res.status(500).json({ error: 'Error sending OTP' });
+  }
+});
+
+app.post('/verifyOTP', async (req, res) => {
+  const { phoneNumber, otp } = req.body;
+  
+  try {
+    // Verify the OTP from DDB
+    const isValid = await verifyOTP(phoneNumber, otp);
+    
+    if (isValid) {
+      logger.info(`User ${phoneNumber} successfully authenticated`);
+
+      await recordLoginHistory(phoneNumber);
+      res.status(200).json({ message: 'OTP verified successfully' });
+    } else {
+      res.status(400).json({ error: 'Invalid OTP' });
+    }
+  } catch (error) {
+    logger.error(`Error verifying OTP for ${phoneNumber}: ${error}`);
+    res.status(500).json({ error: 'Error verifying OTP' });
+  }
+});
+
+async function recordLoginHistory(phoneNumber) {
+  const params = {
+    TableName: 'UserLoginHistory',
+    Item: {
+      user_phone_number: phoneNumber,
+      login_timestamp: new Date().toISOString(),
+      login_type: 'OTP',
+      login_status: 'success'
+    }
+  };
+
+  try {
+    await docClient.put(params).promise();
+    logger.info(`Login history recorded for user ${phoneNumber}`);
+  } catch (error) {
+    logger.error(`Error recording login history for user ${phoneNumber}: ${error}`);
+  }
+}
+
+async function saveOTP(phoneNumber, otp) {
+  const expirationTime = new Date(Date.now() + 3 * 60 * 1000); // 3 minutes from now
+  
+  const params = {
+    TableName: 'UserAuthentication',
+    Item: {
+      phoneNumber: phoneNumber,
+      otp: otp,
+      expirationTime: expirationTime.toISOString()
+    }
+  };
+
+  await docClient.put(params).promise();
+}
+
+async function verifyOTP(phoneNumber, otp) {
+  const params = {
+    TableName: 'UserAuthentication', // Replace with your actual table name
+    Key: {
+      phoneNumber: phoneNumber
+    }
+  };
+
+  const result = await docClient.get(params).promise();
+  
+  if (result.Item && result.Item.otp === otp) {
+    const currentTime = new Date();
+    const expirationTime = new Date(result.Item.expirationTime);
+    
+    if (currentTime <= expirationTime) {
+      // OTP is valid and not expired
+      await deleteOTP(phoneNumber); // Remove the OTP after successful verification
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+async function deleteOTP(phoneNumber) {
+  const params = {
+    TableName: 'UserAuthentication', // Replace with your actual table name
+    Key: {
+      phoneNumber: phoneNumber
+    }
+  };
+
+  await docClient.delete(params).promise();
+}
 
 // app.post('/createFolder', (req, res) => {
     

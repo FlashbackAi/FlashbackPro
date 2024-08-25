@@ -1,0 +1,159 @@
+.otp-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem;
+    background-color: #ffffff;
+    border-radius: 12px;
+    max-width: 400px;
+    margin: 2rem auto;
+  }
+  
+  .otp-container h2 {
+    font-size: 1.5rem;
+    color: black;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  
+  .otp-container p {
+    font-size: 1.2rem;
+    color: #000000;
+    margin-bottom: 0.5rem;
+    text-align: center;
+  }
+  
+  .otp-input-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1em;
+  }
+  
+  .otp-input {
+    width: 40px;
+    height: 40px;
+    margin: 0 0.5rem;
+    text-align: center;
+    font-size: 1.2rem;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    transition: border-color 0.3s ease;
+  }
+  
+  .otp-input:focus {
+    border-color: #007bff;
+    outline: none;
+  }
+  
+  .verify-button, .resend-button {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: bold;
+    font-family: Arial, Helvetica, sans-serif;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, opacity 0.3s ease;
+  }
+  
+  .verify-button {
+    background-color: #007bff;
+    margin-bottom: 1rem;
+  }
+  
+  .verify-button:hover:not(:disabled) {
+    background-color: #0056b3;
+  }
+  
+  .resend-button {
+    background-color: #6c757d;
+  }
+  
+  .resend-button:hover:not(:disabled) {
+    background-color: #5a6268;
+  }
+  
+  .verify-button:disabled, .resend-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  .timer, .cooldown, .attempts {
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: 1rem;
+  }
+  
+  .cooldown {
+    color: #dc3545;
+  }
+  
+  .attempts {
+    font-weight: bold;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .otp-container {
+    animation: fadeIn 0.5s ease-out;
+  }
+  
+  @media (max-width: 480px) {
+    .otp-container {
+      padding: 1.5rem;
+    }
+  
+    .otp-input {
+      width: 35px;
+      height: 35px;
+      font-size: 1rem;
+    }
+  }
+
+  .flip-card {
+    background-color: transparent;
+    width: 50px;
+    height: 60px;
+    perspective: 1000px;
+    margin: 0 5px;
+  }
+  
+  .flip-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+  }
+  
+  .flip-card-inner.flipped {
+    transform: rotateY(180deg);
+  }
+  
+  .flip-card-front, .flip-card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+  }
+  
+  .flip-card-front {
+    background-color: #fff;
+  }
+  
+  .flip-card-back {
+    background-color: #007bff;
+    color: white;
+    transform: rotateY(180deg);
+  }

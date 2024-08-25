@@ -102,7 +102,7 @@ const ROUTES=[
     {
         path:"/home",
         exact:false,
-        protected:false,
+        protected:true,
         component:Home
     },
     // {
@@ -120,13 +120,13 @@ const ROUTES=[
     {
         path:"/photos/:eventName/:userId",
         exact:false,
-        protected:false,
+        protected:true,
         component:ImagesPage
     },
     {
         path:"/photosV1/:eventName/:userId",
         exact:false,
-        protected:false,
+        protected:true,
         component:ImagesPageNew
     },
     // {
@@ -150,7 +150,7 @@ const ROUTES=[
     {
         path:"/TermsAndConditions",
         exact:false,
-        protected:false,
+        protected:true,
         component:TermsAndConditions
     },
     // {
@@ -168,25 +168,25 @@ const ROUTES=[
     {
         path:"/relations/:eventName",
         exact:false,
-        protected:false,
+        protected:true,
         component:FaceSelection
     },
     {
         path:"/photoSelectionNew/:eventName/:form_owner",
         exact:false,
-        protected:false,
+        protected:true,
         component:PhotoSelectionNew
     },
     {
         path:"/photoSelection/:eventName/:form_owner",
         exact:false,
-        protected:false,
+        protected:true,
         component:PhotoSelection
     },
     {
         path:"/edit/collage",
         exact:false,
-        protected:false,
+        protected:true,
         component:Collage
     },
     {
@@ -198,7 +198,7 @@ const ROUTES=[
     {
         path:"/creatorLogin",
         exact:false,
-        protected:false,
+        protected:true,
         component:CreatorLogin
     },
     // {
@@ -216,7 +216,7 @@ const ROUTES=[
     {
         path:"/eventSelector",
         exact:false,
-        protected:false,
+        protected:true,
         component:EventSelector,
     },
     // {
@@ -228,13 +228,13 @@ const ROUTES=[
     {
         path:"/eventDetails/:eventName",
         exact:false,
-        protected:false,
+        protected:true,
         component:EventDetails,
     },
     {
         path:"/about",
         exact:false,
-        protected:false,
+        protected:true,
         component:About,
     },
     {
@@ -246,7 +246,7 @@ const ROUTES=[
     {
         path:"/portfolio/:userName",
         exact:false,
-        protected:false,
+        protected:true,
         component:Portfolio,
     },
     {

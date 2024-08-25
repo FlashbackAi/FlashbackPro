@@ -48,6 +48,56 @@ class WhatsAppSender {
       throw error;
     }
   }
+
+  async sendOTP(recipientPhoneNumber, otp) {
+    try {
+      const response = await axios.post(
+        this.apiUrl,
+        {
+          messaging_product: 'whatsapp',
+          to: recipientPhoneNumber,
+          type: 'template',
+          template: {
+            name: 'authflash',
+            language: {
+              code: 'en'
+            },
+            components: [
+              {
+                type: 'body',
+                parameters: [
+                  { type: 'text', text: otp }
+                ]
+              },
+              {
+                type: 'button',
+                sub_type: 'url',
+                index: 0,
+                parameters: [
+                  {
+                    type: 'text',
+                    text: otp
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      console.log('OTP sent successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error sending OTP via WhatsApp:', error.response ? error.response.data : error.message);
+      throw error;
+    }
+  }
 }
 
 module.exports = WhatsAppSender;

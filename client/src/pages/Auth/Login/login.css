@@ -132,3 +132,27 @@ h1, h4{
     justify-content: center;
 
 }
+
+.fade-out {
+  opacity: 0;
+}
+
+.fade-in {
+  opacity: 1;
+}
+
+/* Adjust the submit button style to match OTP verify button */
+.submit, .verify-button {
+  background-image: linear-gradient(90deg, #66d3ff, #9a6aff 38%, #ee75cb 71%, #fd4d77);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+
+.submit:disabled, .verify-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
