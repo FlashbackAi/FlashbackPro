@@ -13,10 +13,11 @@
 
 .modalOuter {
   position: relative;
-  width: 80%; /* Set a fixed width for the modal */
-  max-width: 800px; /* Set a maximum width */
-  max-height: 90vh;
-  /*background: #1c1c1c;*/
+  /* width: 80%; */
+  max-width: fit-content;
+  max-height: fit-content;
+  background: #1c1c1cc0;
+  height: fit-content;
   padding: 3em;
   border-radius: 8px;
   display: flex;
@@ -53,11 +54,13 @@
 }
 
 .left-arrow {
+  background-color: #1c1c1c60;
   left: 10px;
 }
 
 .right-arrow {
   right: 10px;
+  background-color: #1c1c1c60;
 }
 
 .imageToolBox {
@@ -91,7 +94,7 @@
 
 @media (max-width: 480px) {
   .modalOuter {
-    width: 100%; /* Full width for very small screens */
+    /* width: 100%; Full width for very small screens */
     padding: 0.5em; /* Further reduce padding */
   }
 
