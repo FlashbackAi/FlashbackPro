@@ -246,7 +246,7 @@ const ROUTES=[
     {
         path:"/portfolio/:userName",
         exact:false,
-        protected:true,
+        protected:false,
         component:Portfolio,
     },
     {

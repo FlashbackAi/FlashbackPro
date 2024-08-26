@@ -25,14 +25,18 @@ const ImageModal = ({
   const [isDownloading, setIsDownloading] = useState(false);
   const [isFavourite, setIsFavourite] = useState(clickedImgFavourite);
   const touchStartRef = useRef(0);  // To store the starting touch position
+  const isNavigatingRef = useRef(false);  // Track if we're navigating images
 
   // Define base font size for em calculation
   const baseFontSize = 16; // Adjust if your app uses a different base font size
   console.log(clickedImg)
 
   useEffect(() => {
-    setClickedImg(images[currentIndex].thumbnail);
-    setIsFavourite(images[currentIndex].isFavourites);
+    if (isNavigatingRef.current) {
+      setClickedImg(images[currentIndex].thumbnail);
+      setIsFavourite(images[currentIndex].isFavourites);
+      isNavigatingRef.current = false;  // Reset after updating
+    }
   }, [currentIndex, images, setClickedImg]);
 
   const handleClick = (e) => {
@@ -44,12 +48,14 @@ const ImageModal = ({
 
   const handleNext = () => {
     if (currentIndex < images.length - 1) {
+      isNavigatingRef.current = true;  // Set flag to true for navigation
       setCurrentIndex(currentIndex + 1);
     }
   };
 
   const handlePrev = () => {
     if (currentIndex > 0) {
+      isNavigatingRef.current = true;  // Set flag to true for navigation
       setCurrentIndex(currentIndex - 1);
     }
   };
@@ -74,7 +80,8 @@ const ImageModal = ({
     }
   };
 
-  const downloadCurrentImage = async () => {
+  const downloadCurrentImage = async (e) => {
+    e.stopPropagation(); // Prevents the event from bubbling up
     if (!clickedImg) {
       console.error("No current image found");
       return;
@@ -111,7 +118,8 @@ const ImageModal = ({
     lazySpan && lazySpan.classList.add("visible");
   };
 
-  const addToFavourite = () => {
+  const addToFavourite = (e) => {
+    e.stopPropagation(); // Prevents the event from bubbling up
     const fav = document.querySelector(".favourite");
     if (isFavourite) fav.classList.remove("bgRed");
     else fav.classList.add("bgRed");
@@ -184,4 +192,3 @@ const ImageModal = ({
 };
 
 export default ImageModal;
-

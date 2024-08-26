@@ -1,0 +1,62 @@
+.my-masonry-grid {
+  display: flex;
+  flex-direction: row; /* Ensure items are filled row-wise */
+  flex-wrap: wrap;     /* Allow items to wrap to the next line */
+  margin-left: 1em;
+  margin-right: 1em; /* Adjust for gutter using em */
+  width: auto;
+}
+
+.my-masonry-grid_column {
+  background-clip: padding-box;
+  /* padding-left: 0.1em; Adjust for gutter using em */
+  width: 19%;
+}
+
+.im-wrapper-images {
+  margin: 0.15em; /* Space between items using em */
+  position: relative;
+  overflow: hidden; /* Maintain image ratio */
+  /* border-radius: 10%; Rounded corners */
+}
+
+.im-wrapper-images img {
+  margin: 0.15em;
+  display: block;
+  width: 100%; /* Full width of container */
+  /* max-width: 10em; Limit the width for thumbnail size using em */
+  height: auto; /* Adjust height according to the width */
+  object-fit: cover; /* Cover the container while maintaining aspect ratio */
+  /* border-radius: 10%; Rounded corners */
+  transition: transform 0.2s; /* Smooth scaling on hover */
+}
+
+.im-wrapper-images:hover img {
+  transform: scale(1.03); /* Scale image on hover */
+}
+
+.heart-icon {
+  position: absolute;
+  bottom: 0.5em;
+  right: 0.3em;
+  border-radius: 50%;
+  padding: 0.3em; /* Use em for consistent scaling */
+  width: 1.5em; /* Smaller size for the heart icon */
+  height: 1.5em;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+@media (max-width: 768px) {
+  /* .my-masonry-grid_column {
+    padding-left: 0.3em; Smaller gutter for mobile
+  } */
+
+  .im-wrapper-images {
+    margin: 0.15em; /* Smaller space between items for mobile */
+  }
+
+  /* .ip-wrapper-images img {
+    max-width: 7em; Smaller thumbnails for mobile
+  } */
+}

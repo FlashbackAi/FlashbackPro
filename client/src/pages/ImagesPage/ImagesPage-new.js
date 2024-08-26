@@ -10,9 +10,10 @@ import API_UTIL from "../../services/AuthIntereptor";
 import { Heart } from "lucide-react";
 import Footer from "../../components/Footer/Footer";
 import "../../components/Footer/Footer.css"; // Import the updated CSS
-import "./ImagePage.css";
+import "./ImagePage-new.css";
 import AppBar from "../../components/AppBar/AppBar";
 import MiniHeroComponent from "../../components/MiniHeroComponent/MiniHeroComponent";
+import Masonry from "react-masonry-css"; // Import Masonry
 
 function ImagesPageNew() {
   const [lastEvaluatedKey, setLastEvaluatedKey] = useState(undefined);
@@ -32,6 +33,30 @@ function ImagesPageNew() {
   const [clientObj, setClientObj] = useState();
   const [userObj,setUserObj] = useState();
   const [bannerImg, setBannerImg]  = useState();
+
+
+  const [breakpointColumnsObj, setBreakpointColumnsObj] = useState({
+    default: calculateColumns(),
+    1200: calculateColumns(),
+    992: calculateColumns(),
+    768: calculateColumns(),
+    576: calculateColumns(),
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setBreakpointColumnsObj({
+        default: calculateColumns(),
+        1200: calculateColumns(),
+        992: calculateColumns(),
+        768: calculateColumns(),
+        576: calculateColumns(),
+      });
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const handleClick = (item, index) => {
     setClickedImg(item.thumbnail);
@@ -237,7 +262,7 @@ function ImagesPageNew() {
       tempImages[index].isFavourites = true;
       tempImages.splice(favIndex, 0, tempImages.splice(index, 1)[0]);
       displayFavIcon(favIndex);
-      setClickedImgIndex(favIndex);
+      // setClickedImgIndex(favIndex);
       setLastFavIndex((favIndex) => favIndex + 1);
       setImages(tempImages);
     } else {
@@ -247,7 +272,7 @@ function ImagesPageNew() {
       tempImages[index].isFavourites = false;
       tempImages.splice(unFavIndex, 0, tempImages.splice(index, 1)[0]);
       hideFavIcon(unFavIndex);
-      setClickedImgIndex(unFavIndex);
+      // setClickedImgIndex(unFavIndex);
       setLastFavIndex((favIndex) => favIndex - 1);
       setImages(tempImages);
     }
@@ -275,6 +300,15 @@ function ImagesPageNew() {
     handleFavourite(index, images[index].original, isFav);
   };
 
+  // const breakpointColumnsObj = {
+  //   default: 5,  // 6 columns for large screens (default)
+  //   1200: 5,     // 6 columns for screens 1200px and above
+  //   992: 5,      // 6 columns for screens between 992px and 1200px (laptops)
+  //   768: 3,      // 3 columns for screens between 768px and 992px (tablets)
+  //   576: 3,      // 3 columns for screens 576px and below (mobile)
+  // };
+  
+
   return (
     <div className="page-container">
       {isLoading ? (
@@ -289,32 +323,31 @@ function ImagesPageNew() {
             />
           <div className="content-wrap">
             {images.length > 0 ? (
-              <div className="ip-wrapper">
-                {images.map((item, index) => (
-                  <div key={index} className="ip-wrapper-images">
-                    <LazyLoadImage
-                      src={item.thumbnail}
-                      placeholderSrc={PlaceholderImage}
-                      effect="blur"
-                      onLoad={() => item.isFavourites && displayFavIcon(index)}
-                      onClick={() => handleClick(item, index)}
-                    />
-                    {/* {item.isFavourites && ( */}
-                    {/* <Heart
-                      data-key={index}
-                      className="image_favourite_down hidden"
-                    /> */}
-                    {/* )} */}
-                    <Heart
-                      data-key={index}
-                      className={`heart-icon ${item.isFavourites ? "bgRed" : ""}`}
-                      onClick={(e) => {
-                        e.stopPropagation(); // Prevent the click from triggering the image click
-                        toggleFavourite(index);
-                      }}
-                    />
-                  </div> 
-                ))}
+              <div className="im-wrapper">
+                   <Masonry
+                   breakpointCols={breakpointColumnsObj}
+                   className="my-masonry-grid"
+                   columnClassName="my-masonry-grid_column"
+                 >
+                   {images.map((item, index) => (
+                     <div key={index} className="im-wrapper-images">
+                       <img
+                         src={item.thumbnail}
+                         alt={`img ${index}`}
+                         style={{ objectFit: "cover" }}
+                         onClick={() => handleClick(item, index)}
+                       />
+                       <Heart
+                         data-key={index}
+                         className={`heart-icon ${item.isFavourites ? "bgRed" : ""}`}
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           toggleFavourite(index);
+                         }}
+                       />
+                     </div>
+                   ))}
+                 </Masonry>
                 <div>
                   {clickedImg && (
                     <Modal
@@ -342,5 +375,18 @@ function ImagesPageNew() {
     </div>
   );
 }
+
+const calculateColumns = () => {
+  const width = window.innerWidth;
+  if (width >= 1200) {
+    return 6;
+  } else if (width >= 992) {
+    return 5;
+  } else if (width >= 768) {
+    return 4;
+  } else {
+    return 3;
+  }
+};
 
 export default ImagesPageNew;
