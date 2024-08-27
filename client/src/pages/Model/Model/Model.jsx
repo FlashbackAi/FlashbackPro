@@ -44,7 +44,7 @@ const Model = () => {
     const fetchUserDetails = async () => {
       try {
         setLoading(true);
-        const userPhoneNumber = sessionStorage.getItem('userphoneNumber');
+        const userPhoneNumber =localStorage.userPhoneNumber;
         const response = await API_UTIL.get(`/fetchUserDetails/${userPhoneNumber}`);
         setUserDetails(response.data.data);
         if (sessionStorage.getItem('userphoneNumber') !== response.data.data.user_name) {
@@ -62,7 +62,7 @@ const Model = () => {
 
   const handleLinkClick = () => {
     const clientName = userDetails.user_name;
-    const sessionNumber = sessionStorage.getItem('userphoneNumber');
+    const sessionNumber =localStorage.userPhoneNumber;
     if (clientName === sessionNumber) {
       openIsDetailsModalOpen();
     } else {
@@ -86,7 +86,7 @@ const Model = () => {
   const handleDetailFormSubmit = async (e) => {
     e.preventDefault();
 
-    const userPhoneNumber = sessionStorage.getItem('userphoneNumber');
+    const userPhoneNumber =localStorage.userPhoneNumber;
 
     if (!userPhoneNumber) {
       toast.error("User phone number is missing from session.");

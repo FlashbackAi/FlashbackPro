@@ -8,7 +8,7 @@ const AppBar = ({ showLogout = true }) => {
 
   const handleLogout = () => {
     // Remove session storage
-    sessionStorage.clear();
+   localStorage.clear();
 
     // Navigate to the default page '/'
     navigate('/');

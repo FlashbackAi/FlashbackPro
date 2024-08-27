@@ -271,7 +271,8 @@ function Login({ name, onLoginSuccess, showAppBar=true }) {
       setIsNewUser(true);
       //toast("Click a selfie to register, don't worry we won't save your selfie.");
     } else if (response.status === 200) {
-      sessionStorage.setItem('userphoneNumber', fullPhoneNumber);
+      localStorage.setItem('userPhoneNumber', fullPhoneNumber);
+      //localStorage.setItem('userphoneNumber', fullPhoneNumber);
       // toast(
       //   `Hey ${fullPhoneNumber}, you already exist. Have a great event ahead..`
       // );
@@ -298,7 +299,8 @@ function Login({ name, onLoginSuccess, showAppBar=true }) {
             userId: urlArray[urlArray.length - 1],
           });
           if (response.status === 200) {
-            sessionStorage.setItem('userphoneNumber', fullPhoneNumber);
+            localStorage.setItem('userPhoneNumber', fullPhoneNumber);
+            //localStorage.setItem('userphoneNumber', fullPhoneNumber);
             
             console.log("Succesfully mapped the userId and phoneNumber");
             navigate(fromUrl);
@@ -311,7 +313,8 @@ function Login({ name, onLoginSuccess, showAppBar=true }) {
         // navigate(eventName ? `/login/${eventName}/rsvp` : fromUrl);
         navigate(fromUrl);
       }
-      sessionStorage.setItem('userphoneNumber', fullPhoneNumber);
+      localStorage.setItem('userPhoneNumber', fullPhoneNumber);
+      //localStorage.setItem('userphoneNumber', fullPhoneNumber);
       // toast(
       //   `hey ${fullPhoneNumber}, you already exist. Have a great event ahead..`
       // );
@@ -330,7 +333,8 @@ function Login({ name, onLoginSuccess, showAppBar=true }) {
             "Content-Type": "multipart/form-data",
           },
         });
-        sessionStorage.setItem('userphoneNumber', fullPhoneNumber);
+        localStorage.setItem('userPhoneNumber', fullPhoneNumber);
+        //localStorage.setItem('userphoneNumber', fullPhoneNumber);
         handleNavigation(fullPhoneNumber);
         if (typeof fromUrl === 'string' && fromUrl.includes("photos")) {
           try {

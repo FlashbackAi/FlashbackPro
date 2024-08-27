@@ -6,7 +6,7 @@ import {  useNavigate } from 'react-router-dom';
 import LoadingSpinner from '../../../components/Loader/LoadingSpinner';
 
 const PortfolioForm = () => {
-  const userPhoneNumber = sessionStorage.getItem('userphoneNumber');
+  const userPhoneNumber =localStorage.userPhoneNumber;
 
   const [formData, setFormData] = useState({
     user_phone_number: userPhoneNumber,
@@ -30,7 +30,7 @@ const PortfolioForm = () => {
 
     const fetchUserDetails = async () => {
       try {
-        const userPhoneNumber = sessionStorage.getItem('userphoneNumber');
+        const userPhoneNumber =localStorage.userPhoneNumber;
         console.log(userPhoneNumber);
         const response = await API_UTIL.get(`/fetchUserDetails/${userPhoneNumber}`);
         setIsLoading(false)

@@ -19,7 +19,7 @@ const Event = () => {
   const [userDetails, setUserDetails] = useState([]);
   const [displayNone, setDisplayNone] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const userPhoneNumber = sessionStorage.getItem('userphoneNumber');
+  const userPhoneNumber =localStorage.userPhoneNumber;
   const [eventToDelete, setEventToDelete] = useState(null);
   const [formData, setFormData] = useState({
     eventName: '',

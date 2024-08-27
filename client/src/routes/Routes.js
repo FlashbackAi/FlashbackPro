@@ -168,7 +168,7 @@ const ROUTES=[
     {
         path:"/relations/:eventName",
         exact:false,
-        protected:true,
+        protected:false,
         component:FaceSelection
     },
     {
@@ -180,7 +180,7 @@ const ROUTES=[
     {
         path:"/photoSelection/:eventName/:form_owner",
         exact:false,
-        protected:true,
+        protected:false,
         component:PhotoSelection
     },
     {

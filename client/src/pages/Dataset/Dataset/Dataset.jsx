@@ -14,7 +14,7 @@ const Dataset = () => {
   const [datasetToDelete, setDatasetToDelete] = useState(null);
   const [userDetails, setUserDetails] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const userPhoneNumber = sessionStorage.getItem('userphoneNumber');
+  const userPhoneNumber =localStorage.userPhoneNumber;
 
   const [formData, setFormData] = useState({
     org_name: '',
@@ -63,7 +63,7 @@ const Dataset = () => {
 
   const handleLinkClick = () => {
     const clientName = userDetails.user_name;
-    const sessionNumber = sessionStorage.getItem('userphoneNumber');
+    const sessionNumber =localStorage.userPhoneNumber;
     if (clientName === sessionNumber) {
       openIsDetailsModalOpen();
     } else {
@@ -87,7 +87,7 @@ const Dataset = () => {
   const handleDetailFormSubmit = async (e) => {
     e.preventDefault();
 
-    const userPhoneNumber = sessionStorage.getItem('userphoneNumber');
+    const userPhoneNumber =localStorage.userPhoneNumber;
 
     if (!userPhoneNumber) {
       toast.error("User phone number is missing from session.");

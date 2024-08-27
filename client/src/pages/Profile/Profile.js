@@ -7,8 +7,8 @@ function Profile(){
     const handleLogout=()=>{
 
         console.log("logout")
-        sessionStorage.setItem("accessToken", null);
-        sessionStorage.clear();
+       localStorage.setItem("accessToken", null);
+       localStorage.clear();
         navigate("/login")
       };
 

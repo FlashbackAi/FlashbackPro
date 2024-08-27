@@ -18,7 +18,7 @@ function Pro() {
   const [userThumbnails, setUserThumbnails] = useState([]);
   const [clientDetails, setClientDetails] = useState([]);
   const [userDetails, setUserDetails] = useState([]);
-  const username = sessionStorage.getItem("username");
+  const username =localStorage.getItem("username");
   const [isLoading, setIsLoading] = useState(true);
   const [fetchTimeout, setFetchTimeout] = useState(false);
   const isDataFetched = useRef(false);
@@ -96,7 +96,7 @@ function Pro() {
   const saveShareDetails = async (item) => {
 
     try{
-      const user = sessionStorage.getItem('userphoneNumber');
+      const user =localStorage.userPhoneNumber;
       
 
       const response = await API_UTIL.post(`/saveProShareDetails`,{user:user,sharedUser:item.user_id,eventName:eventName});
@@ -154,7 +154,7 @@ function Pro() {
     if (userThumbnails.length === 0) setIsLoading(true);
 
     try {
-      const response = await API_UTIL.get(`/getUserDetails/${sessionStorage.getItem('userphoneNumber')}`);
+      const response = await API_UTIL.get(`/getUserDetails/${localStorage.getItem('userphoneNumber')}`);
       if (response.status === 200) {
         setUserDetails(response.data);
       } else {
@@ -169,7 +169,7 @@ function Pro() {
 
   const updateRewardPoints = async (points) =>{
     const updateData = {
-      user_phone_number: sessionStorage.getItem('userphoneNumber'),
+      user_phone_number:localStorage.userPhoneNumber,
       reward_points : userDetails?.reward_points ? userDetails.reward_points + points : 50 + points
     };
   

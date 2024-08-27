@@ -1,4 +1,4 @@
-html {
+ html {
   scroll-snap-type: y mandatory;
   -ms-scroll-snap-type: y mandatory;
   -webkit-scroll-snap-type: y mandatory;
@@ -15,14 +15,18 @@ html::-webkit-scrollbar {
   display: none;
 }
 
+
 .albumSelectionForm {
-  display: ruby-text;
-  height: 100%;
+  display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-
+  height: 100%;
+  background-color: #1c1c1c;
 }
+
+
+
 
 .button_flex {
   display: flex;
@@ -32,7 +36,7 @@ html::-webkit-scrollbar {
 
 .button_flex div {
   background-color: #b48e75;
-  /*background-image: linear-gradient(90deg, #66d3ff, #9a6aff 38%, #ee75cb 71%, #fd4d77);*/
+  background-image: linear-gradient(90deg, #66d3ff, #9a6aff 38%, #ee75cb 71%, #fd4d77);
   padding: 0.4em 1em;
   border-radius: 0.2em;
 }
@@ -74,6 +78,7 @@ section {
   visibility: visible !important;
   animation: entry 0.2s ease-in forwards;
 }
+
 
 @keyframes entry {
   from {
@@ -358,7 +363,7 @@ header{
   transform: scale(1.1);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
 }
-
+   
 .sibling-container {
   display: flex;
   flex-direction: row;
@@ -403,7 +408,6 @@ header{
 img {
   max-width: 100%;
   height: auto;
-  display: block;
 }
 
 .question-header .question {
@@ -417,7 +421,7 @@ img {
 .question-answer {
   min-height: 100vh;
 }
-
+ 
 .button_flex {
   display: flex;
   justify-content: center;
@@ -430,7 +434,6 @@ button {
   font-size: 1.2em;
   color: white;
   background-color: #b48e75;
-  /*background-image: linear-gradient(90deg, #66d3ff, #9a6aff 38%, #ee75cb 71%, #fd4d77);*/
   outline: none;
   border: none;
 }
@@ -450,6 +453,7 @@ button {
   justify-content: center;
   margin-right: 20px;
 }
+
 .sibling-image-container .question-header {
   padding-bottom: 10%;
 }
@@ -466,6 +470,7 @@ button {
   overflow: hidden;
   background-color: #f0f0f0;
 }
+
 .sibling-image-container .selected-image {
   width: 100%;
   height: auto;
@@ -473,17 +478,9 @@ button {
   object-fit: cover; 
 }
 
-.app-bar{
-  /*position: fixed;*/
-}
 
-.albumSelectionForm{
-  background-color: #1c1c1c;
-  height: 100vh;
-  /*background-color: white;*/
-  /*color: black;*/
-}
+
 
 .card{
   margin: 1em;
-}
+} 

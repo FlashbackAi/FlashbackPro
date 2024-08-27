@@ -17,7 +17,7 @@ function CreateFlashBack() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFlashBack, setSelectedFlashBack] = useState('');
   const [flashBacks, setFlashBacks] = useState([]);
-  const username = sessionStorage.getItem("username")
+  const username =localStorage.getItem("username")
   const [selectedImages, setSelectedImages] = useState([]);
   const [selectedImagesUrl,setSelectedImagesUrl] =  useState([]);
 

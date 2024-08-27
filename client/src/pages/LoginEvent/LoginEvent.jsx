@@ -64,7 +64,7 @@ export const LoginEvent = () => {
     const [userDetails, setUserDetails] = useState();
 
     useEffect(() => {
-        const phoneNumber = sessionStorage.getItem('userphoneNumber');
+        const phoneNumber =localStorage.userPhoneNumber;
         if (phoneNumber) {
             setUserPhoneNumber(phoneNumber);
             fetchUserDetails(phoneNumber)
@@ -140,7 +140,8 @@ export const LoginEvent = () => {
             <Login
                 name = {eventName}
                 onLoginSuccess={(phoneNumber) => {
-                    sessionStorage.setItem('userphoneNumber', phoneNumber);
+                    localStorage.setItem('userPhoneNumber', phoneNumber);
+                    //localStorage.setItem('userphoneNumber', phoneNumber);
                     setUserPhoneNumber(phoneNumber);
                     navigate(`/login/${eventName}/rsvp`);
                 }}
