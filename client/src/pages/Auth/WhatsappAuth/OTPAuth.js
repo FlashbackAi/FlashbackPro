@@ -21,6 +21,7 @@ const OTPAuth = ({ phoneNumber, onVerify, onResend, otpSentTime }) => {
       setIsDisabled(false);
       setOtp(['', '', '', '', '', '']);
       
+      
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
@@ -48,6 +49,13 @@ const OTPAuth = ({ phoneNumber, onVerify, onResend, otpSentTime }) => {
   }, [otpSentTime]);
 
   useEffect(() => {
+    // Focus on the first input when the component mounts
+    if (inputRefs.current[0]) {
+      inputRefs.current[0].focus();
+    }
+  }, []);
+
+  useEffect(() => {
     let timer;
     if (cooldownTime > 0) {
       timer = setTimeout(() => setCooldownTime(prev => prev - 1), 1000);
@@ -69,6 +77,32 @@ const OTPAuth = ({ phoneNumber, onVerify, onResend, otpSentTime }) => {
   const handleKeyDown = (index, e) => {
     if (e.key === 'Backspace' && index > 0 && otp[index] === '') {
       inputRefs.current[index - 1].focus();
+    }
+  };
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text').slice(0, 6).replace(/\D/g, '');
+    
+    if (pastedData) {
+      const newOtp = [...otp];
+      for (let i = 0; i < 6; i++) {
+        newOtp[i] = pastedData[i] || '';
+      }
+      setOtp(newOtp);
+
+      const nextEmptyIndex = newOtp.findIndex(val => val === '');
+      const focusIndex = nextEmptyIndex === -1 ? 5 : nextEmptyIndex;
+      inputRefs.current[focusIndex].focus();
+
+      
+      // Add highlight class to all inputs
+      inputRefs.current.forEach(input => input.classList.add('highlight'));
+
+      // Remove highlight class after animation completes
+      setTimeout(() => {
+        inputRefs.current.forEach(input => input.classList.remove('highlight'));
+      }, 500);
     }
   };
 
@@ -128,13 +162,17 @@ const OTPAuth = ({ phoneNumber, onVerify, onResend, otpSentTime }) => {
           <input
             key={index}
             ref={el => inputRefs.current[index] = el}
-            type="text"
+            type="tel"
+            inputMode="numeric"
+            pattern="[0-9]"
             maxLength={1}
             value={digit}
             onChange={(e) => handleChange(index, e.target.value)}
             onKeyDown={(e) => handleKeyDown(index, e)}
+            onPaste={handlePaste}
             className="otp-input"
             disabled={isDisabled}
+            // autoComplete='off'
           />
           </div>
           <div className="flip-card-back">

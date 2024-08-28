@@ -157,3 +157,8 @@
     color: white;
     transform: rotateY(180deg);
   }
+
+  .otp-input.highlight {
+    animation: highlightInput 0.5s ease;
+  }
+  
