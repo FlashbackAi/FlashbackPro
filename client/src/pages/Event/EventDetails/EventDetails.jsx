@@ -8,7 +8,6 @@ import API_UTIL from '../../../services/AuthIntereptor';
 import './EventDetails.css';
 import AppBar from '../../../components/AppBar/AppBar';
 import LabelAndInput from '../../../components/molecules/LabelAndInput/LabelAndInput';
-// import CustomButton from '../../../components/atoms/CustomButton/CustomButton';
 
 const EventDetails = () => {
   const location = useLocation();
@@ -26,14 +25,11 @@ const EventDetails = () => {
   const [uploading, setUploading] = useState(false);
   const [isEditEnabled, setIsEditEnabled] = useState(false);
   const qrRef = useRef();
-  const userDetails = location.state?.userDetails; // Retrieve userDetails from location state
+  const userDetails = location.state?.userDetails;
   const navigate = useNavigate();
   const [fileCount, setFileCount] = useState(0);
   const [overallProgress, setOverallProgress] = useState(30);
-
-  console.log(userDetails);
-
-  const [uploadedFilesCount, setUploadedFilesCount] = useState(0); // State for uploaded files count
+  const [uploadedFilesCount, setUploadedFilesCount] = useState(0);
 
   useEffect(() => {
     const fetchEventData = async (eventName) => {
@@ -41,53 +37,47 @@ const EventDetails = () => {
         const response = await API_UTIL.get(`/getEventDetails/${eventName}`);
         console.log(response.data);
         setEvent(response.data);
-        let fileCount=0;
+        let fileCount = 0;
         if (response.data.uploaded_files) {
           fileCount = response.data.uploaded_files;
           setUploadedFilesCount(fileCount);
         }
         setEditData({
           eventName: response.data.event_name,
-          eventDate: response.data.event_date.split('T')[0], 
+          eventDate: response.data.event_date.split('T')[0],
           eventTime: response.data.event_date.split('T')[1].slice(0, 5),
           invitationNote: response.data.invitation_note,
           eventLocation: response.data.event_location
         });
-  
-        // Check if uploaded_files key exists and set the count
-       
       } catch (error) {
         setError(error.message);
       }
     };
-  
+
     fetchEventData(eventName);
   }, [eventName]);
-  
 
   const handleEditClick = () => {
-    // if (!toggleEdit) {
-      setEditData({
-        eventName: event.event_name,
-        eventDate: event.event_date.split('T')[0], // Assuming event_date is in ISO 8601 format
-        eventTime: event.event_date.split('T')[1].slice(0, 5), // Extract time portion, assuming format HH:MM:SS
-        invitationNote: event.invitation_note,
-        eventLocation: event.event_location
-      });
-    // }
+    setEditData({
+      eventName: event.event_name,
+      eventDate: event.event_date.split('T')[0],
+      eventTime: event.event_date.split('T')[1].slice(0, 5),
+      invitationNote: event.invitation_note,
+      eventLocation: event.event_location
+    });
     setIsEditEnabled(true);
   };
 
   const handleCancel = () => {
     setEditData({
       eventName: event.event_name,
-      eventDate: event.event_date.split('T')[0], // Assuming event_date is in ISO 8601 format
-      eventTime: event.event_date.split('T')[1].slice(0, 5), // Extract time portion, assuming format HH:MM:SS
+      eventDate: event.event_date.split('T')[0],
+      eventTime: event.event_date.split('T')[1].slice(0, 5),
       invitationNote: event.invitation_note,
       eventLocation: event.event_location
     });
-    setIsEditEnabled(false)
-  }
+    setIsEditEnabled(false);
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -104,11 +94,11 @@ const EventDetails = () => {
         eventDate: combinedDateTime,
         invitationNote: editData.invitationNote,
         eventLocation: editData.eventLocation,
-        uploadedFiles:uploadedFilesCount
+        uploadedFiles: uploadedFilesCount
       });
 
       if (response.status === 200) {
-        setIsEditEnabled(false)
+        setIsEditEnabled(false);
         toast.success('Event updated successfully');
         navigate('/event');
       }
@@ -148,127 +138,130 @@ const EventDetails = () => {
     setFileCount(0);
   };
 
-  const CHUNK_SIZE = 5 * 1024 * 1024; // Chunks of 5MB for file upload
-
   const onDrop = useCallback((acceptedFiles) => {
     const totalFiles = acceptedFiles.length;
-  
-    if (totalFiles > 25) {
+    if (totalFiles > 500) {
       setFileCount(totalFiles);
-      setUploadStatus(`You have selected ${totalFiles} files. You can upload a maximum of 25 files at a time.`);
-      setUploading(false); // Ensure uploading state is false
+      setUploadStatus(`You have selected ${totalFiles} files. You can upload a maximum of 500 files at a time.`);
+      setUploading(false);
     } else {
       setFiles(acceptedFiles);
-      setFileCount(totalFiles); // Set the file count
+      setFileCount(totalFiles);
       setUploadProgress({});
       setUploadStatus('');
-      setUploading(false); // Reset uploading state when files are dropped
+      setUploading(false);
     }
   }, []);
-  
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
   });
+  // Utility function to create a delay
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-  const uploadChunk = async (file, chunk, chunkIndex, totalChunks) => {
-    const formData = new FormData();
-    formData.append('files', chunk, file.name);
-    formData.append('eventName', event.event_name);
-    formData.append('eventDate', event.event_date);
-    formData.append('folderName', event.folder_name);
-    formData.append('chunkNumber', chunkIndex);
-    formData.append('totalChunks', totalChunks);
-
-    try {
-      const response = await API_UTIL.post(`/uploadFiles/${event.event_name}/${event.event_date}/${event.folder_name}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          setUploadProgress((prev) => ({
-            ...prev,
-            [file.name]: {
-              ...prev[file.name],
-              [chunkIndex]: percentCompleted,
-            },
-          }));
-
-          // Update overall progress
-          // const completedChunks = chunkIndex + 1;
-          // const overallPercent = (completedChunks / totalChunks) * 100;
-          setOverallProgress(60);
-        },
-      });
-      return response.data;
-    } catch (error) {
-      console.error(`Error uploading chunk ${chunkIndex} of ${file.name}:`, error);
-      throw error;
-    }
-  };
-
-  const uploadFile = async (file) => {
-    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-    const fileId = `${file.name}`;
-
-    for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
-      const start = chunkIndex * CHUNK_SIZE;
-      const end = Math.min(start + CHUNK_SIZE, file.size);
-      const chunk = file.slice(start, end);
-
-      try {
-        await uploadChunk(file, chunk, chunkIndex, totalChunks);
-      } catch (error) {
-        // If chunk upload fails, we could implement retry logic here
-        console.error(`Failed to upload chunk ${chunkIndex} of ${file.name}`);
-        throw error;
-      }
-    }
-  };
 
   const uploadFiles = async () => {
     if (files.length === 0) {
       setUploadStatus('Please select files to upload');
       return;
     }
-
+  
     setUploading(true);
-    // setUploadStatus('Uploading and finding faces...'); // Start loader text
-    setUploadFilesModalStatus('Uploading and finding faces...');
+    setUploadFilesModalStatus('Uploading files...');
     setIsUploadFilesFailed(false);
-    setOverallProgress(10); // Reset overall progress
-
+    setOverallProgress(0); // Start at 0% progress
+  
+    const MAX_CONCURRENT_UPLOADS = 3; // Reduced to avoid 429 error
+    const MAX_RETRIES = 3;
+    let index = 0;
+    const totalFiles = files.length;
+    const progressIncrement = 100 / totalFiles; // Each file contributes equally to the progress
+  
+    const uploadFile = async (file) => {
+      const formData = new FormData();
+      formData.append('files', file);
+      formData.append('eventName', event.event_name);
+      formData.append('eventDate', event.event_date);
+      formData.append('folderName', event.folder_name);
+  
+      let attempts = 0;
+      let delayTime = 1000; // Start with 1 second delay
+  
+      while (attempts < MAX_RETRIES) {
+        try {
+          const response = await API_UTIL.post(`/uploadFiles/${event.event_name}/${event.event_date}/${event.folder_name}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+            onUploadProgress: (progressEvent) => {
+              // Optionally use this for detailed per-file progress
+            },
+          });
+  
+          // Increment the overall progress after a successful file upload
+          setOverallProgress((prevProgress) => Math.ceil(prevProgress + progressIncrement));
+        
+          return response.data;
+        } catch (error) {
+          if (error.response && error.response.status === 429) {
+            console.error(`Error uploading file ${file.name}, attempt ${attempts}: Too many requests, retrying after ${delayTime / 1000} seconds`);
+            await delay(delayTime);
+            delayTime *= 2; // Double the delay time for exponential backoff
+          } else {
+            console.error(`Error uploading file ${file.name}, attempt ${attempts}:`, error);
+          }
+          attempts++;
+          if (attempts === MAX_RETRIES) throw error;
+        }
+      }
+    };
+  
+    const handleUploads = async () => {
+      while (index < files.length) {
+        const promises = [];
+        for (let i = 0; i < MAX_CONCURRENT_UPLOADS && index < files.length; i++) {
+          promises.push(uploadFile(files[index]));
+          index++;
+        }
+        await Promise.allSettled(promises);
+      }
+    };
+  
     try {
-      await Promise.all(files.map(uploadFile));
-
-      // setUploadStatus('Associating images...');
-      // Update the uploaded files count
-      setOverallProgress(80);
-    const newUploadedFilesCount = uploadedFilesCount + files.length;
-    setUploadedFilesCount(newUploadedFilesCount); // Update the state with new count
-
-    // Update the event with the new uploaded files count
-    await API_UTIL.put(`/updateEvent/${event.event_id}`, {
-      eventName: editData.eventName,
-      eventDate: `${editData.eventDate}T${editData.eventTime}:00`,
-      invitationNote: editData.invitationNote,
-      eventLocation: editData.eventLocation,
-      uploadedFiles:newUploadedFilesCount
-    });
-
-     
+      await handleUploads();
+  
+      // After all files are uploaded successfully, update the uploaded files count
+      const newUploadedFilesCount = uploadedFilesCount + files.length;
+      setUploadedFilesCount(newUploadedFilesCount);
+  
+      try {
+        const response = await API_UTIL.put(`/updateEvent/${event.event_id}`, {
+          eventName: editData.eventName,
+          eventDate: `${editData.eventDate}T${editData.eventTime}:00`,
+          invitationNote: editData.invitationNote,
+          eventLocation: editData.eventLocation,
+          uploadedFiles: newUploadedFilesCount,
+        });
+  
+        if (response.status === 200) {
+          toast.success('Event updated successfully with new file count');
+        }
+      } catch (error) {
+        console.error('Error updating event with new file count:', error);
+        toast.error('Failed to update the event with new file count. Please try again.');
+      }
+  
       setUploadStatus('Upload completed successfully');
-    
       setFiles([]);
     } catch (error) {
       console.error('Upload failed:', error);
       setUploadStatus('Upload failed. Please try again.');
     } finally {
       setUploading(false);
-      setOverallProgress(100); // Set to 100% on completion
+      setOverallProgress(100); // Ensure progress bar is set to 100% on completion
       setFileCount(0);
     }
   };
-
+  
+  
   const sendInvite = () => {
     const message = editData
       ? `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(editData?.eventDate)} at ${getFormattedTime(editData?.eventDate)}. Location: ${editData?.eventLocation} , Url: https://flashback.inc/login/${event?.folder_name}`
@@ -287,8 +280,8 @@ const EventDetails = () => {
   };
 
   function getFormattedDate(datetime) {
-    console.log("inside format" )
-    console.log(datetime)
+    console.log("inside format" );
+    console.log(datetime);
     const date = new Date(datetime);
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -312,7 +305,6 @@ const EventDetails = () => {
       const message = `Join the collaboration for the event: ${formatEventName(event?.event_name)}. Collaborate using the following link: ${collabLink}`;
       const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
 
-      // Open WhatsApp with the message pre-filled
       window.open(url, '_blank');
     } catch (error) {
       console.error('Error generating collaboration link:', error);
@@ -325,7 +317,7 @@ const EventDetails = () => {
       const sendFlashbacksResponse = await API_UTIL.post('/send-flashbacks', { eventName: event.folder_name });
 
       if (sendFlashbacksResponse.status === 200) {
-        toast.success('flashbacks sent successfully!');
+        toast.success('Flashbacks sent successfully!');
       } else {
         throw new Error('Failed to send flashbacks.');
       }
@@ -341,7 +333,7 @@ const EventDetails = () => {
 
   return (
     <div className="event-details-page-root">
-      <AppBar></AppBar>
+      <AppBar />
       {event.event_name && (
         <div className="event-details-container">
           <h1 className="event-details-title">
@@ -352,108 +344,50 @@ const EventDetails = () => {
           </div>
           <div className="invitation-image-content">
             <div className="event-details-content">
-              {/* {toggleEdit ? (
-                <form onSubmit={handleFormSubmit} className="edit-form">
-                  <div className="eo-form-group">
-                    <label className="ed-form-label">Event Name:</label>
-                    <input
-                      type="text"
-                      name="eventName"
-                      value={editData.eventName}
-                      onChange={handleInputChange}
-                      className="ed-form-input"
-                      required
-                    />
-                  </div>
-                  <div className="eo-form-group">
-                    <label className="ed-form-label">Date:</label>
-                    <input
-                      type="date"
-                      name="eventDate"
-                      value={editData.eventDate}
-                      onChange={handleInputChange}
-                      className="ed-form-input"
-                      required
-                    />
-                  </div>
-                  <div className="eo-form-group">
-                    <label className="ed-form-label">Time:</label>
-                    <input
-                      type="time"
-                      name="eventTime"
-                      value={editData.eventTime}
-                      onChange={handleInputChange}
-                      className="ed-form-input"
-                      required
-                    />
-                  </div>
-                  <div className="eo-form-group">
-                    <label className="ed-form-label">Invitation Note:</label>
-                    <textarea
-                      name="invitationNote"
-                      value={editData.invitationNote}
-                      onChange={handleInputChange}
-                      className="ed-form-input"
-                    />
-                  </div>
-                  <div className="eo-form-group">
-                    <label className="ed-form-label">Location:</label>
-                    <input
-                      type="text"
-                      name="eventLocation"
-                      value={editData.eventLocation}
-                      onChange={handleInputChange}
-                      className="ed-form-input"
-                    />
-                  </div>
-                  
-                </form>
-              ) : ( */}
-                <div className="ed-form-group">
-                  <LabelAndInput
-                    name={"eventName"}
-                    label={"Event Name:"}
-                    value={event.event_name}
-                    type={"text"}
-                    handleChange={handleInputChange}
-                    isEditable={false}
-                  ></LabelAndInput>
-                  <LabelAndInput
-                    name={"eventDate"}
-                    label={"Date:"}
-                    defaultValue={getFormattedDate(event.event_date)}
-                    value={editData.eventDate}
-                    type={"date"}
-                    handleChange={handleInputChange}
-                    isEditable={isEditEnabled}
-                  ></LabelAndInput>
-                  <LabelAndInput
-                    name={"eventTime"}
-                    label={"Time:"}
-                    defaultValue={getFormattedDate(event.event_date)}
-                    value={editData.eventTime}
-                    type={"time"}
-                    handleChange={handleInputChange}
-                    isEditable={isEditEnabled}
-                  ></LabelAndInput>
-                  <LabelAndInput
-                    name={"invitationNote"}
-                    label={"Invitation Note:"}
-                    value={editData.invitationNote}
-                    type={"text"}
-                    handleChange={handleInputChange}
-                    isEditable={isEditEnabled}
-                  ></LabelAndInput>
-                  <LabelAndInput
-                    name={"eventLocation"}
-                    label={"Location:"}
-                    value={editData.eventLocation}
-                    type={"text"}
-                    handleChange={handleInputChange}
-                    isEditable={isEditEnabled}
-                  ></LabelAndInput>
-                </div>
-              {/* )} */}
+              <div className="ed-form-group">
+                <LabelAndInput
+                  name={"eventName"}
+                  label={"Event Name:"}
+                  value={event.event_name}
+                  type={"text"}
+                  handleChange={handleInputChange}
+                  isEditable={false}
+                />
+                <LabelAndInput
+                  name={"eventDate"}
+                  label={"Date:"}
+                  defaultValue={getFormattedDate(event.event_date)}
+                  value={editData.eventDate}
+                  type={"date"}
+                  handleChange={handleInputChange}
+                  isEditable={isEditEnabled}
+                />
+                <LabelAndInput
+                  name={"eventTime"}
+                  label={"Time:"}
+                  defaultValue={getFormattedDate(event.event_date)}
+                  value={editData.eventTime}
+                  type={"time"}
+                  handleChange={handleInputChange}
+                  isEditable={isEditEnabled}
+                />
+                <LabelAndInput
+                  name={"invitationNote"}
+                  label={"Invitation Note:"}
+                  value={editData.invitationNote}
+                  type={"text"}
+                  handleChange={handleInputChange}
+                  isEditable={isEditEnabled}
+                />
+                <LabelAndInput
+                  name={"eventLocation"}
+                  label={"Location:"}
+                  value={editData.eventLocation}
+                  type={"text"}
+                  handleChange={handleInputChange}
+                  isEditable={isEditEnabled}
+                />
+              </div>
               <div className='edit-actions'>
                 {isEditEnabled ? <>
                   <button className="save-button cancel-button" onClick={handleCancel}>
@@ -463,10 +397,10 @@ const EventDetails = () => {
                     Save
                   </button>
                 </> :
-                <button  className="save-button" onClick={handleEditClick}>
+                <button className="save-button" onClick={handleEditClick}>
                     Edit
                   </button>
-                  }
+                }
               </div>
             </div>
             <div className="ed-form-footer">
@@ -514,8 +448,6 @@ const EventDetails = () => {
               </a>
             )}
           </div>
-          <div></div>
-
           <Modal
             isOpen={isQrModalOpen}
             onRequestClose={closeQrModal}
@@ -578,32 +510,27 @@ const EventDetails = () => {
                     </p>
                   )}
                 </div>
-                {fileCount > 0 && <p>{fileCount} file(s) selected</p>}{" "}
-                {/* Display file count */}
+                {fileCount > 0 && <p>{fileCount} file(s) selected</p>}
                 {uploadStatus && <p>{uploadStatus}</p>}
                 <button 
                   onClick={uploadFiles} 
                   className="upload-button" 
-                  disabled={fileCount > 25}
+                  disabled={fileCount > 500}
                 >
                   Upload
                 </button>
-               
 
                 {uploading && (
                   <div className="processing-bar-container">
                     <div
                       className="processing-bar-fill"
-                      style={{ width: `${overallProgress}%` }} // Adjusts the width based on actual progress
+                      style={{ width: `${overallProgress}%` }}
                     ></div>
                     <div className="processing-bar-text">
                       {overallProgress < 100 ? `${overallProgress}% Processing...` : 'Completed'}
                     </div>
                   </div>
                 )}
-
-
-
               </div>
             </div>
           </Modal>

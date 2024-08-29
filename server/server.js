@@ -4805,36 +4805,75 @@ const imageUpload = multer({
 });
 
 
-app.post('/uploadFiles/:eventName/:eventDate/:folder_name', upload.array('files', 2000), async (req, res) => {
+// app.post('/uploadFiles/:eventName/:eventDate/:folder_name', upload.array('files', 2000), async (req, res) => {
+//   try {
+//     const { eventName, eventDate, folder_name } = req.params;
+//     const { chunkNumber, totalChunks } = req.body;
+    
+//     const uploadPromises = req.files.map(async (file) => {
+//       const fileId = `${folder_name}/${file.originalname}`;
+//       const params = {
+//         Bucket: imagesBucketName,
+//         Key: fileId,
+//         Body: file.buffer,
+//         ContentType: file.mimetype
+//       };
+
+//       try {
+//         const result = await s3.upload(params).promise();
+//         uploadStatus.set(fileId, {
+//           status: 'completed',
+//           chunkNumber,
+//           totalChunks
+//         });
+//         return result;
+//       } catch (error) {
+//         console.error(`Error uploading file ${file.originalname}:`, error);
+//         uploadStatus.set(fileId, {
+//           status: 'failed',
+//           chunkNumber,
+//           totalChunks,
+//           error: error.message
+//         });
+//         throw error;
+//       }
+//     });
+
+//     const results = await Promise.allSettled(uploadPromises);
+
+//     const successfulUploads = results.filter(r => r.status === 'fulfilled').map(r => r.value);
+//     const failedUploads = results.filter(r => r.status === 'rejected').map(r => r.reason);
+
+//     res.status(200).json({
+//       message: 'Upload process completed',
+//       successfulUploads,
+//       failedUploads,
+//       totalFiles: req.files.length
+//     });
+//   } catch (error) {
+//     console.error('Error in upload process:', error);
+//     res.status(500).json({ error: 'Error in upload process' });
+//   }
+// });
+
+app.post('/uploadFiles/:eventName/:eventDate/:folder_name', upload.array('files', 50), async (req, res) => {
   try {
     const { eventName, eventDate, folder_name } = req.params;
-    const { chunkNumber, totalChunks } = req.body;
-    
+
     const uploadPromises = req.files.map(async (file) => {
       const fileId = `${folder_name}/${file.originalname}`;
       const params = {
         Bucket: imagesBucketName,
         Key: fileId,
-        Body: file.buffer,
+        Body: file.buffer, // Consider using a stream if the file size is very large
         ContentType: file.mimetype
       };
 
       try {
         const result = await s3.upload(params).promise();
-        uploadStatus.set(fileId, {
-          status: 'completed',
-          chunkNumber,
-          totalChunks
-        });
         return result;
       } catch (error) {
         console.error(`Error uploading file ${file.originalname}:`, error);
-        uploadStatus.set(fileId, {
-          status: 'failed',
-          chunkNumber,
-          totalChunks,
-          error: error.message
-        });
         throw error;
       }
     });
@@ -4855,7 +4894,6 @@ app.post('/uploadFiles/:eventName/:eventDate/:folder_name', upload.array('files'
     res.status(500).json({ error: 'Error in upload process' });
   }
 });
-
 
 
 
