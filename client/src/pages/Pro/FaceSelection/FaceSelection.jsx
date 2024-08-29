@@ -951,7 +951,7 @@ const FaceSelection = () => {
 
   return (
     <>
-    {/* <AppBar/> */}
+    <AppBar/>
       <section className="albumSelectionForm">
         {!isCharacterSelected && (
           <motion.div
