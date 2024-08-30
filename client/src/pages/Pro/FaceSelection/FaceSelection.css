@@ -1,4 +1,4 @@
- html {
+html {
   scroll-snap-type: y mandatory;
   -ms-scroll-snap-type: y mandatory;
   -webkit-scroll-snap-type: y mandatory;
@@ -36,7 +36,7 @@ html::-webkit-scrollbar {
 
 .button_flex div {
   background-color: #b48e75;
-  background-image: linear-gradient(90deg, #66d3ff, #9a6aff 38%, #ee75cb 71%, #fd4d77);
+  /* background-image: linear-gradient(90deg, #66d3ff, #9a6aff 38%, #ee75cb 71%, #fd4d77); */
   padding: 0.4em 1em;
   border-radius: 0.2em;
 }
@@ -425,6 +425,7 @@ img {
 .button_flex {
   display: flex;
   justify-content: center;
+  /*background-image: linear-gradient(90deg, #66d3ff, #9a6aff 38%, #ee75cb 71%, #fd4d77);*/
   gap: 1em;
 }
 
