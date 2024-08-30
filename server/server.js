@@ -141,6 +141,7 @@ const userClientInteractionTable ='user_client_interaction';
 const eventsTable = 'events';
 const eventsDetailsTable = 'event_details';
 const EventCollabs = 'event_collabs';
+const deletedEventsTable = 'event_delete'
 const projectsTable = 'projects_data';
 const indexedDataTableName = 'indexed_data'
 const formDataTableName = 'selectionFormData'; 
@@ -2736,6 +2737,91 @@ app.post('/downloadImage', async (req, res) => {
           res.status(500).json({ error: 'Error creating user' });
         }
       });
+
+      // app.post('/createUser', async (req, res) => {
+      //   const username = req.body.username;
+      //   let eventName = req.body.eventName;
+      //   const userSource = req.body.userSource;
+      //   const role = req.body.role;
+      //   const reward_points = req.body.reward_points;
+      //   logger.info("creating user " + username);
+      
+      //   try {
+      //     // Check if the user already exists
+      //     if (!eventName) {
+      //       eventName = 'Nivedhitha_Mallikarjun_Reddy_Engagement';
+      //     }
+          
+      //     const existingUser = await getUser(username);
+      //     logger.info("existingUser" + existingUser);
+      //     if (existingUser && existingUser.potrait_s3_url) {
+      //       const mappingResult = await mapUserToEvent(eventName, username);
+      //       if (!mappingResult.success) {
+      //         return res.status(500).json({ error: mappingResult.message });
+      //       }
+      //       return res.json({ error: 'User already exists', status: 'exists' });
+      //     }
+      
+      //     // Create a new user entry in DynamoDB
+      //     if (!existingUser) {
+      //       await createUser(username, userSource, role, reward_points);
+      //       console.log("created successfully ->" + username);
+      //     }
+      
+      //     const mappingResult = await mapUserToEvent(eventName, username);
+      //     if (!mappingResult.success) {
+      //       return res.status(500).json({ error: mappingResult.message });
+      //     }
+      
+      //     res.status(201).json({ message: 'User created successfully', status: 'created' });
+      //   } catch (error) {
+      //     console.error('Error:', error);
+      //     res.status(500).json({ error: 'Error creating user' });
+      //   }
+      // });
+      
+      app.post('/mapUserToEvent', async (req, res) => {
+        const eventName = req.body.event_id;
+        const username = req.body.user_phone_number;
+      
+        if (!eventName || !username) {
+          return res.status(400).json({ error: 'Event name and user phone number are required' });
+        }
+      
+        try {
+          const mappingResult = await mapUserToEvent(eventName, username);
+          if (!mappingResult.success) {
+            return res.status(500).json({ error: mappingResult.message });
+          }
+      
+          res.status(200).json({ message: 'User-event mapping successful' });
+        } catch (error) {
+          console.error('Error:', error);
+          res.status(500).json({ error: 'Error in user-event mapping' });
+        }
+      });
+      
+
+      const mapUserToEvent = async (eventName, username) => {
+        const updateParamsUserEvent = {
+          TableName: userEventTableName,
+          Item: {
+            event_name: eventName,
+            user_phone_number: username,
+            created_date: new Date().toISOString()
+          }
+        };
+      
+        try {
+          const putResult = await docClient.put(updateParamsUserEvent).promise();
+          logger.info('Insert in user-event mapping is successful:', eventName);
+          return { success: true, message: 'User-event mapping successful' };
+        } catch (error) {
+          logger.error('Error in user-event mapping:', error);
+          return { success: false, message: 'Error in user-event mapping' };
+        }
+      };
+      
       
       // Function to get a user from DynamoDB
       async function getUser(username) {
@@ -4555,8 +4641,8 @@ const getEventDetailsByFolderName = async (folderName) => {
 // });
 
 // API endpoint to delete an event
-app.delete('/deleteEvent/:eventId', async (req, res) => {
-  const { eventId } = req.params;
+app.delete('/deleteEvent/:eventId/:userPhoneNumber', async (req, res) => {
+  const { eventId, userPhoneNumber } = req.params;
 
   const getParams = {
     TableName: eventsDetailsTable,
@@ -4565,7 +4651,7 @@ app.delete('/deleteEvent/:eventId', async (req, res) => {
     }
   };
 
-  logger.info(`Deletion Process Started for eventId: ${eventId}`);
+  logger.info(`Deletion Process Started for eventId: ${eventId}, userPhoneNumber: ${userPhoneNumber}`);
 
   try {
     // Step 1: Fetch event details to get the folder name
@@ -4690,28 +4776,91 @@ app.delete('/deleteEvent/:eventId', async (req, res) => {
       }
       logger.info(`Step 4 Completed: Event status updated for all fetched items`);
     }
-     // Step 5a: Delete the event-related thumbnail image from flashbackeventthumbnail bucket
-     logger.info(`Step 5a: Deleting event-related thumbnail from flashbackeventthumbnail bucket`);
-     const thumbnailKey = `${folderName}.jpg`; // Construct the key for the thumbnail image
-     const deleteThumbnailParams = {
-       Bucket: 'flashbackeventthumbnail',
-       Key: thumbnailKey
-     };
- 
-     try {
-       const deleteThumbnailResult = await s3.deleteObject(deleteThumbnailParams).promise();
-       logger.info(`Step 5a Completed: Deleted thumbnail image ${thumbnailKey} from flashbackeventthumbnail bucket`);
-     } catch (thumbnailDeleteError) {
-       logger.error(`Failed to delete thumbnail image from flashbackeventthumbnail bucket: ${thumbnailDeleteError.message}`);
-       return res.status(500).json({ message: 'Error deleting thumbnail image from S3', error: thumbnailDeleteError.message });
-     }
+
+    // Step 4a: Fetch and delete entries from event_collabs table using event_id
+    logger.info(`Step 4a: Fetching and deleting entries from event_collabs table for eventId: ${eventId}`);
+    lastEvaluatedKey = null;
+    let collabsQueryResult = { Items: [] };
+
+    do {
+      const collabsQueryParams = {
+        TableName: 'event_collabs',
+        KeyConditionExpression: 'event_id = :eventId',
+        ExpressionAttributeValues: {
+          ':eventId': eventId
+        },
+        ExclusiveStartKey: lastEvaluatedKey
+      };
+
+      const collabsResult = await docClient.query(collabsQueryParams).promise();
+      collabsQueryResult.Items = collabsQueryResult.Items.concat(collabsResult.Items);
+      lastEvaluatedKey = collabsResult.LastEvaluatedKey;
+
+    } while (lastEvaluatedKey);
+
+    if (collabsQueryResult.Items.length > 0) {
+      for (const collab of collabsQueryResult.Items) {
+        const deleteCollabParams = {
+          TableName: 'event_collabs',
+          Key: {
+            event_id: collab.event_id,
+            user_name: collab.user_name
+          }
+        };
+
+        try {
+          await docClient.delete(deleteCollabParams).promise();
+          logger.info(`Deleted entry from event_collabs table for event_id: ${collab.event_id}, user_name: ${collab.user_name}`);
+        } catch (deleteError) {
+          logger.error(`Failed to delete entry from event_collabs table for event_id: ${collab.event_id}, user_name: ${collab.user_name} - Error: ${deleteError.message}`);
+          return res.status(500).json({ message: 'Error deleting entry from event_collabs table', error: deleteError.message });
+        }
+      }
+      logger.info(`Step 4a Completed: Deleted all fetched entries from event_collabs table`);
+    } else {
+      logger.info('No entries found in event_collabs table for eventId');
+    }
+
+    // Step 5a: Delete the event-related thumbnail image from flashbackeventthumbnail bucket
+    logger.info(`Step 5a: Deleting event-related thumbnail from flashbackeventthumbnail bucket`);
+    const thumbnailKey = `${folderName}.jpg`; // Construct the key for the thumbnail image
+    const deleteThumbnailParams = {
+      Bucket: 'flashbackeventthumbnail',
+      Key: thumbnailKey
+    };
+
+    try {
+      const deleteThumbnailResult = await s3.deleteObject(deleteThumbnailParams).promise();
+      logger.info(`Step 5a Completed: Deleted thumbnail image ${thumbnailKey} from flashbackeventthumbnail bucket`);
+    } catch (thumbnailDeleteError) {
+      logger.error(`Failed to delete thumbnail image from flashbackeventthumbnail bucket: ${thumbnailDeleteError.message}`);
+      return res.status(500).json({ message: 'Error deleting thumbnail image from S3', error: thumbnailDeleteError.message });
+    }
 
     // Step 5: Delete the event from the primary event details table
     logger.info(`Step 5: Deleting event from primary table for eventId: ${eventId}`);
     await docClient.delete(getParams).promise();
     logger.info(`Step 5 Completed: Event deleted from primary table for eventId: ${eventId}`);
 
-   
+    // Step 6: Insert entry into event_delete table with event_id, user_phone_number, and deleted date
+    logger.info(`Step 6: Inserting entry into event_delete table for eventId: ${eventId}, userPhoneNumber: ${userPhoneNumber}`);
+    const deleteDate = new Date().toISOString(); // Get the current date in ISO format
+    const eventDeleteParams = {
+      TableName: deletedEventsTable,
+      Item: {
+        event_id: eventId,
+        user_phone_number: userPhoneNumber,
+        deleted_date: deleteDate
+      }
+    };
+
+    try {
+      await docClient.put(eventDeleteParams).promise();
+      logger.info(`Step 6 Completed: Inserted entry into event_delete table for eventId: ${eventId}, userPhoneNumber: ${userPhoneNumber}`);
+    } catch (eventDeleteError) {
+      logger.error(`Failed to insert entry into event_delete table for eventId: ${eventId}, userPhoneNumber: ${userPhoneNumber} - Error: ${eventDeleteError.message}`);
+      return res.status(500).json({ message: 'Error inserting entry into event_delete table', error: eventDeleteError.message });
+    }
 
     logger.info(`Deletion Process Completed successfully for eventId: ${eventId}`);
     res.status(200).json({ message: 'Event deleted successfully and marked as deleted in event mapping table' });
@@ -4720,6 +4869,8 @@ app.delete('/deleteEvent/:eventId', async (req, res) => {
     res.status(500).json({ message: 'Error deleting event', error: error.message });
   }
 });
+
+
 
 app.get("/getProjectDetails/:clientName", async (req, res) => {
   

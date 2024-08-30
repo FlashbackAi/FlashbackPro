@@ -35,6 +35,7 @@ import PortfolioForm from "../pages/Portfolio/PortfolioForm/PortfolioForm";
 import Vision from "../pages/Vision/vision"
 import Collab from "../pages/Collaboration/Collab";
 import ImagesPageNew from "../pages/ImagesPage/ImagesPage-new";
+import Invite from "../pages/Invitation/Invite";
 
 
 const ROUTES=[
@@ -272,6 +273,12 @@ const ROUTES=[
         exact:false,
         protected:true,
         component:Collab,
+    },
+    {
+        path:"/invite/:eventId",
+        exact:false,
+        protected:true,
+        component:Invite,
     },
     
     

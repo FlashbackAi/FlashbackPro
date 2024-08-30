@@ -127,7 +127,7 @@ const Event = () => {
 
   const deleteEvent = async (eventId) => {
     try {
-      await API_UTIL.delete(`/deleteEvent/${eventId}`);
+      await API_UTIL.delete(`/deleteEvent/${eventId}/${userPhoneNumber}`);
       setEvents(events.filter(event => !(event.event_id === eventId)));
       setIsDeleteModalOpen(false);
       // toast.success('Event deleted successfully');

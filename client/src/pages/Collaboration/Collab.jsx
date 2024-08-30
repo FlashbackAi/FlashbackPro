@@ -13,7 +13,7 @@ const Collab = () => {
   const [userName, setUserName] = useState('');
   const [isUserNameExists, setIsUserNameExists] = useState(false);
   const navigate = useNavigate();
-  const userPhoneNumber =localStorage?.userphoneNumber;
+  const userPhoneNumber =localStorage?.userPhoneNumber;
 
   useEffect(() => {
     const fetchEventData = async () => {
