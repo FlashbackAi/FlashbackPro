@@ -36,6 +36,7 @@ import Vision from "../pages/Vision/vision"
 import Collab from "../pages/Collaboration/Collab";
 import ImagesPageNew from "../pages/ImagesPage/ImagesPage-new";
 import Invite from "../pages/Invitation/Invite";
+import EventImages from "../pages/ImagesPage/EventImages";
 
 
 const ROUTES=[
@@ -129,6 +130,12 @@ const ROUTES=[
         exact:false,
         protected:true,
         component:ImagesPageNew
+    },
+    {
+        path:"/eventPhotos/:eventName",
+        exact:false,
+        protected:true,
+        component:EventImages
     },
     // {
     //     path:"/pictures/:eventName/:userId",

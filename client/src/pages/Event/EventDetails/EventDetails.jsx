@@ -427,6 +427,11 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
               <button className="footer-buttons" onClick={sendWhatsappMsg}>
                 Send Photos
               </button>
+              <button className="footer-buttons" onClick={() => {
+                  navigate(`/eventPhotos/${event?.folder_name}`);
+                }}>
+                Uploaded Photos
+              </button>
               <button
                 className="footer-buttons"
                 onClick={() => {

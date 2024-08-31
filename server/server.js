@@ -61,7 +61,7 @@ app.get("/share/:eventName/:userId", async(req, res) => {
       redirectUrl=`sharedImage/${eventName}/${userId}.jpg`
     }
     else{
-      redirectUrl = `photosV1/${eventName}/${userId}`;
+      redirectUrl = `photos/${eventName}/${userId}`;
     } 
     const image = `https://rekognitionuserfaces.s3.amazonaws.com/thumbnails/${userId}.jpg`
     res.render("index",{eventName:req.params.eventName,userId:req.params.userId,image,redirectUrl}); // Assuming you have an "index.ejs" file in the "views" directory
@@ -924,6 +924,27 @@ async function getUserEventMappings(eventName) {
   }
 }
 
+
+async function getUsersForEvent(eventName) {
+  logger.info("fetching users for event : ", eventName);
+  const params = {
+    TableName: 'user_event_mapping',
+    KeyConditionExpression: 'event_name = :eventName',
+    ExpressionAttributeValues: {
+      ':eventName': eventName
+    }
+  };
+
+  try {
+    const result = await docClient.query(params).promise();
+    logger.info("Successfully fetched users for event : ", eventName)
+    return result.Items;
+  } catch (error) {
+    console.error('Error fetching user event mappings:', error);
+    throw error;
+  }
+}
+
 async function getUserData(phoneNumber) {
   const params = {
     TableName: 'users',
@@ -1475,6 +1496,62 @@ app.post('/images-new/:eventName/:userId', async (req, res) => {
   }
 });
 
+app.get('/getEventImages/:eventName', async (req, res) => {
+  const { eventName } = req.params;
+  const { continuationToken } = req.query;
+  const bucketName = thumbnailBucketName; // Replace with your actual bucket name
+
+  if (!eventName) {
+    return res.status(400).json({ error: 'eventName parameter is required' });
+  }
+
+  try {
+    let clientObject = null;
+
+    // Fetch client details only if continuationToken is not provided (first request)
+    if (!continuationToken) {
+      const temp = eventName.split('_');
+      const eventId = temp[temp.length - 1];
+      clientObject = await getClientObjectNew(eventId);
+    }
+
+    // Configure S3 list parameters
+    const listParams = {
+      Bucket: bucketName,
+      Prefix: `${eventName}/`,
+      MaxKeys: 500 // Fetch 100 images at a time
+    };
+
+    // Validate and add ContinuationToken if it's provided
+    if (continuationToken) {
+      console.log("Received continuationToken:", continuationToken); // Log the token
+      listParams.ContinuationToken = continuationToken;
+    }
+
+    // Fetch S3 objects
+    const listedObjects = await s3.listObjectsV2(listParams).promise();
+    const objectUrls = listedObjects.Contents.map(obj => `https://${bucketName}.s3.amazonaws.com/${obj.Key}`);
+
+    // Log the next continuation token
+    console.log("Next continuationToken:", listedObjects.NextContinuationToken);
+
+    // Return the response with images, total images, and client details (if fetched)
+    res.json({
+      images: objectUrls,
+      totalImages: listedObjects.KeyCount || listedObjects.Contents.length,
+      lastEvaluatedKey: listedObjects.NextContinuationToken,
+      clientObj: clientObject
+    });
+  } catch (error) {
+    console.error('Error fetching S3 URLs or client details:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+
+
+
+
 // async function userEventImages(eventName,userId,lastEvaluatedKey){
 
 //       try {
@@ -2021,7 +2098,8 @@ app.get('/userThumbnailsByEventId/:eventId', async (req, res) => {
   try {
     logger.info("Thumbnails are being fetched for event ID: " + eventId);
 
-    // Step 1: Fetch event details and check if thumbnails already exist in the eventsDetailsTable using eventId
+    // Commented out the logic that checks for existing thumbnails in the eventsDetailsTable
+    /*
     const eventDetailsParams = {
       TableName: eventsDetailsTable,
       Key: {
@@ -2040,6 +2118,23 @@ app.get('/userThumbnailsByEventId/:eventId', async (req, res) => {
     if (eventDetailsResult.Item.userThumbnails) {
       logger.info("User thumbnails found in db for event ID: " + eventId);
       return res.json(eventDetailsResult.Item.userThumbnails);
+    }
+    */
+
+    // Fetch event details from the database without checking for existing thumbnails
+    const eventDetailsParams = {
+      TableName: eventsDetailsTable,
+      Key: {
+        event_id: eventId
+      },
+      ProjectionExpression: 'event_name, client_name'
+    };
+
+    const eventDetailsResult = await docClient.get(eventDetailsParams).promise();
+
+    if (!eventDetailsResult.Item) {
+      logger.info("No event details found for event ID: " + eventId);
+      return res.status(404).send('Event not found');
     }
 
     const eventName = eventDetailsResult.Item.event_name;
@@ -2134,6 +2229,7 @@ app.get('/userThumbnailsByEventId/:eventId', async (req, res) => {
     res.status(500).send('Error getting thumbnails for the event ID: ' + eventId);
   }
 });
+
 
 
 
