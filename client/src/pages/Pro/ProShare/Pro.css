@@ -130,3 +130,16 @@
   margin-right: 0;
   margin-top: 1em;
 }
+
+.header {
+  font-size: 1em;
+}
+
+.container {
+  display: flex;
+}
+
+.sidebar {
+  width: 8em;
+}
+

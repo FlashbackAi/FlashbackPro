@@ -928,7 +928,7 @@ async function getUserEventMappings(eventName) {
 async function getUsersForEvent(eventName) {
   logger.info("fetching users for event : ", eventName);
   const params = {
-    TableName: 'user_event_mapping',
+    TableName: userEventTableName,
     KeyConditionExpression: 'event_name = :eventName',
     ExpressionAttributeValues: {
       ':eventName': eventName
@@ -1774,7 +1774,9 @@ async function getUserObjectByUserId(userId){
     const result = await docClient.scan(params).promise();
 
     if (result.Items.length === 0) {
-      throw new Error("userId not found");
+      logger.info("user details not found for userId: ",userId);
+      // throw new Error("userId not found");
+      return;
     }
     logger.info("user details fetched successfully");
     return result.Items[0];
@@ -2142,7 +2144,6 @@ app.get('/userThumbnailsByEventId/:eventId', async (req, res) => {
 
     // Create folder name using event_name + client_name + event_id
     const folderName = `${eventName}_${clientName}_${eventId}`;
-
     logger.info("Constructed folder name: " + folderName);
 
     // Step 2: Query indexedDataTableName to get imageIds associated with the constructed folder name
@@ -2176,18 +2177,14 @@ app.get('/userThumbnailsByEventId/:eventId', async (req, res) => {
       const ageLow = item.AgeRange_Low;
       const ageHigh = item.AgeRange_High;
       if (!userCountMap.has(userId)) {
-        // Initialize the map with an object containing userId, count, and gender
         userCountMap.set(userId, { userId, count: 0, gender, age: 0 });
       }
 
-      // Increment the count for this userId
       const userInfo = userCountMap.get(userId);
       userInfo.count += 1;
-      // Age average
       if (ageLow && ageHigh) {
         userInfo.age = (userInfo.age + ((ageLow + ageHigh) / 2)) / 2;
       }
-      // Update the map with the new object
       userCountMap.set(userId, userInfo);
     });
 
@@ -2205,8 +2202,51 @@ app.get('/userThumbnailsByEventId/:eventId', async (req, res) => {
 
     logger.info("Total number of user thumbnails fetched: " + thumbnailObject.length);
 
-    // Step 3: Store the result in eventsDetailsTable using eventId
+    // Step 3: Fetch users for the event
+    const usersForEvent = await getUsersForEvent(folderName);
 
+    // Step 4: Check if user_id exists and map if necessary
+    for (const user of usersForEvent) {
+      if (!user.user_id) {
+        const userObj = await getUserObjectByUserPhoneNumber(user.user_phone_number)
+        const phoneNumber = user.user_phone_number; // Adjust according to your user data structure
+        const imageUrl = userObj.potrait_s3_url; // Adjust according to your user data structure
+        console.log("mapping user_id with phone Number : ",phoneNumber)
+        try {
+          const result = await mapUserIdAndPhoneNumber(phoneNumber, imageUrl, eventName, user.user_id);
+          if (result && result.Attributes && result.Attributes.user_id) {
+            user.user_id = result.Attributes.user_id; // Update the user with the mapped user_id
+            logger.info(`Mapped user_id ${user.user_id} for phone number ${phoneNumber}`);
+          } else {
+            logger.info(`No user_id found for phone number ${phoneNumber} using imageUrl ${imageUrl}`);
+          }
+        } catch (error) {
+          logger.error(`Error mapping user_id for phone number ${phoneNumber}: ${error.message}`);
+        }
+      }
+    }
+
+    // Create a Set of user_ids from usersForEvent for quick lookup
+    const userIdsSet = new Set(usersForEvent.map(user => user.user_id));
+
+    // Step 5: Check if user_id from thumbnailObject exists in usersForEvent and modify thumbnailObject
+    for (const thumbnail of thumbnailObject) {
+      if (userIdsSet.has(thumbnail.user_id)) {
+        thumbnail.is_registered = true;
+        logger.info(`Thumbnail with image_id ${thumbnail.user_id} is registered.`);
+      } else {
+        const userObj = await getUserObjectByUserId(thumbnail.user_id);
+        if(userObj){
+          thumbnail.is_registered = true;
+          logger.info(`Thumbnail with image_id ${thumbnail.user_id} is registered.`);
+        }else{
+          thumbnail.is_registered = false;
+          logger.info(`Thumbnail with image_id ${thumbnail.user_id} is unregistered.`);
+        }
+      }
+    }
+
+    // Step 6: Store the modified thumbnailObject in eventsDetailsTable using eventId
     const updateParams = {
       TableName: eventsDetailsTable,
       Key: {
@@ -2221,16 +2261,16 @@ app.get('/userThumbnailsByEventId/:eventId', async (req, res) => {
     };
 
     await docClient.update(updateParams).promise();
-    logger.info("User thumbnails saved for event ID: " + eventId);
+    logger.info("User thumbnails updated with registration status and saved for event ID: " + eventId);
 
+    // Respond with the modified thumbnailObject
     res.json(thumbnailObject);
+
   } catch (err) {
     logger.error("Error in fetching thumbnails for event ID: " + eventId, err);
     res.status(500).send('Error getting thumbnails for the event ID: ' + eventId);
   }
 });
-
-
 
 
 async function getThumbanailsForUserIds(keys){

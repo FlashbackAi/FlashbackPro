@@ -38,12 +38,10 @@ function ProNew() {
     if (mergeMode) {
       handleThumbnailClick(item);
     } else {
-      
-    saveShareDetails(item);
+      saveShareDetails(item);
       shareOnWhatsApp(item);
       setClickedImg(true);
     }
-    
   };
 
   const handleClosePopup = () => {
@@ -90,29 +88,23 @@ function ProNew() {
   const shareOnWhatsApp = (item) => {
     const userId = item.user_id;
     const count = item.count;
-    const text = `*Greetings*,\nWe have discovered your *${count}* images captured during the event *"${event.event_name}"*.\nKindly proceed to the provided URL to access and view your photographs:\n${serverIp}/share/${event.folder_name}/${userId}\n\nCheers,\n*Flashback*`;
+    const text = `*Greetings*,\nWe have discovered your *${count}* images captured during the event *"${event.event_name}"*.\nKindly proceed to the provided URL to access and view your photographs:\nhttps://flashback.inc/photosV1/${event.folder_name}/${userId}\n\nCheers,\n*Flashback*`;
     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
     window.open(whatsappUrl, "_blank");
   };
 
   const saveShareDetails = async (item) => {
-
-    try{
-      const user =localStorage.userPhoneNumber;
-      
-
-      const response = await API_UTIL.post(`/saveProShareDetails`,{user:user,sharedUser:item.user_id,event_id:eventId});
+    try {
+      const user = localStorage.userPhoneNumber;
+      const response = await API_UTIL.post(`/saveProShareDetails`, { user: user, sharedUser: item.user_id, event_id: eventId });
       if (response.status === 200) {
-
         updateRewardPoints(10);
       } else {
         throw new Error("Failed to save share info");
       }
-
-    }catch(error){
+    } catch (error) {
       console.error("Error fetching user thumbnails:", error);
     }
-
   };
 
   const fetchThumbnails = async () => {
@@ -140,7 +132,6 @@ function ProNew() {
       const response = await API_UTIL.get(`/userThumbnailsByEventId/${eventId}`);
       if (response.status === 200) {
         setClientDetails(response.data);
-        console.log(response.data.user_name)        
         fetchuserDetails();
       } else {
         throw new Error("Failed to fetch client Details");
@@ -169,33 +160,35 @@ function ProNew() {
     }
   };
 
-  const updateRewardPoints = async (points) =>{
+  const updateRewardPoints = async (points) => {
     const updateData = {
-      user_phone_number:localStorage.userPhoneNumber,
-      reward_points : userDetails?.reward_points ? userDetails.reward_points + points : 50 + points
+      user_phone_number: localStorage.userPhoneNumber,
+      reward_points: userDetails?.reward_points ? userDetails.reward_points + points : 50 + points
     };
   
     try {
       const response = await API_UTIL.post('/updateUserDetails', updateData);
       if (response.status === 200) {
-        setRewardPoints(points)
+        setRewardPoints(points);
         setShowRewardPointsPopUp(true);
-        setUserDetails(response.data.data)
+        setUserDetails(response.data.data);
       } else {
         console.log("Failed to update user details. Please try again.");
       }
     } catch (error) {
       console.error("Error updating user details:", error);
     }
-  
-  }
+  };
 
   useEffect(() => {
     if (isDataFetched.current) return;
     fetchThumbnails();
-    
     isDataFetched.current = true;
   }, []);
+
+  // Separate registered and unregistered users
+  const registeredUsers = userThumbnails.filter(thumbnail => thumbnail.is_registered);
+  const unregisteredUsers = userThumbnails.filter(thumbnail => !thumbnail.is_registered);
 
   return (
     <div className="page-container">
@@ -203,17 +196,13 @@ function ProNew() {
         <LoadingSpinner />
       ) : (
         <>
-          <AppBar/>
-         {/*{userDetails.user_phone_number && (*/}
-         {/* <Header clientObj={clientDetails} userObj={userDetails} eventName={eventName} />*/}
-         {/*)}*/}
+          <AppBar />
           <div className="content-wrap">
             <div className="statsSections">
-            <div className="toolbar">
-              <button onClick={handleMergeClick}>Merge Duplicate Faces</button>
-            </div>
-
-            <div className="totalCount">
+              <div className="toolbar">
+                <button onClick={handleMergeClick}>Merge Duplicate Faces</button>
+              </div>
+              <div className="totalCount">
                 <label>Total Attendees: {userThumbnails.length}</label>
               </div>
             </div>
@@ -229,36 +218,46 @@ function ProNew() {
               />
             )}
             {userThumbnails.length > 0 ? (
-            <>
-              
-              <div className="wrapper-pro">
-                {userThumbnails.map((item, index) => (
-                  <div 
-                    key={index} 
-                    className={`wrapper-images-pro ${
-                      (mergeMode && selectedMainUser === item) ? 'selected-main' :
-                      (mergeMode && selectedDuplicateUsers.includes(item)) ? 'selected-duplicate' : ''
-                    }`}
-                    onClick={() => handleClick(item)}
-                  >
-                    <LazyLoadImage
-                      src={item.face_url}
-                      alt={`User ${index + 1}`}
-                    />
-                    <p>{item.count}</p>
-                  </div>
-                ))}
-
-                {/* {showRewardPointsPopUp && (
-                <div className="popup">
-                  <div className="popup-content">
-                    <h2>Congratulations!</h2>
-                    <p>You have received {rewardPoints} reward points!</p>
-                    <button onClick={handleClosePopup}>X</button>
-                  </div>
+              <>
+                <h2>Registered Users</h2>
+                <div className="wrapper-pro">
+                  {registeredUsers.map((item, index) => (
+                    <div 
+                      key={index} 
+                      className={`wrapper-images-pro ${
+                        (mergeMode && selectedMainUser === item) ? 'selected-main' :
+                        (mergeMode && selectedDuplicateUsers.includes(item)) ? 'selected-duplicate' : ''
+                      }`}
+                      onClick={() => handleClick(item)}
+                    >
+                      <LazyLoadImage
+                        src={item.face_url}
+                        alt={`User ${index + 1}`}
+                      />
+                      <p>{item.count}</p>
+                    </div>
+                  ))}
                 </div>
-              )} */}
-              </div>
+
+                <h2>Unregistered Users</h2>
+                <div className="wrapper-pro">
+                  {unregisteredUsers.map((item, index) => (
+                    <div 
+                      key={index} 
+                      className={`wrapper-images-pro ${
+                        (mergeMode && selectedMainUser === item) ? 'selected-main' :
+                        (mergeMode && selectedDuplicateUsers.includes(item)) ? 'selected-duplicate' : ''
+                      }`}
+                      onClick={() => handleClick(item)}
+                    >
+                      <LazyLoadImage
+                        src={item.face_url}
+                        alt={`User ${index + 1}`}
+                      />
+                      <p>{item.count}</p>
+                    </div>
+                  ))}
+                </div>
               </>
             ) : fetchTimeout ? (
               <p>No images to display</p>
@@ -266,7 +265,6 @@ function ProNew() {
               <p>Failed to load images</p>
             )}
           </div>
-          
           <Footer />
         </>
       )}
@@ -275,3 +273,4 @@ function ProNew() {
 }
 
 export default ProNew;
+
