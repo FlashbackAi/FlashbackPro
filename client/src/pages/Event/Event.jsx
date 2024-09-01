@@ -566,7 +566,7 @@ const Event = () => {
                   }}
                   className={`add-project-button ${displayNone ? "hide" : ""}`}
                 >
-                  +
+                  {!showNewProjectInput ? "+" : "x"}
                 </button>
                 {showNewProjectInput && (
                   <div className="new-project-input">
