@@ -7,6 +7,7 @@ import AppBar from '../../components/AppBar/AppBar';
 import Footer from '../../components/Footer/Footer';
 import LoadingSpinner from '../../components/Loader/LoadingSpinner'; // Import the LoadingSpinner component
 import './Event.css'; // Import the new CSS file
+import LabelAndInput from '../../components/molecules/LabelAndInput/LabelAndInput';
 
 const Event = () => {
   const [events, setEvents] = useState([]);
@@ -247,103 +248,172 @@ const Event = () => {
   if (error) return <div className="loading-screen">Error: {error}</div>;
 
   return (
-    <div className='events-page-root'>
+    <div className="events-page-root">
       <AppBar />
       <div className="events-page-event-container">
         <h1 className="events-page-event-title">My Events</h1>
         <div className="events-page-event-list">
-          <div className="events-page-create-event-card" onClick={() => setIsCreateModalOpen(true)}>
+          <div
+            className="events-page-create-event-card"
+            onClick={() => setIsCreateModalOpen(true)}
+          >
             <div className="events-page-add-event-image-div">
-              <img
-                src="assets\Images\icon-plus.svg"
-                alt="img"
-              />
+              <img src="assets\Images\icon-plus.svg" alt="img" />
             </div>
-              <span >Click here to Add Project</span>
+            <span>Click here to Add Project</span>
           </div>
           {events.map((event) => (
-            <div className='events-page-event-card' onClick={() => onEventClick(event.event_id)}>
-               <div className="event-card-header">
-                  <img
-                    src="https://img.icons8.com/BB271A/m_rounded/2x/filled-trash.png"
-                    className="delete-icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openDeleteModal(event);
-                    }}
-                    alt="Delete"
-                  />
-                </div>
-                <img src={event.event_image} alt="img"></img>
-                <div className='event-name'>
-                  <span>
-                  {event?.event_name}
-                  </span>
-                </div>
+            <div
+              className="events-page-event-card"
+              onClick={() => onEventClick(event.event_id)}
+            >
+              <div className="event-card-header">
+                <img
+                  src="https://img.icons8.com/BB271A/m_rounded/2x/filled-trash.png"
+                  className="delete-icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openDeleteModal(event);
+                  }}
+                  alt="Delete"
+                />
+              </div>
+              <img src={event.event_image} alt="img"></img>
+              <div className="event-name">
+                <span>{event?.event_name}</span>
+              </div>
             </div>
           ))}
         </div>
 
         {/* Modal to update user details */}
         <Modal
-            isOpen={isUserDetailsModalOpen}
-            onRequestClose={() => setIsUserDetailsModalOpen(false)}
-            contentLabel="User Details"
-            className="modal-content"
-            overlayClassName="modal-overlay"
-          >
-            <div className="modal-header">
-              <h2 className="modal-title">User Details</h2>
-              <button className="close-button" onClick={() => setIsUserDetailsModalOpen(false)}>x</button>
+          isOpen={isUserDetailsModalOpen}
+          onRequestClose={() => setIsUserDetailsModalOpen(false)}
+          contentLabel="User Details"
+          className="modal-content event-modal"
+          overlayClassName="modal-overlay"
+        >
+          <div className="modal-header">
+            <h2 className="modal-title">User Details</h2>
+            <button
+              className="close-button"
+              onClick={() => setIsUserDetailsModalOpen(false)}
+            >
+              x
+            </button>
+          </div>
+          <form className="modal-body" onSubmit={handleUserDetailsSubmit}>
+            <div className="form-group">
+              <LabelAndInput
+                label="User Name:"
+                type="text"
+                htmlFor="userName"
+                id="userName"
+                name="userName"
+                value={userFormData.org_name}
+                handleChange={(e) =>
+                  setUserFormData({ ...userFormData, org_name: e.target.value })
+                }
+                placeholder="Enter your photography name"
+                isRequired={true}
+                isEditable={true}
+              ></LabelAndInput>
             </div>
-            <form className="modal-body" onSubmit={handleUserDetailsSubmit}>
-              <div className="form-group">
-                <label htmlFor="userName">User Name:</label>
-                <input
-                  type="text"
-                  id="userName"
-                  name="userName"
-                  value={userFormData.org_name}
-                  onChange={(e) => setUserFormData({ ...userFormData, org_name: e.target.value })}
-                  placeholder="Enter your photography name"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="instagram">Instagram URL:</label>
-                <input
-                  type="text"
-                  id="instagram"
-                  name="instagram"
-                  value={userFormData.social_media.instagram}
-                  onChange={(e) => setUserFormData({ ...userFormData, social_media: { ...userFormData.social_media, instagram: e.target.value } })}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="youtube">YouTube URL:</label>
-                <input
-                  type="text"
-                  id="youtube"
-                  name="youtube"
-                  value={userFormData.social_media.youtube}
-                  onChange={(e) => setUserFormData({ ...userFormData, social_media: { ...userFormData.social_media, youtube: e.target.value } })}
-                />
-              </div>
-              <button type="submit" className="save-button">Save</button>
+            <div className="form-group">
+              <LabelAndInput
+                htmlFor="instagram"
+                label="Instagram URL:"
+                type="text"
+                id="instagram"
+                name="instagram"
+                value={userFormData.social_media.instagram}
+                handleChange={(e) =>
+                  setUserFormData({
+                    ...userFormData,
+                    social_media: {
+                      ...userFormData.social_media,
+                      instagram: e.target.value,
+                    },
+                  })
+                }
+                isEditable={true}
+              ></LabelAndInput>
+              {/* <label htmlFor="instagram">Instagram URL:</label> */}
+              {/* <input
+                type="text"
+                id="instagram"
+                name="instagram"
+                value={userFormData.social_media.instagram}
+                onChange={(e) =>
+                  setUserFormData({
+                    ...userFormData,
+                    social_media: {
+                      ...userFormData.social_media,
+                      instagram: e.target.value,
+                    },
+                  })
+                }
+              /> */}
+            </div>
+            <div className="form-group">
+              <LabelAndInput
+                htmlFor="youtube"
+                label="YouTube URL:"
+                type="text"
+                id="youtube"
+                name="youtube"
+                value={userFormData.social_media.youtube}
+                handleChange={(e) =>
+                  setUserFormData({
+                    ...userFormData,
+                    social_media: {
+                      ...userFormData.social_media,
+                      youtube: e.target.value,
+                    },
+                  })
+                }
+                isEditable={true}
+              ></LabelAndInput>
+              {/* <label htmlFor="youtube">YouTube URL:</label>
+              <input
+                type="text"
+                id="youtube"
+                name="youtube"
+                value={userFormData.social_media.youtube}
+                onChange={(e) =>
+                  setUserFormData({
+                    ...userFormData,
+                    social_media: {
+                      ...userFormData.social_media,
+                      youtube: e.target.value,
+                    },
+                  })
+                }
+              /> */}
+            </div>
+           
+
+            <div style={{ textAlign: "center", margin: "10px 0", display: "flex", flexDirection: 'column', color: "#000000", rowGap: "1rem" }}>
+            <button type="submit" className="save-button">
+              Save
+            </button>
+              or
+              <button
+              type="button"
+              className="create-portfolio-button"
+              onClick={() => navigate("/portfolioForm")}
+            >
+              Create Portfolio
+            </button>
               
-              <div style={{ textAlign: 'center', margin: '10px 0' }}>or</div>
-              
-              <button 
-                type="button" 
-                className="create-portfolio-button" 
-                onClick={() => navigate('/portfolioForm')}
-              >
-                Create Portfolio
-              </button>
-            </form>
-          </Modal>
-           {/* Modal to delete event*/}
-          <Modal
+              </div>
+
+            
+          </form>
+        </Modal>
+        {/* Modal to delete event*/}
+        <Modal
           isOpen={isDeleteModalOpen}
           onRequestClose={closeDeleteModal}
           contentLabel="Delete Confirmation"
@@ -356,11 +426,7 @@ const Event = () => {
             <div className="modal-footer">
               <button
                 className="delete-button"
-                onClick={() =>
-                  deleteEvent(
-                    eventToDelete.event_id
-                  )
-                }
+                onClick={() => deleteEvent(eventToDelete.event_id)}
               >
                 Confirm
               </button>
@@ -370,36 +436,56 @@ const Event = () => {
             </div>
           </div>
         </Modal>
-      
 
         {/* Create Event Modal */}
         <Modal
           isOpen={isCreateModalOpen}
           onRequestClose={() => setIsCreateModalOpen(false)}
           contentLabel="Create Event"
-          className="modal-content"
+          className="modal-content event-modal"
           overlayClassName="modal-overlay"
         >
           <div className="modal-header">
             <h2 className="modal-title">Create Event</h2>
-            <button className="close-button" onClick={() => setIsCreateModalOpen(false)}>x</button>
+            <button
+              className="close-button"
+              onClick={() => setIsCreateModalOpen(false)}
+            >
+              x
+            </button>
           </div>
           <div className="create-event-container">
-            <form className="invitation-form" id="invitation-form" onSubmit={handleCreateEvent}>
+            <form
+              className="invitation-form"
+              id="invitation-form"
+              onSubmit={handleCreateEvent}
+            >
               <div className="form-group">
-                <label htmlFor="event-name">Event Name:</label>
-                <input
-                  type="text"
+                <LabelAndInput
+                  label={"Event Name:"}
                   id="event-name"
-                  name="eventName"
-                  placeholder="Event Name"
+                  type={"text"}
+                  name={"eventName"}
+                  placeholder={"Event Name"}
                   value={formData.eventName}
-                  onChange={handleInputChange}
-                  required
-                />
+                  handleChange={handleInputChange}
+                  isRequired={true}
+                  isEditable={true}
+                ></LabelAndInput>
               </div>
               <div className="form-group">
-                <label htmlFor="event-date">Event Date:</label>
+                <LabelAndInput
+                  htmlFor="event-date"
+                  label={"Event Date:"}
+                  type={"date"}
+                  name={"eventDate"}
+                  id="event-date"
+                  value={formData.eventDate}
+                  handleChange={handleInputChange}
+                  isRequired={true}
+                  isEditable={true}
+                ></LabelAndInput>
+                {/* <label htmlFor="event-date">Event Date:</label>
                 <input
                   type="date"
                   id="event-date"
@@ -407,10 +493,19 @@ const Event = () => {
                   value={formData.eventDate}
                   onChange={handleInputChange}
                   required
-                />
+                /> */}
               </div>
               <div className="form-group">
-                <label htmlFor="event-time">Event Time:</label>
+                <LabelAndInput
+                  label={"Event Time:"}
+                  type={"time"}
+                  name={"eventTime"}
+                  value={formData.eventTime}
+                  handleChange={handleInputChange}
+                  isRequired={true}
+                  isEditable={true}
+                ></LabelAndInput>
+                {/* <label htmlFor="event-time">Event Time:</label>
                 <input
                   type="time"
                   id="event-time"
@@ -418,10 +513,21 @@ const Event = () => {
                   value={formData.eventTime}
                   onChange={handleInputChange}
                   required
-                />
+                /> */}
               </div>
               <div className="form-group">
-                <label htmlFor="event-location">Event Location:</label>
+                <LabelAndInput
+                  label={"Event Location:"}
+                  type="text"
+                  id="event-location"
+                  name="eventLocation"
+                  placeholder="Event Location"
+                  value={formData.eventLocation}
+                  handleChange={handleInputChange}
+                  isRequired={true}
+                  isEditable={true}
+                ></LabelAndInput>
+                {/* <label htmlFor="event-location">Event Location:</label>
                 <input
                   type="text"
                   id="event-location"
@@ -430,13 +536,14 @@ const Event = () => {
                   value={formData.eventLocation}
                   onChange={handleInputChange}
                   required
-                />
+                /> */}
               </div>
               <div className="form-group">
                 <label htmlFor="project-name">Project Name:</label>
                 <select
                   id="project-name"
                   name="projectName"
+                  className='select-project'
                   value={formData.projectName}
                   onChange={handleInputChange}
                   required
@@ -457,7 +564,7 @@ const Event = () => {
                     setShowNewProjectInput(!showNewProjectInput);
                     setDisplayNone(!displayNone);
                   }}
-                  className={`add-project-button${displayNone ? "hide" : ""}`}
+                  className={`add-project-button ${displayNone ? "hide" : ""}`}
                 >
                   +
                 </button>
@@ -469,14 +576,27 @@ const Event = () => {
                       value={newProjectName}
                       onChange={handleNewProjectChange}
                     />
-                    <button type="button" onClick={handleCreateProject} className="save-project-button">
+                    <button
+                      type="button"
+                      onClick={handleCreateProject}
+                      className="save-project-button"
+                    >
                       Save
                     </button>
                   </div>
                 )}
               </div>
               <div className="form-group">
-                <label htmlFor="invitation-note">Invitation Note:</label>
+                <LabelAndInput
+                  label={"Invitation Note:"}
+                  name="invitationNote"
+                  placeholder="Invitation Note"
+                  value={formData.invitationNote}
+                  handleChange={handleInputChange}
+                  isRequired={true}
+                  isEditable={true}
+                ></LabelAndInput>
+                {/* <label htmlFor="invitation-note">Invitation Note:</label>
                 <textarea
                   id="invitation-note"
                   name="invitationNote"
@@ -484,20 +604,34 @@ const Event = () => {
                   value={formData.invitationNote}
                   onChange={handleInputChange}
                   required
-                ></textarea>
+                ></textarea> */}
               </div>
               <div className="form-group">
-                <label htmlFor="event-image">Upload Image:</label>
+                <LabelAndInput 
+                label={"Upload Image:"}
+                type="file"
+                id="event-image"
+                name="eventImage"
+                accept="image/*"
+                handleChange={handleFileChange}
+                isEditable={true}
+
+                ></LabelAndInput>
+                {/* <label htmlFor="event-image">Upload Image:</label>
                 <input
                   type="file"
                   id="event-image"
                   name="eventImage"
                   accept="image/*"
                   onChange={handleFileChange}
-                />
+                /> */}
               </div>
-              <button className="submit-button" type="submit" disabled={uploading}>
-                {uploading ? 'Creating...' : 'Create'}
+              <button
+                className="submit-button create-event-button"
+                type="submit"
+                disabled={uploading}
+              >
+                {uploading ? "Creating..." : "Create"}
               </button>
             </form>
           </div>

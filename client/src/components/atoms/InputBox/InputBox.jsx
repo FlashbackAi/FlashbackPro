@@ -20,6 +20,9 @@ const InputBox = ({
   type = "text",
   name,
   handleChange,
+  placeholder,
+  isRequired = false,
+  accept
 }) => {
    
   return (
@@ -32,6 +35,9 @@ const InputBox = ({
         value={value}
         defaultValue={defaultValue}
         onChange={handleChange}
+        placeholder={placeholder}
+        required={isRequired}
+        accept={accept}
       ></input>
     </div>
   );
