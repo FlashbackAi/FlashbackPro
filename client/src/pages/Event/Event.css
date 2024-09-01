@@ -615,7 +615,7 @@
 }
 
 .new-project-input > * {
-  max-width: calc(50% -  5px);
+  max-width: calc(50% -  8px);
 }
 
 .form-label {
