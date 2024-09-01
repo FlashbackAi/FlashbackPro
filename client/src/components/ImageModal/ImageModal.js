@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import LoadingSpinner from "../Loader/LoadingSpinner";
-import { ArrowLeft, ArrowRight, ArrowDownToLine, Heart, Share2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowDownToLine, Heart, Share2, ChevronRight, ChevronLeft } from "lucide-react";
 import API_UTIL from "../../services/AuthIntereptor";
 import { toast } from "react-toastify";
 import "./ImageModal.css";
@@ -184,8 +184,8 @@ const ImageModal = ({
             </div>
           )}
         </div>
-        <ArrowLeft className="modal-arrow left-arrow" onClick={handlePrev} />
-        <ArrowRight className="modal-arrow right-arrow" onClick={handleNext} />
+        <ChevronLeft className="modal-arrow left-arrow" onClick={handlePrev} />
+        <ChevronRight className="modal-arrow right-arrow" onClick={handleNext} />
       </div>
     </div>
   );

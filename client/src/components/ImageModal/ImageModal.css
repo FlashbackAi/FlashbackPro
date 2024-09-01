@@ -43,7 +43,7 @@
 
 .modal-arrow {
   position: absolute;
-  width: 25%;
+  /* width: 25%; */
   height: 4rem;
   top: 50%;
   transform: translateY(-50%);
