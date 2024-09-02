@@ -85,9 +85,9 @@
 
 
 
+
   
  
-  
   .edit-icon {
     position: absolute;
     top: 20px;
@@ -455,3 +455,26 @@ dropzone {
   color: white;
 }
 
+@media (max-width: 540px) {
+  .qr-modal-content {
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    max-width: 80%;
+    margin: 0;
+    width: 80%;
+    height: 50%;
+  }
+  .event-details-qr-modal{
+    width: 90%;
+    display: grid;
+    gap: 1rem;
+    .modal-title {
+      margin: 0;
+    }
+    .close-button {
+      padding: 0;
+      width: fit-content;
+    }
+  }
+}
