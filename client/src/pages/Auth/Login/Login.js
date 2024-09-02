@@ -139,6 +139,9 @@ function Login({ name, onLoginSuccess, showAppBar = true }) {
       console.error("Error verifying OTP:", error);
       return { success: false };
     }
+    finally{
+      setShowOTP(false);
+    }
   };
 
   const handleOTPResend = async () => {

@@ -296,12 +296,12 @@ const Event = () => {
         >
           <div className="modal-header">
             <h2 className="modal-title">User Details</h2>
-            <button
+            {/* <button
               className="close-button"
               onClick={() => setIsUserDetailsModalOpen(false)}
             >
               x
-            </button>
+            </button> */}
           </div>
           <form className="modal-body" onSubmit={handleUserDetailsSubmit}>
             <div className="form-group">

@@ -27,7 +27,6 @@ return children;
 };
 
 function RenderRoutes({ isLoading = false }) {
-  console.log('Rendering routes');
   return (
     <>
       {isLoading ? (

@@ -34,7 +34,7 @@ const PortfolioForm = () => {
         console.log(userPhoneNumber);
         const response = await API_UTIL.get(`/fetchUserDetails/${userPhoneNumber}`);
         setIsLoading(false)
-        if (sessionStorage.getItem('userphoneNumber') !== response.data.data.user_name && response.data.data.hasOwnProperty('org_name')) {
+        if (userPhoneNumber !== response.data.data.user_name && response.data.data.hasOwnProperty('org_name')) {
           navigate(`/portfolio/${response.data.data.user_name}`)
         }
       } catch (error) {
