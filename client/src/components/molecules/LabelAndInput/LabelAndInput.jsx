@@ -9,10 +9,13 @@ const LabelAndInput = ({
   isEditable,
   type,
   handleChange,
+  placeholder ,
+  isRequired,
+  accept
 }) => {
   return (
     <div className="label-text-field">
-      <span>{label}</span>
+      <label >{label}</label>
       <InputBox
         value={value}
         defaultValue={defaultValue}
@@ -20,6 +23,9 @@ const LabelAndInput = ({
         name={name}
         type={type}
         isEditable={isEditable}
+        placeholder={placeholder}
+        isRequired={isRequired}
+        accept={accept}
       ></InputBox>
     </div>
   );
