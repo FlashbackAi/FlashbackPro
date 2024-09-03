@@ -1,157 +1,139 @@
-.merge-component {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-    z-index: 1000;
-    max-width: 80%;
-    width: 600px;
-  }
-  
-  .merge-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-  }
-  
-  .close-button {
-    background: none;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-  }
-  
-  .user-selection {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 20px;
-  }
-  
-  .main-user, .duplicate-users {
-    width: 48%;
-  }
-  
-  .user-slot {
-    border: 2px dashed #f0e8e8;
-    border-radius: 5px;
-    background-color: black;
-    padding: 10px;
-    margin-bottom: 10px;
-    text-align: center;
-    cursor: pointer;
-    
-  }
-  
-  .selected-user {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border: 2px solid #007bff;
-    border-radius: 5px;
-    padding: 10px;
-    margin-bottom: 10px;
-  }
-  
-  .selected-user img {
-    width: 50px;
-    height: 50px;
-    object-fit: cover;
-    border-radius: 50%;
-  }
-  
-  .merging-text {
-  position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
+.merge-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.merge-popup-content {
+  background-color: black;
+  border-radius: 5%;
+  border: 0.25px dashed;
+  border-image: linear-gradient(90deg, #66d3ff, #9a6aff 38%, #ee75cb 71%, #fd4d77) 0.5;
+  padding: 10px;
+  max-width: 500px;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
   color: white;
-  font-size: 24px;
-  font-weight: bold;
-  z-index: 2002;
+}
+
+.selected-users {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+  transition: all 0.5s ease;
+}
+
+.selected-user {
+  position: relative;
+  text-align: center;
+  transition: all 0.5s ease;
+}
+
+.selected-user img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 50%;
+  transition: all 0.5s ease;
+}
+
+.merge-reason {
+  margin-bottom: 20px;
+}
+
+.merge-reason select {
+  width: 100%;
+  padding: 5px;
+  background-color: #333;
+  color: white;
+  border: 1px solid #666;
 }
 
 .merge-actions {
-    display: flex;
-    justify-content: center;
-  }
-  
-  .merge-actions button {
-    padding: 10px 20px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-  
-  .merge-actions button:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-  }
-  
-  .merge-animation {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 2000;
-  }
-  
-  .main-user-animate,
-  .duplicate-user-animate {
-    width: 100px;
-    height: 100px;
-    background-size: cover;
-    background-position: center;
-    border-radius: 50%;
-    position: absolute;
-  }
-  
-  .main-user-animate {
-    z-index: 2001;
-    animation: growAndStay 2s forwards;
-  }
-  
-  .duplicate-user-animate {
-    animation: shrinkAndMerge 2s forwards;
-  }
-  
-  @keyframes growAndStay {
-    0% {
-      transform: scale(1);
-    }
-    50% {
-      transform: scale(1.5);
-    }
-    100% {
-      transform: scale(1.5);
-    }
-  }
-  
-  @keyframes shrinkAndMerge {
-    0% {
-      transform: scale(1) translate(0, 0);
-    }
-    100% {
-      transform: scale(0) translate(50px, 50px);
-    }
-  }
+  display: flex;
+  justify-content: space-around;
+}
 
-  /* In Pro.css */
-.wrapper-images-pro.selected-main {
-    border: 3px solid #007bff;
-  }
-  
-  .wrapper-images-pro.selected-duplicate {
-    border: 3px solid #28a745;
-  }
+.merge-actions button {
+  padding: 10px 20px;
+  cursor: pointer;
+  background-image: linear-gradient(90deg, #66d3ff, #9a6aff 38%, #ee75cb 71%, #fd4d77);
+  color: white;
+  border: none;
+  border-radius: 5px;
+}
+
+.merge-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Merging Animation Styles */
+.selected-users.merging {
+  justify-content: center;
+}
+
+.selected-user.merging:first-child {
+  animation: moveLeft 1.5s forwards;
+}
+
+.selected-user.merging:last-child {
+  animation: moveRight 1.5s forwards;
+}
+
+.selected-user.merging img {
+  animation: pulse 1.5s infinite alternate;
+}
+
+.merging-message, .merge-result {
+  text-align: center;
+  font-size: 1.2em;
+  margin-top: 20px;
+  animation: fadeIn 0.5s;
+}
+
+.merge-result.success {
+  color: #4CAF50;
+}
+
+.merge-result.failure {
+  color: #F44336;
+}
+
+@keyframes moveLeft {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-25%); }
+}
+
+@keyframes moveRight {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(25%); }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.1); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes mergeComplete {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.merge-result {
+  animation: mergeComplete 1s ease-in-out;
+}

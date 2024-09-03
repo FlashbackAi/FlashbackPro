@@ -26,6 +26,8 @@ function ProNew() {
   const [clickedImg, setClickedImg] = useState(null);
   const [showMergeDuplicateUsers, setShowMergeDuplicateUsers] = useState(false);
   const [mergeMode, setMergeMode] = useState(false);
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [showMergePopup, setShowMergePopup] = useState(false);
   const [selectedMainUser, setSelectedMainUser] = useState(null);
   const [selectedDuplicateUsers, setSelectedDuplicateUsers] = useState([]);
   const [showRewardPointsPopUp, setShowRewardPointsPopUp] = useState(null);
@@ -40,12 +42,28 @@ function ProNew() {
     } else {
       saveShareDetails(item);
       shareOnWhatsApp(item);
-      setClickedImg(true);
+      // setClickedImg(true);
     }
   };
 
-  const handleClosePopup = () => {
-    setShowRewardPointsPopUp(false)
+  const handleManageUsers = () => {
+    setMergeMode(true);
+    setSelectedUsers([]);
+  };
+
+  const handleCancelManageUsers = () => {
+    setMergeMode(false);
+    setSelectedUsers([]);
+  };
+
+  const handleClosePopup = (fullReset = false) => {
+    setShowMergePopup(false);
+    if (fullReset) {
+      setMergeMode(false);
+      setSelectedUsers([]);
+    } else {
+      setSelectedUsers(prev => prev.slice(0, 1));
+    }
   };
 
   const handleMergeClick = () => {
@@ -62,28 +80,50 @@ function ProNew() {
     setSelectedDuplicateUsers([]);
   };
 
-  const handleMerge = async (mainUser, duplicateUsers) => {
+  const handleMerge = async (reason) => {
     try {
-      console.log("Merging", mainUser, "with", duplicateUsers);
-      
-      updateRewardPoints(50);
-      await fetchThumbnails();
-      handleCloseMerge();
-    
+      const user_phone_number = localStorage.getItem("userPhoneNumber");
+      const response = await API_UTIL.post('/mergeUsers', {
+        userIds: selectedUsers.map(u => u.user_id),
+        reason: reason,
+        eventId: eventId,
+        user_phone_number: user_phone_number
+      });
+
+      if (response.data.success) {
+        alert("Users merged successfully!");
+        updateRewardPoints(50);
+        await fetchThumbnails();
+        setMergeMode(false);
+        setSelectedUsers([]);
+        setShowMergePopup(false);
+      } else {
+        alert(response.data.message);
+      }
     } catch (error) {
       console.error("Error merging users:", error);
+      alert("Error merging users. Please try again.");
     }
   };
 
 
-  const handleThumbnailClick = (item) => {
-    if (!selectedMainUser) {
-      setSelectedMainUser(item);
-    } else if (selectedDuplicateUsers.length < 5 && !selectedDuplicateUsers.includes(item) && item !== selectedMainUser) {
-      setSelectedDuplicateUsers([...selectedDuplicateUsers, item]);
-    }
-  };
+  const handleThumbnailClick = (user) => {
+    if (!mergeMode) return;
 
+    setSelectedUsers(prev => {
+      const isSelected = prev.some(u => u.user_id === user.user_id);
+      if (isSelected) {
+        return prev.filter(u => u.user_id !== user.user_id);
+      } else if (prev.length < 2) {
+        const newSelected = [...prev, user];
+        if (newSelected.length === 2) {
+          setShowMergePopup(true);
+        }
+        return newSelected;
+      }
+      return prev;
+    });
+  };
 
   const shareOnWhatsApp = (item) => {
     const userId = item.user_id;
@@ -200,23 +240,16 @@ function ProNew() {
           <div className="content-wrap">
             <div className="statsSections">
               <div className="toolbar">
-                <button onClick={handleMergeClick}>Merge Duplicate Faces</button>
+                {!mergeMode ? (
+                <button onClick={handleMergeClick}>Manage Duplicate Faces</button>
+                ) : (
+                  <button onClick={handleCancelManageUsers}>Cancel</button>
+                )}
               </div>
               <div className="totalCount">
                 <label>Total Attendees: {userThumbnails.length}</label>
               </div>
             </div>
-            {showMergeDuplicateUsers && (
-              <MergeDuplicateUsers
-                onClose={handleCloseMerge}
-                onMerge={handleMerge}
-                thumbnails={userThumbnails}
-                selectedMainUser={selectedMainUser}
-                selectedDuplicateUsers={selectedDuplicateUsers}
-                onMainUserSelect={setSelectedMainUser}
-                onDuplicateUserSelect={setSelectedDuplicateUsers}
-              />
-            )}
             {userThumbnails.length > 0 ? (
               <>
                 <h2>Registered Users</h2>
@@ -224,11 +257,8 @@ function ProNew() {
                   {registeredUsers.map((item, index) => (
                     <div 
                       key={index} 
-                      className={`wrapper-images-pro ${
-                        (mergeMode && selectedMainUser === item) ? 'selected-main' :
-                        (mergeMode && selectedDuplicateUsers.includes(item)) ? 'selected-duplicate' : ''
-                      }`}
-                      onClick={() => handleClick(item)}
+                      className={`wrapper-images-pro ${mergeMode ? 'selectable' : ''} ${selectedUsers.some(u => u.user_id === item.user_id) ? 'selected' : ''}`}
+                      onClick={() => handleThumbnailClick(item)}
                     >
                       <LazyLoadImage
                         src={item.face_url}
@@ -255,6 +285,11 @@ function ProNew() {
                         alt={`User ${index + 1}`}
                       />
                       <p>{item.count}</p>
+                      {mergeMode && (
+                    <div className={`tick-mark ${selectedUsers.some(u => u.user_id === item.user_id) ? 'selected' : ''}`}>
+                      ✓
+                    </div>
+                  )}
                     </div>
                   ))}
                 </div>
@@ -267,6 +302,13 @@ function ProNew() {
           </div>
           <Footer />
         </>
+      )}
+      {showMergePopup && (
+        <MergeDuplicateUsers
+          users={selectedUsers}
+          onClose={handleClosePopup}
+          onMerge={handleMerge}
+        />
       )}
     </div>
   );

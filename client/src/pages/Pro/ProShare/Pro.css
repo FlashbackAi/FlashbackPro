@@ -102,7 +102,7 @@
 }
 
 .toolbar {
-  display: none;
+  /* display: none; */
   margin-bottom: 1em;
 }
 
@@ -113,7 +113,7 @@
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  /* display: none; Remove this line in order to enable the merge button on Flashback Pro Page */
+  /* display: none;   Remove this line in order to enable the merge button on Flashback Pro Page */
 }
 
 .toolbar button:hover {
@@ -141,5 +141,32 @@
 
 .sidebar {
   width: 8em;
+}
+
+.wrapper-images-pro.selectable {
+  cursor: pointer;
+}
+
+.wrapper-images-pro.selected {
+  border: 2px solid #007bff;
+}
+
+.tick-mark {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background-color: #cccccc; /* Grey background for unselected state */
+  color: #ffffff;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+}
+
+.tick-mark.selected {
+  background-color: #007bff; /* Blue background for selected state */
 }
 

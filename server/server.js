@@ -47,6 +47,7 @@ const whatsappSender = new WhatsAppSender(
 );
 
 const taskProgress = new Map();
+const COLLECTION_ID = 'FlashbackUserDataCollection';
 
 app.get("/share/:eventName/:userId", async(req, res) => {
   try{
@@ -6628,6 +6629,520 @@ app.delete('/deleteDataset/:dataset_name/:org_name', async (req, res) => {
     res.status(500).json({ message: 'Error deleting Dataset', error: error.message });
   }
 });
+
+app.post('/mergeUsers', async (req, res) => {
+  logger.info('Received payload:', JSON.stringify(req.body, null, 2));
+  const { userIds, reason, eventId, user_phone_number } = req.body;
+
+  if (!Array.isArray(userIds) || userIds.length !== 2) {
+    return res.status(400).json({ success: false, message: 'Exactly two user IDs are required.' });
+  }
+  try {
+    // Determine the main user (the one with more records)
+
+    const userCounts = await Promise.all(userIds.map(async (userId) => {
+      const count = await getUserRecordCount(userId);
+      logger.info(`User ${userId} has ${count} records`);
+      return { userId: String(userId), count };
+    }));
+
+    userCounts.sort((a, b) => b.count - a.count);
+    const [mainUser, duplicateUser] = userCounts;
+
+    logger.info(`Attempting to merge user: ${duplicateUser.userId} into user: ${mainUser.userId}`);
+
+    // Perform the merge
+    const mergeResult = await mergeUsers(duplicateUser.userId, mainUser.userId, reason, eventId, user_phone_number);
+
+    if (mergeResult.success) {
+      res.json({ success: true, message: mergeResult.message });
+    } else {
+      res.json({ success: false, message: mergeResult.message });
+    }
+  } catch (error) {
+    logger.error('Error in merge users API:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+async function getUserRecordCount(userId) {
+  let totalCount = 0;
+  let lastEvaluatedKey = null;
+
+  const sanitizedUserId = String(userId).trim();
+  logger.info('Sanitized userId:', sanitizedUserId);
+
+  do {
+    const params = {
+      TableName: 'indexed_data',
+      IndexName: 'user_id-index',
+      KeyConditionExpression: 'user_id = :userid',
+      ExpressionAttributeValues: { ':userid': { S: sanitizedUserId } },
+      Select: 'COUNT'
+    };
+
+    if (lastEvaluatedKey) {
+      params.ExclusiveStartKey = lastEvaluatedKey;
+    }
+
+    try {
+      const response = await dynamoDB.query(params).promise();
+      totalCount += response.Count;
+      lastEvaluatedKey = response.LastEvaluatedKey;
+    } catch (error) {
+      logger.error(`Error querying user record count for user ${userId}:`, error);
+      throw error;
+    }
+  } while (lastEvaluatedKey);
+
+  return totalCount;
+}
+
+
+async function mergeUsers(fromUserId, toUserId, reason, eventId, user_phone_number) {
+  logger.info(`Merging user ${fromUserId} into ${toUserId}`);
+  try {
+      // Step 1: Compare faces
+      const similarityThreshold = reason === 'very_similar' ? 99 : 95;
+      
+      const comparisonResult = await rekognition.compareFaces({
+        SourceImage: {
+          S3Object: {
+            Bucket: 'rekognitionuserfaces',
+            Name: `thumbnails/${fromUserId}.jpg`
+          }
+        },
+        TargetImage: {
+          S3Object: {
+            Bucket: 'rekognitionuserfaces',
+            Name: `thumbnails/${toUserId}.jpg`
+          }
+        },
+        SimilarityThreshold: similarityThreshold
+      }).promise();
+
+      // console.log(`Similarity of both the faces ${comparisonResult.FaceMatches.Similarity}`);
+
+      if (comparisonResult.FaceMatches.Similarity < 99) {
+          return { success: false, message: "These faces do not belong to the same user." };
+      }
+
+      const highestSimilarity = Math.max(...comparisonResult.FaceMatches.map(match => match.Similarity));
+
+      if (highestSimilarity < similarityThreshold) {
+        return { 
+          success: false, 
+          message: "We can see that these faces doesn't match"
+        };
+      }
+  
+      logger.info(`Face similarity: ${highestSimilarity.toFixed(2)}%`);
+  
+      // Step 3: Perform merge
+      await disassociateFaces(fromUserId);
+      await transferRecordsAndAssociateFaces(fromUserId, toUserId);
+      await updateUserImageActivity(fromUserId, toUserId);
+      await updateUserOutputs(fromUserId, toUserId);
+      await updateRekognitionImageProperties(fromUserId, toUserId);
+      await updateUsersTable(fromUserId, toUserId);
+      await updateUserEventMapping(fromUserId, toUserId);
+      await deleteUser(fromUserId);
+
+      // Step 4: Log the merge activity
+      await logMergeActivity(fromUserId, toUserId, reason, eventId, highestSimilarity, user_phone_number);
+
+      logger.info(`Successfully merged user ${fromUserId} into ${toUserId}`);
+      return { success: true, message: "Users merged successfully." };
+  } catch (e) {
+      logger.error(`Error merging users: ${e}`);
+      return { success: false, message: "An error occurred while merging users." };
+  }
+}
+
+async function logMergeActivity(fromUserId, toUserId, reason, eventId, similarity, user_phone_number) {
+  const params = {
+      TableName: 'DuplicateUserMergeLogger',
+      Item: {
+          Merge_id: { S: `${fromUserId}-${toUserId}-${Date.now()}` },
+          event_id: { S: eventId },
+          merge_executor: { S: user_phone_number },
+          timestamp: { S: new Date().toISOString() },
+          source_user: { S: fromUserId },
+          source_user_s3_url: { S: `https://rekognitionuserfaces.s3.amazonaws.com/thumbnails/${fromUserId}.jpg` },
+          target_user: { S: toUserId },
+          target_user_s3_url: { S: `https://rekognitionuserfaces.s3.amazonaws.com/thumbnails/${toUserId}.jpg` },
+          reason: { S: reason },
+          similarity: { N: similarity.toString() }
+      }
+  };
+
+  try {
+      await dynamoDB.putItem(params).promise();
+      logger.info('Merge activity logged successfully');
+  } catch (error) {
+      logger.error('Error logging merge activity:', error);
+      // Don't throw here, as we want to continue with the merge process even if logging fails
+  }
+}
+
+
+async function disassociateFaces(userId) {
+  logger.info(`Disassociating faces for user ${userId}`);
+  try {
+      const faceIds = [];
+      let lastEvaluatedKey = null;
+
+      do {
+          const queryParams = {
+              TableName: 'indexed_data',
+              IndexName: 'user_id-index',
+              KeyConditionExpression: 'user_id = :uid',
+              ExpressionAttributeValues: {':uid': {S: userId}},
+              ProjectionExpression: 'face_id',
+              ExclusiveStartKey: lastEvaluatedKey
+          };
+
+          const response = await dynamoDB.query(queryParams).promise();
+
+          response.Items.forEach(item => faceIds.push(item.face_id.S));
+
+          lastEvaluatedKey = response.LastEvaluatedKey;
+      } while (lastEvaluatedKey);
+
+      if (faceIds.length > 0) {
+          // Disassociate faces in batches of 100 (Rekognition API limit)
+          for (let i = 0; i < faceIds.length; i += 100) {
+              const batch = faceIds.slice(i, i + 100);
+              await rekognition.disassociateFaces({
+                  CollectionId: COLLECTION_ID,
+                  UserId: userId,
+                  FaceIds: batch
+              }).promise();
+          }
+      }
+
+      logger.info(`Disassociated ${faceIds.length} faces for user ${userId}`);
+  } catch (e) {
+      logger.error(`Error disassociating faces: ${e}`);
+  }
+}
+
+
+async function transferRecordsAndAssociateFaces(fromUserId, toUserId) {
+  logger.info(`Transferring records from user ${fromUserId} to ${toUserId}`);
+  try {
+      const toUserFaceCount = await getUserFaceCount(toUserId);
+      logger.info(`No. of faces for the Main User: ${toUserId} are ${toUserFaceCount}`);
+      const faceIdsToAssociate = [];
+      let recordsTransferred = 0;
+      let lastEvaluatedKey = null;
+
+      do {
+          const queryParams = {
+              TableName: 'indexed_data',
+              IndexName: 'user_id-index',
+              KeyConditionExpression: 'user_id = :uid',
+              ExpressionAttributeValues: {':uid': {S: fromUserId}},
+              ExclusiveStartKey: lastEvaluatedKey
+          };
+
+          const response = await dynamoDB.query(queryParams).promise();
+
+          for (const item of response.Items) {
+              const newItem = {...item, user_id: {S: toUserId}};
+
+              // Put new item
+              await dynamoDB.putItem({TableName: 'indexed_data', Item: newItem}).promise();
+
+              // Delete old item
+              await dynamoDB.deleteItem({
+                  TableName: 'indexed_data',
+                  Key: {
+                      image_id: item.image_id,
+                      user_id: {S: fromUserId}
+                  }
+              }).promise();
+
+              recordsTransferred++;
+
+              if (toUserFaceCount + faceIdsToAssociate.length < 99) {
+                  faceIdsToAssociate.push(item.face_id.S);
+              }
+          }
+
+          lastEvaluatedKey = response.LastEvaluatedKey;
+      } while (lastEvaluatedKey);
+
+      logger.info(`Transferred ${recordsTransferred} records from ${fromUserId} to ${toUserId}`);
+      logger.info(`Collected ${faceIdsToAssociate.length} face IDs to associate`);
+
+      if (faceIdsToAssociate.length > 0) {
+          try {
+              await rekognition.associateFaces({
+                  CollectionId: COLLECTION_ID,
+                  UserId: toUserId,
+                  FaceIds: faceIdsToAssociate
+              }).promise();
+              logger.info(`Associated ${faceIdsToAssociate.length} faces to user ${toUserId}`);
+          } catch (e) {
+              if (e.code === 'ServiceQuotaExceededException') {
+                  logger.warning(`Reached maximum face association limit for user ${toUserId}. Some faces were not associated.`);
+              } else {
+                  throw e;
+              }
+          }
+      } else {
+          logger.info(`No faces associated to user ${toUserId} as the limit was reached`);
+      }
+  } catch (e) {
+      logger.error(`Error transferring records and associating faces: ${e}`);
+  }
+}
+
+async function getUserFaceCount(userId) {
+  try {
+      const params = {
+          TableName: 'indexed_data',
+          IndexName: 'user_id-index',
+          KeyConditionExpression: 'user_id = :uid',
+          Select: 'COUNT',
+          ExpressionAttributeValues: { ':uid': { S: userId } }
+      };
+
+      const response = await dynamoDB.query(params).promise();
+      return response.Count;
+  } catch (e) {
+      logger.error(`Error getting user face count from DynamoDB: ${e}`);
+      return 0;
+  }
+}
+
+async function deleteUser(userId) {
+  logger.info(`Deleting user ${userId}`);
+  try {
+      await rekognition.deleteUser({
+          CollectionId: COLLECTION_ID,
+          UserId: userId
+      }).promise();
+      logger.info(`Successfully deleted user ${userId} from Rekognition`);
+  } catch (e) {
+      logger.error(`Error deleting user from Rekognition: ${e}`);
+  }
+}
+
+async function updateUserOutputs(userId, primaryUserId) {
+  logger.info(`Updating user outputs from ${userId} to ${primaryUserId}`);
+  let lastEvaluatedKey = null;
+
+  do {
+      const queryParams = {
+          TableName: 'user_outputs',
+          KeyConditionExpression: 'unique_uid = :userid',
+          ExpressionAttributeValues: { ':userid': {S: userId } },
+          ExclusiveStartKey: lastEvaluatedKey
+      };
+
+      const response = await dynamoDB.query(queryParams).promise();
+
+      for (const item of response.Items) {
+          const newItem = { ...item, unique_uid: primaryUserId };
+
+          await dynamoDB.putItem({
+              TableName: 'user_outputs',
+              Item: newItem
+          }).promise();
+
+          await dynamoDB.delete({
+              TableName: 'user_outputs',
+              Key: {
+                  unique_uid: userId,
+                  s3_url: item.s3_url
+              }
+          }).promise();
+
+          logger.info(`Updated user: ${userId} to primary user: ${primaryUserId} in user_outputs table for s3_url: ${item.s3_url}`);
+      }
+
+      lastEvaluatedKey = response.LastEvaluatedKey;
+  } while (lastEvaluatedKey);
+
+  lastEvaluatedKey = null;
+
+  do {
+      const queryParams = {
+          TableName: 'user_outputs',
+          IndexName: 'unique_uid-event_name-index',
+          KeyConditionExpression: 'unique_uid = :userid',
+          ExpressionAttributeValues: { ':userid': {S: userId } },
+          ExclusiveStartKey: lastEvaluatedKey
+      };
+
+      const response = await dynamoDB.query(queryParams).promise();
+
+      for (const item of response.Items) {
+          await dynamoDB.update({
+              TableName: 'user_outputs',
+              Key: {
+                  unique_uid: item.unique_uid,
+                  s3_url: item.s3_url
+              },
+              UpdateExpression: 'SET unique_uid = :primary_uid',
+              ExpressionAttributeValues: { ':primary_uid': {S: primaryUserId } }
+          }).promise();
+
+          logger.info(`Updated user: ${userId} to primary user: ${primaryUserId} in user_outputs table (unique_uid-event_name-index) for event: ${item.event_name || 'Unknown'}`);
+      }
+
+      lastEvaluatedKey = response.LastEvaluatedKey;
+  } while (lastEvaluatedKey);
+}
+
+async function updateRekognitionImageProperties(userId, primaryUserId) {
+  logger.info(`Updating Rekognition image properties for user ${userId} to ${primaryUserId}`);
+  let lastEvaluatedKey = null;
+
+  do {
+      const scanParams = {
+          TableName: 'RekognitionImageProperties',
+          FilterExpression: 'contains(user_ids, :userid)',
+          ExpressionAttributeValues: { ':userid': {S: userId } },
+          ExclusiveStartKey: lastEvaluatedKey
+      };
+
+      const response = await dynamoDB.scan(scanParams).promise();
+
+      for (const item of response.Items) {
+          if (item.user_ids) {
+              const userIds = item.user_ids;
+              const newUserIds = [...new Set(userIds.map(uid => (uid === userId ? primaryUserId : uid)))];
+
+              await dynamoDB.update({
+                  TableName: 'RekognitionImageProperties',
+                  Key: { image_id: item.image_id },
+                  UpdateExpression: 'SET user_ids = :new_user_ids',
+                  ExpressionAttributeValues: { ':new_user_ids': {S: newUserIds } }
+              }).promise();
+
+              logger.info(`Updated user_ids from ${userId} to ${primaryUserId} for image_id ${item.image_id}`);
+          }
+      }
+
+      lastEvaluatedKey = response.LastEvaluatedKey;
+  } while (lastEvaluatedKey);
+}
+
+async function updateUsersTable(userId, primaryUserId) {
+  logger.info(`Updating users table from ${userId} to ${primaryUserId}`);
+  let lastEvaluatedKey = null;
+
+  do {
+      const queryParams = {
+          TableName: 'users',
+          IndexName: 'user_id-index',
+          KeyConditionExpression: 'user_id = :userid',
+          ExpressionAttributeValues: { ':userid': {S: userId } },
+          ExclusiveStartKey: lastEvaluatedKey
+      };
+
+      const response = await dynamoDB.query(queryParams).promise();
+
+      for (const item of response.Items) {
+          const updateParams = {
+              TableName: 'users',
+              Key: { user_phone_number: item.user_phone_number },
+              UpdateExpression: 'SET user_id = :primary_uid',
+              ExpressionAttributeValues: { ':primary_uid':  {S: primaryUserId } }
+          };
+
+          await dynamoDB.update(updateParams).promise();
+
+          logger.info(`Updated user_id from ${userId} to ${primaryUserId} for user_phone_number ${item.user_phone_number}`);
+      }
+
+      lastEvaluatedKey = response.LastEvaluatedKey;
+  } while (lastEvaluatedKey);
+}
+
+async function updateUserEventMapping(userId, primaryUserId) {
+  logger.info(`Updating user_event_mapping table from ${userId} to ${primaryUserId}`);
+  let lastEvaluatedKey = null;
+
+  do {
+      const queryParams = {
+          TableName: 'user_event_mapping',
+          IndexName: 'user_id-index',
+          KeyConditionExpression: 'user_id = :userid',
+          ExpressionAttributeValues: { ':userid': {S: userId } },
+          ExclusiveStartKey: lastEvaluatedKey
+      };
+
+      const response = await dynamoDB.query(queryParams).promise();
+
+      for (const item of response.Items) {
+          const updateParams = {
+              TableName: 'user_event_mapping',
+              Key: {
+                  event_name: item.event_name,
+                  user_phone_number: item.user_phone_number
+              },
+              UpdateExpression: 'SET user_id = :primary_uid',
+              ExpressionAttributeValues: { ':primary_uid': {S: primaryUserId } }
+          };
+
+          await dynamoDB.update(updateParams).promise();
+
+          logger.info(`Updated user_id from ${userId} to ${primaryUserId} for event ${item.event_name} and user_phone_number ${item.user_phone_number}`);
+      }
+
+      lastEvaluatedKey = response.LastEvaluatedKey;
+  } while (lastEvaluatedKey);
+}
+
+async function updateUserImageActivity(fromUserId, toUserId) {
+  logger.info(`Updating user_image_activity table for user ${fromUserId} to ${toUserId}`);
+  try {
+      let lastEvaluatedKey = null;
+
+      do {
+          const queryParams = {
+              TableName: 'user_image_activity',
+              KeyConditionExpression: 'user_id = :userid',
+              ExpressionAttributeValues: {
+                  ':userid': { S: fromUserId }
+              },
+              ExclusiveStartKey: lastEvaluatedKey
+          };
+
+          const response = await dynamoDB.query(queryParams).promise();
+
+          for (const item of response.Items) {
+              // Create a new item with the new user_id
+              const newItem = { ...item, user_id: { S: toUserId } };
+
+              // Put the new item
+              await dynamoDB.putItem({
+                  TableName: 'user_image_activity',
+                  Item: newItem
+              }).promise();
+
+              // Delete the old item
+              await dynamoDB.deleteItem({
+                  TableName: 'user_image_activity',
+                  Key: {
+                      user_id: { S: fromUserId },
+                      activity_timestamp: item.activity_timestamp
+                  }
+              }).promise();
+          }
+
+          lastEvaluatedKey = response.LastEvaluatedKey;
+      } while (lastEvaluatedKey);
+
+      logger.info(`Updated user_image_activity table for user ${fromUserId} to ${toUserId}`);
+  } catch (error) {
+      logger.error(`Error updating user_image_activity table: ${error}`);
+  }
+}
 
 
   const httpsServer = https.createServer(credentials, app);
