@@ -4,6 +4,7 @@ import API_UTIL from '../../../services/AuthIntereptor';
 import { toast } from 'react-toastify';
 import {  useNavigate } from 'react-router-dom';
 import LoadingSpinner from '../../../components/Loader/LoadingSpinner';
+import LabelAndInput from '../../../components/molecules/LabelAndInput/LabelAndInput';
 
 const PortfolioForm = () => {
   const userPhoneNumber =localStorage.userPhoneNumber;
@@ -132,15 +133,30 @@ const PortfolioForm = () => {
 
   return (
     <>
-    {
-      isLoading ? (
-        <LoadingSpinner/>
+      {isLoading ? (
+        <LoadingSpinner />
       ) : (
-    <div className="create-event-container">
-      <h1 className="form-title">Create Portfolio</h1>
-      <form className="invitation-form" id="invitation-form" onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="event-name">Photography Name:</label>
+        <div className="create-event-container">
+          <h1 className="form-title">Create Portfolio</h1>
+          <form
+            className="invitation-form"
+            id="invitation-form"
+            onSubmit={handleSubmit}
+          >
+            <div className="form-group">
+              <LabelAndInput
+                htmlFor="event-name"
+                label={"Photography Name:"}
+                type="text"
+                id="event-name"
+                name="org_name"
+                placeholder="Enter your Studio Name"
+                value={formData.org_name}
+                handleChange={handleInputChange}
+                isRequired={true}
+                isEditable={true}
+              ></LabelAndInput>
+              {/* <label htmlFor="event-name">Photography Name:</label>
           <input
             type="text"
             id="event-name"
@@ -149,11 +165,23 @@ const PortfolioForm = () => {
             value={formData.org_name}
             onChange={handleInputChange}
             required
-          />
-        </div>
+          /> */}
+            </div>
 
-        <div className="form-group">
-          <label htmlFor="event-date">Instagram URL:</label>
+            <div className="form-group">
+              <LabelAndInput
+                htmlFor="event-date"
+                label={"Instagram URL:"}
+                type="text"
+                id="event-date"
+                name="instagram"
+                placeholder="Provide your Instagram URL"
+                value={formData.social_media.instagram}
+                handleChange={handleSocialMediaChange}
+                isRequired={true}
+                isEditable={true}
+              ></LabelAndInput>
+              {/* <label htmlFor="event-date">Instagram URL:</label>
           <input
             type="text"
             id="event-date"
@@ -162,10 +190,22 @@ const PortfolioForm = () => {
             value={formData.social_media.instagram}
             onChange={handleSocialMediaChange}
             required
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="event-location">YouTube URL:</label>
+          /> */}
+            </div>
+            <div className="form-group">
+              <LabelAndInput
+                htmlFor="event-location"
+                label={"YouTube URL:"}
+                type="text"
+                id="event-location"
+                name="youtube"
+                placeholder="Provide your YouTube URL"
+                value={formData.social_media.youtube}
+                handleChange={handleSocialMediaChange}
+                isRequired={true}
+                isEditable={true}
+              ></LabelAndInput>
+              {/* <label htmlFor="event-location">YouTube URL:</label>
           <input
             type="text"
             id="event-location"
@@ -174,11 +214,23 @@ const PortfolioForm = () => {
             value={formData.social_media.youtube}
             onChange={handleSocialMediaChange}
             required
-          />
-        </div>
+          /> */}
+            </div>
 
-        <div className="form-group">
-          <label htmlFor="event-date">Facebook URL:</label>
+            <div className="form-group">
+              <LabelAndInput
+                htmlFor="event-date"
+                label={"Facebook URL:"}
+                type="text"
+                id="event-date"
+                name="facebook"
+                placeholder="Provide your Instagram URL"
+                value={formData.social_media.facebook}
+                handleChange={handleSocialMediaChange}
+                isRequired={true}
+                isEditable={true}
+              ></LabelAndInput>
+              {/* <label htmlFor="event-date">Facebook URL:</label>
           <input
             type="text"
             id="event-date"
@@ -187,27 +239,45 @@ const PortfolioForm = () => {
             value={formData.social_media.facebook}
             onChange={handleSocialMediaChange}
             required
-          />
-        </div>
-        {/* Banner Image Upload Section */}
-        <div className="folder-section">
-          <div className="form-group">
-            <label className="form-label">Upload Banner Image:</label>
+          /> */}
+            </div>
+            {/* Banner Image Upload Section */}
+            <div className="folder-section">
+              <div className="form-group">
+                <LabelAndInput
+                  label={"Upload Banner Image:"}
+                  type="file"
+                  multiple
+                  handleChange={(e) => handleImageUpload(0, e)}
+                  isEditable={true} // Index 0 for the banner folder
+                  // className="form-input"
+                ></LabelAndInput>
+                {/* <label className="form-label">Upload Banner Image:</label>
             <input
               type="file"
               multiple
               onChange={(e) => handleImageUpload(0, e)} // Index 0 for the banner folder
               className="form-input"
-            />
-          </div>
-        </div>
+            /> */}
+              </div>
+            </div>
 
-       
-
-        {folders.slice(1).map((folder, index) => (
-          <div key={index + 1} className="folder-section">
-            <div className="form-group">
-              <label htmlFor={`folder-name-${index + 1}`}>Folder Name:</label>
+            {folders.slice(1).map((folder, index) => (
+              <div key={index + 1} className="folder-section">
+                <div className="form-group">
+                  <LabelAndInput
+                    htmlFor={`folder-name-${index + 1}`}
+                    label={"FolderName"}
+                    type="text"
+                    id={`folder-name-${index + 1}`}
+                    name={`folder_name_${index + 1}`}
+                    placeholder="Enter folder name"
+                    value={folder.folderName}
+                    handleChange={(e) => handleFolderNameChange(index + 1, e)}
+                    isRequired={true}
+                    isEditable={true}
+                  ></LabelAndInput>
+                  {/* <label htmlFor={`folder-name-${index + 1}`}>Folder Name:</label>
               <input
                 type="text"
                 id={`folder-name-${index + 1}`}
@@ -216,30 +286,44 @@ const PortfolioForm = () => {
                 value={folder.folderName}
                 onChange={(e) => handleFolderNameChange(index + 1, e)}
                 required
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Upload Images to {folder.folderName || 'folder'}:</label>
+              /> */}
+                </div>
+                <div className="form-group">
+                  <LabelAndInput
+                    label={`Upload Images to ${folder.folderName || "folder"}:`}
+                    type="file"
+                    multiple
+                    handleChange={(e) => handleImageUpload(index + 1, e)}
+                    isEditable={true}
+                  ></LabelAndInput>
+                  {/* <label className="form-label">Upload Images to {folder.folderName || 'folder'}:</label>
               <input
                 type="file"
                 multiple
                 onChange={(e) => handleImageUpload(index + 1, e)}
                 className="form-input"
-              />
+              /> */}
+                </div>
+              </div>
+            ))}
+
+            <div className="form-group">
+              <button
+                type="button"
+                onClick={addFolder}
+                className="add-folder-button"
+              >
+                Add Folder
+              </button>
             </div>
-          </div>
-        ))}
 
-        <div className="form-group">
-          <button type="button" onClick={addFolder} className="add-folder-button">Add Folder</button>
+            <button className="submit-button" type="submit">
+              Create
+            </button>
+          </form>
         </div>
-
-        <button className="submit-button" type="submit">Create</button>
-      </form>
-    </div>
-    )
-  }
-  </>
+      )}
+    </>
   );
 };
 
