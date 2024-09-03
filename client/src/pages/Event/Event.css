@@ -1026,7 +1026,7 @@
 /* Responsive Tab Styles */
 @media (max-width: 40em) { /* 640px converted to em assuming 1em = 16px */
   .tab-switcher {
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
   }
 
