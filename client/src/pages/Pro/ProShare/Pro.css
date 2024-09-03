@@ -168,5 +168,12 @@
 
 .tick-mark.selected {
   background-color: #007bff; /* Blue background for selected state */
+  color: white;
 }
 
+.merge-message {
+  text-align: center;
+  margin: 10px 0;
+  font-weight: bold;
+  color: rgb(128, 0, 17); /* or any color that fits your design */
+}

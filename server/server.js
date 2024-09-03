@@ -1261,7 +1261,7 @@ app.post('/sendOTP', async (req, res) => {
 });
 
 app.post('/verifyOTP', async (req, res) => {
-  const { phoneNumber, otp } = req.body;
+  const { phoneNumber, otp, login_platform } = req.body;
   
   try {
     // Verify the OTP from DDB
@@ -1270,7 +1270,7 @@ app.post('/verifyOTP', async (req, res) => {
     if (isValid) {
       logger.info(`User ${phoneNumber} successfully authenticated`);
 
-      await recordLoginHistory(phoneNumber);
+      await recordLoginHistory(phoneNumber, login_platform);
       res.status(200).json({ message: 'OTP verified successfully' });
     } else {
       res.status(400).json({ error: 'Invalid OTP' });
@@ -1281,14 +1281,15 @@ app.post('/verifyOTP', async (req, res) => {
   }
 });
 
-async function recordLoginHistory(phoneNumber) {
+async function recordLoginHistory(phoneNumber, login_platform) {
   const params = {
     TableName: 'UserLoginHistory',
     Item: {
       user_phone_number: phoneNumber,
       login_timestamp: new Date().toISOString(),
-      login_type: 'OTP',
-      login_status: 'success'
+      login_type: 'Whatsapp_OTP',
+      login_status: 'success',
+      login_platform: login_platform
     }
   };
 
@@ -6817,9 +6818,10 @@ async function mergeUsers(fromUserId, toUserId, reason, eventId, user_phone_numb
       // console.log(`Similarity of both the faces ${comparisonResult.FaceMatches.Similarity}`);
 
       if (comparisonResult.FaceMatches.Similarity < 99) {
+          logger.info('These faces do not belong to the same user.');
           return { success: false, message: "These faces do not belong to the same user." };
       }
-
+      
       const highestSimilarity = Math.max(...comparisonResult.FaceMatches.map(match => match.Similarity));
 
       if (highestSimilarity < similarityThreshold) {

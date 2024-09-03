@@ -41,7 +41,7 @@ function MergeDuplicateUsers({ users, onClose, onMerge }) {
   return (
     <div className="merge-popup">
       <div className="merge-popup-content">
-        <h2>Merge Users</h2>
+        <h2>Merge Faces</h2>
         <div className={`selected-users ${mergeState !== 'idle' ? 'merging' : ''}`}>
           {users.map((user, index) => (
             <div key={index} className={`selected-user ${mergeState !== 'idle' ? 'merging' : ''}`}>

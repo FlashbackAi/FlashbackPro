@@ -127,8 +127,9 @@ function Login({ name, onLoginSuccess, showAppBar = true }) {
 
   const handleOTPVerify = async (otpString) => {
     const fullPhoneNumber = countryCode + phoneNumber;
+    const login_platform = 'FlashbackWeb';
     try {
-      const response = await API_UTIL.post('/verifyOTP', { phoneNumber: fullPhoneNumber, otp: otpString });
+      const response = await API_UTIL.post('/verifyOTP', { phoneNumber: fullPhoneNumber, otp: otpString, login_platform });
       if (response.status === 200) {
         // OTP verified successfully, proceed with user creation or login
         await createOrLoginUser(fullPhoneNumber);

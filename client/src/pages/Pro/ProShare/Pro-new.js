@@ -26,6 +26,7 @@ function ProNew() {
   const [clickedImg, setClickedImg] = useState(null);
   const [showMergeDuplicateUsers, setShowMergeDuplicateUsers] = useState(false);
   const [mergeMode, setMergeMode] = useState(false);
+  const [mergeMessage, setMergeMessage] = useState('');
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [showMergePopup, setShowMergePopup] = useState(false);
   const [selectedMainUser, setSelectedMainUser] = useState(null);
@@ -54,6 +55,7 @@ function ProNew() {
   const handleCancelManageUsers = () => {
     setMergeMode(false);
     setSelectedUsers([]);
+    setMergeMessage('');
   };
 
   const handleClosePopup = (fullReset = false) => {
@@ -67,6 +69,7 @@ function ProNew() {
   };
 
   const handleMergeClick = () => {
+    setMergeMessage('Select 2 duplicate faces to merge');
     setShowMergeDuplicateUsers(true);
     setMergeMode(true);
     setSelectedMainUser(null);
@@ -242,7 +245,7 @@ function ProNew() {
             <div className="statsSections">
               <div className="toolbar">
                 {!mergeMode ? (
-                <button onClick={handleMergeClick}>Manage Duplicate Faces</button>
+                <button onClick={handleMergeClick}>Manage Faces</button>
                 ) : (
                   <button onClick={handleCancelManageUsers}>Cancel</button>
                 )}
@@ -251,6 +254,7 @@ function ProNew() {
                 <label>Total Attendees: {userThumbnails.length}</label>
               </div>
             </div>
+            {mergeMessage && <div className="merge-message">{mergeMessage}</div>}
             {userThumbnails.length > 0 ? (
               <>
                 <h2>Registered Users</h2>
@@ -259,26 +263,6 @@ function ProNew() {
                     <div 
                       key={index} 
                       className={`wrapper-images-pro ${mergeMode ? 'selectable' : ''} ${selectedUsers.some(u => u.user_id === item.user_id) ? 'selected' : ''}`}
-                      onClick={() => handleThumbnailClick(item)}
-                    >
-                      <LazyLoadImage
-                        src={item.face_url}
-                        alt={`User ${index + 1}`}
-                      />
-                      <p>{item.count}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <h2>Unregistered Users</h2>
-                <div className="wrapper-pro">
-                  {unregisteredUsers.map((item, index) => (
-                    <div 
-                      key={index} 
-                      className={`wrapper-images-pro ${
-                        (mergeMode && selectedMainUser === item) ? 'selected-main' :
-                        (mergeMode && selectedDuplicateUsers.includes(item)) ? 'selected-duplicate' : ''
-                      }`}
                       onClick={() => handleClick(item)}
                     >
                       <LazyLoadImage
@@ -287,10 +271,32 @@ function ProNew() {
                       />
                       <p>{item.count}</p>
                       {mergeMode && (
-                    <div className={`tick-mark ${selectedUsers.some(u => u.user_id === item.user_id) ? 'selected' : ''}`}>
-                      ✓
+                        <div className={`tick-mark ${selectedUsers.some(u => u.user_id === item.user_id) ? 'selected' : ''}`}>
+                          ✓
+                        </div>
+                      )}
                     </div>
-                  )}
+                  ))}
+                </div>
+
+                <h2>Unregistered Users</h2>
+                <div className="wrapper-pro">
+                  {unregisteredUsers.map((item, index) => (
+                    <div 
+                    key={index} 
+                    className={`wrapper-images-pro ${mergeMode ? 'selectable' : ''} ${selectedUsers.some(u => u.user_id === item.user_id) ? 'selected' : ''}`}
+                    onClick={() => handleClick(item)}
+                  >
+                      <LazyLoadImage
+                        src={item.face_url}
+                        alt={`User ${index + 1}`}
+                      />
+                      <p>{item.count}</p>
+                      {mergeMode && (
+                        <div className={`tick-mark ${selectedUsers.some(u => u.user_id === item.user_id) ? 'selected' : ''}`}>
+                          ✓
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
