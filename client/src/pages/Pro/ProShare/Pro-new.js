@@ -90,21 +90,22 @@ function ProNew() {
         user_phone_number: user_phone_number
       });
 
-      if (response.data.success) {
-        alert("Users merged successfully!");
+      if (response.data.success) { 
         updateRewardPoints(50);
         await fetchThumbnails();
-        setMergeMode(false);
-        setSelectedUsers([]);
-        setShowMergePopup(false);
-      } else {
-        alert(response.data.message);
       }
+      return response.data;
     } catch (error) {
       console.error("Error merging users:", error);
-      alert("Error merging users. Please try again.");
+      return { success: false, message: "Error merging users. Please try again." };
     }
   };
+
+  const handleCloseMergePopup = () => {
+    setMergeMode(false);
+    setSelectedUsers([]);
+    setShowMergePopup(false);
+  }
 
 
   const handleThumbnailClick = (user) => {
