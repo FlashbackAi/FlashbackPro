@@ -1,134 +1,127 @@
+.content-wrap {
+  background-color: white;
+}
+
 .header {
-    font-size: 1em;
-  }
-  
-  .container {
-    display: flex;
-  }
-  
-  .sidebar {
-    width: 8em;
-  }
-  
-  .content {
-    padding: 1px;
-  }
-  
-  .wrapper-images img {
-    padding: 0em;
-  }
-  
-  .content h2 {
-    margin: 0.5em;
-  }
-  
-  .wrapper-images-pro {
-    position: relative;
-    width: 100%;
-    height: auto;
-    object-fit: cover;
-    border-radius: 5%;
-    border: 0.25px dashed;
-    border-image: linear-gradient(90deg, #66d3ff, #9a6aff 38%, #ee75cb 71%, #fd4d77) 0.5;
+  font-size: 1em;
+}
 
+.container {
+  display: flex;
+}
 
-  }
-  
-  .wrapper-images-pro:hover {
-    transform: scale(1.05);
-  }
-  
-  .wrapper-images-pro img {
-    width: 10em;
-    height: 11em;
-    margin: auto;
-    object-fit: cover;
-    border-radius: 5%;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    /* border: 2px solid gray; */
-  }
-  
+.sidebar {
+  width: 8em;
+}
+
+.content {
+  padding: 0.0625em; /* 1px to em */
+}
+
+.wrapper-images img {
+  padding: 0em;
+}
+
+.content h2 {
+  margin: 0.5em;
+}
+
+.wrapper-images-pro {
+  position: relative;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border-radius: 0.3125em; /* 5px to em */
+  border: 0.015625em dashed; /* 0.25px to em */
+  border-image: linear-gradient(90deg, #66d3ff, #9a6aff 38%, #ee75cb 71%, #fd4d77) 0.5;
+}
+
+.wrapper-images-pro:hover {
+  transform: scale(1.05);
+}
+
+.wrapper-images-pro img {
+  width: 10em;
+  height: 11em;
+  margin: auto;
+  object-fit: cover;
+  border-radius: 0.3125em; /* 5px to em */
+  box-shadow: 0 0.25em 0.5em rgba(0, 0, 0, 0.2); /* 4px and 8px to em */
+}
+
+.wrapper-pro {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr); /* 8 images per row for larger screens */
+  gap: 0.03125em; /* 0.5px to em */
+  margin: 3em;
+}
+
+.wrapper-pro p {
+  margin: 0;
+}
+
+.loading-spinner img {
+  margin-left: 0em !important;
+}
+
+/* Responsive adjustments for tablets */
+@media (max-width: 64em) { /* 1024px to em */
   .wrapper-pro {
-    display: grid;
-    grid-template-columns: repeat(8, 1fr); /* 8 images per row for larger screens */
-    gap: 0.50em; /* Gap between grid items */
-    margin: 3em;
+    grid-template-columns: repeat(4, 1fr); /* 4 images per row for tablets */
+    margin: 1em;
   }
-  
-  .wrapper-pro p {
-    margin: 0;
+}
+
+/* Responsive adjustments for mobile devices */
+@media (max-width: 48em) { /* 768px to em */
+  .wrapper-pro {
+    grid-template-columns: repeat(3, 1fr); /* 3 images per row for mobile devices */
+    margin: 1em;
   }
-  
-  .loading-spinner img {
-    margin-left: 0em !important;
+
+  .wrapper-images-pro img {
+    width: 100%; /* Full width on mobile */
+    height: auto;
   }
-  
-  /* Responsive adjustments for tablets */
-  @media (max-width: 1024px) {
-    .wrapper-pro {
-      grid-template-columns: repeat(4, 1fr); /* 4 images per row for tablets */
-      margin: 1em;
-    }
-  }
-  
-  /* Responsive adjustments for mobile devices */
-  @media (max-width: 768px) {
-    .wrapper-pro {
-      grid-template-columns: repeat(3, 1fr); /* 2 images per row for mobile devices */
-      margin: 1em;
-    }
-  
-    .wrapper-images-pro img {
-      width: 100%; /* Full width on mobile */
-      height: auto;
-    }
-  }
+}
 
 .selected-main {
-  border: 3px solid #007bff !important;
+  border: 0.1875em solid #007bff !important; /* 3px to em */
 }
 
 .selected-duplicate {
-  border: 3px solid #28a745 !important;
+  border: 0.1875em solid #28a745 !important; /* 3px to em */
 }
 
 .statsSections {
   display: flex;
   justify-content: space-between;
   align-items: center; /* Optional: Aligns items vertically centered */
-  font-size:larger;
   padding-left: 3%;
   padding-right: 3%;
+  margin-top: 1em;
 }
 
 .toolbar {
-  /* display: none; */
-  margin-bottom: 1em;
+  display: flex;
+  gap: 2em;
 }
 
-.toolbar button {
+.p-button {
   padding: 0.5em 1em;
-  background-color: #007bff;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 0.25em; /* 4px to em */
   cursor: pointer;
-  /* display: none;   Remove this line in order to enable the merge button on Flashback Pro Page */
+  margin: 0.00625em; /* 0.1px to em */
 }
 
-.toolbar button:hover {
-  background-color: #0056b3;
-}
-
-.content-wrap{
+.content-wrap {
   background-color: black;
 }
 
- .totalCount{
-  display: block;
-  margin-left: auto;
-  margin-right: 0;
-  margin-top: 1em;
+.totalCount {
+  font-size: larger;
 }
 
 .header {
@@ -148,18 +141,18 @@
 }
 
 .wrapper-images-pro.selected {
-  border: 2px solid #007bff;
+  border: 0.125em solid #007bff; /* 2px to em */
 }
 
 .tick-mark {
   position: absolute;
-  top: 5px;
-  right: 5px;
+  top: 0.3125em; /* 5px to em */
+  right: 0.3125em; /* 5px to em */
   background-color: #cccccc; /* Grey background for unselected state */
   color: #ffffff;
   border-radius: 50%;
-  width: 20px;
-  height: 20px;
+  width: 1.25em; /* 20px to em */
+  height: 1.25em; /* 20px to em */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -173,7 +166,32 @@
 
 .merge-message {
   text-align: center;
-  margin: 10px 0;
+  margin: 0.625em 0; /* 10px to em */
   font-weight: bold;
   color: rgb(128, 0, 17); /* or any color that fits your design */
+}
+
+.send-photos-content {
+  padding: 1.25em; /* 20px to em */
+  background-color: white;
+  border-radius: 0.5em; /* 8px to em */
+  max-width: 31.25em; /* 500px to em */
+  margin: 0 auto;
+}
+
+.send-modal-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1.25em; /* 20px to em */
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 1.5em; /* 24px to em */
+  cursor: pointer;
+}
+
+.send-modal-body {
+  text-align: center; /* Center the body content */
 }

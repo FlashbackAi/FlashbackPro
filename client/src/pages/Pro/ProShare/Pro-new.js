@@ -1,17 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import LoadingSpinner from "../../../components/Loader/LoadingSpinner";
-import Modal from "../../../components/ImageModal/ImageModal";
-import { useNavigate ,useLocation } from "react-router-dom";
+// import Modal from "../../../components/ImageModal/ImageModal";
+import { useLocation } from "react-router-dom";
 import { LazyLoadImage } from "react-lazy-load-image-component";
-import PlaceholderImage from "../../../media/images/blurredLogo.png";
-import Header from "../../../components/Header/Header";
+
 import API_UTIL from "../../../services/AuthIntereptor";
 import Footer from "../../../components/Footer/Footer";
 import "../../../components/Footer/Footer.css"; // Import your CSS file
 import MergeDuplicateUsers from "./MergeHandler/MergeDuplicateUsers";
 import "./Pro.css";
 import AppBar from "../../../components/AppBar/AppBar";
+import Modal from 'react-modal';
+import { toast } from 'react-toastify';
 
 function ProNew() {
   const { eventId } = useParams();
@@ -22,8 +23,6 @@ function ProNew() {
   const [isLoading, setIsLoading] = useState(true);
   const [fetchTimeout, setFetchTimeout] = useState(false);
   const isDataFetched = useRef(false);
-  const history = useNavigate();
-  const [clickedImg, setClickedImg] = useState(null);
   const [showMergeDuplicateUsers, setShowMergeDuplicateUsers] = useState(false);
   const [mergeMode, setMergeMode] = useState(false);
   const [mergeMessage, setMergeMessage] = useState('');
@@ -33,8 +32,11 @@ function ProNew() {
   const [selectedDuplicateUsers, setSelectedDuplicateUsers] = useState([]);
   const [showRewardPointsPopUp, setShowRewardPointsPopUp] = useState(null);
   const [rewardPoints,setRewardPoints] = useState();
-  const serverIp = process.env.REACT_APP_SERVER_IP;
+  const [isSendModalOpen,setIsSendModalOpen] = useState(false);
+  // const serverIp = process.env.REACT_APP_SERVER_IP;
   const location = useLocation();
+  const [isSending, setIsSending] = useState(false);
+  
   const event = location.state?.event; // Retrieve event from location state
 
   const handleClick = (item) => {
@@ -54,6 +56,7 @@ function ProNew() {
 
   const handleCancelManageUsers = () => {
     setMergeMode(false);
+    setShowMergePopup(false);
     setSelectedUsers([]);
     setMergeMessage('');
   };
@@ -70,18 +73,19 @@ function ProNew() {
 
   const handleMergeClick = () => {
     setMergeMessage('Select 2 duplicate faces to merge');
+    
     setShowMergeDuplicateUsers(true);
     setMergeMode(true);
     setSelectedMainUser(null);
     setSelectedDuplicateUsers([]);
   };
 
-  const handleCloseMerge = () => {
-    setShowMergeDuplicateUsers(false);
-    setMergeMode(false);
-    setSelectedMainUser(null);
-    setSelectedDuplicateUsers([]);
-  };
+  // const handleCloseMerge = () => {
+  //   setShowMergeDuplicateUsers(false);
+  //   setMergeMode(false);
+  //   setSelectedMainUser(null);
+  //   setSelectedDuplicateUsers([]);
+  // };
 
   const handleMerge = async (reason) => {
     try {
@@ -104,11 +108,11 @@ function ProNew() {
     }
   };
 
-  const handleCloseMergePopup = () => {
-    setMergeMode(false);
-    setSelectedUsers([]);
-    setShowMergePopup(false);
-  }
+  // const handleCloseMergePopup = () => {
+  //   setMergeMode(false);
+  //   setSelectedUsers([]);
+  //   setShowMergePopup(false);
+  // }
 
 
   const handleThumbnailClick = (user) => {
@@ -204,6 +208,42 @@ function ProNew() {
     }
   };
 
+  const sendWhatsappMsg = async () => {
+    try {
+      
+      const userIdMappingResponse = await API_UTIL.post('/generateUserIdsForExistingUsers', { eventName: event.folder_name });
+      if(userIdMappingResponse.status === 200){
+      const sendFlashbacksResponse = await API_UTIL.post('/send-flashbacks', { eventName: event.folder_name });
+
+      if (sendFlashbacksResponse.status === 200) {
+        toast.success('Flashbacks sent successfully!');
+      } else {
+        throw new Error('Failed to send flashbacks.');
+      }
+    }
+    else{
+      throw new Error('Failed to send flashbacks.');
+    }
+    } catch (error) {
+      console.error('Error Publishing Images', error);
+       toast.error('Failed to Publish Images');
+    }
+  };
+  const handleSendPhotos = async () => {
+    setIsSending(true); // Set sending state to true
+    setIsSendModalOpen(true);
+    try {
+      await sendWhatsappMsg();
+    } finally {
+      setIsSending(false); // Set sending state to false after process is complete
+    }
+  };
+  
+
+  const closeSendPhotos = () => {
+    setIsSendModalOpen(false);
+  };
+
   const updateRewardPoints = async (points) => {
     const updateData = {
       user_phone_number: localStorage.userPhoneNumber,
@@ -243,12 +283,20 @@ function ProNew() {
           <AppBar />
           <div className="content-wrap">
             <div className="statsSections">
-              <div className="toolbar">
+             <div className="toolbar"> 
                 {!mergeMode ? (
                 <button onClick={handleMergeClick}>Manage Faces</button>
                 ) : (
-                  <button onClick={handleCancelManageUsers}>Cancel</button>
+                  <button className ='p-button' onClick={handleCancelManageUsers}>Cancel</button>
                 )}
+                  <button
+                  className='p-button'
+                  onClick={handleSendPhotos}
+                  disabled={isSending} // Disable button while sending
+                >
+                  {isSending ? 'Sending...' : 'Send Photos'} {/* Update button text */}
+                </button>
+                 
               </div>
               <div className="totalCount">
                 <label>Total Attendees: {userThumbnails.length}</label>
@@ -313,9 +361,35 @@ function ProNew() {
       {showMergePopup && (
         <MergeDuplicateUsers
           users={selectedUsers}
-          onClose={handleClosePopup}
+          onClose={handleCancelManageUsers}
           onMerge={handleMerge}
         />
+      )}
+      {isSendModalOpen &&(
+       <Modal
+       key={isSendModalOpen ? 'open' : 'closed'} // Adding key to handle unique modal instances
+       isOpen={isSendModalOpen}
+       onRequestClose={closeSendPhotos}
+       contentLabel="Send Photos"
+       className="send-photos-content"
+       overlayClassName="modal-overlay"
+     >
+      <div className='pro-send-modal'>
+        <div className="send-modal-header">
+          {/* <h2 className="send-modal-title">
+            Send Photos
+          </h2> */}
+          <button className="close-button" onClick={closeSendPhotos}>
+            x
+          </button>
+        </div>
+        <div className="send-modal-body">
+          <p>Only registered users will receive Photos.</p>
+          <p>For unregistered users, you can click on their thumbnail and send photos through your WhatsApp.</p>
+        </div>
+      </div>
+    </Modal>
+    
       )}
     </div>
   );

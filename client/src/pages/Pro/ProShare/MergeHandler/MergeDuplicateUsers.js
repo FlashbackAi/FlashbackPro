@@ -63,7 +63,7 @@ function MergeDuplicateUsers({ users, onClose, onMerge }) {
             </div>
             <div className="merge-actions">
               <button onClick={handleMerge} disabled={!mergeReason}>Merge</button>
-              <button onClick={handleCancel}>Cancel</button>
+              <button onClick={onClose}>Cancel</button>
             </div>
           </>
         )}
