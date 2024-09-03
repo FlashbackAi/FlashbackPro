@@ -16,6 +16,7 @@ const PortfolioForm = () => {
       facebook:''
     },
     org_name: '',
+    role: 'creator'
   });
 
   const [folders, setFolders] = useState([{ folderName: 'Banner', images: [] }]);

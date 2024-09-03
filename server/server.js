@@ -569,6 +569,8 @@ app.post('/trigger-flashback', async (req, res) => {
   }
 });
 
+
+
 // Function to query user_event_mapping table
 async function queryUserEventMapping(eventName) {
   const params = {
@@ -670,43 +672,43 @@ async function searchUsersByImage(portraitS3Url, phoneNumber) {
 }
 
 //async function mapUserIdAndPhoneNumber(phoneNumber,imageUrl,eventName,userId){
-  async function mapUserIdAndPhoneNumber(phoneNumber,imageUrl,eventName,userId){
+  async function mapUserIdAndPhoneNumber(phoneNumber, imageUrl, eventName, userId) {
     try {
       // Call searchUsersByImage API with portraitS3Url
       const result = await searchUsersByImage(imageUrl, phoneNumber);
-      if(!result){
-        logger.info("matched user not found: "+phoneNumber);
-        logger.info("deleting the S3 url for unmacthed  userId->"+userId);
+      if (!result) {
+        logger.info("matched user not found: " + phoneNumber);
+        logger.info("deleting the S3 url for unmacthed userId->" + userId);
         const userDeleteParams = {
-          TableName: userrecordstable, 
+          TableName: userrecordstable,
           Key: {
-              'user_phone_number': phoneNumber 
+            'user_phone_number': phoneNumber
           },
           UpdateExpression: 'REMOVE potrait_s3_url',
           ReturnValues: 'UPDATED_NEW'
-      };
+        };
   
-      const deltResult = docClient.update(userDeleteParams).promise();
-      logger.info("deleted the s3 url for userId ->"+userId);
+        const deltResult = docClient.update(userDeleteParams).promise();
+        logger.info("deleted the s3 url for userId ->" + userId);
         return;
       }
       const matchedUserId = result.matchedUserId[0];
-      if(userId && matchedUserId != userId){
-          logger.info("deleting the S3 url for unmacthed  userId->"+matchedUserId);
-            const userDeleteParams = {
-              TableName: userrecordstable, 
-              Key: {
-                  'user_phone_number': phoneNumber
-              },
-              UpdateExpression: 'REMOVE potrait_s3_url',
-              ReturnValues: 'UPDATED_NEW'
-          };
-      
-          const deltResult = docClient.update(userDeleteParams).promise();
-          logger.info("deleted the s3 url for userId ->"+matchedUserId);
-          return;
+      if (userId && matchedUserId != userId) {
+        logger.info("deleting the S3 url for unmacthed userId->" + matchedUserId);
+        const userDeleteParams = {
+          TableName: userrecordstable,
+          Key: {
+            'user_phone_number': phoneNumber
+          },
+          UpdateExpression: 'REMOVE potrait_s3_url',
+          ReturnValues: 'UPDATED_NEW'
+        };
+  
+        const deltResult = docClient.update(userDeleteParams).promise();
+        logger.info("deleted the s3 url for userId ->" + matchedUserId);
+        return;
       }
-      logger.info('Matched userId for the phoneNumber: '+phoneNumber+' and imageUrl: '+imageUrl+'is :', matchedUserId);
+      logger.info('Matched userId for the phoneNumber: ' + phoneNumber + ' and imageUrl: ' + imageUrl + 'is :', matchedUserId);
       const userUpdateParams = {
         TableName: userrecordstable,
         Key: {
@@ -718,38 +720,52 @@ async function searchUsersByImage(portraitS3Url, phoneNumber) {
         },
         ReturnValues: 'UPDATED_NEW'
       };
-
-      const userEventUpdateParams = {
-        TableName: userEventTableName, // Replace with your table name
-        Key: {
-          'event_name':eventName,
-          'user_phone_number': phoneNumber // Replace with your partition key name
-        },
-        UpdateExpression: 'set flashback_status = :flashbackStatus, user_id = :userId',
-        ExpressionAttributeValues: {
-          ':flashbackStatus': "triggered",
-          ':userId':matchedUserId
-        },
-        ReturnValues: 'UPDATED_NEW'
-      };
-    
-    
+  
       try {
         const userResult = await docClient.update(userUpdateParams).promise();
-        const eventResult = await docClient.update(userEventUpdateParams).promise();
-        logger.info('Updated userId and flashback status for :'+ phoneNumber);
+        
+        // Call the new function for updating event mapping
+        await updateEventMappingWithUserId(phoneNumber, eventName, matchedUserId);
+        
+        logger.info('Updated userId and flashback status for :' + phoneNumber);
         return userResult;
       } catch (error) {
-        logger.info("Failure is updating the userId in users table : "+error);
+        logger.info("Failure in updating the userId in users table: " + error);
         throw error;
       }
-
+  
     } catch (error) {
       logger.info("Error in marking the userId and phone number");
       throw error;
     }
-}
+  }
 
+  async function updateEventMappingWithUserId(phoneNumber, eventName, matchedUserId) {
+    const userEventUpdateParams = {
+      TableName: userEventTableName, // Replace with your table name
+      Key: {
+        'event_name': eventName,
+        'user_phone_number': phoneNumber // Replace with your partition key name
+      },
+      UpdateExpression: 'set flashback_status = :flashbackStatus, user_id = :userId',
+      ExpressionAttributeValues: {
+        ':flashbackStatus': "triggered",
+        ':userId': matchedUserId
+      },
+      ReturnValues: 'UPDATED_NEW'
+    };
+  
+    try {
+      const eventResult = await docClient.update(userEventUpdateParams).promise();
+      logger.info('Updated userId and flashback status for :' + phoneNumber);
+      return eventResult;
+    } catch (error) {
+      logger.info("Failure in updating the userId in users table: " + error);
+      throw error;
+    }
+  }
+  
+  
 // Function to get s3_url using matchedUser
 async function getS3Url(matchedUser,eventName) {
   const params = {
@@ -813,7 +829,7 @@ app.post('/send-flashbacks', async (req, res) => {
   taskProgress.set(taskId, { progress: 0, status: 'in_progress' });
 
   // Start the flashback sending process asynchronously
-  sendFlashbacksAsync(taskId, eventName);
+  await sendFlashbacksAsync(taskId, eventName);
 
   res.json({ taskId });
 });
@@ -829,41 +845,118 @@ app.get('/flashback-progress/:taskId', (req, res) => {
   res.json(progress);
 });
 
+async function getUserForEvent(evetName) {
+  try{
+
+    const params = {
+      TableName: indexedDataTableName,
+      IndexName: 'folder_name-user_id-index',
+      ProjectionExpression: 'user_id, image_id, Gender_Value, AgeRange_Low, AgeRange_High',
+      KeyConditionExpression: 'folder_name = :folderName',
+      ExpressionAttributeValues: {
+        ':folderName': evetName
+      }
+    };
+
+    let items = [];
+    let lastEvaluatedKey = null;
+    do {
+      if (lastEvaluatedKey) {
+        params.ExclusiveStartKey = lastEvaluatedKey;
+      }
+
+      const data = await docClient.query(params).promise();
+      items = items.concat(data.Items);
+      lastEvaluatedKey = data.LastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    const userCountMap = new Map();
+
+    items.forEach(item => {
+      const userId = item.user_id;
+    
+      if (!userCountMap.has(userId)) {
+        userCountMap.set(userId, { userId, count: 0, });
+      }
+      const userInfo = userCountMap.get(userId);
+      userInfo.count += 1;
+      userCountMap.set(userId, userInfo);
+    });
+
+    logger.info("Total number of user userIds fetched: " + userCountMap.size);
+    const userIds = Array.from(userCountMap.keys());
+    return userIds
+   
+  }
+  catch(error){
+    return error;
+  }
+  
+}
 async function sendFlashbacksAsync(taskId, eventName) {
   try {
+    const usersForEvent = await getUserForEvent(eventName);
     const userEventMappings = await getUserEventMappings(eventName);
-    logger.info("started sending Whatsapp Messages : "+eventName+" no. of users: "+ userEventMappings.length);
-    const totalUsers = userEventMappings.length;
-    let sentUsers = 0;
+    logger.info(`Started sending Whatsapp Messages for event: ${eventName}`); // Log the start of the process
 
+    let status = 'Flashbacks_Fully_Delivered';
+    let sentUsers = 0; // Initialize sentUsers to track the number of messages sent successfully
+
+    // Create a map of userEventMappings with user_phone_number as key
+    const userEventMappingMap = new Map();
     for (const mapping of userEventMappings) {
-      const { user_phone_number } = mapping;
-      const userData = await getUserData(user_phone_number);
+      if(mapping && mapping.user_phone_number)
+      userEventMappingMap.set(mapping.user_phone_number, mapping);
+    }
+    logger.info(`Created user event mapping map with ${userEventMappingMap.size} entries`); // Log the size of the mapping map
 
-      if (userData && userData.user_id && userData.potrait_s3_url) {
+    for (const userId of usersForEvent) {
+      const userData = await getUserObjectByUserId(userId);
+      if(!userData){
+        logger.info("User id is not a registered user : ",userId);
+        continue;
+      }
+      const user_phone_number = userData.user_phone_number;
+
+      logger.info(`Processing user: ${user_phone_number}`); // Log the user being processed
+
+      // Check if userEventMappings has an entry with user_phone_number
+      const existingMapping = userEventMappingMap.get(user_phone_number);
+      const isUserMapped = !!existingMapping;
+
+      if (!isUserMapped) {
+        logger.info(`User ${user_phone_number} is already mapped to event ${eventName}`); // Log if the user is already mapped
+        await mapUserToEvent(eventName, user_phone_number);
+        await updateEventMappingWithUserId(user_phone_number,eventName,userData.user_id);
+        logger.info(`Mapped user ${user_phone_number} to event ${eventName}`); // Log the mapping action
+      }
+
+      if (userData && userData.user_id && userData.potrait_s3_url && 
+          (!isUserMapped || (isUserMapped && existingMapping.flashback_status !== 'Flashback_Delivered'))) {
         try {
           await sendWhatsAppMessage(user_phone_number, eventName, userData.user_id);
-          await updateUserEventMapping(eventName, user_phone_number, 'Flashback_Delivered');
-          await storeSentData(user_phone_number, eventName, `https://flashback.inc:5000/share/${eventName}/${userData.user_id}`);
-          sentUsers++;
 
-          // Update progress
-          const progress = Math.round((sentUsers / totalUsers) * 100);
-          taskProgress.set(taskId, { progress, status: 'in_progress' });
+          await updateUserEventMapping(eventName, user_phone_number, 'Flashback_Delivered');
+
+          await storeSentData(user_phone_number, eventName, `https://flashback.inc:5000/share/${eventName}/${userData.user_id}`);
+
+          logger.info(`Successfully sent WhatsApp message to ${user_phone_number}`); 
         } catch (error) {
-          logger.info(`Error sending message to ${user_phone_number}:`, error);
+          logger.error(`Error sending message to ${user_phone_number}: ${error.message}`); // Log error in sending message
         }
+      } else {
+        logger.info(`Skipping user ${user_phone_number} as message is already delivered or user is not eligible`); // Log if the user is skipped
       }
     }
 
-    const status = sentUsers === totalUsers ? 'Flashbacks_Fully_Delivered' : 'Flashbacks_Partially_Delivered';
-    await updateEventFlashbackStatus(eventName, status);
+    await updateEventFlashbackStatus(eventName, 'triggered');
+    logger.info(`Updated event flashback status for ${eventName} to 'triggered'`); // Log the event status update
 
     // Mark task as completed
     taskProgress.set(taskId, { progress: 100, status: 'completed' });
-    logger.info("Completed sending Whatsapp messages : "+eventName);
+    logger.info(`Completed sending Whatsapp messages for event: ${eventName}, total users processed: ${sentUsers}`); // Log the completion of the process
   } catch (error) {
-    logger.info('Error sending flashbacks:', error);
+    logger.error(`Error sending flashbacks for event ${eventName}: ${error.message}`); // Log error in the entire process
     taskProgress.set(taskId, { progress: 0, status: 'failed' });
   }
 }
@@ -909,10 +1002,7 @@ async function getUserEventMappings(eventName) {
     KeyConditionExpression: 'event_name = :eventName',
     ExpressionAttributeValues: {
       ':eventName': eventName,
-      ':delivered': 'delivered',
-      ':flashbackDelivered': 'Flashback_Delivered'
-    },
-    FilterExpression: 'flashback_status <> :delivered AND flashback_status <> :flashbackDelivered'
+    }
   };
 
   try {
@@ -2831,7 +2921,7 @@ app.post('/downloadImage', async (req, res) => {
           // Check if the user already exists
           if(!eventName)
             {
-              eventName = 'Nivedhitha_Mallikarjun_Reddy_Engagement'
+              eventName = 'default_user'
 
             }
           const existingUser = await getUser(username);
@@ -5927,7 +6017,7 @@ app.get("/getAllImages/:eventName", async(req,res) =>{
 // });
 
 app.post("/updatePortfolioDetails", async (req, res) => {
-  const { user_phone_number, org_name, social_media } = req.body;
+  const { user_phone_number, org_name, social_media,role } = req.body;
 
   logger.info("Updating portfolio details for the user_phone_number: ", user_phone_number);
 
@@ -5968,6 +6058,9 @@ app.post("/updatePortfolioDetails", async (req, res) => {
   }
   if (org_name) {
     updateFields.org_name = org_name;
+  }
+  if(role){
+    updateFields.role = role;
   }
 
   const updateExpressions = [];

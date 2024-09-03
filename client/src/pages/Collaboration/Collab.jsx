@@ -61,10 +61,17 @@ const Collab = () => {
       }
 
       // Accept or reject the collaboration
+      const apiResponse = await API_UTIL.post('/mapUserToEvent', {
+        event_id: event.folder_name,
+        user_phone_number: userPhoneNumber
+      });
+
+      if (apiResponse.status === 200) {
       await API_UTIL.put(`/acceptCollab/${eventId}`, { userName:user_name, status });
 
       toast.success(`Collaboration ${status.toLowerCase()}ed successfully`);
       navigate('/event');
+      }
     } catch (error) {
       console.error(`Error ${status.toLowerCase()}ing collaboration:`, error);
       toast.error(`Failed to ${status.toLowerCase()} collaboration. Please try again.`);
@@ -78,7 +85,8 @@ const Collab = () => {
       const response = await API_UTIL.post('/updatePortfolioDetails', {
         user_phone_number: userPhoneNumber,
         org_name: org_name,
-        social_media: userDetails.social_media, // Retain the existing social media details
+        social_media: userDetails.social_media,
+        role:'creator' // Retain the existing social media details
       });
 
       // toast.success('User details updated successfully');

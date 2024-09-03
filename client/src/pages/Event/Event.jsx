@@ -39,7 +39,8 @@ const Event = () => {
       instagram: '',
       youtube: ''
     },
-    org_name: ''
+    org_name: '',
+    role:'creator'
   });
   const [newProjectName, setNewProjectName] = useState('');
   const [uploading, setUploading] = useState(false);

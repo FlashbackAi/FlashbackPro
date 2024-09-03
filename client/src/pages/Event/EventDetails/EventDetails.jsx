@@ -314,6 +314,9 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
   const sendWhatsappMsg = async () => {
     try {
+      
+      const userIdMappingResponse = await API_UTIL.post('/generateUserIdsForExistingUsers', { eventName: event.folder_name });
+      if(userIdMappingResponse.status === 200){
       const sendFlashbacksResponse = await API_UTIL.post('/send-flashbacks', { eventName: event.folder_name });
 
       if (sendFlashbacksResponse.status === 200) {
@@ -321,6 +324,10 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
       } else {
         throw new Error('Failed to send flashbacks.');
       }
+    }
+    else{
+      throw new Error('Failed to send flashbacks.');
+    }
     } catch (error) {
       console.error('Error Publishing Images', error);
       toast.error('Failed to Publish Images');

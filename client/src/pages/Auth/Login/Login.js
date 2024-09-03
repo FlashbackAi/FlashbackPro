@@ -8,6 +8,7 @@ import Select, { components } from "react-select";
 import "./login.css";
 import AppBar from "../../../components/AppBar/AppBar";
 import OTPAuth from "../WhatsappAuth/OTPAuth";
+import { from } from "readable-stream";
 
 const CustomOption = ({ children, ...props }) => {
   return (
@@ -69,7 +70,7 @@ function Login({ name, onLoginSuccess, showAppBar = true }) {
   // Check if user is already logged in
   useEffect(() => {
     const userPhoneNumber = localStorage.getItem("userPhoneNumber");
-    if (userPhoneNumber) {
+    if (userPhoneNumber && !location.state?.from?.pathname?.includes('/photos')) {
       navigate(location.state?.from?.pathname || "/event");
     }
   }, [navigate, location.state]);
