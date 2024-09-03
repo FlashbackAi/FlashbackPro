@@ -948,18 +948,22 @@ const Event = () => {
             </>
           ) : (
             <>
-              {attendedEvents.map((event) => (
-                <div
-                  className="events-page-event-card"
-                  key={event.event_id} // Add key to each event card
-                  onClick={() => onAttendEventClick(event.folder_name)}
-                >
-                  <img src={event.event_image} alt="img" />
-                  <div className="event-name">
-                    <span>{event?.event_name}</span>
-                  </div>
-                </div>
-              ))}
+              {attendedEvents.length > 0 ? ( // Check if there are attended events
+                  attendedEvents.map((event) => (
+                    <div
+                      className="events-page-event-card"
+                      key={event.event_id} // Add key to each event card
+                      onClick={() => onAttendEventClick(event.folder_name)}
+                    >
+                      <img src={event.event_image} alt="img" />
+                      <div className="event-name">
+                        <span>{event?.event_name}</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p>No Attended Events</p> // Display message if no attended events
+                )}
             </>
           )}
         </div>
