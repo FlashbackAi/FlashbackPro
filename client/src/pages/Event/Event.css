@@ -980,3 +980,58 @@
     width: 90%;
   }
 }
+
+
+/* Tab Container Styles */
+.tab-switcher {
+  display: flex;
+  justify-content: space-around;
+  background-color: #FFFFFF;
+  padding: 0.5em 0;
+  border-bottom: 0.125em solid #e0e0e0;
+  margin-bottom: 1em;
+}
+
+/* Tab Button Styles */
+.tab-button {
+  font-size: 1em;
+  font-weight: 600;
+  color: #757575;
+  text-transform: uppercase;
+  padding: 0.5em;
+  cursor: pointer;
+  border: none;
+  background: none;
+  outline: none;
+  position: relative;
+  transition: color 0.3s;
+}
+
+/* Active Tab Button Styles */
+.tab-button.active {
+  color:#000000; /* Purple color for the active tab */
+}
+
+/* Active Tab Indicator */
+.tab-button.active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.125em;
+  height: 0.125em;
+  background-color: black; /* Purple color for the indicator */
+}
+
+/* Responsive Tab Styles */
+@media (max-width: 40em) { /* 640px converted to em assuming 1em = 16px */
+  .tab-switcher {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .tab-button {
+    width: 100%;
+    text-align: center;
+  }
+}

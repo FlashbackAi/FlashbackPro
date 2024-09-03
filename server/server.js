@@ -1015,6 +1015,26 @@ async function getUserEventMappings(eventName) {
   }
 }
 
+async function getEventsForUser(userPhoneNumber) {
+  const params = {
+    TableName: userEventTableName,
+    IndexName:'user_event_mapping_GSI',
+    KeyConditionExpression: 'user_phone_number = :userPhoneNumber',
+    ExpressionAttributeValues: {
+      ':userPhoneNumber': userPhoneNumber,
+    }
+  };
+
+  try {
+    const result = await docClient.query(params).promise();
+    return result.Items;
+  } catch (error) {
+    console.error('Error fetching user event mappings:', error);
+    throw error;
+  }
+}
+
+
 
 async function getUsersForEvent(eventName) {
   logger.info("fetching users for event : ", eventName);
@@ -4481,6 +4501,32 @@ app.get("/getClientDetailsByEventname/:eventName", async (req, res) => {
   } catch (err) {
     logger.info(err.message);
     res.status(500).send(err.message);
+  }
+});
+
+app.get("/getUserAttendedEvents/:user_phone_number", async (req, res) => {
+  const userPhoneNumber = req.params.user_phone_number;
+
+  try {
+    // Fetch event IDs for the user
+    const events = await getEventsForUser(userPhoneNumber);
+    // // Extract event IDs from event names
+    // const eventIds = events.map(eventName => {
+    //   const parts = eventName.split('-');
+    //   return parts[parts.length - 2]; // Extract the last second part as event ID
+    // });
+    // Fetch event details for each event ID
+    const eventDetailsPromises = events.map(event => getEventDetailsByFolderName(event.event_name));
+    const eventDetails = await Promise.all(eventDetailsPromises);
+
+    // Filter out any null results
+    const validEventDetails = eventDetails.filter(event => event !== null);
+
+    // Send the valid event details as the response
+    res.json(validEventDetails);
+  } catch (error) {
+    console.error(`Error fetching user attended events: ${error.message}`);
+    res.status(500).send('Error fetching user attended events');
   }
 });
 
