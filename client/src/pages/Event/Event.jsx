@@ -8,6 +8,7 @@ import Footer from '../../components/Footer/Footer';
 import LoadingSpinner from '../../components/Loader/LoadingSpinner'; // Import the LoadingSpinner component
 import './Event.css'; // Import the new CSS file
 import LabelAndInput from '../../components/molecules/LabelAndInput/LabelAndInput';
+import { X } from 'lucide-react';
 
 const Event = () => {
   const [events, setEvents] = useState([]);
@@ -447,12 +448,14 @@ const Event = () => {
         >
           <div className="modal-header">
             <h2 className="modal-title">Create Event</h2>
-            <button
+            <X
               className="close-button"
+              onMouseEnter={(e) => {
+                e.preventDefault();
+              }}
               onClick={() => setIsCreateModalOpen(false)}
             >
-              x
-            </button>
+            </X>
           </div>
           <div className="create-event-container">
             <form
