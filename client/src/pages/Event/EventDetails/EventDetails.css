@@ -202,6 +202,12 @@
     border-radius: 8px;
     max-width: 500px;
     margin: 0 auto;
+
+  }
+
+  .uploadfiles-modal-content {
+    max-height: 90%
+    ;
   }
   
   .modal-overlay {
@@ -211,14 +217,21 @@
   .modal-header,
   .uploadfiles-modal-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
+    position: relative;
+    .close-button {
+      position: absolute;
+      right: 10px;
+      width: fit-content;
+    }
   }
   
   .modal-title,
   .uploadfiles-modal-title {
     font-size: 1.5em;
     color: #333;
+    margin-top: 0;
   }
   
   .close-button {
@@ -232,6 +245,21 @@
   .qr-modal-body,
   .modal-body {
     margin-top: 20px;
+  }
+
+  .qr-modal-body {
+    /* padding: 50px; */
+  }
+
+  .qr-modal-content{
+    position: relative;
+    .modal-header {
+        position: static;
+        .close-button {
+          right: 15px;
+
+        }
+    }
   }
   
   .qr-footer-buttons,
@@ -455,6 +483,11 @@ dropzone {
   color: white;
 }
 
+.event-details-qr-modal {
+    height: 50%;
+    /* padding: 30px; */
+}
+
 @media (max-width: 540px) {
   .qr-modal-content {
     padding: 20px;
@@ -463,7 +496,7 @@ dropzone {
     max-width: 80%;
     margin: 0;
     width: 80%;
-    height: 50%;
+    /* height: 50%; */
   }
   .event-details-qr-modal{
     width: 90%;

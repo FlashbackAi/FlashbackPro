@@ -531,8 +531,8 @@
   max-width: 50%;
 }
 
-.close-button :hover {
-  color: red;
+.close-button:hover {
+  /* color: red; */
 }
 
 .modal-body {
@@ -690,7 +690,7 @@
 
 .qr-modal-content {
   width: 30%;
-  height: 60%;
+  /* height: 60%; */
   background-color: #1e293b;
   display: flex;
   flex-direction: column;
@@ -895,9 +895,21 @@
   span {
     align-self: start;
   }
-  
+  .modal-header {
+    justify-content: center;
+    position: relative;
+    .close-button {
+      width: fit-content;
+      position: absolute;
+      right: 10px;
+    }
+  }
 
 
+}
+
+.delete-modal-content {
+  text-align: center;
 }
 
 .create-event-button, .create-portfolio-button {
@@ -935,6 +947,10 @@
   :disabled {
     background-color: white;
   }
+}
+
+.modal-header {
+  justify-content: center;
 }
 
 @media only screen and (max-width: 540px) {
