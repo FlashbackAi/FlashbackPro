@@ -289,7 +289,6 @@ const Event = () => {
         {/* Modal to update user details */}
         <Modal
           isOpen={isUserDetailsModalOpen}
-          onRequestClose={() => setIsUserDetailsModalOpen(false)}
           contentLabel="User Details"
           className="modal-content event-modal"
           overlayClassName="modal-overlay"

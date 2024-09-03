@@ -461,7 +461,7 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
             overlayClassName="modal-overlay"
           >
             {event && (
-              <div>
+              <div className='event-details-qr-modal'>
                 <div className="modal-header">
                   <h2 className="modal-title">
                     QR Code for {formatEventName(event?.event_name)}
