@@ -136,7 +136,7 @@ const PortfolioForm = () => {
       {isLoading ? (
         <LoadingSpinner />
       ) : (
-        <div className="create-event-container">
+        <div className="create-portfolio-container">
           <h1 className="form-title">Create Portfolio</h1>
           <form
             className="invitation-form"

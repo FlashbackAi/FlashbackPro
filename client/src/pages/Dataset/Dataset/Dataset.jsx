@@ -145,40 +145,47 @@ const Dataset = () => {
   if (error) return <div className="loading-screen">Error: {error}</div>;
 
   return (
-    <>
+    <div className='datasets-page-root'>
     {userDetails.org_name && <OrgHeader orgObj={userDetails}/>}
     
-    <div className="event-container">
-      <h1 className="event-title">My Datasets</h1>
-      <ul className="event-list">
-        <li className="event-item" onClick={handleLinkClick}>
-          <div className="event-card">
-            <img src="https://img.icons8.com/B48E75/stamp/2x/add.png" alt="/img" className="add-event-image" />
-            <div className="event-card-footer">
-              <h2 className="event-name">Click here to Add Datasets</h2>
+    <div className="datasets-page-dataset-container">
+    <h1 className="datasets-page-dataset-title ">My Datasets</h1>
+      
+      <div className = 'datasets-page-dataset-list'>
+        <div
+          className="datasets-page-create-dataset-card"
+          // onClick={() => setIsCreateModalOpen(true)}
+          onClick={ handleLinkClick}
+        >
+          <div className="datasets-page-add-dataset-image-div">
+            <img src="assets/Images/icon-plus.svg" alt="img" />
+          </div>
+          <span>Click here to Add Dataset</span>
+        </div>
+        {datasetList.map((dataset) => (
+          <div
+            className="datasets-page-dataset-card"
+            key={dataset.dataset_name} // Add key to each event card
+            onClick={() => onDataSetClick(dataset.dataset_name)}
+          >
+            <div className="dataset-card-header">
+              <img
+                src="https://img.icons8.com/BB271A/m_rounded/2x/filled-trash.png"
+                className="delete-icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openDeleteModal(dataset);
+                }}
+                alt="Delete"
+              />
+            </div>
+            <img src="/datasetIcon.jpg" alt="img" />
+            <div className="dataset-name">
+              <span>{dataset?.dataset_name}</span>
             </div>
           </div>
-        </li>
-        {datasetList.map((dataset) => (
-          <li key={dataset.dataset_name} className="event-item">
-            <div className="event-card" onClick={() => onDataSetClick(dataset.dataset_name)}>
-              <div className="event-card-header">
-                <img
-                  src="https://img.icons8.com/BB271A/m_rounded/2x/filled-trash.png"
-                  className="delete-icon"
-                  onClick={(e) => { e.stopPropagation(); openDeleteModal(dataset); }}
-                  alt="Delete"
-                />
-              </div>
-              <img src='/datasetIcon.jpg' alt="/img" className="event-image" />
-              <div className="event-card-footer">
-                <h2 className="event-name">{dataset?.dataset_name}</h2>
-              </div>
-            </div>
-          </li>
         ))}
-      </ul>
-
+      </div>
       <Modal
         isOpen={isDetailModalOpen}
         onRequestClose={() => setIsDetailModalOpen(false)}
@@ -313,7 +320,11 @@ const Dataset = () => {
         </div>
       </Modal>
     </div>
-    </>
+
+
+
+    
+    </div>
   );
 }
 

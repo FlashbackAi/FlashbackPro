@@ -3,6 +3,7 @@ import './DatasetForm.css';
 import API_UTIL from '../../../services/AuthIntereptor';
 import { toast } from 'react-toastify';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import LabelAndInput from '../../../components/molecules/LabelAndInput/LabelAndInput';
 
 
 const DatasetForm = () => {
@@ -69,42 +70,42 @@ const DatasetForm = () => {
   };
 
   return (
-    <div className="create-event-container">
+    <div className="create-dataset-container">
       <h1 className="form-title">Create Dataset</h1>
       <form className="invitation-form" id="invitation-form" onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="event-name">Dataset Name:</label>
-          <input
-            type="text"
-            id="event-name"
-            name="dataset_name"
-            placeholder="Dataset Name"
-            value={formData.dataset_name}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="event-name">Dataset Description:</label>
-          <input
-            type="text"
-            id="event-name"
-            name="dataset_desc"
-            placeholder="Dataset Description"
-            value={formData.dataset_desc}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="dataset-category">Dataset Category:</label>
+        <LabelAndInput
+          htmlFor="event-name"
+          label="Dataset Name:"
+          type="text"
+          id="event-name"
+          name="dataset_name"
+          placeholder="Dataset Name"
+          value={formData.dataset_name}
+          handleChange={handleInputChange}
+          isRequired={true}
+          isEditable={true}
+        />
+        <LabelAndInput
+          htmlFor="event-name"
+          label="Dataset Description:"
+          type="text"
+          id="event-name"
+          name="dataset_desc"
+          placeholder="Dataset Description"
+          value={formData.dataset_desc}
+          handleChange={handleInputChange}
+          isRequired={true}
+          isEditable={true}
+        />
+        <div className="form-group dataset-form-select-div">
+          <label htmlFor="dataset-category" className='dataset-form-select-label'>Dataset Category:</label>
           <select
             id="dataset-category"
             name="dataset_category"
             value={formData.dataset_category}
             onChange={handleInputChange}
             required
+            className='dataset-form-select'
           >
             <option value="" disabled>Select a category</option> {/* Default option */}
             <option value="Faces Data">Faces Data</option>
@@ -113,47 +114,44 @@ const DatasetForm = () => {
             <option value="object data">Object Data</option>
           </select>
         </div>
-        <div className="form-group">
-          <label htmlFor="event-date">Dataset Url:</label>
-          <input
-            type="text"
-            id="event-date"
-            name="dataset_url"
-            placeholder="provide your dataset url"
-            value={formData.dataset_url}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="event-location">Dataset Acces Key:</label>
-          <input
-            type="text"
-            id="event-location"
-            name="dataset_acceskey"
-            placeholder="provide your dataset access key "
-            value={formData.dataset_acceskey}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="event-location">Dataset Size:</label>
-          <input
-            type="text"
-            id="event-location"
-            name="dataset_size"
-            placeholder="provide your dataset size"
-            value={formData.dataset_size}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
-
-        <button className="submit-button" type="submit" >
-        {formData.dataset_size ? ` [Pay ${formData.dataset_size/10} coins]` : ''}
-          Create
+        <LabelAndInput
+          htmlFor="dataset-url"
+          label="Dataset URL:"
+          type="text"
+          id="dataset-url"
+          name="dataset_url"
+          placeholder="Provide your dataset URL"
+          value={formData.dataset_url}
+          handleChange={handleInputChange}
+          isRequired={true}
+          isEditable={true}
+        />
+        <LabelAndInput
+          htmlFor="dataset-acceskey"
+          label="Dataset Access Key:"
+          type="text"
+          id="dataset-acceskey"
+          name="dataset_acceskey"
+          placeholder="Provide your dataset access key"
+          value={formData.dataset_acceskey}
+          handleChange={handleInputChange}
+          isRequired={true}
+          isEditable={true}
+        />
+        <LabelAndInput
+          htmlFor="dataset-size"
+          label="Dataset Size:"
+          type="number"
+          id="dataset-size"
+          name="dataset_size"
+          placeholder="Provide your dataset size"
+          value={formData.dataset_size}
+          handleChange={handleInputChange}
+          isRequired={true}
+          isEditable={true}
+        />
+        <button className="submit-button" type="submit">
+          {formData.dataset_size ? `Pay ${formData.dataset_size / 10} coins` : 'Create'}
         </button>
       </form>
     </div>
