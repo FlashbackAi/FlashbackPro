@@ -36,7 +36,6 @@ function RenderRoutes({ isLoading = false }) {
       ) : (
         <Routes>
           {ROUTES.map((route, i) => {
-            console.log(`Rendering route: ${route.path}`);
             const RouteComponent = route.component;
             return (
               <Route

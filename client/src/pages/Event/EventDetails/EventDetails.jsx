@@ -156,37 +156,36 @@ const EventDetails = () => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
   });
-  // Utility function to create a delay
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
   const uploadFiles = async () => {
     if (files.length === 0) {
       setUploadStatus('Please select files to upload');
       return;
     }
-  
+
     setUploading(true);
     setUploadFilesModalStatus('Uploading files...');
     setIsUploadFilesFailed(false);
     setOverallProgress(0); // Start at 0% progress
-  
+
     const MAX_CONCURRENT_UPLOADS = 3; // Reduced to avoid 429 error
     const MAX_RETRIES = 3;
     let index = 0;
     const totalFiles = files.length;
     const progressIncrement = 100 / totalFiles; // Each file contributes equally to the progress
-  
+
     const uploadFile = async (file) => {
       const formData = new FormData();
       formData.append('files', file);
       formData.append('eventName', event.event_name);
       formData.append('eventDate', event.event_date);
       formData.append('folderName', event.folder_name);
-  
+
       let attempts = 0;
       let delayTime = 1000; // Start with 1 second delay
-  
+
       while (attempts < MAX_RETRIES) {
         try {
           const response = await API_UTIL.post(`/uploadFiles/${event.event_name}/${event.event_date}/${event.folder_name}`, formData, {
@@ -195,7 +194,7 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
               // Optionally use this for detailed per-file progress
             },
           });
-  
+
           // Increment the overall progress after a successful file upload
           setOverallProgress((prevProgress) => Math.ceil(prevProgress + progressIncrement));
         
@@ -213,7 +212,7 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
         }
       }
     };
-  
+
     const handleUploads = async () => {
       while (index < files.length) {
         const promises = [];
@@ -224,14 +223,14 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
         await Promise.allSettled(promises);
       }
     };
-  
+
     try {
       await handleUploads();
-  
+
       // After all files are uploaded successfully, update the uploaded files count
       const newUploadedFilesCount = uploadedFilesCount + files.length;
       setUploadedFilesCount(newUploadedFilesCount);
-  
+
       try {
         const response = await API_UTIL.put(`/updateEvent/${event.event_id}`, {
           eventName: editData.eventName,
@@ -240,7 +239,7 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
           eventLocation: editData.eventLocation,
           uploadedFiles: newUploadedFilesCount,
         });
-  
+
         if (response.status === 200) {
           toast.success('Event updated successfully with new file count');
         }
@@ -248,7 +247,7 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
         console.error('Error updating event with new file count:', error);
         toast.error('Failed to update the event with new file count. Please try again.');
       }
-  
+
       setUploadStatus('Upload completed successfully');
       setFiles([]);
     } catch (error) {
@@ -260,8 +259,7 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
       setFileCount(0);
     }
   };
-  
-  
+
   const sendInvite = () => {
     const message = editData
       ? `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(editData?.eventDate)} at ${getFormattedTime(editData?.eventDate)}. Location: ${editData?.eventLocation} , Url: https://flashback.inc/invite/${event?.event_id}`
@@ -412,13 +410,10 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
             </div>
             <div className="ed-form-footer">
               <button className="footer-buttons" onClick={openQrModal}>
-                Generate QR
+                Invite / QR
               </button>
               <button className="footer-buttons" onClick={openUploadFilesModal}>
                 Upload Files
-              </button>
-              <button className="footer-buttons" onClick={sendInvite}>
-                Invite
               </button>
               <button className="footer-buttons" onClick={sendCollab}>
                 Collab
@@ -429,11 +424,11 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
                   navigate(`/proV1/${event?.event_id}`, { state: { event } });
                 }}
               >
-                Attendees
+                Attendees / Send Photos
               </button>
-              <button className="footer-buttons" onClick={sendWhatsappMsg}>
+              {/* <button className="footer-buttons" onClick={sendWhatsappMsg}>
                 Send Photos
-              </button>
+              </button> */}
               <button className="footer-buttons" onClick={() => {
                   navigate(`/eventPhotos/${event?.folder_name}`);
                 }}>
@@ -470,7 +465,7 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
               <div className='event-details-qr-modal'>
                 <div className="modal-header">
                   <h2 className="modal-title">
-                    QR Code for {formatEventName(event?.event_name)}
+                    QR Code
                   </h2>
                   <button className="close-button" onClick={closeQrModal}>
                     x
@@ -485,6 +480,13 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
                   </div>
                   <button className="qr-footer-buttons" onClick={downloadQRCode}>
                     Download QR
+                  </button>
+                </div>
+                <hr className="modal-separator" />
+                <div className="qr-modal-footer">
+                  <p className="invite-text">Send an invitation for your event</p>
+                  <button className="qr-footer-buttons" onClick={sendInvite}>
+                    Invite
                   </button>
                 </div>
               </div>
