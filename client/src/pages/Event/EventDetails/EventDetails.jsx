@@ -442,9 +442,8 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
               <button
                 className="footer-buttons"
                 onClick={() => {
-                  navigate(`/relations/${event?.event_name}`);
+                  navigate(`/relationsV1/${event?.event_id}`);
                 }}
-                disabled={true}
               >
                 Relation Mapping
               </button>

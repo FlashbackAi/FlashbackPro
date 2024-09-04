@@ -5882,6 +5882,188 @@ app.get("/getFamilySuggestions/:user_id/:eventName", async (req, res) => {
 });
 
 
+app.get("/getFamilySuggestionsV1/:user_id/:eventName", async (req, res) => {
+  const { user_id, eventName } = req.params;
+  
+  logger.info(`Received request to get family suggestions for user_id: ${user_id} with eventName: ${eventName}`);
+
+  try {
+    let imageIds = new Set();
+
+    // Step 1: Query indexedDataTableName to get imageIds associated with the user_id and eventName
+    let lastEvaluatedKey = null;
+    do {
+      const params = {
+        TableName: indexedDataTableName,
+        IndexName: 'user_id-folder_name-index',
+        KeyConditionExpression: "user_id = :userId and folder_name = :eventName",
+        ExpressionAttributeValues: {
+          ":userId": user_id,
+          ":eventName": eventName
+        },
+        ProjectionExpression: "image_id",
+        ExclusiveStartKey: lastEvaluatedKey
+      };
+
+      logger.info(`Querying indexedDataTableName for user_id: ${user_id} and eventName: ${eventName}`);
+
+      const data = await docClient.query(params).promise();
+      data.Items.forEach(item => {
+        imageIds.add(item.image_id);
+      });
+
+      lastEvaluatedKey = data.LastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    if (imageIds.size === 0) {
+      logger.info('No images found for the given user_id and eventName');
+      return res.send([]);
+    }
+
+    logger.info(`Total unique imageIds found: ${imageIds.size}`);
+
+    // Step 2: Fetch user_ids for each image_id from RecogImages table
+    const imageDetailsPromises = Array.from(imageIds).map(imageId => {
+      const params = {
+        TableName: recokgImages,
+        Key: { image_id: imageId },
+        ProjectionExpression: 'user_ids'
+      };
+      return docClient.get(params).promise();
+    });
+
+    logger.info('Fetching image details from RecogImages table');
+
+    const imageDetailsResults = await Promise.all(imageDetailsPromises);
+    const userIdMap = {};
+
+    imageDetailsResults.forEach(result => {
+      if (result.Item && result.Item.user_ids) {
+        result.Item.user_ids.forEach(id => {
+          if (!userIdMap[id]) {
+            userIdMap[id] = 0;
+          }
+          userIdMap[id]++;
+        });
+      }
+    });
+
+    // Step 3: Fetch userThumbnails from EventTable using scan
+    const scanParams = {
+      TableName: eventsDetailsTable,
+      FilterExpression: 'folder_name = :eventName',
+      ExpressionAttributeValues: {
+        ':eventName': eventName
+      },
+      ProjectionExpression: 'userThumbnails'
+    };
+
+    const scanResult = await docClient.scan(scanParams).promise();
+    if (scanResult.Items.length === 0 || !scanResult.Items[0].userThumbnails) {
+      logger.info('No userThumbnails found in EventTable for the given event');
+      return res.send(userIdMap);
+    }
+
+    const userThumbnails = scanResult.Items[0].userThumbnails;
+
+    // Step 4: Enrich userIdMap with avgAge and gender
+    const enrichedUserIdMap = Object.entries(userIdMap).map(([userId, count]) => {
+      const userThumbnail = userThumbnails.find(thumbnail => thumbnail.user_id === userId);
+      return {
+        user_id: userId,
+        count: count,
+        avgAge: userThumbnail ? userThumbnail.avgAge : null,
+        gender: userThumbnail ? userThumbnail.gender : null,
+        face_url: `https://rekognitionuserfaces.s3.amazonaws.com/thumbnails/${userId}.jpg`
+      };
+    });
+
+    // Step 5: Generate Family Suggestions
+    const user = enrichedUserIdMap.find(user => user.user_id === user_id);
+    if (!user) {
+      logger.info('No information found for the provided user_id');
+      return res.status(404).send('User not found');
+    }
+
+    const userAge = user.avgAge;
+    const userGender = user.gender;
+    const userCount = user.count;
+
+    logger.info(`userAge: ${userAge}, userGender: ${userGender}`);
+    const userObject = {
+      user_id: user_id,
+      avgAge: userAge,
+      gender: userGender
+    };
+    const familySuggestions = {
+      father: [],
+      mother: [],
+      siblings: [],
+      spouse: [],
+      kids: [],
+      user: userObject
+    };
+
+    for (const person of enrichedUserIdMap) {
+      if (person.user_id === user_id || person.avgAge === null) continue;
+      
+      const clonedPerson = {...person};
+      
+      // Calculate scores for father suggestions
+      if (clonedPerson.gender === 'Male' && clonedPerson.avgAge >= userAge) {
+        clonedPerson.score = await calculateScore(clonedPerson,userCount, userAge, 15);
+        familySuggestions.father.push(clonedPerson);
+      }
+
+      // Clone the person object again for mother section
+      const clonedPersonMother = {...person};
+      
+      // Calculate scores for mother suggestions
+      if (clonedPersonMother.gender === 'Female' && clonedPersonMother.avgAge >= userAge) {
+        clonedPersonMother.score = await calculateScore(clonedPersonMother,userCount, userAge, 15);
+        familySuggestions.mother.push(clonedPersonMother);
+      }
+
+      // Clone the person object again for siblings section
+      const clonedPersonSibling = {...person};
+      
+      // Calculate scores for siblings suggestions
+      if (Math.abs(clonedPersonSibling.avgAge - userAge) <= 20) {
+        clonedPersonSibling.score = await calculateScore(clonedPersonSibling, userCount, userAge, 3);
+        familySuggestions.siblings.push(clonedPersonSibling);
+        
+        const clonedPersonSpouse = {...clonedPersonSibling};
+        if (clonedPersonSpouse.gender !== userGender) {
+          clonedPersonSpouse.score = await calculateScore(clonedPersonSpouse, userCount, userAge, 5);
+          familySuggestions.spouse.push(clonedPersonSpouse);
+        }
+      }
+
+      // Clone the person object again for kids section
+      const clonedPersonKid = {...person};
+      
+      // Calculate scores for kids suggestions
+      if (clonedPersonKid.avgAge <= userAge - 10) {
+        clonedPersonKid.score = await calculateScore(clonedPersonKid, userCount, userAge, 20);
+        familySuggestions.kids.push(clonedPersonKid);
+      }
+    }
+
+    // Sorting the lists based on the score
+    familySuggestions.father = familySuggestions.father.sort((a, b) => b.score - a.score).slice(0, 15).map(({ face_url, avgAge }) => ({ face_url, avgAge }));
+    familySuggestions.mother = familySuggestions.mother.sort((a, b) => b.score - a.score).slice(0, 15).map(({ face_url, avgAge }) => ({ face_url, avgAge }));
+    familySuggestions.siblings = familySuggestions.siblings.sort((a, b) => b.score - a.score).slice(0, 15).map(({ face_url, avgAge, gender }) => ({ face_url, avgAge, gender }));
+    familySuggestions.spouse = familySuggestions.spouse.sort((a, b) => b.score - a.score).slice(0, 15).map(({ face_url, avgAge }) => ({ face_url, avgAge }));
+    familySuggestions.kids = familySuggestions.kids.sort((a, b) => b.score - a.score).slice(0, 15).map(({ face_url, avgAge }) => ({ face_url, avgAge }));
+
+    res.send(familySuggestions);
+  } catch (error) {
+    logger.error(`Error fetching images: ${error.message}`);
+    res.status(500).send("Error fetching images");
+  }
+});
+
+
 
 app.put("/setFolderName/:eventName", async(req,res) =>{
   const eventName = req.params.eventName;

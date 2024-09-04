@@ -37,6 +37,7 @@ import Collab from "../pages/Collaboration/Collab";
 import ImagesPageNew from "../pages/ImagesPage/ImagesPage-new";
 import Invite from "../pages/Invitation/Invite";
 import EventImages from "../pages/ImagesPage/EventImages";
+import FaceSelectionV1 from "../pages/Pro/FaceSelection/FaceSelectionV1";
 
 
 const ROUTES=[
@@ -178,6 +179,12 @@ const ROUTES=[
         exact:false,
         protected:false,
         component:FaceSelection
+    },
+    {
+        path:"/relationsV1/:eventId",
+        exact:false,
+        protected:false,
+        component:FaceSelectionV1
     },
     {
         path:"/photoSelectionNew/:eventName/:form_owner",
