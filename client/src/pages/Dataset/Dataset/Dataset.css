@@ -73,7 +73,28 @@
   border-radius: 10px;
   
 }
+.dataset-modal {
+  background-color: white;
+  opacity: 100%;
+  label {
+  color: black;
+  align-self: start;
+  }
+  span {
+    align-self: start;
+  }
+  .modal-header {
+    justify-content: center;
+    position: relative;
+    .close-button {
+      width: fit-content;
+      position: absolute;
+      right: 10px;
+    }
+  }
 
+
+}
 
 /* Tablet and mobile responsiveness */
 @media (min-width: 640px) {

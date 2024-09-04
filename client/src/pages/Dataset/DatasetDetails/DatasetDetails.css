@@ -1,8 +1,7 @@
-/* .event-details-container {
+.event-details-container {
     padding: 20px;
     width: 80%;
     margin: auto;
-    background-color: #1c1c1c;
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   }
@@ -11,12 +10,11 @@
     text-align: center;
     font-size: 2em;
     margin-bottom: 20px;
-    color: #f1f1f1;
+    color: black
   }
   
   .event-details-content {
     position: relative;
-    background-color: #1c1c1c;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -55,7 +53,7 @@
     padding: 0.2em;
     font-size: 1.4em;
     margin: 0.5em !important;
-    color: white;
+    color: black
   }
 
   .ed-form-footer {
@@ -215,7 +213,6 @@
     height: 1.5rem;
     transition: transed-form 0.2s;
     cursor: pointer;
-    color: white !important;
     border-radius: 0.25rem;
   }
   
@@ -232,4 +229,4 @@
     margin:auto;
     max-width: 80em;
     margin-bottom: 15px;
-  } */
+  }

@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import Modal from 'react-modal';
 import API_UTIL from '../../../services/AuthIntereptor';
 import './DatasetDetails.css';
+import LabelAndInput from '../../../components/molecules/LabelAndInput/LabelAndInput';
 
 const DataSetDetails = () => {
   const { orgName, datasetName } = useParams();
@@ -100,9 +101,30 @@ const DataSetDetails = () => {
             {activeTab === 'details' && (
               <div className="event-details-content">
                 <div className="ed-form-group">
-                  <p className="ed-form-value">Dataset Category: {datasetDetails.dataset_category}</p>
-                  <p className="ed-form-value">Dataset Url: {datasetDetails.dataset_url}</p>
-                  <p className="ed-form-value">Dataset size: {datasetDetails.dataset_size}</p>
+                    <LabelAndInput
+                      name={"datasetCategory"}
+                      label={"Dataset Category:"}
+                      value={datasetDetails.dataset_category}
+                      type={"text"}
+                      handleChange={() => {}} // Since it's not editable, no need for a handleChange function
+                      isEditable={false}
+                    />
+                    <LabelAndInput
+                      name={"datasetUrl"}
+                      label={"Dataset URL:"}
+                      value={datasetDetails.dataset_url}
+                      type={"text"}
+                      handleChange={() => {}} // Since it's not editable, no need for a handleChange function
+                      isEditable={false}
+                    />
+                    <LabelAndInput
+                      name={"datasetSize"}
+                      label={"Dataset Size:"}
+                      value={datasetDetails.dataset_size}
+                      type={"text"}
+                      handleChange={() => {}} // Since it's not editable, no need for a handleChange function
+                      isEditable={false}
+                    />
                 </div>
               </div>
             )}
@@ -136,7 +158,7 @@ const DataSetDetails = () => {
             )}
           </div>
 
-          <div className="tab-container">
+          {/* <div className="tab-container">
             <span 
               className={`tab-link ${activeTab === 'details' ? 'active' : ''}`} 
               onClick={() => handleTabChange('details')}
@@ -149,8 +171,21 @@ const DataSetDetails = () => {
             >
               Requests
             </span>
-          </div>
-
+          </div> */}
+          <div className="tab-switcher">
+          <button 
+              className={`tab-button ${activeTab === 'details' ? 'active' : ''}`} 
+              onClick={() => handleTabChange('details')}
+            >
+              Dataset Details
+            </button>
+            <button 
+              className={`tab-button ${activeTab === 'requests' ? 'active' : ''}`} 
+              onClick={() => handleTabChange('requests')}
+            >
+              Requests
+            </button>
+        </div>
           <Modal
             isOpen={isRequestsModalOpen}
             onRequestClose={closeRequestsModal}

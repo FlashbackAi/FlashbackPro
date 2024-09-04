@@ -4,6 +4,9 @@ import Modal from 'react-modal';
 import { toast } from 'react-toastify';
 import './Dataset.css'; // Import the new CSS file
 import { useNavigate } from 'react-router-dom';
+
+// import LabelAndInput from '../../components/molecules/LabelAndInput/LabelAndInput';
+import LabelAndInput from '../../../components/molecules/LabelAndInput/LabelAndInput';
 import OrgHeader from '../../../components/OrgHeader/OrgHeader';
 
 const Dataset = () => {
@@ -190,7 +193,7 @@ const Dataset = () => {
         isOpen={isDetailModalOpen}
         onRequestClose={() => setIsDetailModalOpen(false)}
         contentLabel="Dataset Details"
-        className="modal-content"
+        className="modal-content dataset-modal"
         overlayClassName="modal-overlay"
       >
         <div className="modal-header">
@@ -198,109 +201,117 @@ const Dataset = () => {
           <button className="close-button" onClick={() => setIsDetailModalOpen(false)}>x</button>
         </div>
         <form onSubmit={handleDetailFormSubmit} className="modal-body">
-          <div className="form-group">
-            <label className="form-label">Organisation Name:</label>
-            <input
-              type="text"
-              name="org_name"
-              value={formData.org_name}
-              onChange={handleInputChange}
-              placeholder='Please enter your Organisation name'
-              className="form-input"
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Organisation Description:</label>
-            <input
-              type="text"
-              name="org_desc"
-              value={formData.org_desc}
-              onChange={handleInputChange}
-
-              className="form-input"
-              requiredplaceholder='Please enter your Organisation Description'
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Establieshed Nation:</label>
-            <input
-              type="text"
-              name="established_nation"
-              value={formData.established_nation}
-              onChange={handleInputChange}
-              className="form-input"
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Website Url:</label>
-            <input
-              type="text"
-              name="website_url"
-              value={formData.website_url}
-              onChange={handleInputChange}
-              className="form-input"
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Organisation Email:</label>
-            <input
-              type="text"
-              name="org_email"
-              value={formData.org_email}
-              onChange={handleInputChange}
-              className="form-input"
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Founder Name:</label>
-            <input
-              type="text"
-              name="founder_name"
-              value={formData.founder_name}
-              onChange={handleInputChange}
-              className="form-input"
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Founder Linkedin Url:</label>
-            <input
-              type="text"
-              name="founder_linkedinUrl"
-              value={formData.founder_linkedinUrl}
-              onChange={handleInputChange}
-              className="form-input"
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Founder Email:</label>
-            <input
-              type="text"
-              name="founder_email"
-              value={formData.founder_email}
-              onChange={handleInputChange}
-              className="form-input"
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Founder Contact No:</label>
-            <input
-              type="text"
-              name="founder_contactNo"
-              value={formData.founder_contactNo}
-              onChange={handleInputChange}
-              className="form-input"
-              required
-            />
-          </div>
+          <LabelAndInput
+            htmlFor="org_name"
+            label="Organisation Name:"
+            type="text"
+            id="org_name"
+            name="org_name"
+            placeholder="Please enter your Organisation name"
+            value={formData.org_name}
+            handleChange={handleInputChange}
+            isRequired={true}
+            isEditable={true}
+          />
+          <LabelAndInput
+            htmlFor="org_desc"
+            label="Organisation Description:"
+            type="text"
+            id="org_desc"
+            name="org_desc"
+            placeholder="Please enter your Organisation Description"
+            value={formData.org_desc}
+            handleChange={handleInputChange}
+            isRequired={true}
+            isEditable={true}
+          />
+          <LabelAndInput
+            htmlFor="established_nation"
+            label="Established Nation:"
+            type="text"
+            id="established_nation"
+            name="established_nation"
+            placeholder="Enter the nation where the organisation was established"
+            value={formData.established_nation}
+            handleChange={handleInputChange}
+            isRequired={true}
+            isEditable={true}
+          />
+          <LabelAndInput
+            htmlFor="website_url"
+            label="Website URL:"
+            type="text"
+            id="website_url"
+            name="website_url"
+            placeholder="Provide your website URL"
+            value={formData.website_url}
+            handleChange={handleInputChange}
+            isRequired={true}
+            isEditable={true}
+          />
+          <LabelAndInput
+            htmlFor="org_email"
+            label="Organisation Email:"
+            type="email"  // Changed type to 'email' for better semantic HTML
+            id="org_email"
+            name="org_email"
+            placeholder="Enter the organisation's email address"
+            value={formData.org_email}
+            handleChange={handleInputChange}
+            isRequired={true}
+            isEditable={true}
+          />
+          <LabelAndInput
+            htmlFor="founder_name"
+            label="Founder Name:"
+            type="text"
+            id="founder_name"
+            name="founder_name"
+            placeholder="Enter the founder's name"
+            value={formData.founder_name}
+            handleChange={handleInputChange}
+            isRequired={true}
+            isEditable={true}
+          />
+          <LabelAndInput
+            htmlFor="founder_linkedinUrl"
+            label="Founder LinkedIn URL:"
+            type="text"
+            id="founder_linkedinUrl"
+            name="founder_linkedinUrl"
+            placeholder="Provide the LinkedIn URL of the founder"
+            value={formData.founder_linkedinUrl}
+            handleChange={handleInputChange}
+            isRequired={true}
+            isEditable={true}
+          />
+          <LabelAndInput
+            htmlFor="founder_email"
+            label="Founder Email:"
+            type="email"  // Changed type to 'email' for better semantic HTML
+            id="founder_email"
+            name="founder_email"
+            placeholder="Enter the founder's email address"
+            value={formData.founder_email}
+            handleChange={handleInputChange}
+            isRequired={true}
+            isEditable={true}
+          />
+          <LabelAndInput
+            htmlFor="founder_contactNo"
+            label="Founder Contact No:"
+            type="text"
+            id="founder_contactNo"
+            name="founder_contactNo"
+            placeholder="Enter the founder's contact number"
+            value={formData.founder_contactNo}
+            handleChange={handleInputChange}
+            isRequired={true}
+            isEditable={true}
+          />
           <button type="submit" className="save-button">Submit</button>
         </form>
+
       </Modal>
 
       <Modal
