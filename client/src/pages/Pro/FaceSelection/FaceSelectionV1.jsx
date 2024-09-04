@@ -918,7 +918,7 @@ const FaceSelectionV1 = () => {
         setIsFacesSelectionDone(true);
 
         console.log("Navigating to photo selection");
-        navigate(`/photoSelection/${eventId}/${formData['form_owner']}`);
+        navigate(`/photoSelectionV1/${eventObj.folder_name}/${formData['form_owner']}`);
       } else {
         throw new Error("Failed to save the selection");
       }

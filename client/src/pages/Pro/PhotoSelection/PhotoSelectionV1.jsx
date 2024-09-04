@@ -11,7 +11,7 @@ import { LazyLoadImage } from 'react-lazy-load-image-component';
 import { Heart } from 'lucide-react';
 import Modal from "../../../components/ImageModal/ImageModalNew";
 
-const PhotoSelection = () => {
+const PhotoSelectionV1 = () => {
   const isDataFetched = useRef(false);
   const [isLoading, setIsLoading] = useState(true);
   const { eventName, form_owner } = useParams();
@@ -214,7 +214,9 @@ const PhotoSelection = () => {
 
   const fetchFormData = async () => {
     try {
-      const response = await API_UTIL.get(`/getSelectionFormData/${eventName}/${form_owner}`);
+      const temp = eventName.split('_');
+      const eventId = temp[temp.length-1];
+      const response = await API_UTIL.get(`/getSelectionFormData/${eventId}/${form_owner}`);
       if (response.data) {
         setFormData(response.data);
         initializeImagesData(response.data);
@@ -1091,4 +1093,4 @@ const handleSelectTab = async (key) => {
   );
 };
 
-export default PhotoSelection;
+export default PhotoSelectionV1;

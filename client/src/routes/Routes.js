@@ -14,7 +14,7 @@ import TermsAndConditions from "../pages/TermsAndConditions/TermsAndConditions";
 import Collage from "../pages/Edit/Collage/Collage";
 import SharedImage from "../pages/ImagesPage/SharedImage";
 import PhotoSelection from "../pages/Pro/PhotoSelection/PhotoSelection";
-import PhotoSelectionNew from "../pages/Pro/PhotoSelection/PhotoSelectionNew";
+import PhotoSelectionNew from "../pages/Pro/PhotoSelection/PhotoSelectionV1";
 import FaceSelection from "../pages/Pro/FaceSelection/FaceSelection";
 import Event from "../pages/Event/Event";
 // import { LoginEvent } from "../pages/LoginEvent/LoginEvent";
@@ -38,6 +38,7 @@ import ImagesPageNew from "../pages/ImagesPage/ImagesPage-new";
 import Invite from "../pages/Invitation/Invite";
 import EventImages from "../pages/ImagesPage/EventImages";
 import FaceSelectionV1 from "../pages/Pro/FaceSelection/FaceSelectionV1";
+import PhotoSelectionV1 from "../pages/Pro/PhotoSelection/PhotoSelectionV1";
 
 
 const ROUTES=[
@@ -197,6 +198,12 @@ const ROUTES=[
         exact:false,
         protected:false,
         component:PhotoSelection
+    },
+    {
+        path:"/photoSelectionV1/:eventName/:form_owner",
+        exact:false,
+        protected:false,
+        component:PhotoSelectionV1
     },
     {
         path:"/edit/collage",
