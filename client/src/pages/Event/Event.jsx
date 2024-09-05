@@ -265,10 +265,10 @@ const Event = () => {
        
         {/* Tab Switcher */}
         <div className="tab-switcher">
-          <button onClick={() => setSelectedTab('myFlashbacks')} className={`tab-button ${selectedTab === 'myFlashbacks' ? 'active' : ''}`}>
+          <button onClick={() => setSelectedTab('myFlashbacks')} className={`tab-switch-button ${selectedTab === 'myFlashbacks' ? 'active' : ''}`}>
             My Flashbacks
           </button>
-          <button onClick={() => setSelectedTab('attendedFlashbacks')} className={`tab-button ${selectedTab === 'attendedFlashbacks' ? 'active' : ''}`}>
+          <button onClick={() => setSelectedTab('attendedFlashbacks')} className={`tab-switch-button ${selectedTab === 'attendedFlashbacks' ? 'active' : ''}`}>
             Attended Flashbacks
           </button>
         </div>

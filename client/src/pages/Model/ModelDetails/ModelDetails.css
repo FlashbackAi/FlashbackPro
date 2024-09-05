@@ -1,71 +1,85 @@
-/* .event-details-container {
-  padding: 20px;
-  width: 80%;
-  margin: auto;
-  background-color: #1c1c1c;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+
+.dataset-details-modal {
+  background-color: white;
+  opacity: 100%;
+  label {
+  color: black;
+  align-self: start;
+  }
+  span {
+    align-self: start;
+  }
+  .modal-header {
+    justify-content: center;
+    position: relative;
+    .close-button {
+      width: fit-content;
+      position: absolute;
+      right: 10px;
+    }
+  }
+
+
 }
 
-.event-details-title {
+.model-details-container {
+  padding: 1.25em;
+  /* width: 50em; 80% of 62.5em (1000px) */
+  margin: auto;
+  border-radius: 0.5em;
+  box-shadow: 0 0.25em 0.5em rgba(0, 0, 0, 0.1);
+}
+
+.model-details-title {
   text-align: center;
   font-size: 2em;
-  margin-bottom: 20px;
-  color: #f1f1f1;
+  margin-bottom: 1.25em;
+  color: black;
 }
 
-.model-tab-content {
-  flex-grow: 1;
+.model-details-content {
+  position: relative;
+  padding: 1.25em;
+  border-radius: 0.5em;
+  box-shadow: 0 0.25em 0.5em rgba(0, 0, 0, 0.1);
 }
 
-.model-details-content,
-.datasets-content {
-  padding: 20px;
-  background-color: #2a2a2a;
-  border-radius: 8px;
-  margin-bottom: 20px;
-}
-
-.tab-container {
-  display: flex;
-  justify-content: center;
-  margin-top: auto;
-  background-color: #333;
-  padding: 10px;
-  border-radius: 0 0 8px 8px;
-  
-}
-
-.tab-link {
-  padding: 10px 20px;
-  cursor: pointer;
-  color: #f1f1f1;
-  margin: 0 10px;
-  border-radius: 4px;
-  transition: background-color 0.3s;
-}
-
-.tab-link:hover {
-  background-color: #444;
-}
-
-.tab-link.active {
-  background-color: #555;
-  font-weight: bold;
-}
-
-.ed-form-group {
+.md-form-group {
   margin: auto;
   max-width: 60em;
-  margin-bottom: 15px;
+  margin-bottom: 0.9375em;
 }
 
-.ed-form-value {
-  margin-bottom: 10px;
-  padding: 0.2em;
-  font-size: 1.4em;
-  margin: 0.5em !important;
-  color: white;
+
+
+
+
+.model-link {
+  display: block;
+  margin-top: 1.25em;
+  text-align: center;
+  color: #007bff;
+  text-decoration: none;
 }
 
-Further styling for content, buttons, etc... */
+.model-link:hover {
+  text-decoration: underline;
+}
+
+.m-req-modal-content {
+  padding: 1.25em;
+  background-color: #fff;
+  border-radius: 0.5em;
+  max-width: 31.25em; /* 500px */
+  margin: 0 auto;
+}
+
+.m-req-modal-body {
+  margin-top: 1.25em;
+}
+.m-datasets-bottom-section{
+  display: flex;
+  justify-content: space-around;
+}
+
+

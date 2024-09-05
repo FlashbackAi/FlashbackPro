@@ -993,7 +993,7 @@
 }
 
 /* Tab Button Styles */
-.tab-button {
+.tab-switch-button {
   font-size: 1em;
   font-weight: 600;
   color: #757575;
@@ -1008,19 +1008,18 @@
 }
 
 /* Active Tab Button Styles */
-.tab-button.active {
-  color:#000000; /* Purple color for the active tab */
-}
+.tab-switch-button.active {
+  color:#000000;}
 
 /* Active Tab Indicator */
-.tab-button.active::after {
+.tab-switch-button.active::after {
   content: '';
   position: absolute;
   left: 0;
   right: 0;
   bottom: -0.125em;
   height: 0.125em;
-  background-color: black; /* Purple color for the indicator */
+  background-color: black; 
 }
 
 /* Responsive Tab Styles */

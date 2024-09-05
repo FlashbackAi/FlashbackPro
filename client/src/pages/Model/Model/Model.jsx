@@ -4,6 +4,7 @@ import Modal from 'react-modal';
 import { toast } from 'react-toastify';
 import './Model.css'; // Import the new CSS file
 import { useNavigate } from 'react-router-dom';
+import LabelAndInput from '../../../components/molecules/LabelAndInput/LabelAndInput';
 import OrgHeader from '../../../components/OrgHeader/OrgHeader';
 
 const Model = () => {
@@ -44,7 +45,7 @@ const Model = () => {
     const fetchUserDetails = async () => {
       try {
         setLoading(true);
-        const userPhoneNumber =localStorage.userPhoneNumber;
+        const userPhoneNumber = localStorage.userPhoneNumber;
         const response = await API_UTIL.get(`/fetchUserDetails/${userPhoneNumber}`);
         setUserDetails(response.data.data);
         if (sessionStorage.getItem('userphoneNumber') !== response.data.data.user_name) {
@@ -57,12 +58,11 @@ const Model = () => {
     };
 
     fetchUserDetails();
-
   }, []);
 
   const handleLinkClick = () => {
     const clientName = userDetails.user_name;
-    const sessionNumber =localStorage.userPhoneNumber;
+    const sessionNumber = localStorage.userPhoneNumber;
     if (clientName === sessionNumber) {
       openIsDetailsModalOpen();
     } else {
@@ -75,7 +75,6 @@ const Model = () => {
   };
 
   const handleInputChange = (e) => {
-   
     const { name, value } = e.target;
     setFormData((prevState) => ({
       ...prevState,
@@ -86,7 +85,7 @@ const Model = () => {
   const handleDetailFormSubmit = async (e) => {
     e.preventDefault();
 
-    const userPhoneNumber =localStorage.userPhoneNumber;
+    const userPhoneNumber = localStorage.userPhoneNumber;
 
     if (!userPhoneNumber) {
       toast.error("User phone number is missing from session.");
@@ -144,174 +143,189 @@ const Model = () => {
   if (error) return <div className="loading-screen">Error: {error}</div>;
 
   return (
-    <>
-    {userDetails.org_name && <OrgHeader orgObj={userDetails}/>}
-    <div className="event-container">
-      <h1 className="event-title">My Models</h1>
-      <ul className="event-list">
-        <li className="event-item" onClick={handleLinkClick}>
-          <div className="event-card">
-            <img src="https://img.icons8.com/B48E75/stamp/2x/add.png" alt="/img" className="add-event-image" />
-            <div className="event-card-footer">
-              <h2 className="event-name">Click here to Add Models</h2>
+    <div className="models-page-root">
+      {userDetails.org_name && <OrgHeader orgObj={userDetails} />}
+      
+      <div className="models-page-model-container">
+        <h1 className="models-page-model-title">My Models</h1>
+        
+        <div className="models-page-model-list">
+          <div
+            className="models-page-create-model-card"
+            onClick={handleLinkClick}
+          >
+            <div className="models-page-add-model-image-div">
+              <img src="assets/Images/icon-plus.svg" alt="img" />
             </div>
+            <span>Click here to Add Model</span>
           </div>
-        </li>
-        {modelsList.map((model) => (
-          <li key={model.model_name} className="event-item">
-            <div className="event-card" onClick={() => onModelClick(model.model_name)}>
-              <div className="event-card-header">
+          {modelsList.map((model) => (
+            <div
+              className="models-page-model-card"
+              key={model.model_name}
+              onClick={() => onModelClick(model.model_name)}
+            >
+              <div className="model-card-header">
                 <img
                   src="https://img.icons8.com/BB271A/m_rounded/2x/filled-trash.png"
                   className="delete-icon"
-                  onClick={(e) => { e.stopPropagation(); openDeleteModal(model); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openDeleteModal(model);
+                  }}
                   alt="Delete"
                 />
               </div>
-              <img src='/datasetIcon.jpg' alt="/img" className="event-image" />
-              <div className="event-card-footer">
-                <h2 className="event-name">{model?.model_name}</h2>
+              <img src="/datasetIcon.jpg" alt="img" />
+              <div className="model-name">
+                <span>{model?.model_name}</span>
               </div>
             </div>
-          </li>
-        ))}
-      </ul>
-
-      <Modal
-        isOpen={isDetailModalOpen}
-        onRequestClose={() => setIsDetailModalOpen(false)}
-        contentLabel="Dataset Details"
-        className="modal-content"
-        overlayClassName="modal-overlay"
-      >
-        <div className="modal-header">
-          <h2 className="modal-title">Model Details</h2>
-          <button className="close-button" onClick={() => setIsDetailModalOpen(false)}>x</button>
+          ))}
         </div>
-        <form onSubmit={handleDetailFormSubmit} className="modal-body">
-          <div className="form-group">
-            <label className="form-label">Organisation Name:</label>
-            <input
+        
+        <Modal
+          isOpen={isDetailModalOpen}
+          onRequestClose={() => setIsDetailModalOpen(false)}
+          contentLabel="Model Details"
+          className="modal-content model-modal"
+          overlayClassName="modal-overlay"
+        >
+          <div className="modal-header">
+            <h2 className="modal-title">Model Details</h2>
+            <button className="close-button" onClick={() => setIsDetailModalOpen(false)}>x</button>
+          </div>
+          <form onSubmit={handleDetailFormSubmit} className="modal-body">
+            <LabelAndInput
+              htmlFor="org_name"
+              label="Organisation Name:"
               type="text"
+              id="org_name"
               name="org_name"
+              placeholder="Please enter your Organisation name"
               value={formData.org_name}
-              onChange={handleInputChange}
-              placeholder='Please enter your Organisation name'
-              className="form-input"
-              required
+              handleChange={handleInputChange}
+              isRequired={true}
+              isEditable={true}
             />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Organisation Description:</label>
-            <input
+            <LabelAndInput
+              htmlFor="org_desc"
+              label="Organisation Description:"
               type="text"
+              id="org_desc"
               name="org_desc"
+              placeholder="Please enter your Organisation Description"
               value={formData.org_desc}
-              onChange={handleInputChange}
-
-              className="form-input"
-              requiredplaceholder='Please enter your Organisation Description'
+              handleChange={handleInputChange}
+              isRequired={true}
+              isEditable={true}
             />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Establieshed Nation:</label>
-            <input
+            <LabelAndInput
+              htmlFor="established_nation"
+              label="Established Nation:"
               type="text"
+              id="established_nation"
               name="established_nation"
+              placeholder="Enter the nation where the organisation was established"
               value={formData.established_nation}
-              onChange={handleInputChange}
-              className="form-input"
-              required
+              handleChange={handleInputChange}
+              isRequired={true}
+              isEditable={true}
             />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Website Url:</label>
-            <input
+            <LabelAndInput
+              htmlFor="website_url"
+              label="Website URL:"
               type="text"
+              id="website_url"
               name="website_url"
+              placeholder="Provide your website URL"
               value={formData.website_url}
-              onChange={handleInputChange}
-              className="form-input"
-              required
+              handleChange={handleInputChange}
+              isRequired={true}
+              isEditable={true}
             />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Organisation Email:</label>
-            <input
-              type="text"
+            <LabelAndInput
+              htmlFor="org_email"
+              label="Organisation Email:"
+              type="email"
+              id="org_email"
               name="org_email"
+              placeholder="Enter the organisation's email address"
               value={formData.org_email}
-              onChange={handleInputChange}
-              className="form-input"
-              required
+              handleChange={handleInputChange}
+              isRequired={true}
+              isEditable={true}
             />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Founder Name:</label>
-            <input
+            <LabelAndInput
+              htmlFor="founder_name"
+              label="Founder Name:"
               type="text"
+              id="founder_name"
               name="founder_name"
+              placeholder="Enter the founder's name"
               value={formData.founder_name}
-              onChange={handleInputChange}
-              className="form-input"
-              required
+              handleChange={handleInputChange}
+              isRequired={true}
+              isEditable={true}
             />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Founder Linkedin Url:</label>
-            <input
+            <LabelAndInput
+              htmlFor="founder_linkedinUrl"
+              label="Founder LinkedIn URL:"
               type="text"
+              id="founder_linkedinUrl"
               name="founder_linkedinUrl"
+              placeholder="Provide the LinkedIn URL of the founder"
               value={formData.founder_linkedinUrl}
-              onChange={handleInputChange}
-              className="form-input"
-              required
+              handleChange={handleInputChange}
+              isRequired={true}
+              isEditable={true}
             />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Founder Email:</label>
-            <input
-              type="text"
+            <LabelAndInput
+              htmlFor="founder_email"
+              label="Founder Email:"
+              type="email"
+              id="founder_email"
               name="founder_email"
+              placeholder="Enter the founder's email address"
               value={formData.founder_email}
-              onChange={handleInputChange}
-              className="form-input"
-              required
+              handleChange={handleInputChange}
+              isRequired={true}
+              isEditable={true}
             />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Founder Contact No:</label>
-            <input
+            <LabelAndInput
+              htmlFor="founder_contactNo"
+              label="Founder Contact No:"
               type="text"
+              id="founder_contactNo"
               name="founder_contactNo"
+              placeholder="Enter the founder's contact number"
               value={formData.founder_contactNo}
-              onChange={handleInputChange}
-              className="form-input"
-              required
+              handleChange={handleInputChange}
+              isRequired={true}
+              isEditable={true}
             />
+            <button type="submit" className="save-button">Submit</button>
+          </form>
+        </Modal>
+        
+        <Modal
+          isOpen={isDeleteModalOpen}
+          onRequestClose={closeDeleteModal}
+          contentLabel="Delete Confirmation"
+          className="delete-modal-content"
+          overlayClassName="modal-overlay"
+        >
+          <div className='delete-modal-bg'>
+            <h2 className="modal-title">Confirm Delete</h2>
+            <p className="modal-body">Do you want to delete this Model?</p>
+            <div className="modal-footer">
+              <button className="delete-button" onClick={() => deleteModel(modelToDelete.model_name, modelToDelete.org_name)}>Confirm</button>
+              <button className="cancel-button" onClick={closeDeleteModal}>Cancel</button>
+            </div>
           </div>
-          <button type="submit" className="save-button">Submit</button>
-        </form>
-      </Modal>
-
-      <Modal
-        isOpen={isDeleteModalOpen}
-        onRequestClose={closeDeleteModal}
-        contentLabel="Delete Confirmation"
-        className="delete-modal-content"
-        overlayClassName="modal-overlay"
-      >
-        <div className='delete-modal-bg'>
-          <h2 className="modal-title">Confirm Delete</h2>
-          <p className="modal-body">Do you want to delete this Model?</p>
-          <div className="modal-footer">
-            <button className="delete-button" onClick={() => deleteModel(modelToDelete.model_name, modelToDelete.org_name)}>Confirm</button>
-            <button className="cancel-button" onClick={closeDeleteModal}>Cancel</button>
-          </div>
-        </div>
-      </Modal>
+        </Modal>
+      </div>
     </div>
-    </>
   );
 }
 

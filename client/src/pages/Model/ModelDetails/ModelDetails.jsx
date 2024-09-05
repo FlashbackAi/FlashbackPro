@@ -4,18 +4,19 @@ import API_UTIL from '../../../services/AuthIntereptor';
 import './ModelDetails.css';
 import Modal from 'react-modal';
 import { toast } from 'react-toastify';
+import LabelAndInput from '../../../components/molecules/LabelAndInput/LabelAndInput';
 
-const DataSetDetails = () => {
+const ModelDetails = () => {
   const { orgName, modelName } = useParams();
   const [modelDetails, setModelDetails] = useState({});
   const [activeTab, setActiveTab] = useState('details');
   const [datasets, setDatasets] = useState([]);
   const [requests, setRequests] = useState([]);
-  const [isdatasetDetailsModalOpen, setIsdatasetDetailsModalOpen] = useState(false);
+  const [isDatasetDetailsModalOpen, setIsDatasetDetailsModalOpen] = useState(false);
   const [clickedDataset, setClickedDataset] = useState('');
 
   useEffect(() => {
-    const fetchEventData = async () => {
+    const fetchModelData = async () => {
       try {
         const response = await API_UTIL.get(`/getModelDetails/${orgName}/${modelName}`);
         setModelDetails(response.data?.[0]);
@@ -31,29 +32,25 @@ const DataSetDetails = () => {
       }
     };
 
-    fetchEventData();
+    fetchModelData();
   }, [orgName, modelName]);
 
   const handleTabChange = async (tab) => {
     setActiveTab(tab);
-    if(tab === 'requests'){
+    if (tab === 'requests') {
       // Fetch requests made by the model
       const requestsResponse = await API_UTIL.get(`/getDatasetRequestsbyModel/${modelName}-${orgName}`);
       setRequests(requestsResponse.data);
     }
   };
 
-  const openDatasetDetailsModal = async (dataset) => {
-    try {
-      setIsdatasetDetailsModalOpen(true);
-      setClickedDataset(dataset);
-    } catch (error) {
-      console.error('Error opening modal:', error);
-    }
+  const openDatasetDetailsModal = (dataset) => {
+    setIsDatasetDetailsModalOpen(true);
+    setClickedDataset(dataset);
   };
 
   const closeDatasetDetailsModal = () => {
-    setIsdatasetDetailsModalOpen(false);
+    setIsDatasetDetailsModalOpen(false);
   };
 
   const onClickRequest = async (dataset) => {
@@ -63,122 +60,196 @@ const DataSetDetails = () => {
         model_org_name: modelDetails.org_name,
         dataset_name: dataset.dataset_name,
         dataset_org_name: dataset.org_name,
-        status: 'pending'
+        status: 'pending',
       };
 
       const response = await API_UTIL.post('/requestDatasetAccess', formDataToSend);
 
       if (response.status === 200) {
-        toast.success("Successfully sent the request", {autoClose: 2000 });
+        toast.success("Successfully sent the request", { autoClose: 2000 });
 
         // Refresh the requests list after a new request is made
         const requestsResponse = await API_UTIL.get(`/getDatasetRequests/${modelName}-${orgName}`);
         setRequests(requestsResponse.data);
-      } else if(response.status === 400) {
-        toast.success("Request Already Exists",{autoClose: 1500 });
+      } else if (response.status === 400) {
+        toast.success("Request Already Exists", { autoClose: 1500 });
       }
     } catch (err) {
       console.error(err);
-      toast.error("Failed to send the request",{autoClose: 1500 });
+      toast.error("Failed to send the request", { autoClose: 1500 });
     }
   };
 
   return (
-    <div className="event-details-container">
-      <h1 className="event-details-title">{modelDetails?.model_name || 'Loading...'}</h1>
-      
-      <div className="model-tab-content">
-        {activeTab === 'details' && (
-          <div className="model-details-content">
-            <div className="ed-form-group">
-              <p className="ed-form-value">Model Category: {modelDetails.model_category || 'Not available'}</p>
-              <p className="ed-form-value">Model Url: {modelDetails.model_url || 'Not available'}</p>
-              <p className="ed-form-value">Model Description: {modelDetails.model_desc || 'Not available'}</p>
-              <p className="ed-form-value">Required Dataset Size: {modelDetails.dataset_size}</p>
-            </div>
+    <>
+        <div className="tab-switcher">
+            <button
+              className={`tab-switch-button ${activeTab === 'details' ? 'active' : ''}`}
+              onClick={() => handleTabChange('details')}
+            >
+              Model Details
+            </button>
+            <button
+              className={`tab-switch-button ${activeTab === 'datasets' ? 'active' : ''}`}
+              onClick={() => handleTabChange('datasets')}
+            >
+              Datasets
+            </button>
+            <button
+              className={`tab-switch-button ${activeTab === 'requests' ? 'active' : ''}`}
+              onClick={() => handleTabChange('requests')}
+            >
+              My Requests
+            </button>
           </div>
-        )}
+      {modelDetails?.model_name && (
+        <div className="model-details-container">
+          <h1 className="model-details-title">{modelDetails.model_name}</h1>
 
-        {activeTab === 'datasets' && (
-          <div className="datasets-content">
-            {datasets.length > 0 ? (
-              datasets.map((dataset) => (
-                <div key={dataset.dataset_name} className="dataset-item">
-                  <p>Owner: {dataset.org_name}</p>
-                  <p>Dataset Name: {dataset.dataset_name}</p>
-                  <button onClick={() => onClickRequest(dataset)}>Request</button> 
-                  <button onClick={() => openDatasetDetailsModal(dataset)}>Details</button>
+          <div className="model-tab-content">
+            {activeTab === 'details' && (
+              <div className="model-details-content">
+                <div className="md-form-group">
+                  <LabelAndInput
+                    name={'modelCategory'}
+                    label={'Model Category:'}
+                    value={modelDetails.model_category}
+                    type={'text'}
+                    handleChange={() => {}} // Not editable
+                    isEditable={false}
+                  />
+                  <LabelAndInput
+                    name={'modelUrl'}
+                    label={'Model URL:'}
+                    value={modelDetails.model_url}
+                    type={'text'}
+                    handleChange={() => {}} // Not editable
+                    isEditable={false}
+                  />
+                  <LabelAndInput
+                    name={'modelDesc'}
+                    label={'Model Description:'}
+                    value={modelDetails.model_desc}
+                    type={'text'}
+                    handleChange={() => {}} // Not editable
+                    isEditable={false}
+                  />
+                  <LabelAndInput
+                    name={'datasetSize'}
+                    label={'Required Dataset Size:'}
+                    value={modelDetails.dataset_size}
+                    type={'text'}
+                    handleChange={() => {}} // Not editable
+                    isEditable={false}
+                  />
                 </div>
-              ))
-            ) : (
-              <p>No Datasets found.</p>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'requests' && (
-          <div className="requests-content">
-            {requests.length > 0 ? (
-              requests.map((request, index) => (
-                <div key={index} className="request-item">
-                  <p>Dataset: {request.dataset_name}</p>
-                  <p>Owner: {request.dataset_org_name}</p>
-                  <p>Status: {request.status}</p>
-                </div>
-              ))
-            ) : (
-              <p>No requests found.</p>
-            )}
-          </div>
-        )}
-      </div>
-
-      <div className="tab-container">
-        <span 
-          className={`tab-link ${activeTab === 'details' ? 'active' : ''}`} 
-          onClick={() => handleTabChange('details')}
-        >
-          Model Details
-        </span>
-        <span 
-          className={`tab-link ${activeTab === 'datasets' ? 'active' : ''}`} 
-          onClick={() => handleTabChange('datasets')}
-        >
-          Datasets
-        </span>
-        <span 
-          className={`tab-link ${activeTab === 'requests' ? 'active' : ''}`} 
-          onClick={() => handleTabChange('requests')}
-        >
-          My Requests
-        </span>
-      </div>
-
-      <Modal
-        isOpen={isdatasetDetailsModalOpen}
-        onRequestClose={closeDatasetDetailsModal}
-        contentLabel="Requests"
-        className="qr-modal-content"
-        overlayClassName="modal-overlay"
-      >
-        {clickedDataset && (
-          <div>
-            <div className="modal-header">
-              <h2 className="modal-title">Details of {clickedDataset.dataset_name} dataset</h2>
-              <button className="close-button" onClick={closeDatasetDetailsModal}>x</button>
-            </div>
-            <div className="qr-modal-body">
-              <div className="ed-form-group">
-                <p className="ed-form-value">Dataset Category: {clickedDataset.dataset_category}</p>
-                <p className="ed-form-value">Dataset Url: {clickedDataset.dataset_url}</p>
-                <p className="ed-form-value"> Dataset Size: {clickedDataset.dataset_size}</p>
               </div>
-            </div>
+            )}
+
+            {activeTab === 'datasets' && (
+              <div className="datasets-content">
+                {datasets.length > 0 ? (
+                  datasets.map((dataset) => (
+                    <div key={dataset.dataset_name} className="dataset-item">
+                    <LabelAndInput
+                    name={'owner'}
+                    label={'Owner:'}
+                    value={dataset.org_name}
+                    type={'text'}
+                    handleChange={() => {}} // Not editable
+                    isEditable={false}
+                   />
+                   <LabelAndInput
+                    name={'datasetName'}
+                    label={'Dataset Name:'}
+                    value={dataset.dataset_name}
+                    type={'text'}
+                    handleChange={() => {}} // Not editable
+                    isEditable={false}
+                   />
+                   <div className='m-datasets-bottom-section'>
+                      <button onClick={() => onClickRequest(dataset)}>Request</button>
+                      <button onClick={() => openDatasetDetailsModal(dataset)}>Details</button>
+                    </div>
+                    <hr className="modal-separator" />
+                  </div>
+                  ))
+                ) : (
+                  <p>No Datasets found.</p>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'requests' && (
+              <div className="requests-content">
+                {requests.length > 0 ? (
+                  <div className="md-form-footer">
+                    {requests.map((request, index) => (
+                      <div key={index} className="request-item">
+                        <p>Dataset: {request.dataset_name}</p>
+                        <p>Owner: {request.dataset_org_name}</p>
+                        <p>Status: {request.status}</p>
+                        <hr className="modal-separator" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p>No requests found.</p>
+                )}
+              </div>
+            )}
           </div>
-        )}
-      </Modal>
-    </div>
+
+      
+
+          <Modal
+            isOpen={isDatasetDetailsModalOpen}
+            onRequestClose={closeDatasetDetailsModal}
+            contentLabel="Dataset Details"
+            className="modal-content dataset-details-modal"
+            overlayClassName="modal-overlay"
+          >
+            {clickedDataset && (
+              <div>
+                <div className="modal-header">
+                  <h2 className="modal-title">Details of {clickedDataset.dataset_name} dataset</h2>
+                  <button className="close-button" onClick={closeDatasetDetailsModal}>x</button>
+                </div>
+                <div className="m-modal-body">
+                  <div className="md-form-group">
+                    <LabelAndInput
+                      name={'datasetCategory'}
+                      label={'Dataset Category:'}
+                      value={clickedDataset.dataset_category}
+                      type={'text'}
+                      handleChange={() => {}} // Not editable
+                      isEditable={false}
+                    />
+                    <LabelAndInput
+                      name={'datasetUrl'}
+                      label={'Dataset URL:'}
+                      value={clickedDataset.dataset_url}
+                      type={'text'}
+                      handleChange={() => {}} // Not editable
+                      isEditable={false}
+                    />
+                    <LabelAndInput
+                      name={'datasetSize'}
+                      label={'Dataset Size:'}
+                      value={clickedDataset.dataset_size}
+                      type={'text'}
+                      handleChange={() => {}} // Not editable
+                      isEditable={false}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </Modal>
+        </div>
+      )}
+    </>
   );
 };
 
-export default DataSetDetails;
+export default ModelDetails;

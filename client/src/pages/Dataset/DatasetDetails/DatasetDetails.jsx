@@ -1,4 +1,4 @@
-import React, { useState, useEffect , useCallback} from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import Modal from 'react-modal';
 import API_UTIL from '../../../services/AuthIntereptor';
@@ -11,7 +11,6 @@ const DataSetDetails = () => {
   const [activeTab, setActiveTab] = useState('details');
   const [isRequestsModalOpen, setIsRequestsModalOpen] = useState(false);
   const [requests, setRequests] = useState([]);
-
 
   const fetchDatasetRequests = useCallback(async () => {
     try {
@@ -44,8 +43,8 @@ const DataSetDetails = () => {
   const updateRequestStatus = async (requestId, newStatus) => {
     try {
       // Find the request by ID
-      const requestToUpdate = requests.find(request => request.id === requestId);
-      
+      const requestToUpdate = requests.find((request) => request.id === requestId);
+
       if (!requestToUpdate) {
         console.error(`Request with ID ${requestId} not found`);
         return;
@@ -57,140 +56,143 @@ const DataSetDetails = () => {
         model_org_name: requestToUpdate.model_org_name,
         dataset_name: datasetName,
         dataset_org_name: orgName,
-        status: newStatus
+        status: newStatus,
       };
 
       // Call the API to update the request status
       const response = await API_UTIL.post('/updateRequestStatus', payload);
-      
+
       if (response.status === 200) {
         await fetchDatasetRequests(); // Re-fetch the requests after updating the status
       } else {
-        throw new Error("Failed to update request status");
+        throw new Error('Failed to update request status');
       }
     } catch (error) {
       console.error(`Error updating request status: ${error.message}`);
     }
   };
+
   const handleTabChange = async (tab) => {
     setActiveTab(tab);
-    if(tab === 'requests'){
+    if (tab === 'requests') {
       await fetchDatasetRequests();
     }
-
   };
-  
+
   const handleAccept = (requestId) => {
-    updateRequestStatus(requestId, "Accepted");
+    updateRequestStatus(requestId, 'Accepted');
   };
 
   const handleReject = (requestId) => {
-    updateRequestStatus(requestId, "Rejected");
+    updateRequestStatus(requestId, 'Rejected');
   };
+
   const closeRequestsModal = () => {
     setIsRequestsModalOpen(false);
   };
 
   return (
     <>
+     <div className="tab-switcher">
+            <button
+              className={`tab-switch-button ${activeTab === 'details' ? 'active' : ''}`}
+              onClick={() => handleTabChange('details')}
+            >
+              Dataset Details
+            </button>
+            <button
+              className={`tab-switch-button ${activeTab === 'requests' ? 'active' : ''}`}
+              onClick={() => handleTabChange('requests')}
+            >
+              Requests
+            </button>
+          </div>
       {datasetDetails?.dataset_name && (
-        <div className="event-details-container">
-          <h1 className="event-details-title">{datasetDetails.dataset_name}</h1>
+        <div className="dataset-details-container">
+          <h1 className="dataset-details-title">{datasetDetails.dataset_name}</h1>
 
           <div className="model-tab-content">
             {activeTab === 'details' && (
-              <div className="event-details-content">
-                <div className="ed-form-group">
-                    <LabelAndInput
-                      name={"datasetCategory"}
-                      label={"Dataset Category:"}
-                      value={datasetDetails.dataset_category}
-                      type={"text"}
-                      handleChange={() => {}} // Since it's not editable, no need for a handleChange function
-                      isEditable={false}
-                    />
-                    <LabelAndInput
-                      name={"datasetUrl"}
-                      label={"Dataset URL:"}
-                      value={datasetDetails.dataset_url}
-                      type={"text"}
-                      handleChange={() => {}} // Since it's not editable, no need for a handleChange function
-                      isEditable={false}
-                    />
-                    <LabelAndInput
-                      name={"datasetSize"}
-                      label={"Dataset Size:"}
-                      value={datasetDetails.dataset_size}
-                      type={"text"}
-                      handleChange={() => {}} // Since it's not editable, no need for a handleChange function
-                      isEditable={false}
-                    />
+              <div className="dataset-details-content">
+                <div className="dd-form-group">
+                  <LabelAndInput
+                    name={'datasetCategory'}
+                    label={'Dataset Category:'}
+                    value={datasetDetails.dataset_category}
+                    type={'text'}
+                    handleChange={() => {}} // Since it's not editable, no need for a handleChange function
+                    isEditable={false}
+                  />
+                  <LabelAndInput
+                    name={'datasetUrl'}
+                    label={'Dataset URL:'}
+                    value={datasetDetails.dataset_url}
+                    type={'text'}
+                    handleChange={() => {}} // Since it's not editable, no need for a handleChange function
+                    isEditable={false}
+                  />
+                  <LabelAndInput
+                    name={'datasetSize'}
+                    label={'Dataset Size:'}
+                    value={datasetDetails.dataset_size}
+                    type={'text'}
+                    handleChange={() => {}} // Since it's not editable, no need for a handleChange function
+                    isEditable={false}
+                  />
                 </div>
               </div>
             )}
 
             {activeTab === 'requests' && (
               <div className="requests-content">
-                <div className="ed-form-footer">
-                {requests.length > 0 ? (
-                  <div>
-                    <div className="modal-header">
-                      <h2 className="modal-title">Requests for {datasetDetails.dataset_name} dataset</h2>
-                    </div>
-                    <div className="qr-modal-body">
-                      {requests.map((request) => (
-                        <div key={request.id} className="request-item">
-                          <p>Model: {request.model_name}</p>
-                          <p>Owner: {request.model_org_name}</p>
-                          <div>
-                           <button onClick={() => handleAccept(request.id)}>Accept</button>
-                          <button onClick={() => handleReject(request.id)}>Reject</button>
+                <div className="dd-form-footer">
+                  {requests.length > 0 ? (
+                    <div>
+                      <div className="modal-header">
+                        <h2 className="modal-title">Requests for {datasetDetails.dataset_name} dataset</h2>
+                      </div>
+                      <div className=" d-req-modal-body">
+                        {requests.map((request) => (
+                          <div key={request.id} className="request-item">
+                            <LabelAndInput
+                name={'modelName'}
+                label={'Model:'}
+                value={request.model_name}
+                type={'text'}
+                handleChange={() => {}} // Not editable
+                isEditable={false}
+              />
+              <LabelAndInput
+                name={'modelOwner'}
+                label={'Owner:'}
+                value={request.model_org_name}
+                type={'text'}
+                handleChange={() => {}} // Not editable
+                isEditable={false}
+              />
+                            <div className='d-req-bottom-section'>
+                              <button onClick={() => handleAccept(request.id)}>Accept</button>
+                              <button onClick={() => handleReject(request.id)}>Reject</button>
+                            </div>
+                            <hr className="modal-separator" />
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <p>No requests found.</p>
-                )}
+                  ) : (
+                    <p>No requests found.</p>
+                  )}
                 </div>
               </div>
             )}
           </div>
 
-          {/* <div className="tab-container">
-            <span 
-              className={`tab-link ${activeTab === 'details' ? 'active' : ''}`} 
-              onClick={() => handleTabChange('details')}
-            >
-              Dataset Details
-            </span>
-            <span 
-              className={`tab-link ${activeTab === 'requests' ? 'active' : ''}`} 
-              onClick={() => handleTabChange('requests')}
-            >
-              Requests
-            </span>
-          </div> */}
-          <div className="tab-switcher">
-          <button 
-              className={`tab-button ${activeTab === 'details' ? 'active' : ''}`} 
-              onClick={() => handleTabChange('details')}
-            >
-              Dataset Details
-            </button>
-            <button 
-              className={`tab-button ${activeTab === 'requests' ? 'active' : ''}`} 
-              onClick={() => handleTabChange('requests')}
-            >
-              Requests
-            </button>
-        </div>
+         
           <Modal
             isOpen={isRequestsModalOpen}
             onRequestClose={closeRequestsModal}
             contentLabel="Requests"
-            className="qr-modal-content"
+            className="d-req-modal-content"
             overlayClassName="modal-overlay"
           >
             {requests.length > 0 ? (
@@ -199,7 +201,7 @@ const DataSetDetails = () => {
                   <h2 className="modal-title">Requests for {datasetDetails.dataset_name} dataset</h2>
                   <button className="close-button" onClick={closeRequestsModal}>x</button>
                 </div>
-                <div className="qr-modal-body">
+                <div className="d-req-modal-body">
                   {requests.map((request) => (
                     <div key={request.id} className="request-item">
                       <p>Owner: {request.owner}</p>
