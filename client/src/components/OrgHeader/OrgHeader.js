@@ -74,15 +74,14 @@ const OrgHeader = ({ orgObj, modelName, showPoints =true }) => {
   // }
 
   return (
-    <>
-      <header className="stickToTop">
+    <div className="orgHeader-root">
 
         {orgObj &&
             
-        <div className="second-header-container">
+        <>
           
 
-              <div>
+              <div className="org-name">
 
                 {/* <h3>Clicked by - <a href="/portfolio"  target = "_blank" onClick={PortfolioClick}>{clientObj.user_name}</a></h3>
                 <a href={clientObj.social_media.instagram} target="_blank" rel="noopener noreferrer">
@@ -91,14 +90,14 @@ const OrgHeader = ({ orgObj, modelName, showPoints =true }) => {
                 <a href={clientObj.social_media.youtube} target="_blank" rel="noopener noreferrer">
                   <img src="https://img.icons8.com/ffffff/color/2x/youtube-play.png" alt="YouTube" onClick={() => setYoutubeClick(true)} />
                 </a> */}
-                <p>{orgObj.org_name}</p>
+                <span>{orgObj.org_name}</span>
               </div>
 
-              {showPoints && <div className="redeem-points" >Points - {points} 🪙</div>}
+              {showPoints && <div className="prot-redeem-points" > <span>Points - {points} 🪙</span></div>}
             
-        </div>
+        </>
         }
-      </header>
+      
 
       {showPopup && (
         <div className="popup">
@@ -120,7 +119,7 @@ const OrgHeader = ({ orgObj, modelName, showPoints =true }) => {
           </div>
         </div>
       )} */}
-    </>
+    </div>
   );
 };
 

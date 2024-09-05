@@ -1,6 +1,6 @@
-header {
+/* header {
   padding: 0.5em 1rem;
-  /* font-size: 1em; */
+  font-size: 1em;
   display: flex;
   justify-content: center;
   flex-direction: column;
@@ -9,13 +9,33 @@ header {
   left: 0;
   z-index: 12;
   background-color: #1c1c1c;
-  /* background-color: red; */
+  background-color: red;
+} */
+
+.orgHeader-root {
+  padding-top: env(safe-area-inset-top);
+  
+  width: 100%;
+  background-color: black;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid ;
+  border-image: linear-gradient(90deg,#66D3FF 0%, #9A6AFF 38%,  #EE75CB 71%, #FD4D77 100%);
+  border-image-slice: 1;
+  padding-bottom: 0.3em;
 }
 
 .stickToTop{
+
   position: sticky;
   top: 0;
   padding-bottom: 1em;
+
+}
+.org-name{
+  padding: .5em;
+  font-size: 2em;
 }
 
 .m_Bottom_Low {
@@ -69,7 +89,7 @@ header h3 {
   /* padding: 10px; */
   position: sticky;
   z-index: 12;
-  background-color: #5a5959;
+  background-color: black;
   padding: 0.5em;
   margin: 0.5em;
 }
@@ -92,10 +112,10 @@ header h3 {
   margin-top: 0.25em;
 }
 
-.redeem-points {
-  font-size: 0.6em;
+.prot-redeem-points {
+  font-size: 1em;
   cursor: pointer;
-  color: #bbb6b6;
+  color: white;
   font-weight: bold;
 }
 

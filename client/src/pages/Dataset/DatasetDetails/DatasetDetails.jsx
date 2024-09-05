@@ -4,6 +4,7 @@ import Modal from 'react-modal';
 import API_UTIL from '../../../services/AuthIntereptor';
 import './DatasetDetails.css';
 import LabelAndInput from '../../../components/molecules/LabelAndInput/LabelAndInput';
+import OrgHeader from '../../../components/OrgHeader/OrgHeader';
 
 const DataSetDetails = () => {
   const { orgName, datasetName } = useParams();
@@ -11,6 +12,8 @@ const DataSetDetails = () => {
   const [activeTab, setActiveTab] = useState('details');
   const [isRequestsModalOpen, setIsRequestsModalOpen] = useState(false);
   const [requests, setRequests] = useState([]);
+  const [userDetails, setUserDetails] = useState(null);
+  const userPhoneNumber =localStorage.userPhoneNumber;
 
   const fetchDatasetRequests = useCallback(async () => {
     try {
@@ -37,7 +40,18 @@ const DataSetDetails = () => {
     };
 
     fetchEventData();
-  }, [orgName, datasetName, fetchDatasetRequests]);
+    const fetchUserDetails = async () => {
+      try {
+        
+        const response = await API_UTIL.get(`/fetchUserDetails/${userPhoneNumber}`);
+        setUserDetails(response.data.data);
+      } catch (error) {
+        console.error('Error fetching user details:', error);
+      }
+    };
+
+    fetchUserDetails();
+  }, [orgName, datasetName, fetchDatasetRequests, userPhoneNumber]);
 
   // Update request status and re-fetch the updated requests
   const updateRequestStatus = async (requestId, newStatus) => {
@@ -93,6 +107,7 @@ const DataSetDetails = () => {
 
   return (
     <>
+    {userDetails && userDetails.org_name && <OrgHeader orgObj={userDetails}/>}
      <div className="tab-switcher">
             <button
               className={`tab-switch-button ${activeTab === 'details' ? 'active' : ''}`}

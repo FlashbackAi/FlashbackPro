@@ -5,6 +5,7 @@ import './ModelDetails.css';
 import Modal from 'react-modal';
 import { toast } from 'react-toastify';
 import LabelAndInput from '../../../components/molecules/LabelAndInput/LabelAndInput';
+import OrgHeader from '../../../components/OrgHeader/OrgHeader';
 
 const ModelDetails = () => {
   const { orgName, modelName } = useParams();
@@ -14,6 +15,8 @@ const ModelDetails = () => {
   const [requests, setRequests] = useState([]);
   const [isDatasetDetailsModalOpen, setIsDatasetDetailsModalOpen] = useState(false);
   const [clickedDataset, setClickedDataset] = useState('');
+  const [userDetails, setUserDetails] = useState(null);
+  const userPhoneNumber =localStorage.userPhoneNumber;
 
   useEffect(() => {
     const fetchModelData = async () => {
@@ -33,7 +36,19 @@ const ModelDetails = () => {
     };
 
     fetchModelData();
-  }, [orgName, modelName]);
+    const fetchUserDetails = async () => {
+      try {
+        
+        const response = await API_UTIL.get(`/fetchUserDetails/${userPhoneNumber}`);
+        setUserDetails(response.data.data);
+      } catch (error) {
+        console.error('Error fetching user details:', error);
+      }
+    };
+
+    fetchUserDetails();
+
+  }, [orgName, modelName, userPhoneNumber]);
 
   const handleTabChange = async (tab) => {
     setActiveTab(tab);
@@ -82,6 +97,7 @@ const ModelDetails = () => {
 
   return (
     <>
+    {userDetails && userDetails.org_name && <OrgHeader orgObj={userDetails}/>}
         <div className="tab-switcher">
             <button
               className={`tab-switch-button ${activeTab === 'details' ? 'active' : ''}`}
