@@ -1,43 +1,42 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import LoadingSpinner from "../../../components/Loader/LoadingSpinner";
-// import Modal from "../../../components/ImageModal/ImageModal";
-import { useLocation } from "react-router-dom";
 import { LazyLoadImage } from "react-lazy-load-image-component";
-
 import API_UTIL from "../../../services/AuthIntereptor";
 import Footer from "../../../components/Footer/Footer";
-import "../../../components/Footer/Footer.css"; // Import your CSS file
 import MergeDuplicateUsers from "./MergeHandler/MergeDuplicateUsers";
 import "./Pro.css";
 import AppBar from "../../../components/AppBar/AppBar";
-import Modal from 'react-modal';
-import { toast } from 'react-toastify';
+import Modal from "react-modal";
+import { toast } from "react-toastify";
+import { div } from "prelude-ls";
 
 function ProNew() {
   const { eventId } = useParams();
+  const [eventDetails, setEventDetails] = useState(null); // New state for event details
   const [userThumbnails, setUserThumbnails] = useState([]);
   const [clientDetails, setClientDetails] = useState([]);
   const [userDetails, setUserDetails] = useState([]);
-  const username =localStorage.getItem("username");
+  const username = localStorage.getItem("username");
   const [isLoading, setIsLoading] = useState(true);
   const [fetchTimeout, setFetchTimeout] = useState(false);
   const isDataFetched = useRef(false);
   const [showMergeDuplicateUsers, setShowMergeDuplicateUsers] = useState(false);
   const [mergeMode, setMergeMode] = useState(false);
-  const [mergeMessage, setMergeMessage] = useState('');
+  const [mergeMessage, setMergeMessage] = useState("");
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [showMergePopup, setShowMergePopup] = useState(false);
   const [selectedMainUser, setSelectedMainUser] = useState(null);
   const [selectedDuplicateUsers, setSelectedDuplicateUsers] = useState([]);
   const [showRewardPointsPopUp, setShowRewardPointsPopUp] = useState(null);
-  const [rewardPoints,setRewardPoints] = useState();
-  const [isSendModalOpen,setIsSendModalOpen] = useState(false);
-  // const serverIp = process.env.REACT_APP_SERVER_IP;
+  const [rewardPoints, setRewardPoints] = useState();
+  const [isSendModalOpen, setIsSendModalOpen] = useState(false);
   const location = useLocation();
   const [isSending, setIsSending] = useState(false);
-  
-  const event = location.state?.event; // Retrieve event from location state
+  const [isImageProcessingDone, setIsImageProcessingDone]  = useState(true);
+  const [isWarningModalOpen, setIsWarningModalOpen] = useState(false); 
+
+  // const event = location.state?.event;
 
   const handleClick = (item) => {
     if (mergeMode) {
@@ -45,7 +44,29 @@ function ProNew() {
     } else {
       saveShareDetails(item);
       shareOnWhatsApp(item);
-      // setClickedImg(true);
+    }
+  };
+
+  // New function to fetch event details
+  const fetchEventDetails = async () => {
+    try {
+      const response = await API_UTIL.get(`/getEventDetails/${eventId}`);
+      if (response.status === 200) {
+        setEventDetails(response.data); // Set event details in state
+        if( response.data.uploaded_files === response.data.files_indexed){
+          if(isImageProcessingDone === false)
+            fetchThumbnails()
+          setIsImageProcessingDone(true);
+        }
+        else{
+            setIsImageProcessingDone(false);
+  
+        }
+      } else {
+        throw new Error("Failed to fetch event details");
+      }
+    } catch (error) {
+      console.error("Error fetching event details:", error);
     }
   };
 
@@ -58,7 +79,7 @@ function ProNew() {
     setMergeMode(false);
     setShowMergePopup(false);
     setSelectedUsers([]);
-    setMergeMessage('');
+    setMergeMessage("");
   };
 
   const handleClosePopup = (fullReset = false) => {
@@ -67,37 +88,33 @@ function ProNew() {
       setMergeMode(false);
       setSelectedUsers([]);
     } else {
-      setSelectedUsers(prev => prev.slice(0, 1));
+      setSelectedUsers((prev) => prev.slice(0, 1));
     }
   };
 
   const handleMergeClick = () => {
-    setMergeMessage('Select 2 duplicate faces to merge');
-    
-    setShowMergeDuplicateUsers(true);
-    setMergeMode(true);
-    setSelectedMainUser(null);
-    setSelectedDuplicateUsers([]);
+    if (!isImageProcessingDone) {
+      setIsWarningModalOpen(true); // Show warning if images are still processing
+    }else{
+      setMergeMessage("Select 2 duplicate faces to merge");
+      setShowMergeDuplicateUsers(true);
+      setMergeMode(true);
+      setSelectedMainUser(null);
+      setSelectedDuplicateUsers([]);
+    }
   };
-
-  // const handleCloseMerge = () => {
-  //   setShowMergeDuplicateUsers(false);
-  //   setMergeMode(false);
-  //   setSelectedMainUser(null);
-  //   setSelectedDuplicateUsers([]);
-  // };
 
   const handleMerge = async (reason) => {
     try {
       const user_phone_number = localStorage.getItem("userPhoneNumber");
-      const response = await API_UTIL.post('/mergeUsers', {
-        userIds: selectedUsers.map(u => u.user_id),
+      const response = await API_UTIL.post("/mergeUsers", {
+        userIds: selectedUsers.map((u) => u.user_id),
         reason: reason,
         eventId: eventId,
-        user_phone_number: user_phone_number
+        user_phone_number: user_phone_number,
       });
 
-      if (response.data.success) { 
+      if (response.data.success) {
         updateRewardPoints(50);
         await fetchThumbnails();
       }
@@ -108,20 +125,13 @@ function ProNew() {
     }
   };
 
-  // const handleCloseMergePopup = () => {
-  //   setMergeMode(false);
-  //   setSelectedUsers([]);
-  //   setShowMergePopup(false);
-  // }
-
-
   const handleThumbnailClick = (user) => {
     if (!mergeMode) return;
 
-    setSelectedUsers(prev => {
-      const isSelected = prev.some(u => u.user_id === user.user_id);
+    setSelectedUsers((prev) => {
+      const isSelected = prev.some((u) => u.user_id === user.user_id);
       if (isSelected) {
-        return prev.filter(u => u.user_id !== user.user_id);
+        return prev.filter((u) => u.user_id !== user.user_id);
       } else if (prev.length < 2) {
         const newSelected = [...prev, user];
         if (newSelected.length === 2) {
@@ -136,7 +146,7 @@ function ProNew() {
   const shareOnWhatsApp = (item) => {
     const userId = item.user_id;
     const count = item.count;
-    const text = `*Greetings*,\nWe have discovered your *${count}* images captured during the event *"${event.event_name}"*.\nKindly proceed to the provided URL to access and view your photographs:\nhttps://flashback.inc/photosV1/${event.folder_name}/${userId}\n\nCheers,\n*Flashback*`;
+    const text = `*Greetings*,\nWe have discovered your *${count}* images captured during the event *"${eventDetails?.event_name}"*.\nKindly proceed to the provided URL to access and view your photographs:\nhttps://flashback.inc/photosV1/${eventDetails?.folder_name}/${userId}\n\nCheers,\n*Flashback*`;
     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
     window.open(whatsappUrl, "_blank");
   };
@@ -144,14 +154,18 @@ function ProNew() {
   const saveShareDetails = async (item) => {
     try {
       const user = localStorage.userPhoneNumber;
-      const response = await API_UTIL.post(`/saveProShareDetails`, { user: user, sharedUser: item.user_id, event_id: eventId });
+      const response = await API_UTIL.post(`/saveProShareDetails`, {
+        user: user,
+        sharedUser: item.user_id,
+        event_id: eventId,
+      });
       if (response.status === 200) {
         updateRewardPoints(10);
       } else {
         throw new Error("Failed to save share info");
       }
     } catch (error) {
-      console.error("Error fetching user thumbnails:", error);
+      console.error("Error saving share details:", error);
     }
   };
 
@@ -210,35 +224,44 @@ function ProNew() {
 
   const sendWhatsappMsg = async () => {
     try {
-      
-      const userIdMappingResponse = await API_UTIL.post('/generateUserIdsForExistingUsers', { eventName: event.folder_name });
-      if(userIdMappingResponse.status === 200){
-      const sendFlashbacksResponse = await API_UTIL.post('/send-flashbacks', { eventName: event.folder_name });
+      const userIdMappingResponse = await API_UTIL.post("/generateUserIdsForExistingUsers", {
+        eventName: eventDetails?.folder_name,
+      });
+      if (userIdMappingResponse.status === 200) {
+        const sendFlashbacksResponse = await API_UTIL.post("/send-flashbacks", {
+          eventName: eventDetails?.folder_name,
+        });
 
-      if (sendFlashbacksResponse.status === 200) {
-        toast.success('Flashbacks sent successfully!');
+        if (sendFlashbacksResponse.status === 200) {
+          toast.success("Flashbacks sent successfully!");
+        } else {
+          throw new Error("Failed to send flashbacks.");
+        }
       } else {
-        throw new Error('Failed to send flashbacks.');
+        throw new Error("Failed to send flashbacks.");
+      }
+    } catch (error) {
+      console.error("Error Publishing Images", error);
+      toast.error("Failed to Publish Images");
+    }
+  };
+
+  const handleSendPhotos = async () => {
+    if (!isImageProcessingDone) {
+      setIsWarningModalOpen(true); // Show warning if images are still processing
+    } else {
+      setIsSending(true);
+      setIsSendModalOpen(true);
+      try {
+        await sendWhatsappMsg();
+      } finally {
+        setIsSending(false); 
       }
     }
-    else{
-      throw new Error('Failed to send flashbacks.');
-    }
-    } catch (error) {
-      console.error('Error Publishing Images', error);
-       toast.error('Failed to Publish Images');
-    }
   };
-  const handleSendPhotos = async () => {
-    setIsSending(true); // Set sending state to true
-    setIsSendModalOpen(true);
-    try {
-      await sendWhatsappMsg();
-    } finally {
-      setIsSending(false); // Set sending state to false after process is complete
-    }
+  const closeWarningModal = () => {
+    setIsWarningModalOpen(false);
   };
-  
 
   const closeSendPhotos = () => {
     setIsSendModalOpen(false);
@@ -247,11 +270,11 @@ function ProNew() {
   const updateRewardPoints = async (points) => {
     const updateData = {
       user_phone_number: localStorage.userPhoneNumber,
-      reward_points: userDetails?.reward_points ? userDetails.reward_points + points : 50 + points
+      reward_points: userDetails?.reward_points ? userDetails.reward_points + points : 50 + points,
     };
-  
+
     try {
-      const response = await API_UTIL.post('/updateUserDetails', updateData);
+      const response = await API_UTIL.post("/updateUserDetails", updateData);
       if (response.status === 200) {
         setRewardPoints(points);
         setShowRewardPointsPopUp(true);
@@ -264,6 +287,17 @@ function ProNew() {
     }
   };
 
+  // Polling for event details every 5 seconds
+  useEffect(() => {
+    fetchEventDetails(); // Fetch event details initially
+
+    const interval = setInterval(() => {
+      fetchEventDetails(); // Fetch event details every 5 seconds
+    }, 30000);
+
+    return () => clearInterval(interval); // Clean up interval on component unmount
+  }, [eventId]);
+
   useEffect(() => {
     if (isDataFetched.current) return;
     fetchThumbnails();
@@ -271,8 +305,8 @@ function ProNew() {
   }, []);
 
   // Separate registered and unregistered users
-  const registeredUsers = userThumbnails.filter(thumbnail => thumbnail.is_registered);
-  const unregisteredUsers = userThumbnails.filter(thumbnail => !thumbnail.is_registered);
+  const registeredUsers = userThumbnails.filter((thumbnail) => thumbnail.is_registered);
+  const unregisteredUsers = userThumbnails.filter((thumbnail) => !thumbnail.is_registered);
 
   return (
     <div className="page-container">
@@ -283,43 +317,54 @@ function ProNew() {
           <AppBar />
           <div className="content-wrap">
             <div className="statsSections">
-             <div className="toolbar"> 
+              <div className="toolbar">
                 {!mergeMode ? (
-                <button onClick={handleMergeClick}>Manage Faces</button>
+                  <button onClick={handleMergeClick}>Manage Faces</button>
                 ) : (
-                  <button className ='p-button' onClick={handleCancelManageUsers}>Cancel</button>
+                  <button className="p-button" onClick={handleCancelManageUsers}>
+                    Cancel
+                  </button>
                 )}
-                  <button
-                  className='p-button'
+                <button
+                  className="p-button"
                   onClick={handleSendPhotos}
                   disabled={isSending} // Disable button while sending
                 >
-                  {isSending ? 'Sending...' : 'Send Photos'} {/* Update button text */}
+                  {isSending ? "Sending..." : "Send Photos"} {/* Update button text */}
                 </button>
-                 
               </div>
               <div className="totalCount">
                 <label>Total Attendees: {userThumbnails.length}</label>
               </div>
             </div>
+            {!isImageProcessingDone && (
+              <div className="image-processing-message">
+                <span>Some of the images are still being processed. Stay tuned for updates.</span>
+              </div>
+            )}
+
+            
             {mergeMessage && <div className="merge-message">{mergeMessage}</div>}
             {userThumbnails.length > 0 ? (
               <>
                 <h2>Registered Users</h2>
                 <div className="wrapper-pro">
                   {registeredUsers.map((item, index) => (
-                    <div 
-                      key={index} 
-                      className={`wrapper-images-pro ${mergeMode ? 'selectable' : ''} ${selectedUsers.some(u => u.user_id === item.user_id) ? 'selected' : ''}`}
+                    <div
+                      key={index}
+                      className={`wrapper-images-pro ${mergeMode ? "selectable" : ""} ${
+                        selectedUsers.some((u) => u.user_id === item.user_id) ? "selected" : ""
+                      }`}
                       onClick={() => handleClick(item)}
                     >
-                      <LazyLoadImage
-                        src={item.face_url}
-                        alt={`User ${index + 1}`}
-                      />
+                      <LazyLoadImage src={item.face_url} alt={`User ${index + 1}`} />
                       <p>{item.count}</p>
                       {mergeMode && (
-                        <div className={`tick-mark ${selectedUsers.some(u => u.user_id === item.user_id) ? 'selected' : ''}`}>
+                        <div
+                          className={`tick-mark ${
+                            selectedUsers.some((u) => u.user_id === item.user_id) ? "selected" : ""
+                          }`}
+                        >
                           ✓
                         </div>
                       )}
@@ -330,18 +375,21 @@ function ProNew() {
                 <h2>Unregistered Users</h2>
                 <div className="wrapper-pro">
                   {unregisteredUsers.map((item, index) => (
-                    <div 
-                    key={index} 
-                    className={`wrapper-images-pro ${mergeMode ? 'selectable' : ''} ${selectedUsers.some(u => u.user_id === item.user_id) ? 'selected' : ''}`}
-                    onClick={() => handleClick(item)}
-                  >
-                      <LazyLoadImage
-                        src={item.face_url}
-                        alt={`User ${index + 1}`}
-                      />
+                    <div
+                      key={index}
+                      className={`wrapper-images-pro ${mergeMode ? "selectable" : ""} ${
+                        selectedUsers.some((u) => u.user_id === item.user_id) ? "selected" : ""
+                      }`}
+                      onClick={() => handleClick(item)}
+                    >
+                      <LazyLoadImage src={item.face_url} alt={`User ${index + 1}`} />
                       <p>{item.count}</p>
                       {mergeMode && (
-                        <div className={`tick-mark ${selectedUsers.some(u => u.user_id === item.user_id) ? 'selected' : ''}`}>
+                        <div
+                          className={`tick-mark ${
+                            selectedUsers.some((u) => u.user_id === item.user_id) ? "selected" : ""
+                          }`}
+                        >
                           ✓
                         </div>
                       )}
@@ -359,41 +407,53 @@ function ProNew() {
         </>
       )}
       {showMergePopup && (
-        <MergeDuplicateUsers
-          users={selectedUsers}
-          onClose={handleCancelManageUsers}
-          onMerge={handleMerge}
-        />
+        <MergeDuplicateUsers users={selectedUsers} onClose={handleCancelManageUsers} onMerge={handleMerge} />
       )}
-      {isSendModalOpen &&(
-       <Modal
-       key={isSendModalOpen ? 'open' : 'closed'} // Adding key to handle unique modal instances
-       isOpen={isSendModalOpen}
-       onRequestClose={closeSendPhotos}
-       contentLabel="Send Photos"
-       className="send-photos-content"
-       overlayClassName="modal-overlay"
-     >
-      <div className='pro-send-modal'>
-        <div className="send-modal-header">
-          {/* <h2 className="send-modal-title">
-            Send Photos
-          </h2> */}
-          <button className="close-button" onClick={closeSendPhotos}>
-            x
-          </button>
-        </div>
-        <div className="send-modal-body">
-          <p>Only registered users will receive Photos.</p>
-          <p>For unregistered users, you can click on their thumbnail and send photos through your WhatsApp.</p>
-        </div>
-      </div>
-    </Modal>
-    
+      {isWarningModalOpen && (
+        <Modal
+          isOpen={isWarningModalOpen}
+          onRequestClose={closeWarningModal}
+          contentLabel="Warning"
+          className="send-photos-content"
+          overlayClassName="modal-overlay"
+        >
+          <div className="pro-send-modal">
+            <div className="send-modal-header">
+              <button className="close-button" onClick={closeWarningModal}>x</button>
+            </div>
+            <div className="send-modal-body">
+              <p>Some of the images are still being processed. Please wait until processing is complete.</p>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {isSendModalOpen && (
+        <Modal
+          key={isSendModalOpen ? "open" : "closed"} // Adding key to handle unique modal instances
+          isOpen={isSendModalOpen}
+          onRequestClose={closeSendPhotos}
+          contentLabel="Send Photos"
+          className="send-photos-content"
+          overlayClassName="modal-overlay"
+        >
+          <div className="pro-send-modal">
+            <div className="send-modal-header">
+              <button className="close-button" onClick={closeSendPhotos}>
+                x
+              </button>
+            </div>
+            <div className="send-modal-body">
+              <p>Only registered users will receive Photos.</p>
+              <p>
+                For unregistered users, you can click on their thumbnail and send photos through your WhatsApp.
+              </p>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );
 }
 
 export default ProNew;
-

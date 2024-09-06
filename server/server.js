@@ -937,7 +937,7 @@ async function sendFlashbacksAsync(taskId, eventName) {
         try {
           await sendWhatsAppMessage(user_phone_number, eventName, userData.user_id);
 
-          await updateUserEventMapping(eventName, user_phone_number, 'Flashback_Delivered');
+          await updateUserDeliveryStatus(eventName, user_phone_number, 'Flashback_Delivered');
 
           await storeSentData(user_phone_number, eventName, `https://flashback.inc:5000/share/${eventName}/${userData.user_id}`);
 
@@ -1068,7 +1068,7 @@ async function getUserData(phoneNumber) {
   return data.Item ? AWS.DynamoDB.Converter.unmarshall(data.Item) : null;
 }
 
-async function updateUserEventMapping(eventName, phoneNumber, flashback_status) {
+async function updateUserDeliveryStatus(eventName, phoneNumber, flashback_status) {
   const params = {
     TableName: 'user_event_mapping',
     Key: {
@@ -2476,10 +2476,11 @@ async function userEventImagesNew(eventName, userId, lastEvaluatedKey, isFavouri
       params = {
         TableName: userImageActivityTableName, // Assuming this is the table where favorite images are stored
         KeyConditionExpression: 'user_id = :userId',
-        FilterExpression: "is_favourite = :isFav",
+        FilterExpression: "is_favourite = :isFav and folder_name = :folder_name",
         ExpressionAttributeValues: {
           ':userId': userId,
-          ':isFav': true
+          ':isFav': true,
+          ':folder_name':eventName
         }
       };
     } else {
@@ -2510,6 +2511,13 @@ async function userEventImagesNew(eventName, userId, lastEvaluatedKey, isFavouri
   }
 }
 
+// Helper function to extract folder_name from s3_url
+const extractFolderName = (s3_url) => {
+  const urlParts = s3_url.split('/');
+  const folderName = urlParts[urlParts.length - 2];
+  logger.info(`Extracted folder_name: ${folderName} from s3_url: ${s3_url}`);
+  return folderName;
+};
 
 app.post('/setFavourites', async (req,res) => {
 
@@ -2518,6 +2526,7 @@ app.post('/setFavourites', async (req,res) => {
     const userId = req.body.userId;
     const imageUrl = req.body.imageUrl;
     const isFav = req.body.isFav;
+    
 
     const params = {
       TableName: userOutputTable,
@@ -2550,13 +2559,15 @@ app.post('/setFavouritesNew', async (req, res) => {
     const userId = req.body.userId;
     const imageUrl = req.body.imageUrl;
     const isFav = req.body.isFav;
+    const folderName = extractFolderName(imageUrl);
     logger.info("Selecting Image:"+imageUrl);
     const params = {
       TableName: userImageActivityTableName,
       Item: {
         user_id: userId,
         s3_url: imageUrl,
-        is_favourite: isFav
+        is_favourite: isFav,
+        folder_name:folderName
       }
     };
 
@@ -7468,6 +7479,95 @@ async function updateUserImageActivity(fromUserId, toUserId) {
 }
 
 
+
+// Fetch all records from DynamoDB
+const fetchAllRecords = async () => {
+  let params = {
+    TableName: userImageActivityTableName
+  };
+
+  let items = [];
+  let data;
+
+  logger.info("Starting scan operation to fetch all records from DynamoDB...");
+
+  do {
+    data = await docClient.scan(params).promise();
+    items = items.concat(data.Items);
+
+    logger.info(`Fetched ${data.Items.length} records in this scan operation.`);
+    params.ExclusiveStartKey = data.LastEvaluatedKey;
+  } while (typeof data.LastEvaluatedKey !== "undefined");
+
+  logger.info(`Completed fetching all records. Total records: ${items.length}`);
+  return items;
+};
+
+// Update record with folder_name
+const updateRecordWithFolderName = async (userId, imageUrl, folderName) => {
+  const params = {
+    TableName: userImageActivityTableName,
+    Key: {
+      user_id: userId,
+      s3_url: imageUrl
+    },
+    UpdateExpression: "set folder_name = :folderName",
+    ExpressionAttributeValues: {
+      ":folderName": folderName
+    },
+    ReturnValues: "UPDATED_NEW"
+  };
+
+  logger.info(`Updating record for user_id: ${userId} with folder_name: ${folderName}`);
+
+  try {
+    const result = await docClient.update(params).promise();
+    logger.info(`Successfully updated record for user_id: ${userId}`);
+    return result;
+  } catch (error) {
+    logger.error(`Error updating record for user_id: ${userId}. Error: ${error.message}`);
+    throw error;
+  }
+};
+
+// API to backfill folder_name for all records
+app.post('/backfillFolderNames', async (req, res) => {
+  try {
+    logger.info("Starting backfilling process for folder_name...");
+
+    const allRecords = await fetchAllRecords();
+    logger.info(`Total records fetched: ${allRecords.length}`);
+
+    let updatedCount = 0;
+    let skippedCount = 0;
+
+    // Iterate through all records and update each with folder_name
+    for (let record of allRecords) {
+      const { user_id, s3_url } = record;
+      if (s3_url) {
+        try {
+          const folderName = extractFolderName(s3_url);
+          await updateRecordWithFolderName(user_id, s3_url, folderName);
+          updatedCount++;
+        } catch (error) {
+          logger.error(`Failed to update record for user_id: ${user_id}. Error: ${error.message}`);
+        }
+      } else {
+        logger.warn(`Skipped record for user_id: ${user_id} due to missing s3_url`);
+        skippedCount++;
+      }
+    }
+
+    logger.info(`Backfilling process completed. Total updated records: ${updatedCount}. Skipped records: ${skippedCount}`);
+    res.status(200).send(`Backfilled folder_name for ${updatedCount} records. Skipped ${skippedCount} records.`);
+  } catch (err) {
+    logger.error("Error occurred during backfilling:", err);
+    res.status(500).send('Error occurred during backfilling folder_name');
+  }
+});
+
+
+
   const httpsServer = https.createServer(credentials, app);
 
   httpsServer.listen(PORT, () => {
@@ -7476,7 +7576,7 @@ async function updateUserImageActivity(fromUserId, toUserId) {
     httpsServer.headersTimeout = 65000; // Increase headers timeout
   });
 
-//**Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
+// **Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
 //  const server = app.listen(PORT ,() => {
 //  logger.info(`Server started on http://localhost:${PORT}`);
 //  server.keepAliveTimeout = 60000; // Increase keep-alive timeout

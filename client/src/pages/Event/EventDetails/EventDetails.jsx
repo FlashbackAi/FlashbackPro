@@ -31,30 +31,40 @@ const EventDetails = () => {
   const [overallProgress, setOverallProgress] = useState(0);
   const [uploadedFilesCount, setUploadedFilesCount] = useState(0);
 
-  useEffect(() => {
-    const fetchEventData = async (eventName) => {
-      try {
-        const response = await API_UTIL.get(`/getEventDetails/${eventName}`);
-        console.log(response.data);
-        setEvent(response.data);
-        let fileCount = 0;
-        if (response.data.uploaded_files) {
-          fileCount = response.data.uploaded_files;
-          setUploadedFilesCount(fileCount);
-        }
-        setEditData({
-          eventName: response.data.event_name,
-          eventDate: response.data.event_date.split('T')[0],
-          eventTime: response.data.event_date.split('T')[1].slice(0, 5),
-          invitationNote: response.data.invitation_note,
-          eventLocation: response.data.event_location
-        });
-      } catch (error) {
-        setError(error.message);
+  // Fetch event data function
+  const fetchEventData = async (eventName) => {
+    try {
+      const response = await API_UTIL.get(`/getEventDetails/${eventName}`);
+      console.log(response.data);
+      setEvent(response.data);
+      let fileCount = 0;
+      if (response.data.uploaded_files) {
+        fileCount = response.data.uploaded_files;
+        setUploadedFilesCount(fileCount);
       }
-    };
+      setEditData({
+        eventName: response.data.event_name,
+        eventDate: response.data.event_date.split('T')[0],
+        eventTime: response.data.event_date.split('T')[1].slice(0, 5),
+        invitationNote: response.data.invitation_note,
+        eventLocation: response.data.event_location
+      });
+    } catch (error) {
+      setError(error.message);
+    }
+  };
 
+  useEffect(() => {
+    // Fetch event data initially
     fetchEventData(eventName);
+
+    // Set up polling
+    const interval = setInterval(() => {
+      fetchEventData(eventName);
+    }, 10000); // 5 seconds
+
+    // Clean up interval on component unmount
+    return () => clearInterval(interval);
   }, [eventName]);
 
   const handleEditClick = () => {

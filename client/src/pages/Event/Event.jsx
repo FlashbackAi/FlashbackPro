@@ -36,6 +36,22 @@ const Event = () => {
   });
 
   const [selectedFile, setSelectedFile] = useState(null);
+
+  useEffect(() => {
+    const loadDefaultImage = async () => {
+      try {
+        const response = await fetch('assets/Images/event-card.jpg');
+        const blob = await response.blob();
+        const defaultImageFile = new File([blob], 'event-card.jpg', { type: 'image/jpeg' });
+        setSelectedFile(defaultImageFile);
+      } catch (error) {
+        console.error('Error loading default image:', error);
+      }
+    };
+
+    loadDefaultImage();
+  }, []);
+
   const [userFormData, setUserFormData] = useState({
     user_name: '',
     social_media: {
@@ -488,7 +504,7 @@ const Event = () => {
                   id="event-date"
                   value={formData.eventDate}
                   handleChange={handleInputChange}
-                  isRequired={true}
+                  isRequired={false}
                   isEditable={true}
                 ></LabelAndInput>
               </div>
@@ -499,7 +515,7 @@ const Event = () => {
                   name={"eventTime"}
                   value={formData.eventTime}
                   handleChange={handleInputChange}
-                  isRequired={true}
+                  isRequired={false}
                   isEditable={true}
                 ></LabelAndInput>
               </div>
@@ -512,7 +528,7 @@ const Event = () => {
                   placeholder="Event Location"
                   value={formData.eventLocation}
                   handleChange={handleInputChange}
-                  isRequired={true}
+                  isRequired={false}
                   isEditable={true}
                 ></LabelAndInput>
               </div>
@@ -571,7 +587,7 @@ const Event = () => {
                   placeholder="Invitation Note"
                   value={formData.invitationNote}
                   handleChange={handleInputChange}
-                  isRequired={true}
+                  isRequired={false}
                   isEditable={true}
                 ></LabelAndInput>
               </div>

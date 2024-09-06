@@ -195,3 +195,16 @@
 .send-modal-body {
   text-align: center; /* Center the body content */
 }
+
+.image-processing-message {
+  /* background-color: #ffe5b4; Light orange background */
+  /* border: 0.08em solid #ff9800; Orange border */
+  border-radius: 0.3em;
+  padding: 1em;
+  text-align: center;
+  font-size: 0.875em; /* This is 14px equivalent */
+  color: #ff5722; /* Darker orange text */
+  margin-bottom: 1.5em; /* Space below the message */
+  font-weight: bold;
+}
+

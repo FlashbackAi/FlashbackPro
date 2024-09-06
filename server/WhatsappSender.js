@@ -20,7 +20,7 @@ class WhatsAppSender {
           to: recipientPhoneNumber,
           type: 'template',
           template: {
-            name: 'flashback_notificationv1',
+            name: 'flashback_notification',
             language: {
               code: 'en'
             },
