@@ -29,7 +29,8 @@ const EventDetails = () => {
   const navigate = useNavigate();
   const [fileCount, setFileCount] = useState(0);
   const [overallProgress, setOverallProgress] = useState(0);
-  const [uploadedFilesCount, setUploadedFilesCount] = useState(0);
+  const [uploadedFilesCount, setUploadedFilesCount] = useState(0);  
+  const [isImageProcessingDone, setIsImageProcessingDone]  = useState(true);
 
   // Fetch event data function
   const fetchEventData = async (eventName) => {
@@ -49,6 +50,14 @@ const EventDetails = () => {
         invitationNote: response.data.invitation_note,
         eventLocation: response.data.event_location
       });
+      if( response.data.uploaded_files === response.data.files_indexed){
+        if(isImageProcessingDone === false)
+        setIsImageProcessingDone(true);
+      }
+      else{
+          setIsImageProcessingDone(false);
+
+      }
     } catch (error) {
       setError(error.message);
     }
@@ -439,19 +448,25 @@ const EventDetails = () => {
               {/* <button className="footer-buttons" onClick={sendWhatsappMsg}>
                 Send Photos
               </button> */}
-              <button className="footer-buttons" onClick={() => {
+              {/* {event?.uploaded_files && ( */}
+                <button className="footer-buttons" onClick={() => {
                   navigate(`/eventPhotos/${event?.folder_name}`);
                 }}>
                 Uploaded Photos
               </button>
-              <button
-                className="footer-buttons"
-                onClick={() => {
-                  navigate(`/relationsV1/${event?.event_id}`);
-                }}
-              >
-                Relation Mapping
-              </button>
+              {/* )} */}
+              
+              {isImageProcessingDone &&(
+                <button
+                  className="footer-buttons"
+                  onClick={() => {
+                    navigate(`/relationsV1/${event?.event_id}`);
+                  }}
+                >
+                  Relation Mapping
+                </button>
+              )}
+
             </div>
             {event.invitation_url && (
               <a
