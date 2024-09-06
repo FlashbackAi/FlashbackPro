@@ -62,7 +62,7 @@ app.get("/share/:eventName/:userId", async(req, res) => {
       redirectUrl=`sharedImage/${eventName}/${userId}.jpg`
     }
     else{
-      redirectUrl = `photosV1/${eventName}/${userId}`;
+      redirectUrl = `photos/${eventName}/${userId}`;
     } 
     const image = `https://rekognitionuserfaces.s3.amazonaws.com/thumbnails/${userId}.jpg`
     res.render("index",{eventName:req.params.eventName,userId:req.params.userId,image,redirectUrl}); // Assuming you have an "index.ejs" file in the "views" directory
