@@ -101,7 +101,7 @@ const logger = winston.createLogger({
   ]
 });
 
- // *** Comment these certificates while testing changes in local developer machine. And, uncomment while pushing to mainline***
+//  // *** Comment these certificates while testing changes in local developer machine. And, uncomment while pushing to mainline***
 const privateKey = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/privkey.pem', 'utf8');
 const certificate = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/fullchain.pem', 'utf8');
 
@@ -117,11 +117,11 @@ const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.
 
 const bucketName = 'flashbackuseruploads';
 const userBucketName='flashbackuserthumbnails';
-const indexBucketName = 'flashbackusercollection';
+// const indexBucketName = 'flashbackusercollection';
 const thumbnailBucketName = 'flashbackimagesthumbnail';
-const imagesBucketName = 'flashbackusercollection';
-// const indexBucketName = 'devtestdnd';
-// const imagesBucketName = 'devtestdnd';
+// const imagesBucketName = 'flashbackusercollection';
+const indexBucketName = 'devtestdnd';
+const imagesBucketName = 'devtestdnd';
 const portfolioBucketName = 'flashbackportfoliouploads';
 
 const rekognition = new AWS.Rekognition({ region: 'ap-south-1' });
@@ -147,11 +147,12 @@ const projectsTable = 'projects_data';
 const indexedDataTableName = 'indexed_data'
 const formDataTableName = 'selectionFormData'; 
 const recokgImages = 'RekognitionImageProperties';
-const datasetTable = 'datasets'
-const modelsTable = 'models'
+const datasetTable = 'datasets;'
+const modelsTable = 'models';
 const proShareDataTable = 'pro_share_data';
-const modelToDatsetReqTable ='model_dataset_requests'
-const userImageActivityTableName = 'user_image_activity'
+const modelToDatsetReqTable ='model_dataset_requests';
+const userImageActivityTableName = 'user_image_activity';
+const ImageUploadData  = 'image_upload_data';   
 
 
 const ClientId = '6goctqurrumilpurvtnh6s4fl1'
@@ -5292,33 +5293,61 @@ const imageUpload = multer({
 //   }
 // });
 
-app.post('/uploadFiles/:eventName/:eventDate/:folder_name', upload.array('files', 50), async (req, res) => {
+// Function to update DynamoDB
+async function updateImageUploadData(s3Result, userPhoneNumber, originalName, eventName, folderName) {
+  const now = new Date();
+  const dynamoDbParams = {
+    TableName: ImageUploadData,
+    Item: {
+      s3_url: s3Result.Location,
+      user_phone_number: userPhoneNumber,
+      file_name: originalName,
+      event_name: eventName,
+      folder_name: folderName,
+      uploaded_date: now.toISOString()
+    }
+  };
+
   try {
-    const { eventName, eventDate, folder_name } = req.params;
+    await docClient.put(dynamoDbParams).promise();
+    logger.info("Updated Image data in ImageUploadData table");
+  } catch (error) {
+    logger.error(`Error updating DynamoDB for file ${originalName}:`, error);
+    throw error;
+  }
+}
 
-    const uploadPromises = req.files.map(async (file) => {
-      const fileId = `${folder_name}/${file.originalname}`;
-      const params = {
-        Bucket: imagesBucketName,
-        Key: fileId,
-        Body: file.buffer, // Consider using a stream if the file size is very large
-        ContentType: file.mimetype
-      };
+app.post('/uploadFiles/:eventName/:userPhoneNumber/:folder_name', upload.array('files', 50), async (req, res) => {
+  const { eventName, userPhoneNumber, folder_name } = req.params;
 
-      try {
-        const result = await s3.upload(params).promise();
-        return result;
-      } catch (error) {
-        console.error(`Error uploading file ${file.originalname}:`, error);
-        throw error;
-      }
-    });
+  logger.info("Started uploading files for the event : "+folder_name);
+  const uploadPromises = req.files.map(async (file) => {
+    const fileId = `${folder_name}/${file.originalname}`;
+    const s3Params = {
+      Bucket: imagesBucketName,
+      Key: fileId,
+      Body: file.buffer,
+      ContentType: file.mimetype
+    };
 
+    try {
+      const s3Result = await s3.upload(s3Params).promise();
+      // Update DynamoDB with the new entry
+      await updateImageUploadData(s3Result, userPhoneNumber, file.originalname, eventName, folder_name);
+    
+      return s3Result;
+    } catch (error) {
+      console.error(`Error uploading file ${file.originalname}:`, error);
+      throw error;
+    }
+  });
+
+  try {
     const results = await Promise.allSettled(uploadPromises);
-
     const successfulUploads = results.filter(r => r.status === 'fulfilled').map(r => r.value);
     const failedUploads = results.filter(r => r.status === 'rejected').map(r => r.reason);
 
+    logger.info("Upload process completed for the event : "+folder_name)
     res.status(200).json({
       message: 'Upload process completed',
       successfulUploads,
@@ -5330,6 +5359,46 @@ app.post('/uploadFiles/:eventName/:eventDate/:folder_name', upload.array('files'
     res.status(500).json({ error: 'Error in upload process' });
   }
 });
+
+
+// app.post('/uploadFiles/:eventName/:eventDate/:folder_name', upload.array('files', 50), async (req, res) => {
+//   try {
+//     const { eventName, eventDate, folder_name } = req.params;
+
+//     const uploadPromises = req.files.map(async (file) => {
+//       const fileId = `${folder_name}/${file.originalname}`;
+//       const params = {
+//         Bucket: imagesBucketName,
+//         Key: fileId,
+//         Body: file.buffer, // Consider using a stream if the file size is very large
+//         ContentType: file.mimetype
+//       };
+
+//       try {
+//         const result = await s3.upload(params).promise();
+//         return result;
+//       } catch (error) {
+//         console.error(`Error uploading file ${file.originalname}:`, error);
+//         throw error;
+//       }
+//     });
+
+//     const results = await Promise.allSettled(uploadPromises);
+
+//     const successfulUploads = results.filter(r => r.status === 'fulfilled').map(r => r.value);
+//     const failedUploads = results.filter(r => r.status === 'rejected').map(r => r.reason);
+
+//     res.status(200).json({
+//       message: 'Upload process completed',
+//       successfulUploads,
+//       failedUploads,
+//       totalFiles: req.files.length
+//     });
+//   } catch (error) {
+//     console.error('Error in upload process:', error);
+//     res.status(500).json({ error: 'Error in upload process' });
+//   }
+// });
 
 
 

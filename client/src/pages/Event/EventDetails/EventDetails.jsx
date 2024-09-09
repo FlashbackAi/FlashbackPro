@@ -31,6 +31,8 @@ const EventDetails = () => {
   const [overallProgress, setOverallProgress] = useState(0);
   const [uploadedFilesCount, setUploadedFilesCount] = useState(0);  
   const [isImageProcessingDone, setIsImageProcessingDone]  = useState(true);
+  const [totalUploadedBytes, setTotalUploadedBytes] = useState(0);
+  const userPhoneNumber = localStorage.userPhoneNumber;
 
   // Fetch event data function
   const fetchEventData = async (eventName) => {
@@ -183,17 +185,19 @@ const EventDetails = () => {
       setUploadStatus('Please select files to upload');
       return;
     }
-
+  
     setUploading(true);
     setUploadFilesModalStatus('Uploading files...');
     setIsUploadFilesFailed(false);
     setOverallProgress(0); // Start at 0% progress
-
+  
     const MAX_CONCURRENT_UPLOADS = 3; // Reduced to avoid 429 error
     const MAX_RETRIES = 3;
     let index = 0;
     const totalFiles = files.length;
-    const progressIncrement = 100 / totalFiles; // Each file contributes equally to the progress
+    const totalBytes = files.reduce((acc, file) => acc + file.size, 0); // Total size of all files
+  
+    // Use React state to safely track the total uploaded bytes
 
     const uploadFile = async (file) => {
       const formData = new FormData();
@@ -201,22 +205,28 @@ const EventDetails = () => {
       formData.append('eventName', event.event_name);
       formData.append('eventDate', event.event_date);
       formData.append('folderName', event.folder_name);
-
+  
       let attempts = 0;
       let delayTime = 1000; // Start with 1 second delay
-
+  
       while (attempts < MAX_RETRIES) {
         try {
-          const response = await API_UTIL.post(`/uploadFiles/${event.event_name}/${event.event_date}/${event.folder_name}`, formData, {
+          const response = await API_UTIL.post(`/uploadFiles/${event.event_name}/${userPhoneNumber}/${event.folder_name}`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
             onUploadProgress: (progressEvent) => {
-              // Optionally use this for detailed per-file progress
+              // Dynamically update the total uploaded bytes using state update function
+              setTotalUploadedBytes((prevUploadedBytes) => {
+                const updatedUploadedBytes = prevUploadedBytes + progressEvent.loaded;
+                
+                // Calculate and update overall progress based on total uploaded bytes
+                const overallProgress = (updatedUploadedBytes / totalBytes) * 100;
+                setOverallProgress(Math.ceil(overallProgress)); // Round to nearest integer
+                
+                return updatedUploadedBytes;
+              });
             },
           });
-
-          // Increment the overall progress after a successful file upload
-          setOverallProgress((prevProgress) => Math.ceil(prevProgress + progressIncrement));
-        
+  
           return response.data;
         } catch (error) {
           if (error.response && error.response.status === 429) {
@@ -231,7 +241,7 @@ const EventDetails = () => {
         }
       }
     };
-
+  
     const handleUploads = async () => {
       while (index < files.length) {
         const promises = [];
@@ -242,14 +252,14 @@ const EventDetails = () => {
         await Promise.allSettled(promises);
       }
     };
-
+  
     try {
       await handleUploads();
-
+  
       // After all files are uploaded successfully, update the uploaded files count
       const newUploadedFilesCount = uploadedFilesCount + files.length;
       setUploadedFilesCount(newUploadedFilesCount);
-
+  
       try {
         const response = await API_UTIL.put(`/updateEvent/${event.event_id}`, {
           eventName: editData.eventName,
@@ -258,7 +268,7 @@ const EventDetails = () => {
           eventLocation: editData.eventLocation,
           uploadedFiles: newUploadedFilesCount,
         });
-
+  
         if (response.status === 200) {
           toast.success('Event updated successfully with new file count');
         }
@@ -266,7 +276,7 @@ const EventDetails = () => {
         console.error('Error updating event with new file count:', error);
         toast.error('Failed to update the event with new file count. Please try again.');
       }
-
+  
       setUploadStatus('Upload completed successfully');
       setFiles([]);
     } catch (error) {
@@ -278,6 +288,7 @@ const EventDetails = () => {
       setFileCount(0);
     }
   };
+  
 
   const sendInvite = () => {
     const message = editData
