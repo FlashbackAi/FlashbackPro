@@ -26,7 +26,12 @@ const rateLimit = require('express-rate-limit');
 const WhatsAppSender = require('./WhatsappSender');
 const { v4: uuidv4 } = require('uuid');
 const { log } = require('console');
+const { AptosClient, AptosAccount } = require('aptos');
+const { aptosConfig } = require('./config');
+const crypto = require('crypto');
+
 //const App = require('..\\client');
+const aptosClient = new AptosClient(aptosConfig.APTOS_NODE_URL);
 const oldEvents = ["Aarthi_Vinay_19122021","Convocation_PrathimaCollege","KSL_25042024","Jahnavi_Vaishnavi_SC_28042024","KSL_22052024","KSL_16052024","V20_BootCamp_2024","Neha_ShivaTeja_18042024"]
 
 dotenv.config();
@@ -102,13 +107,13 @@ const logger = winston.createLogger({
 });
 
 //  // *** Comment these certificates while testing changes in local developer machine. And, uncomment while pushing to mainline***
-const privateKey = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/privkey.pem', 'utf8');
-const certificate = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/fullchain.pem', 'utf8');
+// const privateKey = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/privkey.pem', 'utf8');
+// const certificate = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/fullchain.pem', 'utf8');
 
-const credentials = {
-  key: privateKey,
-  cert: certificate
-}
+// const credentials = {
+//   key: privateKey,
+//   cert: certificate
+// }
 
 // Set up AWS S3
 const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.js
@@ -7636,18 +7641,316 @@ app.post('/backfillFolderNames', async (req, res) => {
 });
 
 
+app.post('/transfer-chewy-coins', async (req, res) => {
+  try {
+      const { amount } = req.body;
 
-  const httpsServer = https.createServer(credentials, app);
+      // Log incoming request
+      logger.info(`Transfer request received: amount = ${amount}`);
 
-  httpsServer.listen(PORT, () => {
-    logger.info(`Server is running on https://localhost:${PORT}`);
-    httpsServer.keepAliveTimeout = 60000; // Increase keep-alive timeout
-    httpsServer.headersTimeout = 65000; // Increase headers timeout
-  });
+      // Read sender's private key and recipient address from config
+        
+      const recipientAddress = aptosConfig.RECIPIENT_ADDRESS;
+      const transferAmount = amount || aptosConfig.DEFAULT_AMOUNT;  // Use provided amount or default
+
+      const senderAccount = new AptosAccount(Buffer.from(aptosConfig.SENDER_PRIVATE_KEY, 'hex'));
+      logger.info(`Transferring ${transferAmount} Chewy Coins from ${senderAccount.address()} to ${recipientAddress}`);
+
+      // Create the transaction payload for transferring Aptos Coins
+      const payload = {
+        type: 'entry_function_payload',
+        function: '0x1::coin::transfer',  // Native Aptos Coin transfer function
+        arguments: [recipientAddress, transferAmount],  // Amount in octas
+        type_arguments: ['0x1::aptos_coin::AptosCoin']  // AptosCoin type argument
+      };
+
+      logger.info(`Payload created: ${JSON.stringify(payload)}`);
+
+      // Measure the time taken for each step
+      const startTime = Date.now();
+      logger.info("fetching account details")      
+      const accountDetails = await aptosClient.getAccount(senderAccount.address());
+      logger.info(`Sender Sequence Number: ${accountDetails.sequence_number}`);
+      // Generate and sign the transaction
+      // const txnRequest = await aptosClient.generateTransaction(senderAccount.address(), payload);
+      let txnRequest;
+      try {
+         txnRequest = await aptosClient.generateTransaction(senderAccount.address(), payload);
+       
+    } catch (error) {
+        logger.error(`Transaction generation failed: ${error.message}`);
+        return res.status(500).json({ error: 'Transaction generation failed', details: error.message });
+    }
+      
+      const signedTxn = await aptosClient.signTransaction(senderAccount, txnRequest);
+      logger.info(`Transaction signed in ${Date.now() - startTime} ms`);
+
+      // Submit the transaction
+      const transactionResult = await aptosClient.submitTransaction(signedTxn);
+      logger.info(`Transaction submitted in ${Date.now() - startTime} ms: ${transactionResult.hash}`);
+
+      // Wait for confirmation
+      const result  = await aptosClient.waitForTransaction(transactionResult.hash);
+      logger.info(`Transaction confirmed in ${Date.now() - startTime} ms: ${transactionResult.hash}`);
+
+      const transactionStatus = await aptosClient.getTransactionByHash(transactionResult.hash);
+      logger.info(`Transaction status: ${transactionStatus.type}, Success: ${transactionStatus.success}`);
+
+      res.status(200).json({
+          message: 'Chewy Coin transfer successful',
+          transactionHash: transactionResult.hash
+      });
+  } catch (error) {
+      logger.error(`Transfer failed: ${error}`);
+      res.status(500).json({ error: 'Chewy Coin transfer failed', details: error.message });
+  }
+});
+
+// Global error handling for unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+// Encryption function for private keys (for secure storage)
+const encrypt = (text, secret) => {
+  const cipher = crypto.createCipher('aes-256-cbc', secret);
+  let encrypted = cipher.update(text, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  return encrypted;
+};
+
+// Function to check if wallet exists in DynamoDB
+const checkWalletExists = async (mobileNumber) => {
+  const params = {
+    TableName: 'wallet_details',
+    Key: {
+      user_phone_number: mobileNumber
+    }
+  };
+
+  try {
+    const result = await docClient.get(params).promise();  // Use docClient
+    return result.Item ? result.Item : null;
+  } catch (error) {
+    logger.error(`Error checking wallet for mobile number: ${mobileNumber}: ${error.message}`);
+    throw error;
+  }
+};
+
+// Function to store wallet info in DynamoDB
+const storeWalletInDynamoDB = async (mobileNumber, walletDetails) => {
+  const params = {
+    TableName: 'wallet_details',
+    Item: {
+      user_phone_number: mobileNumber,
+      wallet_address: walletDetails.walletAddress,
+      public_key: walletDetails.publicKey,
+      encrypted_private_key: walletDetails.encryptedPrivateKey,
+      balance: '0',  // Set balance as '0'
+    }
+  };
+
+  try {
+    await docClient.put(params).promise();  // Use docClient
+    logger.info(`Wallet info stored in DynamoDB for mobile number: ${mobileNumber}`);
+  } catch (error) {
+    logger.error(`Error storing wallet info in DynamoDB for mobile number: ${mobileNumber}: ${error.message}`);
+    throw error;
+  }
+};
+
+// Function to update the balance of the recipient's wallet in DynamoDB
+const updateWalletBalanceInDynamoDB = async (mobileNumber, newBalance) => {
+  const params = {
+    TableName: 'wallet_details',
+    Key: { user_phone_number: mobileNumber },
+    UpdateExpression: 'SET balance = :balance',
+    ExpressionAttributeValues: {
+      ':balance': newBalance
+    },
+    ReturnValues: 'UPDATED_NEW'
+  };
+
+  try {
+    const result = await docClient.update(params).promise();  // Use docClient
+    logger.info(`Updated balance for mobile number: ${mobileNumber} to ${newBalance}`);
+    return result;
+  } catch (error) {
+    logger.error(`Error updating balance for mobile number: ${mobileNumber}: ${error.message}`);
+    throw error;
+  }
+};
+
+const registerCoinStore = async (recipientAddress) => {
+  try {
+    // Application's wallet (sender)
+    const senderAccount = new AptosAccount(Buffer.from(aptosConfig.SENDER_PRIVATE_KEY, 'hex'));
+
+    // Payload to create a CoinStore for the recipient's account
+    const payload = {
+      type: 'entry_function_payload',
+      function: '0x1::coin::register',
+      arguments: [],
+      type_arguments: ['0x1::aptos_coin::AptosCoin'],  // The type argument for AptosCoin (or your specific token)
+    };
+
+    // Generate and sign the transaction to create the CoinStore
+    const txnRequest = await aptosClient.generateTransaction(senderAccount.address(), payload);
+    const signedTxn = await aptosClient.signTransaction(senderAccount, txnRequest);
+
+    // Submit the transaction to register CoinStore
+    const transactionResult = await aptosClient.submitTransaction(signedTxn);
+    logger.info(`CoinStore registration transaction submitted: ${transactionResult.hash}`);
+
+    // Wait for confirmation
+    await aptosClient.waitForTransaction(transactionResult.hash);
+    logger.info(`CoinStore registered for recipient: ${transactionResult.hash}`);
+    
+    return transactionResult.hash;
+  } catch (error) {
+    logger.error(`CoinStore registration failed: ${error.message}`);
+    throw error;
+  }
+};
+
+const transferAptosCoins = async (recipientAddress, transferAmount) => {
+  try {
+    // Register CoinStore for the recipient before transferring AptosCoins
+    await registerCoinStore(recipientAddress);
+
+    // Application's wallet (sender)
+    const senderAccount = new AptosAccount(Buffer.from(aptosConfig.SENDER_PRIVATE_KEY, 'hex'));
+
+    // Payload for transferring Aptos coins
+    const payload = {
+      type: 'entry_function_payload',
+      function: '0x1::coin::transfer',
+      arguments: [recipientAddress, transferAmount],  // Recipient and amount
+      type_arguments: ['0x1::aptos_coin::AptosCoin'],  // The type argument for AptosCoin
+    };
+
+    // Generate and sign the transaction
+    const txnRequest = await aptosClient.generateTransaction(senderAccount.address(), payload);
+    const signedTxn = await aptosClient.signTransaction(senderAccount, txnRequest);
+
+    // Submit the transaction
+    const transactionResult = await aptosClient.submitTransaction(signedTxn);
+    logger.info(`Aptos Coin transfer submitted: ${transactionResult.hash}`);
+
+    // Wait for confirmation
+    await aptosClient.waitForTransaction(transactionResult.hash);
+    logger.info(`Aptos Coin transfer confirmed: ${transactionResult.hash}`);
+
+    return transactionResult.hash;
+  } catch (error) {
+    logger.error(`Aptos Coin transfer failed: ${error.message}`);
+    throw error;
+  }
+};
+
+// Function to fund the account
+const fundNewAccount = async ( recipientAddress, amount) => {
+  try {
+    const senderAccount = new AptosAccount(Buffer.from(aptosConfig.SENDER_PRIVATE_KEY, 'hex'));
+
+    // Create the payload for transferring APT
+    const payload = {
+      type: 'entry_function_payload',
+      function: '0x1::aptos_account::transfer',
+      arguments: [recipientAddress, amount],  // Recipient and amount
+      type_arguments: ['0x1::aptos_coin::AptosCoin'],
+    };
+
+    // Generate and sign the transaction
+    const txnRequest = await aptosClient.generateTransaction(senderAccount.address(), payload);
+    const signedTxn = await aptosClient.signTransaction(senderAccount, txnRequest);
+
+    // Submit the transaction
+    const transactionResult = await aptosClient.submitTransaction(signedTxn);
+    console.log(`Transaction submitted: ${transactionResult.hash}`);
+
+    // Wait for confirmation
+    await aptosClient.waitForTransaction(transactionResult.hash);
+
+    const transactionStatus = await aptosClient.getTransactionByHash(transactionResult.hash);
+    console.log(`Transaction confirmed: ${transactionResult.hash}`);
+  } catch (error) {
+    console.error(`Error funding account: ${error.message}`);
+  }
+};
+
+// API endpoint to create an Aptos wallet using a mobile number
+app.post('/createAptosWallet', async (req, res) => {
+  const { mobileNumber, transferAmount } = req.body;  // Accept the transferAmount from the request
+
+  // Log the incoming request
+  logger.info(`Received request to create wallet for mobile number: ${mobileNumber}`);
+
+  try {
+    // Check if the wallet already exists for the given mobile number
+    const existingWallet = await checkWalletExists(mobileNumber);
+
+    if (existingWallet) {
+      // If the wallet exists, return the existing wallet details
+      logger.info(`Wallet already exists for mobile number: ${mobileNumber}`);
+      return res.status(200).json({
+        message: 'Wallet already exists',
+        walletAddress: existingWallet.wallet_address,
+        balance: existingWallet.balance,
+      });
+    }
+
+    // If no wallet exists, create a new Aptos wallet
+    const aptosAccount = new AptosAccount();
+
+    // Encrypt the private key before storing it
+    const privateKey = aptosAccount.toPrivateKeyObject().privateKeyHex;
+    const encryptedPrivateKey = encrypt(privateKey, 'your-secret-key'); // Replace with a secure secret key
+
+    // Store the user's wallet info (mobile number, wallet address, public key, encrypted private key)
+    const walletDetails = {
+      walletAddress: aptosAccount.address().hex(),
+      publicKey: aptosAccount.pubKey().toString('hex'),
+      encryptedPrivateKey: encryptedPrivateKey,
+    };
+
+    // Store the wallet info in DynamoDB
+   //await storeWalletInDynamoDB(mobileNumber, walletDetails);
+
+    // Log successful wallet creation
+    logger.info(`Aptos Wallet created for mobile number: ${mobileNumber} with wallet address: ${walletDetails.walletAddress}`);
+
+    // Transfer Aptos coins to the newly created wallet
+    const transactionHash = await fundNewAccount(walletDetails.walletAddress, transferAmount || aptosConfig.DEFAULT_TRANSFER_AMOUNT);
+
+    // After transfer, update the recipient's balance in DynamoDB
+    await updateWalletBalanceInDynamoDB(mobileNumber, transferAmount || aptosConfig.DEFAULT_TRANSFER_AMOUNT);
+
+    // Return the wallet details and transaction hash
+    res.status(201).json({
+      message: 'Aptos Wallet created and coins transferred successfully',
+      walletAddress: walletDetails.walletAddress,
+      transactionHash: transactionHash,
+      balance: transferAmount || aptosConfig.DEFAULT_TRANSFER_AMOUNT,  // Update balance to reflect the transfer
+    });
+  } catch (error) {
+    // Log the error
+    logger.error(`Error creating Aptos wallet for mobile number: ${mobileNumber}: ${error.message}`);
+    res.status(500).json({ message: 'Failed to create Aptos wallet', error: error.message });
+  }
+});
+
+  // const httpsServer = https.createServer(credentials, app);
+
+  // httpsServer.listen(PORT, () => {
+  //   logger.info(`Server is running on https://localhost:${PORT}`);
+  //   httpsServer.keepAliveTimeout = 60000; // Increase keep-alive timeout
+  //   httpsServer.headersTimeout = 65000; // Increase headers timeout
+  // });
 
 // **Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
-//  const server = app.listen(PORT ,() => {
-//  logger.info(`Server started on http://localhost:${PORT}`);
-//  server.keepAliveTimeout = 60000; // Increase keep-alive timeout
-//  server.headersTimeout = 65000; // Increase headers timeout
-//  });
+ const server = app.listen(PORT ,() => {
+ logger.info(`Server started on http://localhost:${PORT}`);
+ server.keepAliveTimeout = 60000; // Increase keep-alive timeout
+ server.headersTimeout = 65000; // Increase headers timeout
+ });
