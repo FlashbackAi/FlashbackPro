@@ -28,6 +28,7 @@ const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
 
 const aptosConfig = {
   APTOS_NODE_URL: 'https://fullnode.mainnet.aptoslabs.com/v1',
+  SENDER_ADDRESS: '0xad42dbc223a72cf73c5c653dafde255cab01d73103acf49988c7f2eb43f2dd08',
   SENDER_PRIVATE_KEY: '53632582437017e387f177fe158a35c0f7ac58a8a476a2d69f77650f3a54b644',//process.env.SENDER_PRIVATE_KEY, // Sender's private key
   RECIPIENT_ADDRESS: '1b8dab4f14b7f78399a456d7ad7d2e974838b6cd3f4b6c6757b8b375d9a3c7a5',//process.env.RECIPIENT_ADDRESS,   // Recipient's wallet address
   DEFAULT_AMOUNT: process.env.DEFAULT_AMOUNT || '1000000'
