@@ -259,6 +259,7 @@ const Event = () => {
 
       const res = await API_UTIL.post("/updatePortfolioDetails", requestData);
       if (res.status === 200) {
+        setUserDetails(res.data.data);
         setIsUserDetailsModalOpen(false);
         // fetchEventData(res.data.data.user_name);
         setIsCreateModalOpen(true); 
