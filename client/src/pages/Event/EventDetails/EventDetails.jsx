@@ -33,6 +33,9 @@ const EventDetails = () => {
   const [isImageProcessingDone, setIsImageProcessingDone]  = useState(true);
   const [totalUploadedBytes, setTotalUploadedBytes] = useState(0);
   const userPhoneNumber = localStorage.userPhoneNumber;
+  const [requiredCoins, setRequiredCoins] = useState(0);
+  const [canUpload, setCanUpload] = useState(false); // To manage button state
+  const [isCoinsDedcuted,setIsCoinsDeducted] = useState(false);
 
   // Fetch event data function
   const fetchEventData = async (eventName) => {
@@ -64,7 +67,13 @@ const EventDetails = () => {
       setError(error.message);
     }
   };
+  useEffect(() => {
+    setRequiredCoins(files.length);
+    setCanUpload(userDetails.reward_points >= files.length); // Enable/disable upload based on user's coins
+  }, [files, userDetails]);
 
+  useEffect(() => {
+  }, [isCoinsDedcuted]);
   useEffect(() => {
     // Fetch event data initially
     fetchEventData(eventName);
@@ -174,6 +183,30 @@ const EventDetails = () => {
     }
   }, []);
 
+  const deductCoins = async (numberOfImages) => {
+    try {
+      // Prepare the request payload
+      const payload = {
+        amount: numberOfImages.toString(), // The number of images is the amount to deduct
+        senderMobileNumber: userPhoneNumber, // The current user's phone number
+        recipientMobileNumber: "+919090401234" // The fixed recipient phone number
+      };
+  
+      // Call the API to transfer Chewy coins
+      const response = await API_UTIL.post('http://localhost:5000/transfer-chewy-coins', payload);
+  
+      if (response.status === 200) {
+        setIsCoinsDeducted(true);
+      } else {
+        throw new Error('Failed to deduct coins.');
+      }
+    } catch (error) {
+      console.error('Error deducting coins:', error);
+      toast.error('Failed to deduct coins. Please try again.');
+    }
+  };
+  
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
   });
@@ -276,6 +309,7 @@ const EventDetails = () => {
         console.error('Error updating event with new file count:', error);
         toast.error('Failed to update the event with new file count. Please try again.');
       }
+      await deductCoins(files.length);
   
       setUploadStatus('Upload completed successfully');
       setFiles([]);
@@ -368,7 +402,7 @@ const EventDetails = () => {
 
   return (
     <div className="event-details-page-root">
-      <AppBar />
+      <AppBar showCoins={true}/>
       {event.event_name && (
         <div className="event-details-container">
           <h1 className="event-details-title">
@@ -530,59 +564,70 @@ const EventDetails = () => {
           </Modal>
 
           <Modal
-            isOpen={isUploadFilesModelOpen}
-            onRequestClose={closeUploadFilesModal}
-            contentLabel="Upload Files"
-            className="uploadfiles-modal-content"
-            overlayClassName="modal-overlay"
+      isOpen={isUploadFilesModelOpen}
+      onRequestClose={closeUploadFilesModal}
+      contentLabel="Upload Files"
+      className="uploadfiles-modal-content"
+      overlayClassName="modal-overlay"
+    >
+      <div>
+        <div className="uploadfiles-modal-header">
+          <h2 className="uploadfiles-modal-title">Upload Files</h2>
+          <button className="close-button" onClick={closeUploadFilesModal}>
+            x
+          </button>
+        </div>
+        <div className="modal-body">
+          <div
+            {...getRootProps()}
+            className={`dropzone ${isDragActive ? "active" : ""}`}
+            style={dropzoneStyle}
           >
-            <div>
-              <div className="uploadfiles-modal-header">
-                <h2 className="uploadfiles-modal-title">Upload Files</h2>
-                <button className="close-button" onClick={closeUploadFilesModal}>
-                  x
-                </button>
-              </div>
-              <div className="modal-body">
-                <div
-                  {...getRootProps()}
-                  className={`dropzone ${isDragActive ? "active" : ""}`}
-                  style={dropzoneStyle}
-                >
-                  <input {...getInputProps()} />
-                  {isDragActive ? (
-                    <p>Drop the files here ...</p>
-                  ) : (
-                    <p>
-                      Drag 'n' drop files here, or click to select files from your
-                      machine
-                    </p>
-                  )}
-                </div>
-                {fileCount > 0 && <p>{fileCount} file(s) selected</p>}
-                {uploadStatus && <p>{uploadStatus}</p>}
-                <button 
-                  onClick={uploadFiles} 
-                  className="upload-button" 
-                  disabled={fileCount > 500}
-                >
-                  Upload
-                </button>
+            <input {...getInputProps()} />
+            {isDragActive ? (
+              <p>Drop the files here ...</p>
+            ) : (
+              <p>
+                Drag 'n' drop files here, or click to select files from your
+                machine
+              </p>
+            )}
+          </div>
+          {fileCount > 0 && (
+            <p>
+              {fileCount} file(s) selected.{" "}
+              {canUpload 
+                ? `${requiredCoins} 🪙 will be deducted from your wallet.` 
+                : "Insufficient balance."
+              }
+            </p>
+          )}
+          {uploadStatus && <p>{uploadStatus}</p>}
+          <button 
+            onClick={uploadFiles} 
+            className="upload-button" 
+            disabled={!canUpload || fileCount > 500}
+          >
+            {/* {canUpload 
+              ? `Pay ${requiredCoins} coins to upload` 
+              : 'Insufficient coins'} */}
+              Upload
+          </button>
 
-                {uploading && (
-                  <div className="processing-bar-container">
-                    <div
-                      className="processing-bar-fill"
-                      style={{ width: `${overallProgress}%` }}
-                    ></div>
-                    <div className="processing-bar-text">
-                      {overallProgress < 100 ? `${overallProgress}% Processing...` : 'Finalizing...'}
-                    </div>
-                  </div>
-                )}
+          {uploading && (
+            <div className="processing-bar-container">
+              <div
+                className="processing-bar-fill"
+                style={{ width: `${overallProgress}%` }}
+              ></div>
+              <div className="processing-bar-text">
+                {overallProgress < 100 ? `${overallProgress}% Processing...` : 'Finalizing...'}
               </div>
             </div>
-          </Modal>
+          )}
+        </div>
+      </div>
+    </Modal>
         </div>
       )}
     </div>
