@@ -117,11 +117,11 @@ const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.
 
 const bucketName = 'flashbackuseruploads';
 const userBucketName='flashbackuserthumbnails';
-// const indexBucketName = 'flashbackusercollection';
+const indexBucketName = 'flashbackusercollection';
 const thumbnailBucketName = 'flashbackimagesthumbnail';
-// const imagesBucketName = 'flashbackusercollection';
-const indexBucketName = 'devtestdnd';
-const imagesBucketName = 'devtestdnd';
+const imagesBucketName = 'flashbackusercollection';
+//const indexBucketName = 'devtestdnd';
+//const imagesBucketName = 'devtestdnd';
 const portfolioBucketName = 'flashbackportfoliouploads';
 
 const rekognition = new AWS.Rekognition({ region: 'ap-south-1' });
