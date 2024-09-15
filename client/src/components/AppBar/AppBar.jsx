@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import API_UTIL from '../../services/AuthIntereptor';
 import Modal from 'react-modal'; // Assuming you are using react-modal
 import QRCode from 'qrcode.react'; // Assuming you are using qrcode.react for QR generation
-import { FaCopy } from 'react-icons/fa'; // Font Awesome Copy icon (install using: npm install react-icons)
+import { FaCopy , FaBars} from 'react-icons/fa'; // Font Awesome Copy icon (install using: npm install react-icons)
 
 Modal.setAppElement('#root'); // For accessibility, set the app root for the modal
 
@@ -17,7 +17,11 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
   const qrRef = useRef(null); // Ref for QR code
   const [hashCode, setHashCode] = useState(''); // State to store the wallet hash code
   const [copyStatus, setCopyStatus] = useState('Copy Code'); // State to manage text for copy action
+  const [isMenuOpen, setIsMenuOpen] = useState(false); // State to control menu visibility
 
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen); // Toggle menu visibility
+  };
   // Function to fetch user details from backend
   const fetchUserDetails = async (userPhoneNumber) => {
     try {
@@ -110,18 +114,35 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
 
       <div className='user-section'>
         {showCoins && userDetails && (
+          <>
           <div className='user-coins' onClick={openQrModal}>
             <span>Coins: {userDetails.reward_points}🪙</span>
           </div>
-        )}
+        
 
-        {showLogout && (
+          <FaBars className='menu-icon' onClick={toggleMenu} />
+
+          {/* Dropdown menu */}
+          {isMenuOpen && (
+            <div className='menu-panel'>
+              <div className='menu-item'>Profile</div>
+              <div className='menu-item'>Settings</div>
+              <div className='menu-item' onClick={() => { localStorage.clear(); navigate('/'); }}>Logout</div>
+              <div className='menu-item'>Refer</div>
+              <div className='menu-item'>Claim Rewards</div>
+            </div>
+          )}
+
+        </>
+      )}
+
+        {/* {showLogout && (
           <div className='logout-section'>
             <button className='logout-button' onClick={handleLogout}>
               Logout
             </button>
           </div>
-        )}
+        )} */}
       </div>
 
       {/* QR Code Modal */}
