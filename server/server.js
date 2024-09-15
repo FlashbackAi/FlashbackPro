@@ -111,13 +111,13 @@ const logger = winston.createLogger({
 });
 
 //  // *** Comment these certificates while testing changes in local developer machine. And, uncomment while pushing to mainline***
-const privateKey = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/privkey.pem', 'utf8');
-const certificate = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/fullchain.pem', 'utf8');
+// const privateKey = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/privkey.pem', 'utf8');
+// const certificate = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/fullchain.pem', 'utf8');
 
-const credentials = {
-  key: privateKey,
-  cert: certificate
-}
+// const credentials = {
+//   key: privateKey,
+//   cert: certificate
+// }
 
 // Set up AWS S3
 const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.js
@@ -8131,17 +8131,17 @@ const fetchWalletDetails = async (mobileNumber) => {
   }
 };
 
-  const httpsServer = https.createServer(credentials, app);
+  // const httpsServer = https.createServer(credentials, app);
 
-  httpsServer.listen(PORT, () => {
-    logger.info(`Server is running on https://localhost:${PORT}`);
-    httpsServer.keepAliveTimeout = 60000; // Increase keep-alive timeout
-    httpsServer.headersTimeout = 65000; // Increase headers timeout
-  });
+  // httpsServer.listen(PORT, () => {
+  //   logger.info(`Server is running on https://localhost:${PORT}`);
+  //   httpsServer.keepAliveTimeout = 60000; // Increase keep-alive timeout
+  //   httpsServer.headersTimeout = 65000; // Increase headers timeout
+  // });
 
 // **Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
-//  const server = app.listen(PORT ,() => {
-//  logger.info(`Server started on http://localhost:${PORT}`);
-//  server.keepAliveTimeout = 60000; // Increase keep-alive timeout
-//  server.headersTimeout = 65000; // Increase headers timeout
-//  });
+ const server = app.listen(PORT ,() => {
+ logger.info(`Server started on http://localhost:${PORT}`);
+ server.keepAliveTimeout = 60000; // Increase keep-alive timeout
+ server.headersTimeout = 65000; // Increase headers timeout
+ });
