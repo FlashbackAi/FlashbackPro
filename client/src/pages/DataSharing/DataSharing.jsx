@@ -44,7 +44,7 @@ function DataSharingPage() {
         API_UTIL.get(`/imagesForFederated/${userPhoneNumber}`)
             .then(response => {
                 setPhotoCount(response.data.count);
-                setLabel(`Enable Sharing and Earn ${response.data.count / 2}`)
+                setLabel(`Enable Sharing and Earn ${Math.floor(response.data.count / 2)}`)
             })
             .catch(error => {
                 console.error('Error fetching photo count:', error);
@@ -172,7 +172,7 @@ function DataSharingPage() {
             }
             toast.success('Dataset created successfully');
             await updateImageStatus(userPhoneNumber);
-            await transferChewyCoins(userPhoneNumber, photoCount/2); // Assuming you have a function to update reward points
+            await transferChewyCoins(userPhoneNumber, Math.floor(photoCount / 2));; // Assuming you have a function to update reward points
         } catch (error) {
             console.error('Error saving dataset:', error);
             toast.error('Failed to save the dataset. Please try again.');
