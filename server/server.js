@@ -155,7 +155,7 @@ const projectsTable = 'projects_data';
 const indexedDataTableName = 'indexed_data'
 const formDataTableName = 'selectionFormData'; 
 const recokgImages = 'RekognitionImageProperties';
-const datasetTable = 'datasets;'
+const datasetTable = 'datasets';
 const modelsTable = 'models';
 const proShareDataTable = 'pro_share_data';
 const modelToDatsetReqTable ='model_dataset_requests';
@@ -5305,22 +5305,34 @@ const imageUpload = multer({
 
 // Function to fetch images by user phone number and return the count
 async function fetchImageCountByUserPhoneNumber(userPhoneNumber) {
-  const params = {
-      TableName: ImageUploadData, // Ensure this is the correct table name
-      IndexName: 'user_phone_number-index',
-      KeyConditionExpression: 'user_phone_number = :userPhoneNumber',
-      ExpressionAttributeValues: {
-          ':userPhoneNumber': userPhoneNumber
-      }
-  };
+  let totalCount = 0;
+  let lastEvaluatedKey = null;
 
-  try {
-      const data = await docClient.query(params).promise();
-      return data.Count; // Return the count of images
-  } catch (error) {
-      console.error('Error fetching images count:', error);
-      throw new Error('Error fetching images count');
-  }
+  do {
+      const params = {
+          TableName: ImageUploadData, // Ensure this is the correct table name
+          IndexName: 'user_phone_number-index',
+          KeyConditionExpression: 'user_phone_number = :userPhoneNumber',
+          FilterExpression: 'attribute_not_exists(enable_sharing) OR enable_sharing <> :true',
+          ExpressionAttributeValues: {
+              ':userPhoneNumber': userPhoneNumber,
+              ':true': true
+          },
+          ExclusiveStartKey: lastEvaluatedKey // For pagination
+      };
+
+      try {
+          const data = await docClient.query(params).promise();
+          totalCount += data.Count; // Add the count of the current batch
+          lastEvaluatedKey = data.LastEvaluatedKey; // For pagination
+
+      } catch (error) {
+          console.error('Error fetching images count:', error);
+          throw new Error('Error fetching images count');
+      }
+  } while (lastEvaluatedKey); // Continue querying until all items are fetched
+
+  return totalCount;
 }
 
 // API Endpoint to fetch image count
@@ -5335,6 +5347,81 @@ app.get('/imagesForFederated/:userPhoneNumber', async (req, res) => {
   }
 });
 
+
+
+async function updateEnableSharingForUserPhoneNumber(userPhoneNumber) {
+  let lastEvaluatedKey = null;
+  const updatePromises = [];
+
+  do {
+      // Step 1: Fetch records in batches
+      const params = {
+          TableName: ImageUploadData,
+          IndexName: 'user_phone_number-index',
+          KeyConditionExpression: 'user_phone_number = :userPhoneNumber',
+          FilterExpression: 'attribute_not_exists(enable_sharing) OR enable_sharing <> :true',
+          ExpressionAttributeValues: {
+              ':userPhoneNumber': userPhoneNumber,
+              ':true': true
+          },
+          ExclusiveStartKey: lastEvaluatedKey, // Start key for pagination
+      };
+
+      try {
+          const data = await docClient.query(params).promise();
+          const itemsToUpdate = data.Items;
+
+          // Step 2: Collect update promises
+          itemsToUpdate.forEach(item => {
+              const updateParams = {
+                  TableName: ImageUploadData,
+                  Key: {
+                      s3_url:item.s3_url
+                  },
+                  UpdateExpression: 'set enable_sharing = :true',
+                  ExpressionAttributeValues: {
+                      ':true': true
+                  }
+              };
+              updatePromises.push(docClient.update(updateParams).promise());
+          });
+
+          // Step 3: Prepare for the next batch
+          lastEvaluatedKey = data.LastEvaluatedKey;
+
+      } catch (error) {
+          console.error('Error fetching images:', error);
+          throw new Error('Error fetching images');
+      }
+
+  } while (lastEvaluatedKey); // Continue until no more items to fetch
+
+  // Step 4: Execute all update operations
+  try {
+      await Promise.all(updatePromises);
+      return { message: 'All records updated successfully' };
+  } catch (error) {
+      console.error('Error updating records:', error);
+      throw new Error('Error updating records');
+  }
+}
+
+// Example usage (Node.js Express route handler)
+app.post("/updateImageEnableSharing",async(req, res) =>{
+  const { userPhoneNumber } = req.body;
+
+  if (!userPhoneNumber) {
+      return res.status(400).json({ error: 'userPhoneNumber is required' });
+  }
+
+  try {
+      const result = await updateEnableSharingForUserPhoneNumber(userPhoneNumber);
+      res.json(result);
+  } catch (error) {
+      res.status(500).json({ error: error.message });
+  }
+});
+
 // Function to update DynamoDB
 async function updateImageUploadData(s3Result, userPhoneNumber, originalName, eventName, folderName) {
   const now = new Date();
@@ -5346,7 +5433,9 @@ async function updateImageUploadData(s3Result, userPhoneNumber, originalName, ev
       file_name: originalName,
       event_name: eventName,
       folder_name: folderName,
-      uploaded_date: now.toISOString()
+      uploaded_date: now.toISOString(),
+      enable_sharing:false,
+
     }
   };
 
@@ -6650,7 +6739,7 @@ app.get("/getDatasetDetails/:orgName/:datasetName", async (req, res) => {
       res.status(200).send(result.Items);
     } else {
       logger.info(`No dataset details found for ${orgName} and ${datasetName}`);
-      res.status(404).send({ message: "Dataset details not found" });
+      res.status(200).send({ message: "Dataset details not found" });
     }
 
   } catch (err) {
