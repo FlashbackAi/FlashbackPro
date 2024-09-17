@@ -125,11 +125,11 @@ const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.
 
 const bucketName = 'flashbackuseruploads';
 const userBucketName='flashbackuserthumbnails';
-// const indexBucketName = 'flashbackusercollection';
+const indexBucketName = 'flashbackusercollection';
 const thumbnailBucketName = 'flashbackimagesthumbnail';
-// const imagesBucketName = 'flashbackusercollection';
-const indexBucketName = 'devtestdnd';
-const imagesBucketName = 'devtestdnd';
+const imagesBucketName = 'flashbackusercollection';
+// const indexBucketName = 'devtestdnd';
+// const imagesBucketName = 'devtestdnd';
 const portfolioBucketName = 'flashbackportfoliouploads';
 
 const rekognition = new AWS.Rekognition({ region: 'ap-south-1' });
@@ -8134,7 +8134,8 @@ const fetchWalletDetails = async (mobileNumber) => {
 const getWalletBalance = async (walletAddress) => {
   try {
     const resources = await aptosClient.getAccountResource({ accountAddress: walletAddress,
-      resourceType: "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>"})
+      resourceType: "0x1::coin::CoinStore<0xc26a8eda1c3ab69a157815183ddda88c89d6758ee491dd1647a70af2907ce074::coin::Chewy>"})
+      
 
     // Find the specific CoinStore resource for AptosCoin
     // const aptosCoinResource = resources.find(

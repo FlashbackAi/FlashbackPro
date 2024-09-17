@@ -154,6 +154,7 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
           {/* Dropdown menu */}
           {isMenuOpen && (
             <div className='menu-panel'>
+              <div className='menu-item'>{userDetails.user_phone_number}</div>
               <div className='menu-item'>Profile</div>
               <div className='menu-item'>Settings</div>
               <div className='menu-item' onClick={() => { localStorage.clear(); navigate('/'); }}>Logout</div>

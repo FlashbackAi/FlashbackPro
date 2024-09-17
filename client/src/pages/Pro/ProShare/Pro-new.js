@@ -92,6 +92,33 @@ function ProNew() {
     }
   };
 
+  const transferChewyCoins = async (recipientMobileNumber, amount) => {
+    try {
+      const senderMobileNumber = "+919090401234"; // The fixed sender phone number
+  
+      // Prepare the request payload
+      const payload = {
+        amount: amount,
+        senderMobileNumber: senderMobileNumber,
+        recipientMobileNumber: recipientMobileNumber,
+      };
+  
+      // Call the API to transfer Chewy coins
+      const response = await API_UTIL.post('/transfer-chewy-coins', payload);
+  
+      if (response.status === 200) {
+        toast.success('Rewards added  successfully!');
+      } else {
+        throw new Error('Failed to transfer Chewy Coins.');
+      }
+    } catch (error) {
+      console.error('Error transferring Chewy Coins:', error);
+      toast.error('Failed to transfer Chewy Coins. Please try again.');
+    }
+  };
+  
+  
+
   const handleMergeClick = () => {
     if (!isImageProcessingDone) {
       setIsWarningModalOpen(true); // Show warning if images are still processing
@@ -115,7 +142,7 @@ function ProNew() {
       });
 
       if (response.data.success) {
-        updateRewardPoints(50);
+        await transferChewyCoins(user_phone_number, 50);
         await fetchThumbnails();
       }
       return response.data;
@@ -314,7 +341,7 @@ function ProNew() {
         <LoadingSpinner />
       ) : (
         <>
-          <AppBar />
+          <AppBar showCoins = {true}/>
           <div className="content-wrap">
             <div className="statsSections">
               <div className="toolbar">

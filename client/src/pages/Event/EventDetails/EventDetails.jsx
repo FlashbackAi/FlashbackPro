@@ -324,12 +324,14 @@ const EventDetails = () => {
   };
   
 
-  const sendInvite = () => {
+  const sendInvite = async () => {
     const message = editData
       ? `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(editData?.eventDate)} at ${getFormattedTime(editData?.eventDate)}. Location: ${editData?.eventLocation} , Url: https://flashback.inc/invite/${event?.event_id}`
       : `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(event.event_date)} at ${getFormattedTime(event.event_date)}. Location: ${event.event_location} , Url: https://flashback.inc/invite/${event?.event_id}`;
     const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+    
     window.open(url, '_blank');
+    await transferChewyCoins(userDetails.user_phone_number,10);
   };
 
   const formatEventName = (name) => {
@@ -360,6 +362,30 @@ const EventDetails = () => {
     hours = hours ? String(hours).padStart(2, '0') : '12';
     return `${hours}:${minutes} ${ampm}`;
   }
+  const transferChewyCoins = async (recipientMobileNumber, amount) => {
+    try {
+      const senderMobileNumber = "+919090401234"; // The fixed sender phone number
+  
+      // Prepare the request payload
+      const payload = {
+        amount: amount,
+        senderMobileNumber: senderMobileNumber,
+        recipientMobileNumber: recipientMobileNumber,
+      };
+  
+      // Call the API to transfer Chewy coins
+      const response = await API_UTIL.post('/transfer-chewy-coins', payload);
+  
+      if (response.status === 200) {
+        toast.success(' Rewards added  successfully!');
+      } else {
+        throw new Error('Failed to transfer Chewy Coins.');
+      }
+    } catch (error) {
+      console.error('Error transferring Chewy Coins:', error);
+      toast.error('Failed to transfer Chewy Coins. Please try again.');
+    }
+  };
 
   const sendCollab = async () => {
     try {
@@ -368,6 +394,7 @@ const EventDetails = () => {
       const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
 
       window.open(url, '_blank');
+      await transferChewyCoins(userDetails.user_phone_number,10);
     } catch (error) {
       console.error('Error generating collaboration link:', error);
       toast.error('Failed to generate collaboration link. Please try again.');
