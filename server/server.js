@@ -5303,6 +5303,38 @@ const imageUpload = multer({
 //   }
 // });
 
+// Function to fetch images by user phone number and return the count
+async function fetchImageCountByUserPhoneNumber(userPhoneNumber) {
+  const params = {
+      TableName: ImageUploadData, // Ensure this is the correct table name
+      IndexName: 'user_phone_number-index',
+      KeyConditionExpression: 'user_phone_number = :userPhoneNumber',
+      ExpressionAttributeValues: {
+          ':userPhoneNumber': userPhoneNumber
+      }
+  };
+
+  try {
+      const data = await docClient.query(params).promise();
+      return data.Count; // Return the count of images
+  } catch (error) {
+      console.error('Error fetching images count:', error);
+      throw new Error('Error fetching images count');
+  }
+}
+
+// API Endpoint to fetch image count
+app.get('/imagesForFederated/:userPhoneNumber', async (req, res) => {
+  const userPhoneNumber = req.params.userPhoneNumber;
+
+  try {
+      const imageCount = await fetchImageCountByUserPhoneNumber(userPhoneNumber);
+      res.json({ count: imageCount });
+  } catch (error) {
+      res.status(500).json({ error: 'Error fetching images count' });
+  }
+});
+
 // Function to update DynamoDB
 async function updateImageUploadData(s3Result, userPhoneNumber, originalName, eventName, folderName) {
   const now = new Date();
@@ -7933,9 +7965,9 @@ const transferChewyCoins = async (recipientAddress, amount, senderMobileNumber, 
     );
 
     // If the transaction is successful, update reward points for sender and receiver
-    if (executedTransaction.success) {
-      await updateRewards(senderMobileNumber, recipientMobileNumber, amount);
-    }
+    // if (executedTransaction.success) {
+    //   await updateRewards(senderMobileNumber, recipientMobileNumber, amount);
+    // }
 
     return executedTransaction.success;
 
@@ -8193,7 +8225,7 @@ app.get('/wallet-balance/:phoneNumber', async (req, res) => {
   });
 
 // **Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
-//  const server = app.listen(PORT ,() => {
+// const server = app.listen(PORT ,() => {
 //  logger.info(`Server started on http://localhost:${PORT}`);
 //  server.keepAliveTimeout = 60000; // Increase keep-alive timeout
 //  server.headersTimeout = 65000; // Increase headers timeout

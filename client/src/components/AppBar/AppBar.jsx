@@ -159,7 +159,7 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
               <div className='menu-item'>Settings</div>
               <div className='menu-item' onClick={() => { localStorage.clear(); navigate('/'); }}>Logout</div>
               <div className='menu-item'>Refer</div>
-              <div className='menu-item'>Claim Rewards</div>
+              <div className='menu-item'onClick={() => {navigate(`/dataSharing`)}}>Earn Rewards </div>
             </div>
           )}
 
