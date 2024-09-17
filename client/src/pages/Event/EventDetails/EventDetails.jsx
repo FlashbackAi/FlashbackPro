@@ -193,7 +193,7 @@ const EventDetails = () => {
       };
   
       // Call the API to transfer Chewy coins
-      const response = await API_UTIL.post('http://localhost:5000/transfer-chewy-coins', payload);
+      const response = await API_UTIL.post('/transfer-chewy-coins', payload);
   
       if (response.status === 200) {
         setIsCoinsDeducted(true);
