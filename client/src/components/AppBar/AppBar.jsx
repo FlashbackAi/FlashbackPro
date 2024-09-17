@@ -18,6 +18,8 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
   const [hashCode, setHashCode] = useState(''); // State to store the wallet hash code
   const [copyStatus, setCopyStatus] = useState('Copy Code'); // State to manage text for copy action
   const [isMenuOpen, setIsMenuOpen] = useState(false); // State to control menu visibility
+  const [balance, setBalance] = useState(0);
+  
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen); // Toggle menu visibility
@@ -26,7 +28,9 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
   const fetchUserDetails = async (userPhoneNumber) => {
     try {
       const response = await API_UTIL.get(`/fetchUserDetails/${userPhoneNumber}`);
+
       setUserDetails(response.data.data);
+      setBalance(response.data.data.reward_points);
 
       // Fetch wallet details after fetching user details
       fetchWalletDetails(userPhoneNumber);
@@ -34,6 +38,7 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
       console.error('Error fetching user details:', error);
     }
   };
+
 
   // Function to fetch wallet details from the backend
   const fetchWalletDetails = async (userPhoneNumber) => {
@@ -45,6 +50,30 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
       console.error('Error fetching wallet details:', error);
     }
   };
+  useEffect(() => {
+    if (showCoins) {
+      const userPhoneNumber = localStorage.getItem('userPhoneNumber');
+    // Poll to fetch balance every 10 seconds
+    const interval = setInterval(() => {
+      if (userPhoneNumber) {
+        fetchBalance(userPhoneNumber );
+      }
+    }, 5000);
+
+    // Clear interval on component unmount
+    return () => clearInterval(interval);
+  }
+  }, [showCoins]);
+
+  const fetchBalance = async (walletAddress) => {
+    try {
+      const response = await API_UTIL.get(`/wallet-balance/${walletAddress}`); // Use your API endpoint
+      setBalance(response.data.balance);
+    } catch (error) {
+      console.error('Error fetching wallet balance:', error);
+    }
+  };
+
   const formatHashCode = (code) => {
     if (!code || code.length <= 8) return code;
     return `${code.slice(0, 4)}...${code.slice(-4)}`;
@@ -116,7 +145,7 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
         {showCoins && userDetails && (
           <>
           <div className='user-coins' onClick={openQrModal}>
-            <span>Coins: {userDetails.reward_points}🪙</span>
+            <span>Coins: {balance}🪙</span>
           </div>
         
 
@@ -153,23 +182,15 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
         className="qr-modal-content"
         overlayClassName="modal-overlay"
       >
-        <div className='event-details-qr-modal'>
-          <div className='modal-header'>
-            <h2 className='modal-title'>QR Code</h2>
+        <div className='wallet-details-qr-modal'>
+        <div className='modal-header'>
+            <h2 className='modal-title'>Wallet Details</h2>
+            
             <button className='close-button' onClick={closeQrModal}>x</button>
           </div>
-          <div className='qr-modal-body'>
-            <div ref={qrRef} style={{ marginBottom: '20px' }}>
-              <QRCode value={hashCode} size={256} />
-            </div>
-            <button className='qr-footer-buttons' onClick={downloadQRCode}>
-              Download QR
-            </button>
-          </div>
-          <hr className='modal-separator' />
-
-          <div className='qr-modal-footer'>
-            <p className='invite-text'>Copy Wallet Address</p>
+             <div className='qr-modal-footer'>
+             <span className='hash-code-text'>Balance : {balance} 🪙</span>
+            <p className='wallet-text'>Copy Wallet Address</p>
 
             {/* Hash code section with copy text and icon */}
             <div className='hash-code-section'>
@@ -177,6 +198,15 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
               <FaCopy className='copy-icon' onClick={copyHashCode} title={copyStatus} />
               <span className='copy-text'>{copyStatus}</span>
             </div>
+          </div>
+          <hr className='modal-separator' />
+          <div className='qr-modal-body'>
+            <div ref={qrRef} style={{ marginBottom: '20px' }}>
+              <QRCode value={hashCode} size={256} />
+            </div>
+            {/* <button className='qr-footer-buttons' onClick={downloadQRCode}>
+              Download QR
+            </button> */}
           </div>
         </div>
       </Modal>

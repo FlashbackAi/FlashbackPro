@@ -8130,6 +8130,59 @@ const fetchWalletDetails = async (mobileNumber) => {
   }
 };
 
+// Function to get balance using Aptos SDK
+const getWalletBalance = async (walletAddress) => {
+  try {
+    const resources = await aptosClient.getAccountResource({ accountAddress: walletAddress,
+      resourceType: "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>"})
+
+    // Find the specific CoinStore resource for AptosCoin
+    // const aptosCoinResource = resources.find(
+    //   (resource) => resource.type === '0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>'
+    // );
+
+    if (resources) {
+      // Get the coin balance from the resource data
+      return resources.coin.value;
+    } else {
+      return 0; // No balance found
+    }
+  } catch (error) {
+    throw new Error(`Error fetching wallet balance: ${error.message}`);
+  }
+};
+
+// API endpoint to get wallet details and balance
+app.get('/wallet-balance/:phoneNumber', async (req, res) => {
+  const { phoneNumber } = req.params;
+
+  try {
+    // Get wallet details from DynamoDB
+    const walletDetails = await fetchWalletDetails(phoneNumber);
+    const userDetails = await getUserObjectByUserPhoneNumber(phoneNumber);
+
+    if (!walletDetails) {
+      return res.status(404).json({ message: 'Wallet not found' });
+    }
+
+    // Get the balance of the wallet
+    const balance = await getWalletBalance(walletDetails.wallet_address);
+
+    if(balance!=userDetails.reward_points){
+      updateUserDetails(phoneNumber,{reward_points:balance})
+    }
+    // Return the wallet details and balance
+    res.status(200).json({
+      walletAddress: walletDetails.wallet_address,
+      balance: balance,
+    });
+  } catch (error) {
+    console.error('Error fetching wallet balance:', error);
+    res.status(500).json({ message: 'Error fetching wallet balance', error: error.message });
+  }
+});
+
+
   const httpsServer = https.createServer(credentials, app);
 
   httpsServer.listen(PORT, () => {
