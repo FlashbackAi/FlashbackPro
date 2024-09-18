@@ -129,20 +129,27 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
   return (
     <div className='app-bar'>
      
-        {showCoins && userDetails && (
-
-          <div className='user-coins' onClick={openQrModal}>
-            {/* <span>{balance}🪙</span> */}
-            <span>{balance}🪙</span>
-          </div>
-        )}
-
-      <div className='app-bar-logo'>
+     <div className='app-bar-logo'>
         <img src='assets/Images/logo.svg' alt='Logo' />
         <span>{COMPANY_NAME}</span>
       </div>
-      {showCoins && userDetails && (
-        <div className='hamburger'>
+      <div className='app-bar-socials'>
+        <a href='https://x.com/Flashback_Inc_' target='_blank' rel='noopener noreferrer'>
+          <img src='assets/Images/icon-footer-x.svg' alt='Twitter' />
+        </a>
+        <a href='https://www.instagram.com/flashback_inc/' target='_blank' rel='noopener noreferrer'>
+          <img src='assets/Images/icon-footer-instagram.svg' alt='Instagram' />
+        </a>
+      </div>
+
+      <div className='user-section'>
+        {showCoins && userDetails && (
+          <>
+          <div className='user-coins' onClick={openQrModal}>
+            <span>{balance}🪙</span>
+          </div>
+        
+
           <FaBars className='menu-icon' onClick={toggleMenu} />
 
           {/* Dropdown menu */}
@@ -156,9 +163,10 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
               <div className='menu-item'onClick={() => {navigate(`/dataSharing`)}}>Earn Rewards </div>
             </div>
           )}
-          </div>
-      )}
 
+        </>
+      )}
+      </div>
       <Modal
         isOpen={isQrModalOpen}
         onRequestClose={closeQrModal}
