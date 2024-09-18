@@ -219,7 +219,7 @@ function DataSharingPage() {
 
           <div className='dataseDetails-root'>
               <div className="dataset-details-container">
-                  <h1 className="dataset-details-title">{datasetDetails.dataset_name}</h1>
+                  <h1 className="dataset-details-title">{datasetDetails?.dataset_name}</h1>
                   <div className="model-tab-content">
                       {/* Details Tab */}
                       {activeTab === 'details' && (
