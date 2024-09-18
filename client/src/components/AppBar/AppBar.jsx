@@ -132,7 +132,8 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
         {showCoins && userDetails && (
 
           <div className='user-coins' onClick={openQrModal}>
-            <span>Coins: {balance}🪙</span>
+            {/* <span>{balance}🪙</span> */}
+            <span>{balance}🪙</span>
           </div>
         )}
 
