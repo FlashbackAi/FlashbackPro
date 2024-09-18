@@ -88,7 +88,7 @@ function DataSharingPage() {
                 model_name: requestToUpdate.model_name,
                 model_org_name: requestToUpdate.model_org_name,
                 dataset_name: datasetDetails.dataset_name,
-                dataset_org_name: datasetDetails.dataset_org_name,
+                dataset_org_name: datasetDetails.org_name,
                 status: newStatus,
             };
 

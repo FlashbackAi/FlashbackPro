@@ -17,6 +17,7 @@ const ModelDetails = () => {
   const [clickedDataset, setClickedDataset] = useState('');
   const [userDetails, setUserDetails] = useState(null);
   const userPhoneNumber =localStorage.userPhoneNumber;
+  const [balance, setBalance] = useState();
 
   useEffect(() => {
     const fetchModelData = async () => {
@@ -36,20 +37,60 @@ const ModelDetails = () => {
     };
 
     fetchModelData();
+   
+
+  }, [orgName, modelName, userPhoneNumber]);
+
+  useEffect(() => {
+    // Define the polling interval in milliseconds (e.g., 5000ms = 5 seconds)
+    const pollingInterval = 5000;
+  
     const fetchUserDetails = async () => {
       try {
-        
         const response = await API_UTIL.get(`/fetchUserDetails/${userPhoneNumber}`);
         setUserDetails(response.data.data);
+        setBalance(response.data.data.reward_points)
       } catch (error) {
         console.error('Error fetching user details:', error);
       }
     };
-
+  
+    // Poll the fetchUserDetails method at the specified interval
+    const intervalId = setInterval(fetchUserDetails, pollingInterval);
+  
+    // Fetch immediately on component mount
     fetchUserDetails();
-
-  }, [orgName, modelName, userPhoneNumber]);
-
+  
+    // Clean up the interval on component unmount
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [userPhoneNumber]); // Add any dependencies here, like userPhoneNumber
+  
+  useEffect(() => {
+    // Define the polling interval in milliseconds (e.g., 5000ms = 5 seconds)
+    const pollingInterval = 5000;
+  
+    const fetchBalance = async () => {
+      try {
+        const response = await API_UTIL.get(`/wallet-balance/${userPhoneNumber}`); // Use your API endpoint
+        setBalance(response.data.balance);
+      } catch (error) {
+        console.error('Error fetching wallet balance:', error);
+      }
+    };
+  
+    // Poll the fetchUserDetails method at the specified interval
+    const intervalId = setInterval(fetchBalance, pollingInterval);
+  
+    // Fetch immediately on component mount
+    fetchBalance();
+  
+    // Clean up the interval on component unmount
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [userPhoneNumber]);
   const handleTabChange = async (tab) => {
     setActiveTab(tab);
     if (tab === 'requests') {
@@ -68,6 +109,28 @@ const ModelDetails = () => {
     setIsDatasetDetailsModalOpen(false);
   };
 
+  const deductCoins = async (numberOfImages) => {
+    try {
+      // Prepare the request payload
+      const payload = {
+        amount: numberOfImages.toString(), // The number of images is the amount to deduct
+        senderMobileNumber: userPhoneNumber, // The current user's phone number
+        recipientMobileNumber: "+919090401234" // The fixed recipient phone number
+      };
+  
+      // Call the API to transfer Chewy coins
+      const response = await API_UTIL.post('/transfer-chewy-coins', payload);
+  
+      // if (response.status === 200) {
+      // } else {
+      //   throw new Error('Failed to deduct coins.');
+      // }
+    } catch (error) {
+      console.error('Error deducting coins:', error);
+      toast.error('Failed to deduct coins. Please try again.');
+    }
+  };
+
   const onClickRequest = async (dataset) => {
     try {
       let formDataToSend = {
@@ -81,6 +144,7 @@ const ModelDetails = () => {
       const response = await API_UTIL.post('/requestDatasetAccess', formDataToSend);
 
       if (response.status === 200) {
+        deductCoins(dataset.dataset_size)
         toast.success("Successfully sent the request", { autoClose: 2000 });
 
         // Refresh the requests list after a new request is made
@@ -184,7 +248,7 @@ const ModelDetails = () => {
                     isEditable={false}
                    />
                    <div className='m-datasets-bottom-section'>
-                      <button onClick={() => onClickRequest(dataset)}>Request</button>
+                      <button onClick={() => onClickRequest(dataset)}>Request : {dataset.dataset_size}🪙</button>
                       <button onClick={() => openDatasetDetailsModal(dataset)}>Details</button>
                     </div>
                     <hr className="modal-separator" />
@@ -228,7 +292,7 @@ const ModelDetails = () => {
             {clickedDataset && (
               <div>
                 <div className="modal-header">
-                  <h2 className="modal-title">Details of {clickedDataset.dataset_name} dataset</h2>
+                  <h2 className="modal-title">Details of {clickedDataset.dataset_name}</h2>
                   <button className="close-button" onClick={closeDatasetDetailsModal}>x</button>
                 </div>
                 <div className="m-modal-body">
