@@ -128,27 +128,20 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
 
   return (
     <div className='app-bar'>
+     
+        {showCoins && userDetails && (
+
+          <div className='user-coins' onClick={openQrModal}>
+            <span>Coins: {balance}🪙</span>
+          </div>
+        )}
+
       <div className='app-bar-logo'>
         <img src='assets/Images/logo.svg' alt='Logo' />
         <span>{COMPANY_NAME}</span>
       </div>
-      <div className='app-bar-socials'>
-        <a href='https://x.com/Flashback_Inc_' target='_blank' rel='noopener noreferrer'>
-          <img src='assets/Images/icon-footer-x.svg' alt='Twitter' />
-        </a>
-        <a href='https://www.instagram.com/flashback_inc/' target='_blank' rel='noopener noreferrer'>
-          <img src='assets/Images/icon-footer-instagram.svg' alt='Instagram' />
-        </a>
-      </div>
-
-      <div className='user-section'>
-        {showCoins && userDetails && (
-          <>
-          <div className='user-coins' onClick={openQrModal}>
-            <span>Coins: {balance}🪙</span>
-          </div>
-        
-
+      {showCoins && userDetails && (
+        <div className='hamburger'>
           <FaBars className='menu-icon' onClick={toggleMenu} />
 
           {/* Dropdown menu */}
@@ -162,36 +155,25 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
               <div className='menu-item'onClick={() => {navigate(`/dataSharing`)}}>Earn Rewards </div>
             </div>
           )}
-
-        </>
+          </div>
       )}
 
-        {/* {showLogout && (
-          <div className='logout-section'>
-            <button className='logout-button' onClick={handleLogout}>
-              Logout
-            </button>
-          </div>
-        )} */}
-      </div>
-
-      {/* QR Code Modal */}
       <Modal
         isOpen={isQrModalOpen}
         onRequestClose={closeQrModal}
-        contentLabel="QR Code"
-        className="qr-modal-content"
+        contentLabel="Wallet Details"
+        className="wallet-modal-content"
         overlayClassName="modal-overlay"
       >
-        <div className='wallet-details-qr-modal'>
-        <div className='modal-header'>
-            <h2 className='modal-title'>Wallet Details</h2>
+        <div className='wallet-details-modal'>
+        <div className='wallet-modal-header'>
+            <h2 className='wallet-modal-title'>Wallet Details</h2>
             
             <button className='close-button' onClick={closeQrModal}>x</button>
           </div>
-             <div className='qr-modal-footer'>
-             <span className='hash-code-text'>Balance : {balance} 🪙</span>
-            <p className='wallet-text'>Copy Wallet Address</p>
+             <div className='wallet-modal-upper'>
+             <span className='wallet-text'>Balance : {balance} 🪙</span>
+            <span className='wallet-text'>Copy Wallet Address</span>
 
             {/* Hash code section with copy text and icon */}
             <div className='hash-code-section'>
@@ -201,8 +183,8 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
             </div>
           </div>
           <hr className='modal-separator' />
-          <div className='qr-modal-body'>
-            <div ref={qrRef} style={{ marginBottom: '20px' }}>
+          <div className='wallet-modal-lower'>
+            <div ref={qrRef} >
               <QRCode value={hashCode} size={256} />
             </div>
             {/* <button className='qr-footer-buttons' onClick={downloadQRCode}>

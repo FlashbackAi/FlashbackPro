@@ -4,7 +4,7 @@
     width: 100%;
     background-color: black;
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
     align-items: center;
     border-bottom: 2px solid ;
     border-image: linear-gradient(90deg,#66D3FF 0%, #9A6AFF 38%,  #EE75CB 71%, #FD4D77 100%);
@@ -53,6 +53,7 @@
     color: white;
     font-size: 1rem;
     cursor: pointer;
+    margin-left: 2em;
 }
 .user-section{
     display: flex;
@@ -67,7 +68,6 @@
   
   .hash-code-text {
     font-weight: bold;
-    margin-right: 0.5em;
     font-size: 1.2em;
     color: black;
   }
@@ -85,9 +85,11 @@
     font-style: italic;
   }
 
+  .hamburger{
+    margin-right: 2em;
+  }
   .menu-icon {
     cursor: pointer;
-    position: absolute;
     right: 0.625em; /* 10px/16px */
 }
   
@@ -110,6 +112,44 @@
   
 .menu-item:hover {
     background: #ececec;
+}
+
+.wallet-modal-content{
+    background-color: white;
+    padding: 2em;
+    margin: 0 auto;
+    
+}
+.wallet-modal-header{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    .close-button {
+      position: absolute;
+      right: 0.1em;
+      width: fit-content;
+      font-size: 1.5em;
+    }
+}
+.wallet-modal-title{
+  font-size: 1.5em;
+  color: #333;
+  margin-top: 0;
+}
+.wallet-modal-upper{
+    display: flex;
+    flex-direction: column;
+   align-items: center;
+   margin: 1em;
+   color: black;
+}
+.wallet-text{
+    margin: .3em;
+}
+.wallet-modal-lower{
+    align-items: center;
+    margin-bottom: 1em;
 }
 
 /* Additional styling for responsiveness or themes */
