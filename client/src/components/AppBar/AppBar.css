@@ -53,7 +53,7 @@
     color: white;
     font-size: 1rem;
     cursor: pointer;
-    margin-left: 2em;
+    margin-left: 1em;
 }
 .user-section{
     display: flex;
@@ -86,7 +86,7 @@
   }
 
   .hamburger{
-    margin-right: 2em;
+    margin-right: 1em;
   }
   .menu-icon {
     cursor: pointer;
