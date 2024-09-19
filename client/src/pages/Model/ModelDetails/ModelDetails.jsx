@@ -113,14 +113,14 @@ const ModelDetails = () => {
     try {
       // Prepare the request payload
       const payload = {
-        amount: numberOfImages.toString(), // The number of images is the amount to deduct
+        amount: (numberOfImages*10).toString(), // The number of images is the amount to deduct
         senderMobileNumber: userPhoneNumber, // The current user's phone number
         recipientMobileNumber: "+919090401234" // The fixed recipient phone number
       };
   
       // Call the API to transfer Chewy coins
       const response = await API_UTIL.post('/transfer-chewy-coins', payload);
-  
+      return response;
       // if (response.status === 200) {
       // } else {
       //   throw new Error('Failed to deduct coins.');
@@ -140,18 +140,21 @@ const ModelDetails = () => {
         dataset_org_name: dataset.org_name,
         status: 'pending',
       };
+      const resp = await deductCoins(dataset.dataset_size)
+      
 
-      const response = await API_UTIL.post('/requestDatasetAccess', formDataToSend);
+      if (resp.status === 200) {
+        const response = await API_UTIL.post('/requestDatasetAccess', formDataToSend);
 
-      if (response.status === 200) {
-        deductCoins(dataset.dataset_size)
+        if (response.status === 200) {
         toast.success("Successfully sent the request", { autoClose: 2000 });
 
         // Refresh the requests list after a new request is made
         const requestsResponse = await API_UTIL.get(`/getDatasetRequests/${modelName}-${orgName}`);
         setRequests(requestsResponse.data);
-      } else if (response.status === 400) {
-        toast.success("Request Already Exists", { autoClose: 1500 });
+        } else if (response.status === 400) {
+          toast.success("Request Already Exists", { autoClose: 1500 });
+        }
       }
     } catch (err) {
       console.error(err);
@@ -248,7 +251,7 @@ const ModelDetails = () => {
                     isEditable={false}
                    />
                    <div className='m-datasets-bottom-section'>
-                      <button onClick={() => onClickRequest(dataset)}>Request : {dataset.dataset_size}🪙</button>
+                      <button onClick={() => onClickRequest(dataset)}>Request : {dataset.dataset_size*10}🪙</button>
                       <button onClick={() => openDatasetDetailsModal(dataset)}>Details</button>
                     </div>
                     <hr className="modal-separator" />

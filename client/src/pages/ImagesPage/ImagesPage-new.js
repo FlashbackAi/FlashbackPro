@@ -315,7 +315,7 @@ function ImagesPageNew() {
         <LoadingSpinner />
       ) : (
         <>
-          <AppBar/>
+          <AppBar showCoins={true}/>
           <MiniHeroComponent 
             orgName={clientObj?.org_name}
               socialMediaLinks={clientObj?.social_media}

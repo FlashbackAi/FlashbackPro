@@ -44,7 +44,7 @@ function DataSharingPage() {
         API_UTIL.get(`/imagesForFederated/${userPhoneNumber}`)
             .then(response => {
                 setPhotoCount(response.data.count);
-                setLabel(`Enable Sharing and Earn ${Math.floor(response.data.count / 2)}`)
+                setLabel(`Enable to Earn ${Math.floor(response.data.count / 2)} 🪙`)
             })
             .catch(error => {
                 console.error('Error fetching photo count:', error);
@@ -232,7 +232,10 @@ function DataSharingPage() {
                                                 : 'No photos eligible for earning rewards.'}
                                         </span>
                                         {photoCount > 0 && (
+                                            <>
                                             <SlideToAction onSlideComplete={handleSlideComplete} label={label} />
+                                            <span className='disclaimer-text'>* Enabling sharing will allow Flashback partners to gain permission to train on your data.</span>
+                                            </>
                                         )}
                                     </>
                                 )}
