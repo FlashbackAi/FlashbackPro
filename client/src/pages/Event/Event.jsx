@@ -9,6 +9,7 @@ import LoadingSpinner from '../../components/Loader/LoadingSpinner';
 import './Event.css';
 import LabelAndInput from '../../components/molecules/LabelAndInput/LabelAndInput';
 import { X } from 'lucide-react';
+import ClaimRewardsPopup from '../../components/ClaimRewardsPopup/ClaimRewardsPopup';
 
 const Event = () => {
   const [events, setEvents] = useState([]);
@@ -25,6 +26,7 @@ const Event = () => {
   const [selectedTab, setSelectedTab] = useState('myFlashbacks'); // New state for managing tab selection
   const userPhoneNumber = localStorage.userPhoneNumber;
   const [eventToDelete, setEventToDelete] = useState(null);
+  const [isClaimPopupOpen, setIsClaimPopupOpen] = useState(true);
   const [formData, setFormData] = useState({
     eventName: '',
     eventDate: '',
@@ -176,6 +178,10 @@ const Event = () => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
+  const closeClaimPopup = () => {
+    setIsClaimPopupOpen(false);
+  };
+
 
   const handleFileChange = (e) => {
     setSelectedFile(e.target.files[0]);
@@ -278,6 +284,7 @@ const Event = () => {
   return (
     <div className="events-page-root">
       <AppBar showCoins ={true}/>
+      <ClaimRewardsPopup isOpen={isClaimPopupOpen} onClose={closeClaimPopup}/>
       <div className="events-page-event-container">
        
         {/* Tab Switcher */}

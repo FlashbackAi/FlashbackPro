@@ -1,0 +1,146 @@
+.send-container {
+    display: flex;
+    justify-content: space-around;
+    margin: 2em;
+}
+
+.account-input, .amount-input {
+    border-width: .2em;
+    border-radius: .6em;
+    padding: .5em;
+}
+.account-input{
+    min-width: 25em;
+}
+.amount-input{
+    min-width: 5em;
+}
+
+/* Adjust layout for smaller screens */
+@media only screen and (max-width: 768px) {
+    .send-container {
+        flex-direction: column; /* Stack items vertically */
+
+    }
+
+    .account-input, .amount-input {
+        width: 80%; /* Make input fields take up 80% of the screen width */
+        margin-bottom: 1em; /* Add spacing between inputs */
+    }
+
+    .send-button {
+        width: 50%; /* Make the button smaller in width */
+    }
+}
+
+.send-container-header{
+    color: black;
+    font-size: 2sem;
+    display: flex;
+    justify-content: space-around;
+    font-weight: bold;
+}
+
+
+.send-container-header {
+    color: black;
+    font-size: 3em;
+    display: flex;
+    justify-content: space-around;
+}
+/* 
+.send-button {
+    padding: 0.75em 1.5em;
+    border: none;
+    border-radius: 0.5em;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.3s;
+} */
+.input-label{
+    border-radius: 1em;
+    margin-right: 2em;
+    border-color: rgb(182, 182, 178);
+}
+.input-address {
+    min-width: 15em; 
+    margin-right: 1em;
+    font-size: 1em;
+}
+
+.send-button.loading {
+    background-color: #ccc; /* Grey out when loading */
+    cursor: not-allowed;
+}
+
+/* Container for the entire withdraw section */
+.withdraw-title{
+    display: flex;
+    justify-content: space-around;
+}
+.withdraw-container {
+    padding: 2em;
+    margin: 0 auto;
+    font-family: Arial, sans-serif;
+    color: black    ;
+  }
+  
+  /* Title styling */
+  .withdraw-title {
+    font-size: 2em;
+    margin-bottom: 1em;
+    text-align: center;
+    color: #333;
+  }
+  
+  /* Search bar styling */
+  .search-bar {
+    padding: 0.75em;
+    font-size: 1em;
+    width: 100%;
+    margin-bottom: 2em;
+    border: 0.1em solid #ccc;
+    border-radius: 0.5em;
+  }
+  
+  /* Transactions list container */
+  .transactions-list {
+    max-height: 30em;
+    overflow-y: auto;
+    border: 0.1em solid #ccc;
+    border-radius: 0.5em;
+    padding: 1em;
+  }
+  
+  /* Individual transaction item */
+  .transaction-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 1em 0;
+    border-bottom: 0.1em solid #ddd;
+    align-items: center;
+  }
+  
+  /* Last item without a bottom border */
+  .transaction-item:last-child {
+    border-bottom: none;
+  }
+  
+  /* Information section (name, date) */
+  .transaction-info {
+    flex: 1;
+    font-size: .8em;
+  }
+  
+  /* Transaction date styling */
+  .transaction-date {
+    font-size: 0.875em;
+    color: #666;
+  }
+  
+  /* Transaction amount styling */
+  .transaction-amount {
+    font-size: 1.25em;
+    font-weight: bold;
+  }
+  

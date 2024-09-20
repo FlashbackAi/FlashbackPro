@@ -7,6 +7,7 @@ import LabelAndInput from '../../components/molecules/LabelAndInput/LabelAndInpu
 import SlideToAction from '../../components/SlideToAction/SlideToAction';
 import { toast } from 'react-toastify'; // Import toast for notifications
 import { useNavigate } from 'react-router-dom'; // Import navigate hook if you want to navigate after completion
+import './DataSharing.css'
 
 function DataSharingPage() {
     const [photoCount, setPhotoCount] = useState(null);
@@ -77,6 +78,10 @@ function DataSharingPage() {
 
     const updateRequestStatus = async (requestId, newStatus) => {
         try {
+            if(newStatus === 'Accepted'){
+                await transferChewyCoins(userPhoneNumber, Math.floor(datasetDetails.dataset_size / 2));
+            }
+            
             const requestToUpdate = requests.find((request) => request.id === requestId);
 
             if (!requestToUpdate) {
@@ -172,7 +177,7 @@ function DataSharingPage() {
             }
             toast.success('Dataset created successfully');
             await updateImageStatus(userPhoneNumber);
-            await transferChewyCoins(userPhoneNumber, Math.floor(photoCount / 2));; // Assuming you have a function to update reward points
+            await transferChewyCoins(userPhoneNumber, Math.floor(photoCount / 2)); // Assuming you have a function to update reward points
         } catch (error) {
             console.error('Error saving dataset:', error);
             toast.error('Failed to save the dataset. Please try again.');
@@ -297,8 +302,11 @@ function DataSharingPage() {
                                                           isEditable={false}
                                                       />
                                                       <div className='d-req-bottom-section'>
-                                                          <button onClick={() => updateRequestStatus(request.id, 'Accepted')}>Accept</button>
-                                                          <button onClick={() => updateRequestStatus(request.id, 'Rejected')}>Reject</button>
+                                                        <div className='accept-section'>
+                                                          <button className='accept-button' onClick={() => updateRequestStatus(request.id, 'Accepted')}>Accept</button>
+                                                          <span className='disclaimer-text'>* Accept to earn {Math.floor(datasetDetails.dataset_size/2)} 🪙</span>
+                                                        </div>
+                                                          <button className = 'accept-button' onClick={() => updateRequestStatus(request.id, 'Rejected')}>Reject</button>
                                                       </div>
                                                       <hr className="modal-separator" />
                                                   </div>

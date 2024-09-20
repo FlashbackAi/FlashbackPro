@@ -196,6 +196,7 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
             <div ref={qrRef} >
               <QRCode value={hashCode} size={256} />
             </div>
+            <button className='withdraw-buttom' onClick={()=>navigate('/withdraw')}>Withdraw</button>
             {/* <button className='qr-footer-buttons' onClick={downloadQRCode}>
               Download QR
             </button> */}

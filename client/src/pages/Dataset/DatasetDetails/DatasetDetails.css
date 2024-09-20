@@ -1,11 +1,10 @@
-.dataseDetails-root{
+/* .dataseDetails-root{
   text-align: center;
   color: black;
 }
 
 .dataset-details-container {
   padding: 1.25em;
-  /* width: 50em; 80% of 62.5em (1000px) */
   margin: auto;
   border-radius: 0.5em;
   box-shadow: 0 0.25em 0.5em rgba(0, 0, 0, 0.1);
@@ -55,7 +54,7 @@
   padding: 1.25em;
   background-color: #fff;
   border-radius: 0.5em;
-  max-width: 31.25em; /* 500px */
+  max-width: 31.25em; 
   margin: 0 auto;
 }
 
@@ -74,4 +73,4 @@
 }
 
 
-
+ */

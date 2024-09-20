@@ -147,10 +147,15 @@
     margin: .3em;
 }
 .wallet-modal-lower{
+    display: flex;
+    flex-direction: column;
     align-items: center;
     margin-bottom: 1em;
 }
-
+.withdraw-buttom{
+    margin-top:1em;
+    border-radius: 1em;
+}
 /* Additional styling for responsiveness or themes */
 
   

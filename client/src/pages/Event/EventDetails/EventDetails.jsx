@@ -8,6 +8,7 @@ import API_UTIL from '../../../services/AuthIntereptor';
 import './EventDetails.css';
 import AppBar from '../../../components/AppBar/AppBar';
 import LabelAndInput from '../../../components/molecules/LabelAndInput/LabelAndInput';
+import ClaimRewardsPopup from '../../../components/ClaimRewardsPopup/ClaimRewardsPopup';
 
 const EventDetails = () => {
   const location = useLocation();
@@ -36,6 +37,7 @@ const EventDetails = () => {
   const [requiredCoins, setRequiredCoins] = useState(0);
   const [canUpload, setCanUpload] = useState(false); // To manage button state
   const [isCoinsDedcuted,setIsCoinsDeducted] = useState(false);
+  const [isClaimPopupOpen, setIsClaimPopupOpen] = useState(true);
 
   // Fetch event data function
   const fetchEventData = async (eventName) => {
@@ -141,6 +143,11 @@ const EventDetails = () => {
   const openQrModal = () => {
     setIsQrModalOpen(true);
   };
+
+  const closeClaimPopup = () => {
+    setIsClaimPopupOpen(false);
+  };
+
 
   const closeQrModal = () => {
     setIsQrModalOpen(false);
@@ -430,6 +437,7 @@ const EventDetails = () => {
   return (
     <div className="event-details-page-root">
       <AppBar showCoins={true}/>
+      {/* <ClaimRewardsPopup isOpen={isClaimPopupOpen} onClose={closeClaimPopup}/> */}
       {event.event_name && (
         <div className="event-details-container">
           <h1 className="event-details-title">

@@ -7741,6 +7741,31 @@ app.post('/backfillFolderNames', async (req, res) => {
   }
 });
 
+app.post('/transfer-chewy-coins-by-wallet-address', async (req, res) => {
+  try {
+      const { amount, senderMobileNumber,recipientAddress} = req.body;
+
+      // Log incoming request
+      logger.info(`Transfer request received: amount = ${amount}`);
+
+      // Read sender's private key and recipient address from config
+        
+      //const recipientAddress = aptosConfig.RECIPIENT_ADDRESS;
+      const transferAmount = amount ;  // Use provided amount or default
+      //const recipientWalletDetails = await fetchWalletDetails(recipientMobileNumber)
+
+      // const status = await transferAptosCoins(recipientAddress, transferAmount);
+      const status = await transferChewyCoins(recipientAddress, transferAmount,senderMobileNumber, '');
+
+      res.status(200).json({
+          message: 'Chewy Coin transfer successful',
+          status: status
+      });
+  } catch (error) {
+      logger.error(`Transfer failed: ${error}`);
+      res.status(500).json({ error: 'Chewy Coin transfer failed', details: error.message });
+  }
+});
 
 app.post('/transfer-chewy-coins', async (req, res) => {
   try {
@@ -7883,6 +7908,56 @@ async function updateWalletTransaction(transactionId, senderMobileNumber,recipie
     throw new Error(`Failed to update transaction: ${error.message}`);
   }
 }
+async function fetchTransactionForUserPhoneNumber(userPhoneNumber) {
+  try{
+
+    const params = {
+      TableName: walletTransactions,
+      FilterExpression: 'from_mobile_number = :phone OR to_mobile_number = :phone and coin_type = Chewy',
+      ExpressionAttributeValues: {
+        ':phone': userPhoneNumber,
+      },
+    };
+
+    let items = [];
+    let lastEvaluatedKey = null;
+    do {
+      if (lastEvaluatedKey) {
+        params.ExclusiveStartKey = lastEvaluatedKey;
+      }
+
+      const data = await docClient.scan(params).promise();
+      items = items.concat(data.Items);
+      lastEvaluatedKey = data.LastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    logger.info("Total number of transactions fetched : " + items.size);
+    return items
+   
+  }
+  catch(error){
+    return error;
+  }
+  
+}
+
+app.get('/transactionsByUserPhoneNumber/:userPhoneNumber', async (req, res) => {
+  const { userPhoneNumber } = req.params;
+
+  if (!userPhoneNumber) {
+    return res.status(400).json({ message: 'Phone number is required' });
+  }
+
+  try {
+    // Fetch all transactions by phone number with pagination
+    const allTransactions = await fetchTransactionForUserPhoneNumber(userPhoneNumber);
+    res.status(200).send(allTransactions);
+
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ message: 'Something went wrong' });
+  }
+});
 
 
 /** Register the receiver account to receive transfers for Chewy Coin. */
@@ -8250,6 +8325,8 @@ const fetchWalletDetails = async (mobileNumber) => {
     throw error;
   }
 };
+
+
 
 // Function to get balance using Aptos SDK
 const getWalletBalance = async (walletAddress) => {

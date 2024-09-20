@@ -40,6 +40,7 @@ import EventImages from "../pages/ImagesPage/EventImages";
 import FaceSelectionV1 from "../pages/Pro/FaceSelection/FaceSelectionV1";
 import PhotoSelectionV1 from "../pages/Pro/PhotoSelection/PhotoSelectionV1";
 import DataSharingPage from "../pages/DataSharing/DataSharing";
+import Withdraw from "../pages/Withdraw/Withdraw";
 
 
 const ROUTES=[
@@ -346,8 +347,14 @@ const ROUTES=[
         exact:false,
         protected:true,
         component:DataSharingPage, 
+    },
+    {
+        path:"withdraw",
+        exact:false,
+        protected:true,
+        component:Withdraw, 
     }
-
+    
 ]
 
 export default ROUTES

@@ -10,7 +10,7 @@ import AppBar from "../../../components/AppBar/AppBar";
 import Modal from "react-modal";
 import { toast } from "react-toastify";
 import { div } from "prelude-ls";
-
+import ClaimRewardsPopup from "../../../components/ClaimRewardsPopup/ClaimRewardsPopup";
 function ProNew() {
   const { eventId } = useParams();
   const [eventDetails, setEventDetails] = useState(null); // New state for event details
@@ -35,6 +35,7 @@ function ProNew() {
   const [isSending, setIsSending] = useState(false);
   const [isImageProcessingDone, setIsImageProcessingDone]  = useState(true);
   const [isWarningModalOpen, setIsWarningModalOpen] = useState(false); 
+  const [isClaimPopupOpen, setIsClaimPopupOpen] = useState(true);
 
   // const event = location.state?.event;
 
@@ -74,6 +75,7 @@ function ProNew() {
     setMergeMode(true);
     setSelectedUsers([]);
   };
+
 
   const handleCancelManageUsers = () => {
     setMergeMode(false);
@@ -289,6 +291,10 @@ function ProNew() {
   const closeWarningModal = () => {
     setIsWarningModalOpen(false);
   };
+  const closeClaimPopup = () => {
+    setIsClaimPopupOpen(false);
+  };
+
 
   const closeSendPhotos = () => {
     setIsSendModalOpen(false);
@@ -342,6 +348,7 @@ function ProNew() {
       ) : (
         <>
           <AppBar showCoins = {true}/>
+          {/* <ClaimRewardsPopup isOpen={isClaimPopupOpen} onClose={closeClaimPopup}/> */}
           <div className="content-wrap">
             <div className="statsSections">
               <div className="toolbar">

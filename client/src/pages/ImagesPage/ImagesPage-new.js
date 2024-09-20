@@ -14,6 +14,7 @@ import "./ImagePage-new.css";
 import AppBar from "../../components/AppBar/AppBar";
 import MiniHeroComponent from "../../components/MiniHeroComponent/MiniHeroComponent";
 import Masonry from "react-masonry-css"; // Import Masonry
+import ClaimRewardsPopup from '../../components/ClaimRewardsPopup/ClaimRewardsPopup';
 
 function ImagesPageNew() {
   const [lastEvaluatedKey, setLastEvaluatedKey] = useState(undefined);
@@ -33,6 +34,7 @@ function ImagesPageNew() {
   const [clientObj, setClientObj] = useState();
   const [userObj,setUserObj] = useState();
   const [bannerImg, setBannerImg]  = useState();
+  const [isClaimPopupOpen, setIsClaimPopupOpen] = useState(true);
 
 
   const [breakpointColumnsObj, setBreakpointColumnsObj] = useState({
@@ -299,6 +301,10 @@ function ImagesPageNew() {
     const isFav = !images[index].isFavourites;
     handleFavourite(index, images[index].original, isFav);
   };
+  const closeClaimPopup = () => {
+    setIsClaimPopupOpen(false);
+  };
+
 
   // const breakpointColumnsObj = {
   //   default: 5,  // 6 columns for large screens (default)
