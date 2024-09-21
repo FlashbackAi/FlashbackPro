@@ -139,6 +139,8 @@ const ModelDetails = () => {
         dataset_name: dataset.dataset_name,
         dataset_org_name: dataset.org_name,
         status: 'pending',
+        dataset_size:dataset.dataset_size,
+        model_url:modelDetails.model_url,
       };
       const resp = await deductCoins(dataset.dataset_size)
       

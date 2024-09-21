@@ -88,6 +88,56 @@
     justify-content: center;
     align-items: center;
 }
+
+.history-request-item {
+  background-color: #fff;
+  border-radius: 0.5em;
+  box-shadow: 0 0.125em 0.5em rgba(0, 0, 0, 0.1);
+  padding: 1em;
+  margin-bottom: 1em;
+  font-family: 'Arial', sans-serif;
+}
+
+.history-text {
+  display: flex;
+  justify-content: space-between; /* Aligns the label and value horizontally */
+  font-size: 1em; /* Base font size */
+  color: #333;
+  margin-bottom: 0.375em; /* Space between rows */
+}
+
+.label-left {
+  font-weight: 600;
+  color: #000;
+  width: 40%; /* Left label takes 40% of available width */
+  text-align: left; /* Left align text */
+}
+
+.label-right {
+  width: 60%; /* Right label takes 60% of available width */
+  text-align: left; /* Right align text */
+  color: #666; /* Right label value color */
+}
+
+.coins-credited {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 0.625em; /* Space above the coins-credited section */
+}
+
+.coins-credited span {
+  margin-left: 0.3125em; /* Space between the coin icon and the number */
+  font-size: 1.125em; /* Slightly larger font for emphasis */
+  color: #f8b400; /* Coin color */
+}
+
+.modal-separator {
+  border: 0;
+  height: 0.0625em; /* Thin line */
+  background: #e0e0e0;
+  margin-top: 0.75em; /* Margin above the separator */
+}
+
   
   
   

@@ -6928,14 +6928,12 @@ app.get("/getDatasetRequests/:dataset", async (req, res) => {
   logger.info("Fetching dataset requests for dataset:",dataset)
   const params = {
     TableName: modelToDatsetReqTable,
-    FilterExpression: "#datasetKey = :datasetValue and #status = :status",
+    FilterExpression: "#datasetKey = :datasetValue",
     ExpressionAttributeNames: {
-      "#datasetKey": "dataset",
-      "#status": "status"
+      "#datasetKey": "dataset"
     },
     ExpressionAttributeValues: {
-      ":datasetValue": dataset,
-      ":status":"pending"
+      ":datasetValue": dataset
     }
   };
 
@@ -7909,18 +7907,20 @@ async function updateWalletTransaction(transactionId, senderMobileNumber,recipie
   }
 }
 async function fetchTransactionForUserPhoneNumber(userPhoneNumber) {
-  try{
-
+  try {
     const params = {
       TableName: walletTransactions,
-      FilterExpression: 'from_mobile_number = :phone OR to_mobile_number = :phone and coin_type = Chewy',
+      FilterExpression: '(from_mobile_number = :phone OR to_mobile_number = :phone) AND coin_type = :coinType',
       ExpressionAttributeValues: {
         ':phone': userPhoneNumber,
+        ':coinType': 'Chewy', // Assuming 'Chewy' is a fixed coin type
       },
     };
 
     let items = [];
     let lastEvaluatedKey = null;
+
+    // Fetching paginated data
     do {
       if (lastEvaluatedKey) {
         params.ExclusiveStartKey = lastEvaluatedKey;
@@ -7931,15 +7931,32 @@ async function fetchTransactionForUserPhoneNumber(userPhoneNumber) {
       lastEvaluatedKey = data.LastEvaluatedKey;
     } while (lastEvaluatedKey);
 
-    logger.info("Total number of transactions fetched : " + items.size);
-    return items
-   
+    logger.info("Total number of transactions fetched: " + items.length); // Correcting size to length for array
+    return items;
+    
+  } catch (error) {
+    logger.error('Error fetching transactions: ', error);
+    throw error; // Rethrow error to be caught in the route handler
   }
-  catch(error){
-    return error;
-  }
-  
 }
+
+// Route handler to fetch transactions by user phone number
+app.get('/transactionsByUserPhoneNumber/:userPhoneNumber', async (req, res) => {
+  const { userPhoneNumber } = req.params;
+
+  if (!userPhoneNumber) {
+    return res.status(400).json({ message: 'Phone number is required' });
+  }
+
+  try {
+    const allTransactions = await fetchTransactionForUserPhoneNumber(userPhoneNumber);
+    res.status(200).json(allTransactions);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ message: 'Something went wrong' });
+  }
+});
+
 
 app.get('/transactionsByUserPhoneNumber/:userPhoneNumber', async (req, res) => {
   const { userPhoneNumber } = req.params;

@@ -31,7 +31,7 @@ const ModelForm = () => {
       const response = await API_UTIL.post('/saveModelDetails', formData);
 
       if (response.status === 200) {
-        await updateRewardPoints();
+        // await updateRewardPoints();
         setTimeout(() => {
           navigate('/model');
         }, 1000);

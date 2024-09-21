@@ -130,8 +130,8 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
     <div className='app-bar'>
      
      <div className='app-bar-logo'>
-        <img src='assets/Images/logo.svg' alt='Logo' />
-        <span>{COMPANY_NAME}</span>
+        <img src='assets/Images/logo.svg' alt='Logo' onClick={()=>navigate('/')} />
+        <span onClick={()=>navigate('/')}>{COMPANY_NAME}</span>
       </div>
       <div className='app-bar-socials'>
         <a href='https://x.com/Flashback_Inc_' target='_blank' rel='noopener noreferrer'>
