@@ -1,146 +1,146 @@
+.withdraw-page {
+  background-color: white;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+}
+
+.send-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2em 1em;
+}
+
+.send-header {
+  text-align: center;
+  margin-bottom: 2em;
+}
+.send-title{
+  font-size: 2.5em;
+  color:black ;
+}
+.send-avatar {
+  width: 5em;
+  height: 5em;
+  border-radius: 50%;
+  margin-bottom: 1em;
+}
+
+
+
 .send-container {
-    display: flex;
-    justify-content: space-around;
-    margin: 2em;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1.5em;
+  width: 100%;
+  margin-right:6em;
+  margin-left: 6em;
 }
 
-.account-input, .amount-input {
-    border-width: .2em;
-    border-radius: .6em;
-    padding: .5em;
-}
-.account-input{
-    min-width: 25em;
-}
-.amount-input{
-    min-width: 5em;
+.input-address, .input-amount {
+  color: black;
+  padding: 1em;
+  border: 0.1em solid #555;
+  border-radius: 0.5em;
+  margin-bottom: 1em;
+  font-size: 1em;
+ 
 }
 
-/* Adjust layout for smaller screens */
-@media only screen and (max-width: 768px) {
-    .send-container {
-        flex-direction: column; /* Stack items vertically */
-
-    }
-
-    .account-input, .amount-input {
-        width: 80%; /* Make input fields take up 80% of the screen width */
-        margin-bottom: 1em; /* Add spacing between inputs */
-    }
-
-    .send-button {
-        width: 50%; /* Make the button smaller in width */
-    }
+.input-group {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
 }
 
-.send-container-header{
-    color: black;
-    font-size: 2sem;
-    display: flex;
-    justify-content: space-around;
-    font-weight: bold;
+.wallet-error {
+  color: red;
+  font-size: 0.9em;
+  margin-bottom: 1em;
 }
 
 
-.send-container-header {
-    color: black;
-    font-size: 3em;
-    display: flex;
-    justify-content: space-around;
+
+.balance-info {
+  text-align: center;
+  margin-bottom: 2em;
+  margin-bottom: 1em;
 }
-/* 
+
+.available-balance {
+  font-size: 1.2em;
+  color: black;
+}
+
 .send-button {
-    padding: 0.75em 1.5em;
-    border: none;
-    border-radius: 0.5em;
-    cursor: pointer;
-    font-size: 1em;
-    transition: background-color 0.3s;
-} */
-.input-label{
-    border-radius: 1em;
-    margin-right: 2em;
-    border-color: rgb(182, 182, 178);
-}
-.input-address {
-    min-width: 15em; 
-    margin-right: 1em;
-    font-size: 1em;
+  color: white;
+  padding: 1em 3em;
+  border: none;
+  border-radius: 0.5em;
+  font-size: 1.2em;
+  cursor: pointer;
+  transition: background-color 0.3s;
 }
 
 .send-button.loading {
-    background-color: #ccc; /* Grey out when loading */
-    cursor: not-allowed;
+  cursor: not-allowed;
 }
 
+
 /* Container for the entire withdraw section */
-.withdraw-title{
-    display: flex;
-    justify-content: space-around;
-}
 .withdraw-container {
-    padding: 2em;
-    margin: 0 auto;
-    font-family: Arial, sans-serif;
-    color: black    ;
-  }
-  
-  /* Title styling */
-  .withdraw-title {
-    font-size: 2em;
-    margin-bottom: 1em;
-    text-align: center;
-    color: #333;
-  }
-  
-  /* Search bar styling */
-  .search-bar {
-    padding: 0.75em;
-    font-size: 1em;
-    width: 100%;
-    margin-bottom: 2em;
-    border: 0.1em solid #ccc;
-    border-radius: 0.5em;
-  }
-  
-  /* Transactions list container */
-  .transactions-list {
-    max-height: 30em;
-    overflow-y: auto;
-    border: 0.1em solid #ccc;
-    border-radius: 0.5em;
-    padding: 1em;
-  }
-  
-  /* Individual transaction item */
-  .transaction-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 1em 0;
-    border-bottom: 0.1em solid #ddd;
-    align-items: center;
-  }
-  
-  /* Last item without a bottom border */
-  .transaction-item:last-child {
-    border-bottom: none;
-  }
-  
-  /* Information section (name, date) */
-  .transaction-info {
-    flex: 1;
-    font-size: .8em;
-  }
-  
-  /* Transaction date styling */
-  .transaction-date {
-    font-size: 0.875em;
-    color: #666;
-  }
-  
-  /* Transaction amount styling */
-  .transaction-amount {
-    font-size: 1.25em;
-    font-weight: bold;
-  }
-  
+  padding: 2em;
+  margin: 0 auto;
+  font-family: Arial, sans-serif;
+  color: black;
+}
+
+/* Title styling */
+.withdraw-title {
+  font-size: 2em;
+  margin-bottom: 1em;
+  text-align: center;
+  color:black;
+}
+
+/* Transactions list container */
+.transactions-list {
+  max-height: 30em;
+  overflow-y: auto;
+  border: 0.1em solid #ccc;
+  border-radius: 0.5em;
+  padding: 1em;
+}
+
+/* Individual transaction item */
+.transaction-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 1em 0;
+  border-bottom: 0.1em solid #ddd;
+  align-items: center;
+}
+
+/* Last item without a bottom border */
+.transaction-item:last-child {
+  border-bottom: none;
+}
+
+/* Information section (name, date) */
+.transaction-info {
+  flex: 1;
+  font-size: 0.9em;
+}
+
+/* Transaction date styling */
+.transaction-date {
+  font-size: 0.875em;
+  color: #666;
+}
+
+/* Transaction amount styling */
+.transaction-amount {
+  font-size: 1.25em;
+  font-weight: bold;
+}

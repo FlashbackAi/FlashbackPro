@@ -5663,48 +5663,48 @@ app.get("/fetchUserDetailsByUserName/:userName", async (req, res) => {
 });
 
 
-app.post("/updateUserDetails", async (req, res) => {
-  const { user_phone_number, ...updateFields } = req.body;
+// app.post("/updateUserDetails", async (req, res) => {
+//   const { user_phone_number, ...updateFields } = req.body;
 
-  logger.info("Updating the user info for the user_name: ",user_phone_number)
+//   logger.info("Updating the user info for the user_name: ",user_phone_number)
   
-  if (!user_phone_number) {
-      return res.status(400).json({ error: "User phone number is required" });
-  }
+//   if (!user_phone_number) {
+//       return res.status(400).json({ error: "User phone number is required" });
+//   }
 
-  if (Object.keys(updateFields).length === 0) {
-      return res.status(400).json({ error: "At least one field to update must be provided" });
-  }
+//   if (Object.keys(updateFields).length === 0) {
+//       return res.status(400).json({ error: "At least one field to update must be provided" });
+//   }
 
-  const updateExpressions = [];
-  const expressionAttributeNames = {};
-  const expressionAttributeValues = {};
+//   const updateExpressions = [];
+//   const expressionAttributeNames = {};
+//   const expressionAttributeValues = {};
 
-  Object.keys(updateFields).forEach(key => {
-      updateExpressions.push(`#${key} = :${key}`);
-      expressionAttributeNames[`#${key}`] = key;
-      expressionAttributeValues[`:${key}`] = updateFields[key];
-  });
+//   Object.keys(updateFields).forEach(key => {
+//       updateExpressions.push(`#${key} = :${key}`);
+//       expressionAttributeNames[`#${key}`] = key;
+//       expressionAttributeValues[`:${key}`] = updateFields[key];
+//   });
 
-  const params = {
-      TableName: userrecordstable,
-      Key: {
-          user_phone_number: user_phone_number
-      },
-      UpdateExpression: `SET ${updateExpressions.join(', ')}`,
-      ExpressionAttributeNames: expressionAttributeNames,
-      ExpressionAttributeValues: expressionAttributeValues,
-      ReturnValues: 'ALL_NEW'
-  };
+//   const params = {
+//       TableName: userrecordstable,
+//       Key: {
+//           user_phone_number: user_phone_number
+//       },
+//       UpdateExpression: `SET ${updateExpressions.join(', ')}`,
+//       ExpressionAttributeNames: expressionAttributeNames,
+//       ExpressionAttributeValues: expressionAttributeValues,
+//       ReturnValues: 'ALL_NEW'
+//   };
 
-  try {
-      const result = await docClient.update(params).promise();
-      res.status(200).json({ message: "User details updated successfully", data: result.Attributes });
-  } catch (error) {
-      console.error("Error updating user details:", error);
-      res.status(500).json({ error: "Could not update user details" });
-  }
-});
+//   try {
+//       const result = await docClient.update(params).promise();
+//       res.status(200).json({ message: "User details updated successfully", data: result.Attributes });
+//   } catch (error) {
+//       console.error("Error updating user details:", error);
+//       res.status(500).json({ error: "Could not update user details" });
+//   }
+// });
 
 app.post("/saveProShareDetails",async (req, res) =>{
 
@@ -8397,6 +8397,29 @@ app.get('/wallet-balance/:phoneNumber', async (req, res) => {
     res.status(500).json({ message: 'Error fetching wallet balance', error: error.message });
   }
 });
+
+app.get("/getAccountInfo/:walletAddress", async (req, res) => {
+  const walletAddress = req.params.walletAddress;
+
+  try {
+    const fund = await aptosClient.getAccountInfo({ accountAddress: walletAddress });
+    
+    // If account info is found, return success response with status 200
+    if (fund) {
+      return res.status(200).json({
+        message: "Account Details found",
+        accountInfo: fund // Optional: you can include the account information in the response
+      });
+    }
+    
+  } catch (err) {
+    // If account is not found or any error occurs, return a 404 response
+    return res.status(404).json({
+      message: "No account found with wallet address"
+    });
+  }
+});
+
 
 
   const httpsServer = https.createServer(credentials, app);
