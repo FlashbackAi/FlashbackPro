@@ -18,6 +18,7 @@ const ModelDetails = () => {
   const [userDetails, setUserDetails] = useState(null);
   const userPhoneNumber =localStorage.userPhoneNumber;
   const [balance, setBalance] = useState();
+  const [isRequesting, setIsRequesting] = useState(false);
 
   useEffect(() => {
     const fetchModelData = async () => {
@@ -133,6 +134,7 @@ const ModelDetails = () => {
 
   const onClickRequest = async (dataset) => {
     try {
+      setIsRequesting(true)
       let formDataToSend = {
         model_name: modelDetails.model_name,
         model_org_name: modelDetails.org_name,
@@ -150,6 +152,7 @@ const ModelDetails = () => {
 
         if (response.status === 200) {
         toast.success("Successfully sent the request", { autoClose: 2000 });
+        setIsRequesting(true)
 
         // Refresh the requests list after a new request is made
         const requestsResponse = await API_UTIL.get(`/getDatasetRequests/${modelName}-${orgName}`);
@@ -235,29 +238,21 @@ const ModelDetails = () => {
               <div className="datasets-content">
                 {datasets.length > 0 ? (
                   datasets.map((dataset) => (
-                    <div key={dataset.dataset_name} className="dataset-item">
-                    <LabelAndInput
-                    name={'owner'}
-                    label={'Owner:'}
-                    value={dataset.org_name}
-                    type={'text'}
-                    handleChange={() => {}} // Not editable
-                    isEditable={false}
-                   />
-                   <LabelAndInput
-                    name={'datasetName'}
-                    label={'Dataset Name:'}
-                    value={dataset.dataset_name}
-                    type={'text'}
-                    handleChange={() => {}} // Not editable
-                    isEditable={false}
-                   />
-                   <div className='m-datasets-bottom-section'>
-                      <button onClick={() => onClickRequest(dataset)}>Request : {dataset.dataset_size*10}🪙</button>
-                      <button onClick={() => openDatasetDetailsModal(dataset)}>Details</button>
-                    </div>
-                    <hr className="modal-separator" />
-                  </div>
+                      <div className="dataset-card">
+                        <span  className='req-dataset-name'>{dataset.dataset_name}</span>  
+                        <img className='req-dataset-img' src='/datasetIcon.jpg' alt="img" onClick={() => openDatasetDetailsModal(dataset)} />
+                        <div className='req-dataset-button-sec'> 
+                          
+                          <button
+                              className='req-dataset-button'
+                              onClick={() => onClickRequest(dataset)}
+                              disabled={isRequesting} // Disable button while rejecting
+                          >
+                              Request : {dataset.dataset_size*10}🪙
+                          </button>
+                      </div>
+                      </div>
+
                   ))
                 ) : (
                   <p>No Datasets found.</p>

@@ -12,21 +12,49 @@ function DataSharingPage() {
     const [photoCount, setPhotoCount] = useState(null);
     const [datasetDetails, setDatasetDetails] = useState([]);
     const [activeTab, setActiveTab] = useState('details');
-    const [isRequestsModalOpen, setIsRequestsModalOpen] = useState(false);
     const [requests, setRequests] = useState([]);
     const [userDetails, setUserDetails] = useState([]);
     const userPhoneNumber = localStorage.userPhoneNumber;
     const [label, setLabel] = useState('');
+    const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+    const [selectedRequest, setSelectedRequest] = useState(null);
+    const [selectedModel, setSelectedModel] = useState(null);
+    const [isAccepting, setIsAccepting] = useState(false);
+const [isRejecting, setIsRejecting] = useState(false);
 
-    const [formData, setFormData] = useState({
-        org_name: 'Flashback',
-        dataset_name: '',
-        dataset_desc: '',
-        dataset_category: '',
-        dataset_url: '',
-        dataset_acceskey: '',
-        dataset_size: ''
-    });
+
+
+    // const [formData, setFormData] = useState({
+    //     org_name: 'Flashback',
+    //     dataset_name: '',
+    //     dataset_desc: '',
+    //     dataset_category: '',
+    //     dataset_url: '',
+    //     dataset_acceskey: '',
+    //     dataset_size: ''
+    // });
+    const fetchModelData = async (request) => {
+        try {
+          const response = await API_UTIL.get(`/getModelDetails/${request.model_org_name}/${request.model_name}`);
+          setSelectedModel(response.data?.[0]);
+  
+        } catch (error) {
+          console.error('Error fetching data:', error);
+        }
+      };
+
+    const openRequestDetailsModal = async (request) => {
+        
+        await fetchModelData(request)
+        setSelectedRequest(request);
+        setIsRequestModalOpen(true);
+    };
+    
+    const closeRequestDetailsModal = () => {
+        setIsRequestModalOpen(false);
+        setSelectedRequest(null);
+    };
+    
 
     const fetchDatasetRequests = useCallback(async () => {
         try {
@@ -173,17 +201,25 @@ function DataSharingPage() {
         }
     };
 
-    const handleAccept = (request) => {
-        updateRequestStatus(request, 'Accepted');
+    const handleAccept = async (request) => {
+        try {
+            setIsAccepting(true); // Set accepting state to true
+            await updateRequestStatus(request, 'Accepted');
+        } finally {
+            setIsAccepting(false); // Reset accepting state to false after operation
+        }
     };
+    
+    const handleReject = async (request) => {
+        try {
+            setIsRejecting(true); // Set rejecting state to true
+            await updateRequestStatus(request, 'Rejected');
+        } finally {
+            setIsRejecting(false); // Reset rejecting state to false after operation
+        }
+    };
+    
 
-    const handleReject = (request) => {
-        updateRequestStatus(request, 'Rejected');
-    };
-
-    const closeRequestsModal = () => {
-        setIsRequestsModalOpen(false);
-    };
 
     // Separate pending and accepted/rejected requests
     const pendingRequests = requests.filter(request => request.status === 'pending');
@@ -192,6 +228,7 @@ function DataSharingPage() {
     return (
         <div>
             <AppBar showCoins={true} />
+            <h1 className="dataset-details-title">{datasetDetails?.dataset_name}</h1>
             <div className="tab-switcher">
                 <button
                     className={`tab-switch-button ${activeTab === 'details' ? 'active' : ''}`}
@@ -214,101 +251,97 @@ function DataSharingPage() {
             </div>
 
             <div className='dataseDetails-root'>
-                <div className="dataset-details-container">
-                    <h1 className="dataset-details-title">{datasetDetails?.dataset_name}</h1>
+                
+               
+                   
                     <div className="model-tab-content">
-                        {activeTab === 'details' && (
-                            <>
-                                {photoCount !== null && (
-                                    <>
-                                        <span className='datasetDetails-text'>
-                                            {photoCount > 0
-                                                ? `Number of photos Eligible for Earning Rewards: ${photoCount}`
-                                                : 'No photos eligible for earning rewards.'}
-                                        </span>
-                                        {photoCount > 0 && (
-                                            <>
-                                                <SlideToAction onSlideComplete={handleSlideComplete} label={label} />
-                                                <span className='disclaimer-text'>* Enabling sharing will allow Flashback partners to gain permission to train on your data.</span>
-                                            </>
-                                        )}
-                                    </>
+                    {activeTab === 'details' && (
+                    <div className="dataset-details-container">
+                            {photoCount !== null && (
+                                <>
+                                    <span className='datasetDetails-text'>
+                                        {photoCount > 0
+                                            ? `Number of photos Eligible for Earning Rewards: ${photoCount}`
+                                            : 'No photos eligible for earning rewards.'}
+                                    </span>
+                                    {photoCount > 0 && (
+                                        <>
+                                            <SlideToAction onSlideComplete={handleSlideComplete} label={label} />
+                                            <span className='disclaimer-text'>* Enabling sharing will allow Flashback partners to gain permission to train on your data.</span>
+                                        </>
+                                    )}
+                                </>
+                            )}
+                            <div className="dataset-details-content">
+                                {datasetDetails?.dataset_name && (
+                                    <div className="dd-form-group">
+                                        <LabelAndInput
+                                            name={'datasetCategory'}
+                                            label={'Dataset Category:'}
+                                            value={datasetDetails.dataset_category}
+                                            type={'text'}
+                                            isEditable={false}
+                                        />
+                                        <LabelAndInput
+                                            name={'datasetUrl'}
+                                            label={'Dataset URL:'}
+                                            value={datasetDetails.dataset_url}
+                                            type={'text'}
+                                            isEditable={false}
+                                        />
+                                        <LabelAndInput
+                                            name={'datasetSize'}
+                                            label={'Dataset Size:'}
+                                            value={datasetDetails.dataset_size}
+                                            type={'text'}
+                                            isEditable={false}
+                                        />
+                                    </div>
                                 )}
-                                <div className="dataset-details-content">
-                                    {datasetDetails?.dataset_name && (
-                                        <div className="dd-form-group">
-                                            <LabelAndInput
-                                                name={'datasetCategory'}
-                                                label={'Dataset Category:'}
-                                                value={datasetDetails.dataset_category}
-                                                type={'text'}
-                                                isEditable={false}
-                                            />
-                                            <LabelAndInput
-                                                name={'datasetUrl'}
-                                                label={'Dataset URL:'}
-                                                value={datasetDetails.dataset_url}
-                                                type={'text'}
-                                                isEditable={false}
-                                            />
-                                            <LabelAndInput
-                                                name={'datasetSize'}
-                                                label={'Dataset Size:'}
-                                                value={datasetDetails.dataset_size}
-                                                type={'text'}
-                                                isEditable={false}
-                                            />
-                                        </div>
-                                    )}
-                                </div>
-                            </>
-                        )}
-
-                        {activeTab === 'requests' && (
-                            <div className="requests-content">
-                                <div className="dd-form-footer">
-                                    {pendingRequests.length > 0 ? (
-                                        <div>
-                                            <div className="modal-header">
-                                                <h2 className="modal-title">Requests for {datasetDetails.dataset_name} dataset</h2>
-                                            </div>
-                                            <div className="d-req-modal-body">
-                                                {pendingRequests.map((request) => (
-                                                    <div key={request.id} className="request-item">
-                                                        <LabelAndInput
-                                                            name={'modelName'}
-                                                            label={'Model:'}
-                                                            value={request.model_name}
-                                                            type={'text'}
-                                                            isEditable={false}
-                                                        />
-                                                        <LabelAndInput
-                                                            name={'modelOwner'}
-                                                            label={'Owner:'}
-                                                            value={request.model_org_name}
-                                                            type={'text'}
-                                                            isEditable={false}
-                                                        />
-                                                        <div className='d-req-bottom-section'>
-                                                            <div className='accept-section'>
-                                                                <button className='accept-button' onClick={() => handleAccept(request)}>Accept</button>
-                                                                <span className='disclaimer-text'>* Accept to earn {Math.floor(datasetDetails.dataset_size / 2)} 🪙</span>
-                                                            </div>
-                                                            <button className='accept-button' onClick={() => handleReject(request)}>Reject</button>
-                                                        </div>
-                                                        <hr className="modal-separator" />
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <p>No Active requests found.</p>
-                                    )}
-                                </div>
                             </div>
-                        )}
+                       
+                    </div>
+                    )}
+                    {activeTab === 'requests' && (
+                    <div className="dataset-req-container">
+                      
+                            <div className="requests-content">
+                                {pendingRequests.length > 0 ? (   
+                                <>
+                                    {pendingRequests.map((request) => (
+                                        <div className="request-card">
+                                          <span  className='req-model-name'>{request.model_name}</span>  
+                                          <img className='req-model-img' src='/modelIcon.jpg' alt="img" onClick={() => openRequestDetailsModal(request)} />
+                                          <div className='req-model-button-sec'> 
+                                            <button
+                                                className='req-model-button'
+                                                onClick={() => handleAccept(request)}
+                                                disabled={isAccepting} // Disable button while accepting
+                                            >
+                                                {'Accept'}
+                                            </button>
+                                            <button
+                                                className='req-model-button'
+                                                onClick={() => handleReject(request)}
+                                                disabled={isRejecting} // Disable button while rejecting
+                                            >
+                                                {'Reject'}
+                                            </button>
+                                        </div>
+                                        </div>
+                                    ))}
+                                </> 
+                                ) : (
+                                    <p>No Active requests found.</p>
+                                )}
+                            </div>
+                       
+                    </div>
+                     )}
+                    {activeTab === 'history' && (
+                    <div className="dataset-history-container">
 
-                        {activeTab === 'history' && (
+                       
                             <div className="history-content">
                                 <div className="dd-form-footer">
                                     {completedRequests.length > 0 ? (
@@ -350,10 +383,93 @@ function DataSharingPage() {
                                     )}
                                 </div>
                             </div>
-                        )}
+                      
                     </div>
+                      )}
                 </div>
             </div>
+            <Modal
+                isOpen={isRequestModalOpen}
+                contentLabel="Request Details"
+                className="modal-content event-modal"
+                overlayClassName="modal-overlay"
+                onRequestClose={closeRequestDetailsModal}
+                >
+                <div className="modal-header">
+                    <h2 className="modal-title">Request Details</h2>
+                    <button className="close-button" onClick={closeRequestDetailsModal}>
+                    x
+                  </button>
+                </div>
+                <div className="modal-body">
+                    {selectedRequest ? (
+
+                    <>
+                   
+                        <div className="form-group">
+                        <LabelAndInput
+                            label="Model Name:"
+                            type="text"
+                            value={selectedModel.model_name}
+                            isEditable={false}
+                        />
+                        </div>
+                        <div className="form-group">
+                        <LabelAndInput
+                            label="Model Category:"
+                            type="text"
+                            value={selectedModel.model_category}
+                            isEditable={false}
+                        />
+                        </div>
+                        <div className="form-group">
+                        <LabelAndInput
+                            label="Organization Name:"
+                            type="text"
+                            value={selectedModel.org_name}
+                            isEditable={false}
+                        />
+                        </div>
+                        <div className="form-group">
+                        <LabelAndInput
+                            label="Model_url:"
+                            type="text"
+                            value={selectedModel.model_url}
+                            isEditable={false}
+                        />
+                        </div>
+                        <div className="form-group">
+                        <LabelAndInput
+                            label="Model desc"
+                            type="text"
+                            value={selectedModel.model_desc}
+                            isEditable={false}
+                        />
+                        </div>
+                        <div className="req-model-details-button-sec"> 
+                            <button
+                                className='req-model-details-button'
+                                onClick={() => handleAccept(selectedRequest)}
+                                disabled={isAccepting} // Disable button while accepting
+                            >
+                                {'Accept'}
+                            </button>
+                            <button
+                                className='req-model-details-button'
+                                onClick={() => handleReject(selectedRequest)}
+                                disabled={isRejecting} // Disable button while rejecting
+                            >
+                                {'Reject'}
+                            </button>
+                        </div>
+
+                    </>
+                    ) : (
+                    <p>Loading request details...</p>
+                    )}
+                </div>
+                </Modal>
+
         </div>
     );
 }

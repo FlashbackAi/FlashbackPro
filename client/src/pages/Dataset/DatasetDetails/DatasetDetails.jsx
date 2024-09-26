@@ -170,21 +170,21 @@ const DataSetDetails = () => {
                         {requests.map((request) => (
                           <div key={request.id} className="request-item">
                             <LabelAndInput
-                name={'modelName'}
-                label={'Model:'}
-                value={request.model_name}
-                type={'text'}
-                handleChange={() => {}} // Not editable
-                isEditable={false}
-              />
-              <LabelAndInput
-                name={'modelOwner'}
-                label={'Owner:'}
-                value={request.model_org_name}
-                type={'text'}
-                handleChange={() => {}} // Not editable
-                isEditable={false}
-              />
+                              name={'modelName'}
+                              label={'Model:'}
+                              value={request.model_name}
+                              type={'text'}
+                              handleChange={() => {}} // Not editable
+                              isEditable={false}
+                            />
+                            <LabelAndInput
+                              name={'modelOwner'}
+                              label={'Owner:'}
+                              value={request.model_org_name}
+                              type={'text'}
+                              handleChange={() => {}} // Not editable
+                              isEditable={false}
+                            />
                             <div className='d-req-bottom-section'>
                               <button onClick={() => handleAccept(request.id)}>Accept</button>
                               <button onClick={() => handleReject(request.id)}>Reject</button>

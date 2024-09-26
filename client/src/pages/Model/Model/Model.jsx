@@ -176,7 +176,7 @@ const Model = () => {
                   alt="Delete"
                 />
               </div>
-              <img src="/datasetIcon.jpg" alt="img" />
+              <img src="/modelIcon.jpg" alt="img" />
               <div className="model-name">
                 <span>{model?.model_name}</span>
               </div>
