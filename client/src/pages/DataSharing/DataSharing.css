@@ -233,3 +233,16 @@
   margin-left: 5em;
   align-items: center;
 }
+
+.model-org-section{
+  display: flex;
+  color: #000;
+  flex-direction: column;
+}
+.model-org-label{
+  margin-bottom: .75em;
+}
+.model-org-button{
+  margin-bottom: .75em;
+  max-width: 70%;
+}

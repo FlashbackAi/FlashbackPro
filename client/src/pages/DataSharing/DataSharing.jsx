@@ -6,6 +6,7 @@ import AppBar from '../../components/AppBar/AppBar';
 import LabelAndInput from '../../components/molecules/LabelAndInput/LabelAndInput';
 import SlideToAction from '../../components/SlideToAction/SlideToAction';
 import { toast } from 'react-toastify'; // Import toast for notifications
+import { useNavigate } from 'react-router-dom';
 import './DataSharing.css';
 
 function DataSharingPage() {
@@ -25,7 +26,7 @@ function DataSharingPage() {
     const [rejectingRequests, setRejectingRequests] = useState({});
 
 
-
+    const navigate = useNavigate();
 
 
     // const [formData, setFormData] = useState({
@@ -419,6 +420,7 @@ function DataSharingPage() {
                 onRequestClose={closeRequestDetailsModal}
                 >
                 <div className="modal-header">
+                
                     <h2 className="modal-title">Request Details</h2>
                     <button className="close-button" onClick={closeRequestDetailsModal}>
                     x
@@ -428,6 +430,7 @@ function DataSharingPage() {
                     {selectedRequest ? (
 
                     <>
+                       
                    
                         <div className="form-group">
                         <LabelAndInput
@@ -445,13 +448,15 @@ function DataSharingPage() {
                             isEditable={false}
                         />
                         </div>
-                        <div className="form-group">
-                        <LabelAndInput
+                        <div className="model-org-section">
+                        {/* <LabelAndInput
                             label="Organization Name:"
                             type="text"
                             value={selectedModel.org_name}
                             isEditable={false}
-                        />
+                        /> */}
+                        <span className='model-org-label'>Organisation:</span>
+                        <button className='model-org-button' onClick={()=>navigate(`/orgDetails/${selectedModel.org_name}`)}>{selectedModel.org_name}</button>
                         </div>
                         <div className="form-group">
                         <LabelAndInput

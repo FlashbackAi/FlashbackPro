@@ -41,6 +41,7 @@ import FaceSelectionV1 from "../pages/Pro/FaceSelection/FaceSelectionV1";
 import PhotoSelectionV1 from "../pages/Pro/PhotoSelection/PhotoSelectionV1";
 import DataSharingPage from "../pages/DataSharing/DataSharing";
 import Withdraw from "../pages/Withdraw/Withdraw";
+import OrgDetails from "../pages/orgDetails/orgDetails";
 
 
 const ROUTES=[
@@ -353,7 +354,13 @@ const ROUTES=[
         exact:false,
         protected:true,
         component:Withdraw, 
-    }
+    },{
+        path:"orgDetails/:orgname",
+        exact:false,
+        protected:true,
+        component:OrgDetails, 
+    },
+    
     
 ]
 

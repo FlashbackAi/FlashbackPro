@@ -315,22 +315,48 @@ const ModelDetails = () => {
             )}
 
             {activeTab === 'requests' && (
-              <div className="requests-content">
-                {requests.length > 0 ? (
-                  <div className="md-form-footer">
-                    {requests.map((request, index) => (
-                      <div key={index} className="request-item">
-                        <p>Dataset: {request.dataset_name}</p>
-                        <p>Owner: {request.dataset_org_name}</p>
-                        <p>Status: {request.status}</p>
-                        <hr className="modal-separator" />
-                      </div>
-                    ))}
+              <div className="dataset-history-container">
+
+                       
+              <div className="history-content">
+                  <div className="dd-form-footer">
+                      {requests.length > 0 ? (
+                          <div>
+                              {/* <h2 className="history-title">History for {datasetDetails.dataset_name} dataset</h2> */}
+                              <div className="d-history-modal-body">
+                                  {requests.map((request) => (
+                                      <div key={request.model} className="model-request-item">
+                                          <span className='model-req-text'><span className='label-left'>Dataset</span>: <span className='label-right'>{request.dataset_name}</span></span>
+                                          <span className='model-req-text'><span className='label-left'> Owner</span>:<span className='label-right'>{request.dataset_org_name}</span></span>
+                                          <span className='model-req-text'><span className='label-left'>Request Status</span>: <span className='label-right'>{request.status}</span></span>
+                                          {/* <LabelAndInput
+                                              name={'modelName'}
+                                              label={'Model:'}
+                                              value={request.model_name}
+                                              type={'text'}
+                                              isEditable={false}
+                                          />
+                                          <LabelAndInput
+                                              name={'modelOwner'}
+                                              label={'Owner:'}
+                                              value={request.model_org_name}
+                                              type={'text'}
+                                              isEditable={false}
+                                          /> 
+                                          <div>Status: {request.status}</div>
+                                          */}
+                                          <hr className="modal-separator" />
+                                      </div>
+                                  ))}
+                              </div>
+                          </div>
+                      ) : (
+                          <p>No history found.</p>
+                      )}
                   </div>
-                ) : (
-                  <p>No requests found.</p>
-                )}
               </div>
+        
+      </div>
             )}
           </div>
 
@@ -360,9 +386,17 @@ const ModelDetails = () => {
                       isEditable={false}
                     />
                     <LabelAndInput
-                      name={'datasetUrl'}
-                      label={'Dataset URL:'}
-                      value={clickedDataset.dataset_url}
+                      name={'datasetOwner'}
+                      label={'Dataset Owner:'}
+                      value={clickedDataset.org_name}
+                      type={'text'}
+                      handleChange={() => {}} // Not editable
+                      isEditable={false}
+                    />
+                    <LabelAndInput
+                      name={'datasetDesc'}
+                      label={'Dataset Description:'}
+                      value={clickedDataset.dataset_desc}
                       type={'text'}
                       handleChange={() => {}} // Not editable
                       isEditable={false}

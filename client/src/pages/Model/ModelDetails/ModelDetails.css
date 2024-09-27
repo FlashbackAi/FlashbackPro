@@ -183,5 +183,21 @@
 
 }
 
+.model-request-item {
+  background-color: #fff;
+  border-radius: 0.5em;
+  box-shadow: 0 0.125em 0.5em rgba(0, 0, 0, 0.1);
+  padding: 1em;
+  margin-bottom: 1em;
+  font-family: 'Arial', sans-serif;
+}
+
+.model-req-text {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1em;
+  color: #333;
+  margin-bottom: 0.375em;
+}
 
 
