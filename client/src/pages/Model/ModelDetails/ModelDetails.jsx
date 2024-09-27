@@ -19,6 +19,9 @@ const ModelDetails = () => {
   const userPhoneNumber =localStorage.userPhoneNumber;
   const [balance, setBalance] = useState();
   const [isRequesting, setIsRequesting] = useState(false);
+  const [isAuditing, setIsAuditing] = useState(false);
+  const [requestingStatus, setRequestingStatus] = useState({});
+
 
   useEffect(() => {
     const fetchModelData = async () => {
@@ -110,11 +113,11 @@ const ModelDetails = () => {
     setIsDatasetDetailsModalOpen(false);
   };
 
-  const deductCoins = async (numberOfImages) => {
+  const deductCoins = async (coins) => {
     try {
       // Prepare the request payload
       const payload = {
-        amount: (numberOfImages*10).toString(), // The number of images is the amount to deduct
+        amount: coins, // The number of images is the amount to deduct
         senderMobileNumber: userPhoneNumber, // The current user's phone number
         recipientMobileNumber: "+919090401234" // The fixed recipient phone number
       };
@@ -132,40 +135,71 @@ const ModelDetails = () => {
     }
   };
 
-  const onClickRequest = async (dataset) => {
-    try {
-      setIsRequesting(true)
-      let formDataToSend = {
-        model_name: modelDetails.model_name,
-        model_org_name: modelDetails.org_name,
-        dataset_name: dataset.dataset_name,
-        dataset_org_name: dataset.org_name,
-        status: 'pending',
-        dataset_size:dataset.dataset_size,
-        model_url:modelDetails.model_url,
-      };
-      const resp = await deductCoins(dataset.dataset_size)
-      
-
-      if (resp.status === 200) {
-        const response = await API_UTIL.post('/requestDatasetAccess', formDataToSend);
-
-        if (response.status === 200) {
-        toast.success("Successfully sent the request", { autoClose: 2000 });
-        setIsRequesting(true)
-
-        // Refresh the requests list after a new request is made
-        const requestsResponse = await API_UTIL.get(`/getDatasetRequests/${modelName}-${orgName}`);
-        setRequests(requestsResponse.data);
-        } else if (response.status === 400) {
-          toast.success("Request Already Exists", { autoClose: 1500 });
-        }
+  const auditModel = async () => {
+    try{
+      setIsAuditing(true);
+      await deductCoins('10000');
+      const updatedModel = {
+        org_name: modelDetails.org_name,
+        model_name:modelDetails.model_name,
+        model_category: modelDetails.model_category,
+        model_url: modelDetails.model_url,
+        model_desc: modelDetails.model_desc,
+        is_audited:true
       }
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to send the request", { autoClose: 1500 });
+      const response = await API_UTIL.post('/saveModelDetails', updatedModel);
+      if(response.status!==200){
+        throw Error("Error in auditing model")
+      }else{
+        setModelDetails(updatedModel);
+      }
+    }catch(err){
+      console.log(err);
+    }
+    finally{
+      setIsAuditing(false);
     }
   };
+
+  const onClickRequest = async (dataset) => {
+    try {
+        // Set the requesting state to true for the clicked dataset
+        setRequestingStatus((prev) => ({ ...prev, [dataset.dataset_name]: true }));
+        
+        let formDataToSend = {
+            model_name: modelDetails.model_name,
+            model_org_name: modelDetails.org_name,
+            dataset_name: dataset.dataset_name,
+            dataset_org_name: dataset.org_name,
+            status: 'pending',
+            dataset_size: dataset.dataset_size,
+            model_url: modelDetails.model_url,
+        };
+        
+        const resp = await deductCoins((dataset.dataset_size * 10).toString());
+
+        if (resp.status === 200) {
+            const response = await API_UTIL.post('/requestDatasetAccess', formDataToSend);
+
+            if (response.status === 200) {
+                toast.success("Successfully sent the request", { autoClose: 2000 });
+            } else if (response.status === 400) {
+                toast.success("Request Already Exists", { autoClose: 1500 });
+            }
+
+            // Refresh the requests list after a new request is made
+            const requestsResponse = await API_UTIL.get(`/getDatasetRequests/${modelName}-${orgName}`);
+            setRequests(requestsResponse.data);
+        }
+    } catch (err) {
+        console.error(err);
+        toast.error("Failed to send the request", { autoClose: 1500 });
+    } finally {
+        // Reset the requesting state for the clicked dataset
+        setRequestingStatus((prev) => ({ ...prev, [dataset.dataset_name]: false }));
+    }
+};
+
 
   return (
     <>
@@ -222,41 +256,61 @@ const ModelDetails = () => {
                     handleChange={() => {}} // Not editable
                     isEditable={false}
                   />
-                  <LabelAndInput
+                  {/* <LabelAndInput
                     name={'datasetSize'}
                     label={'Required Dataset Size:'}
                     value={modelDetails.dataset_size}
                     type={'text'}
                     handleChange={() => {}} // Not editable
                     isEditable={false}
-                  />
+                  /> */}
+                  {!modelDetails?.is_audited ? (
+                      <div className="audit-section">
+                        <div>
+                          <button onClick={() => auditModel()} disabled={isAuditing}>
+                            {isAuditing ? 'Auditing...' : 'Audit : 10000🪙'} 
+                          </button>
+                          <span className="audit-info"> * Request your model for Auditing</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <LabelAndInput
+                        name={'isAudited'}
+                        label={'Model Audit Status:'}
+                        value={modelDetails.is_audited}
+                        type={'text'}
+                        handleChange={() => {}} // Not editable
+                        isEditable={false}
+                      />
+)}
+
+                 
                 </div>
               </div>
             )}
 
             {activeTab === 'datasets' && (
               <div className="datasets-content">
-                {datasets.length > 0 ? (
-                  datasets.map((dataset) => (
-                      <div className="dataset-card">
-                        <span  className='req-dataset-name'>{dataset.dataset_name}</span>  
-                        <img className='req-dataset-img' src='/datasetIcon.jpg' alt="img" onClick={() => openDatasetDetailsModal(dataset)} />
-                        <div className='req-dataset-button-sec'> 
-                          
-                          <button
-                              className='req-dataset-button'
-                              onClick={() => onClickRequest(dataset)}
-                              disabled={isRequesting} // Disable button while rejecting
-                          >
-                              Request : {dataset.dataset_size*10}🪙
-                          </button>
-                      </div>
-                      </div>
-
-                  ))
+               {datasets.length > 0 ? (
+                    datasets.map((dataset) => (
+                        <div className="dataset-card" key={dataset.dataset_name}>
+                            <span className='req-dataset-name'>{dataset.dataset_name}</span>  
+                            <img className='req-dataset-img' src='/datasetIcon.jpg' alt="img" onClick={() => openDatasetDetailsModal(dataset)} />
+                            <div className='req-dataset-button-sec'> 
+                                <button
+                                    className='req-dataset-button'
+                                    onClick={() => onClickRequest(dataset)}
+                                    disabled={requestingStatus[dataset.dataset_name]} // Disable button while requesting
+                                >
+                                    {requestingStatus[dataset.dataset_name] ? 'Requesting...' : `Request : ${dataset.dataset_size * 10}🪙`}
+                                </button>
+                            </div>
+                        </div>
+                    ))
                 ) : (
-                  <p>No Datasets found.</p>
+                    <p>No Datasets found.</p>
                 )}
+
               </div>
             )}
 

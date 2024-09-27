@@ -218,4 +218,18 @@
 .req-model-details-button-sec{
   display: flex;
   justify-content: space-around;
+
+}
+
+.req-model-details-button{
+  margin-left: 1em;
+  margin-top: 1em;
+  margin-right: 1em;
+}
+.req-accept-info {
+  color: gray;
+  font-size: 0.6em; /* Smaller font size */
+  /* margin-top: 0.25em; Space between the button and the text */
+  margin-left: 5em;
+  align-items: center;
 }

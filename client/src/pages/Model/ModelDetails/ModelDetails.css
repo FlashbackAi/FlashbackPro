@@ -168,5 +168,20 @@
   justify-content: space-around;
 }
 
+.audit-info{
+  color: gray;
+  font-size: .7em;
+}
+.req-coins{
+  font-size: .7em;
+}
+
+.audit-section{
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+
+}
+
 
 

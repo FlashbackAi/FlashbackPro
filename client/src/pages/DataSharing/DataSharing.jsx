@@ -20,7 +20,11 @@ function DataSharingPage() {
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [selectedModel, setSelectedModel] = useState(null);
     const [isAccepting, setIsAccepting] = useState(false);
-const [isRejecting, setIsRejecting] = useState(false);
+    const [isRejecting, setIsRejecting] = useState(false);
+    const [acceptingRequests, setAcceptingRequests] = useState({});
+    const [rejectingRequests, setRejectingRequests] = useState({});
+
+
 
 
 
@@ -201,25 +205,43 @@ const [isRejecting, setIsRejecting] = useState(false);
         }
     };
 
-    const handleAccept = async (request) => {
-        try {
-            setIsAccepting(true); // Set accepting state to true
-            await updateRequestStatus(request, 'Accepted');
-        } finally {
-            setIsAccepting(false); // Reset accepting state to false after operation
-        }
-    };
+    // const handleAccept = async (request) => {
+    //     try {
+    //         setIsAccepting(true); // Set accepting state to true
+    //         await updateRequestStatus(request, 'Accepted');
+    //     } finally {
+    //         setIsAccepting(false); // Reset accepting state to false after operation
+    //     }
+    // };
     
-    const handleReject = async (request) => {
-        try {
-            setIsRejecting(true); // Set rejecting state to true
-            await updateRequestStatus(request, 'Rejected');
-        } finally {
-            setIsRejecting(false); // Reset rejecting state to false after operation
-        }
-    };
+    // const handleReject = async (request) => {
+    //     try {
+    //         setIsRejecting(true); // Set rejecting state to true
+    //         await updateRequestStatus(request, 'Rejected');
+    //     } finally {
+    //         setIsRejecting(false); // Reset rejecting state to false after operation
+    //         setIsRequestModalOpen(false)
+    //     }
+    // };
     
+    
+        const handleAccept = async (request) => {
+            setAcceptingRequests((prev) => ({ ...prev, [request.model]: true })); // Set accepting state for this request
+            try {
+                await updateRequestStatus(request, 'Accepted');
+            } finally {
+                setAcceptingRequests((prev) => ({ ...prev, [request.model]: false })); // Reset accepting state for this request
+            }
+        };
 
+        const handleReject = async (request) => {
+            setRejectingRequests((prev) => ({ ...prev, [request.model]: true })); // Set rejecting state for this request
+            try {
+                await updateRequestStatus(request, 'Rejected');
+            } finally {
+                setRejectingRequests((prev) => ({ ...prev, [request.model]: false })); // Reset rejecting state for this request
+            }
+        };
 
     // Separate pending and accepted/rejected requests
     const pendingRequests = requests.filter(request => request.status === 'pending');
@@ -309,27 +331,28 @@ const [isRejecting, setIsRejecting] = useState(false);
                                 {pendingRequests.length > 0 ? (   
                                 <>
                                     {pendingRequests.map((request) => (
-                                        <div className="request-card">
-                                          <span  className='req-model-name'>{request.model_name}</span>  
-                                          <img className='req-model-img' src='/modelIcon.jpg' alt="img" onClick={() => openRequestDetailsModal(request)} />
-                                          <div className='req-model-button-sec'> 
-                                            <button
-                                                className='req-model-button'
-                                                onClick={() => handleAccept(request)}
-                                                disabled={isAccepting} // Disable button while accepting
-                                            >
-                                                {'Accept'}
-                                            </button>
-                                            <button
-                                                className='req-model-button'
-                                                onClick={() => handleReject(request)}
-                                                disabled={isRejecting} // Disable button while rejecting
-                                            >
-                                                {'Reject'}
-                                            </button>
-                                        </div>
+                                        <div className="request-card" key={request.model}>
+                                            <span className="req-model-name">{request.model_name}</span>  
+                                            <img className="req-model-img" src="/modelIcon.jpg" alt="img" onClick={() => openRequestDetailsModal(request)} />
+                                            <div className="req-model-button-sec">
+                                                <button
+                                                    className="req-model-button"
+                                                    onClick={() => handleAccept(request)}
+                                                    disabled={acceptingRequests[request.model]} // Disable button only for the current request
+                                                >
+                                                    {acceptingRequests[request.model] ? 'Accepting...' : 'Accept'}
+                                                </button>
+                                                <button
+                                                    className="req-model-button"
+                                                    onClick={() => handleReject(request)}
+                                                    disabled={rejectingRequests[request.model]} // Disable button only for the current request
+                                                >
+                                                    {rejectingRequests[request.model] ? 'Rejecting...' : 'Reject'}
+                                                </button>
+                                            </div>
                                         </div>
                                     ))}
+
                                 </> 
                                 ) : (
                                     <p>No Active requests found.</p>
@@ -349,7 +372,7 @@ const [isRejecting, setIsRejecting] = useState(false);
                                             {/* <h2 className="history-title">History for {datasetDetails.dataset_name} dataset</h2> */}
                                             <div className="d-history-modal-body">
                                                 {completedRequests.map((request) => (
-                                                    <div key={request.id} className="history-request-item">
+                                                    <div key={request.model} className="history-request-item">
                                                         <span className='history-text'><span className='label-left'>Model</span>: <span className='label-right'>{request.model_name}</span></span>
                                                         <span className='history-text'><span className='label-left'> Owner</span>:<span className='label-right'>{request.model_org_name}</span></span>
                                                         <span className='history-text'><span className='label-left'>Request Status</span>: <span className='label-right'>{request.status}</span></span>
@@ -446,22 +469,32 @@ const [isRejecting, setIsRejecting] = useState(false);
                             isEditable={false}
                         />
                         </div>
+                        <div className="form-group">
+                        <LabelAndInput
+                            label="Model Audit Status"
+                            type="text"
+                            value={selectedModel.is_audited}
+                            isEditable={false}
+                        />
+                        </div>
                         <div className="req-model-details-button-sec"> 
                             <button
-                                className='req-model-details-button'
+                                className="req-model-details-button"
                                 onClick={() => handleAccept(selectedRequest)}
                                 disabled={isAccepting} // Disable button while accepting
-                            >
-                                {'Accept'}
-                            </button>
+                                >
+                                {isAccepting ? 'Accepting...' : 'Accept'}
+                                </button>
+
                             <button
                                 className='req-model-details-button'
                                 onClick={() => handleReject(selectedRequest)}
                                 disabled={isRejecting} // Disable button while rejecting
                             >
-                                {'Reject'}
+                                {isRejecting ? 'Rejecting...' : 'Reject'}
                             </button>
                         </div>
+                        <span className='req-accept-info'>* Accept the requst to earn {Math.floor(selectedRequest.dataset_size/2)} 🪙 </span>
 
                     </>
                     ) : (
