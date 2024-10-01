@@ -390,7 +390,7 @@ const EventDetails = () => {
       }
     } catch (error) {
       console.error('Error transferring Chewy Coins:', error);
-      toast.error('Failed to transfer Chewy Coins. Please try again.');
+      toast.error('Failed to transfer Unity Coins. Please try again.');
     }
   };
 
@@ -631,10 +631,14 @@ const EventDetails = () => {
           {fileCount > 0 && (
             <p>
               {fileCount} file(s) selected.{" "}
-              {canUpload 
-                ? `${requiredCoins} 🪙 will be deducted from your wallet.` 
-                : "Insufficient balance."
-              }
+              {canUpload ? (
+                <>
+                  {requiredCoins} <img className='unityLogo' src='/unityLogo.png' alt='Coin' />
+                  will be deducted from your wallet.
+                </>
+              ) : (
+                "Insufficient balance."
+              )}
             </p>
           )}
           {uploadStatus && <p>{uploadStatus}</p>}

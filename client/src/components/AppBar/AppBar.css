@@ -56,6 +56,14 @@
     margin-left: 1em;
     margin-right: 2em;
 }
+
+
+.unityLogo {
+    height: 1.5rem; /* Adjust the size as needed */
+    width: 1.5rem;
+    object-fit: contain; /* Ensures the image keeps its aspect ratio */
+    vertical-align: middle; /* Aligns the image with the text */
+}
 .user-section{
     display: flex;
     align-items: center;
@@ -145,6 +153,7 @@
 }
 .wallet-text{
     margin: .3em;
+    margin-right: 0em;
 }
 .wallet-modal-lower{
     display: flex;

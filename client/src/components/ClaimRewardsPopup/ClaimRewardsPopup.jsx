@@ -37,7 +37,7 @@ const ClaimRewardsPopup = ({ isOpen, onClose, datasetDetails, requests, updateRe
                 >
                     <div>
                         <div className="claim-modal-header">
-                            <span className="claim-modal-title">Congatulations!! You have {rewards}🪙 to claim</span>
+                            <span className="claim-modal-title">Congatulations!! You have {rewards}<img className='unityLogo' src='/unityLogo.png' alt='Coin' /> to claim</span>
                         </div>
                         <div className="claim-modal-body">
                             <button className="claim-button" onClick={() => navigate('/dataSharing')}>

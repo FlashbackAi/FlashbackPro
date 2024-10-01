@@ -75,7 +75,13 @@ function DataSharingPage() {
         API_UTIL.get(`/imagesForFederated/${userPhoneNumber}`)
             .then(response => {
                 setPhotoCount(response.data.count);
-                setLabel(`Enable to Earn ${Math.floor(response.data.count / 2)} 🪙`);
+                setLabel(
+                    <>
+                      Enable to Earn {Math.floor(response.data.count / 2)} 
+                      <img className='unityLogo' src='/unityLogo.png' alt='Coin' />
+                    </>
+                  );
+                  
             })
             .catch(error => {
                 console.error('Error fetching photo count:', error);
@@ -151,7 +157,7 @@ function DataSharingPage() {
             }
         } catch (error) {
             console.error('Error transferring Chewy Coins:', error);
-            toast.error('Failed to transfer Chewy Coins. Please try again.');
+            toast.error('Failed to transfer Unity Coins. Please try again.');
         }
     };
 
@@ -168,7 +174,7 @@ function DataSharingPage() {
             }
         } catch (error) {
             console.error('Error transferring Chewy Coins:', error);
-            toast.error('Failed to transfer Chewy Coins. Please try again.');
+            toast.error('Failed to transfer Unity Coins. Please try again.');
         }
     };
 
@@ -232,6 +238,7 @@ function DataSharingPage() {
                 await updateRequestStatus(request, 'Accepted');
             } finally {
                 setAcceptingRequests((prev) => ({ ...prev, [request.model]: false })); // Reset accepting state for this request
+                setIsRequestModalOpen(false);
             }
         };
 
@@ -378,7 +385,7 @@ function DataSharingPage() {
                                                         <span className='history-text'><span className='label-left'> Owner</span>:<span className='label-right'>{request.model_org_name}</span></span>
                                                         <span className='history-text'><span className='label-left'>Request Status</span>: <span className='label-right'>{request.status}</span></span>
                                                         {request?.status === 'Accepted' &&(
-                                                            <span className='history-text'><span className='label-left'>Coins Credited</span>:<span className='label-right'>{Math.floor(request.dataset_size/2)}🪙</span></span>
+                                                            <span className='history-text'><span className='label-left'>Coins Credited</span>:<span className='label-right'>{Math.floor(request.dataset_size/2)}<img className='unityLogo' src='/unityLogo.png' alt='Coin' /></span></span>
                                                         )}
                                                         <span className='history-text'><span className='label-left'>Model URL</span>:<span className='label-right'>{request.model_url}</span></span>
                                                         {/* <LabelAndInput
@@ -499,7 +506,7 @@ function DataSharingPage() {
                                 {isRejecting ? 'Rejecting...' : 'Reject'}
                             </button>
                         </div>
-                        <span className='req-accept-info'>* Accept the requst to earn {Math.floor(selectedRequest.dataset_size/2)} 🪙 </span>
+                        <span className='req-accept-info'>* Accept the requst to earn {Math.floor(selectedRequest.dataset_size/2)} <img className='unityLogo' src='/unityLogo.png' alt='Coin' /> </span>
 
                     </>
                     ) : (

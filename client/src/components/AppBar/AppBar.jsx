@@ -146,7 +146,7 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
         {showCoins && userDetails && (
           <>
           <div className='user-coins' onClick={openQrModal}>
-            <span>{balance}🪙</span>
+            <span>{balance}<img className='unityLogo' src='/unityLogo.png' alt=''></img></span>
           </div>
         
 
@@ -181,7 +181,7 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
             <button className='close-button' onClick={closeQrModal}>x</button>
           </div>
              <div className='wallet-modal-upper'>
-             <span className='wallet-text'>Balance : {balance} 🪙</span>
+             <span className='wallet-text'>Balance : {balance} <img className='unityLogo' src='/unityLogo.png' alt=''></img></span>
             <span className='wallet-text'>Copy Wallet Address</span>
 
             {/* Hash code section with copy text and icon */}

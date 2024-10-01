@@ -115,7 +115,7 @@ function ProNew() {
       }
     } catch (error) {
       console.error('Error transferring Chewy Coins:', error);
-      toast.error('Failed to transfer Chewy Coins. Please try again.');
+      toast.error('Failed to transfer Unity Coins. Please try again.');
     }
   };
   

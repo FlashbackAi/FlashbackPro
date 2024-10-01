@@ -268,11 +268,19 @@ const ModelDetails = () => {
                       <div className="audit-section">
                         <div>
                           <button onClick={() => auditModel()} disabled={isAuditing}>
-                            {isAuditing ? 'Auditing...' : 'Audit : 10000🪙'} 
+                            {isAuditing ? (
+                              'Auditing...'
+                            ) : (
+                              <>
+                                Audit: 10000 
+                                <img className='unityLogo' src='/unityLogo.png' alt='Coin' />
+                              </>
+                            )}
                           </button>
                           <span className="audit-info"> * Request your model for Auditing</span>
                         </div>
                       </div>
+                    
                     ) : (
                       <LabelAndInput
                         name={'isAudited'}
@@ -302,7 +310,15 @@ const ModelDetails = () => {
                                     onClick={() => onClickRequest(dataset)}
                                     disabled={requestingStatus[dataset.dataset_name]} // Disable button while requesting
                                 >
-                                    {requestingStatus[dataset.dataset_name] ? 'Requesting...' : `Request : ${dataset.dataset_size * 10}🪙`}
+                                    {requestingStatus[dataset.dataset_name] ? (
+                                      'Requesting...'
+                                    ) : (
+                                      <>
+                                        Request: {dataset.dataset_size * 10}
+                                        <img className='unityLogo' src='/unityLogo.png' alt='Coin' />
+                                      </>
+                                    )}
+
                                 </button>
                             </div>
                         </div>
