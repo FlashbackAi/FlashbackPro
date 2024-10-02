@@ -5,10 +5,229 @@ import QRCode from 'qrcode.react';
 import { toast } from 'react-toastify';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import API_UTIL from '../../../services/AuthIntereptor';
+import styled from 'styled-components';
+import { motion, AnimatePresence } from 'framer-motion';
 import './EventDetails.css';
 import AppBar from '../../../components/AppBar/AppBar';
 import LabelAndInput from '../../../components/molecules/LabelAndInput/LabelAndInput';
 import ClaimRewardsPopup from '../../../components/ClaimRewardsPopup/ClaimRewardsPopup';
+import { Edit2, Calendar, Clock, MapPin, Share2, Upload, Users, Image, Link, HandshakeIcon, X, Cable, QrCode, Handshake } from 'lucide-react';
+
+
+const PageWrapper = styled.div`
+  background-color: #121212;
+  min-height: 100vh;
+  color: #ffffff;
+`;
+
+const ContentWrapper = styled.div`
+  max-width: 75rem;
+  margin: 0 auto;
+  padding: 2rem;
+`;
+
+const EventImage = styled.div`
+  position: relative;
+  width: 100%;
+  height: 30rem;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  margin-bottom: 2rem;
+  box-shadow: 0 0.25rem 1rem rgba(0, 255, 255, 0.1);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  &:hover img {
+    transform: scale(1.05);
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.7));
+  }
+`;
+
+const EventTitle = styled.h1`
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  background: white;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+`;
+
+const EventInfo = styled.div`
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+`;
+
+const InfoItem = styled.div`
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+  color: white;
+  margin: 0.5rem 1rem 0.5rem 0;
+
+  svg {
+    margin-right: 0.5rem;
+    color: #00ffff;
+  }
+`;
+
+const ActionButtons = styled.div`
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+`;
+
+const ActionButton = styled(motion.button)`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  background-color: #2a2a2a;
+  color: #ffffff;
+  border: none;
+  border-radius: 1.875rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  svg {
+    margin-right: 0.5rem;
+    color: #00ffff;
+  }
+
+  &:hover {
+    background-color: #3a3a3a;
+    box-shadow: 0 0 0.5rem rgba(0, 255, 255, 0.5);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const EditForm = styled(motion.div)`
+  background-color: #1e1e1e;
+  padding: 2rem;
+  border-radius: 1.25rem;
+  margin-top: 2rem;
+  box-shadow: 0 0.25rem 1rem rgba(0, 255, 255, 0.1);
+`;
+
+const StyledModal = styled(Modal)`
+  &.qr-modal-content,
+  &.uploadfiles-modal-content {
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    max-width: 100%;
+    width: auto;
+    margin: 0;
+    outline: none;
+  }
+`;
+
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
+
+const ModalContent = styled(motion.div)`
+  background-color: #1e1e1e;
+  padding: 2rem;
+  border-radius: 1.25rem;
+  max-width: 31.25rem;
+  width: 90%;
+  color: #ffffff;
+  position: relative;
+  max-height: 80vh;
+  overflow-y: auto;
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 1.5rem;
+  cursor: pointer;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  transition: color 0.3s ease;
+
+  &:hover {
+    color: #00ffff;
+  }
+`;
+
+const QRCodeWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 1rem;
+`;
+
+const Dropzone = styled.div`
+  border: 0.125rem dashed #3a3a3a;
+  border-radius: 0.625rem;
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: #00ffff;
+    background-color: rgba(0, 255, 255, 0.05);
+  }
+`;
+
+const ProgressBar = styled.div`
+  width: 100%;
+  height: 0.625rem;
+  background-color: #2a2a2a;
+  border-radius: 0.3125rem;
+  margin-top: 1rem;
+  overflow: hidden;
+`;
+
+const ProgressFill = styled.div`
+  height: 100%;
+  background-color: #00ffff;
+  width: ${props => props.progress}%;
+  transition: width 0.3s ease;
+`;
+
+const UnityLogo = styled.img`
+  width: 1rem;
+  height: 1rem;
+  vertical-align: middle;
+  margin-left: 0.25rem;
+`;
 
 const EventDetails = () => {
   const location = useLocation();
@@ -39,55 +258,37 @@ const EventDetails = () => {
   const [isCoinsDedcuted,setIsCoinsDeducted] = useState(false);
   const [isClaimPopupOpen, setIsClaimPopupOpen] = useState(true);
 
-  // Fetch event data function
-  const fetchEventData = async (eventName) => {
-    try {
-      const response = await API_UTIL.get(`/getEventDetails/${eventName}`);
-      console.log(response.data);
-      setEvent(response.data);
-      let fileCount = 0;
-      if (response.data.uploaded_files) {
-        fileCount = response.data.uploaded_files;
-        setUploadedFilesCount(fileCount);
+    // Fetch event data function
+    const fetchEventData = async (eventName) => {
+      try {
+        const response = await API_UTIL.get(`/getEventDetails/${eventName}`);
+        setEvent(response.data);
+        setUploadedFilesCount(response.data.uploaded_files || 0);
+        setEditData({
+          eventName: response.data.event_name,
+          eventDate: response.data.event_date.split('T')[0],
+          eventTime: response.data.event_date.split('T')[1].slice(0, 5),
+          invitationNote: response.data.invitation_note,
+          eventLocation: response.data.event_location
+        });
+        setIsImageProcessingDone(response.data.uploaded_files === response.data.files_indexed);
+      } catch (error) {
+        setError(error.message);
       }
-      setEditData({
-        eventName: response.data.event_name,
-        eventDate: response.data.event_date.split('T')[0],
-        eventTime: response.data.event_date.split('T')[1].slice(0, 5),
-        invitationNote: response.data.invitation_note,
-        eventLocation: response.data.event_location
-      });
-      if( response.data.uploaded_files === response.data.files_indexed){
-        if(isImageProcessingDone === false)
-        setIsImageProcessingDone(true);
-      }
-      else{
-          setIsImageProcessingDone(false);
-
-      }
-    } catch (error) {
-      setError(error.message);
-    }
-  };
-  useEffect(() => {
-    setRequiredCoins(files.length);
-    setCanUpload(userDetails.reward_points >= files.length); // Enable/disable upload based on user's coins
-  }, [files, userDetails]);
+    };
 
   useEffect(() => {
-  }, [isCoinsDedcuted]);
-  useEffect(() => {
-    // Fetch event data initially
     fetchEventData(eventName);
-
-    // Set up polling
     const interval = setInterval(() => {
       fetchEventData(eventName);
-    }, 10000); // 5 seconds
-
-    // Clean up interval on component unmount
+    }, 10000);
     return () => clearInterval(interval);
   }, [eventName]);
+
+  useEffect(() => {
+    setRequiredCoins(files.length);
+    setCanUpload(userDetails && userDetails.reward_points >= files.length); // Enable/disable upload based on user's coins
+  }, [files, userDetails]);
 
   const handleEditClick = () => {
     setEditData({
@@ -342,13 +543,14 @@ const EventDetails = () => {
   };
 
   const formatEventName = (name) => {
+    if (!name) return '';
     let event = name.replace(/_/g, ' ');
-    console.log(userDetails.user_name);
-    console.log(event);
-    event = event.replace(userDetails.user_name, '');
-    console.log(event);
-    return event;
+    if (userDetails && userDetails.user_name) {
+      event = event.replace(userDetails.user_name, '');
+    }
+    return event.trim();
   };
+
 
   function getFormattedDate(datetime) {
     console.log("inside format" );
@@ -369,6 +571,7 @@ const EventDetails = () => {
     hours = hours ? String(hours).padStart(2, '0') : '12';
     return `${hours}:${minutes} ${ampm}`;
   }
+  
   const transferChewyCoins = async (recipientMobileNumber, amount) => {
     try {
       const senderMobileNumber = "+919090401234"; // The fixed sender phone number
@@ -434,251 +637,256 @@ const EventDetails = () => {
     return <div>Loading Event Info</div>;
   }
 
+  const StyledLabel = styled.label`
+  color: white;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  display: block;
+`;
+
+const StyledInput = styled.input`
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 0.5rem;
+  color: #ffffff;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+
+  &:focus {
+    outline: none;
+    border-color: #00ffff;
+  }
+`;
+
+const LabelAndInput = ({ label, ...props }) => (
+  <div>
+    <StyledLabel>{label}</StyledLabel>
+    <StyledInput {...props} />
+  </div>
+);
+
   return (
-    <div className="event-details-page-root">
-      <AppBar showCoins={true}/>
-      {/* <ClaimRewardsPopup isOpen={isClaimPopupOpen} onClose={closeClaimPopup}/> */}
-      {event.event_name && (
-        <div className="event-details-container">
-          <h1 className="event-details-title">
-            {formatEventName(event?.event_name)}
-          </h1>
-          <div className="invitation-image">
-            <img src={event.event_image} alt="Event" className="modal-image" />
-          </div>
-          <div className="invitation-image-content">
-            <div className="event-details-content">
-              <div className="ed-form-group">
+    <PageWrapper>
+      <AppBar showCoins={true} />
+      {/*<ClaimRewardsPopup isOpen={isClaimPopupOpen} onClose={closeClaimPopup} /> */}
+      <ContentWrapper>
+        <EventImage>
+          <img src={event.event_image} alt="Event" />
+        </EventImage>
+        <EventTitle>{formatEventName(event?.event_name)}</EventTitle>
+        <EventInfo>
+          <InfoItem>
+            <Calendar size={18} />
+            {getFormattedDate(event.event_date)}
+          </InfoItem>
+          <InfoItem>
+            <Clock size={18} />
+            {getFormattedTime(event.event_date)}
+          </InfoItem>
+          <InfoItem>
+            <MapPin size={18} />
+            {event.event_location || 'Location not set'}
+          </InfoItem>
+        </EventInfo>
+        <ActionButtons>
+          <ActionButton whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={handleEditClick}>
+            <Edit2 size={18} />
+            Edit
+          </ActionButton>
+          <ActionButton whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={openQrModal}>
+            <QrCode size={18} />
+            Invite / QR
+          </ActionButton>
+          <ActionButton whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={openUploadFilesModal}>
+            <Upload size={18} />
+            Upload
+          </ActionButton>
+          <ActionButton whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={sendCollab}>
+            <HandshakeIcon size={18} />
+            Collab
+          </ActionButton>
+          <ActionButton whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => navigate(`/proV1/${event?.event_id}`, { state: { event } })}>
+            <Users size={18} />
+            Attendees
+          </ActionButton>
+          <ActionButton whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => navigate(`/eventPhotos/${event?.folder_name}`)}>
+            <Image size={18} />
+            Photos
+          </ActionButton>
+          {isImageProcessingDone && (
+            <ActionButton whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => navigate(`/relationsV1/${event?.event_id}`)}>
+              <Cable size={18} />
+              Relations
+            </ActionButton>
+          )}
+        </ActionButtons>
+
+        <AnimatePresence>
+          {isEditEnabled && (
+            <EditForm
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <form onSubmit={handleFormSubmit}>
                 <LabelAndInput
-                  name={"eventName"}
-                  label={"Event Name:"}
-                  value={event.event_name}
-                  type={"text"}
+                  name="eventName"
+                  label="Event Name:"
+                  value={editData.eventName}
+                  type="text"
                   handleChange={handleInputChange}
-                  isEditable={false}
+                  isEditable={true}
                 />
                 <LabelAndInput
-                  name={"eventDate"}
-                  label={"Date:"}
-                  defaultValue={getFormattedDate(event.event_date)}
+                  name="eventDate"
+                  label="Date:"
                   value={editData.eventDate}
-                  type={"date"}
+                  type="date"
                   handleChange={handleInputChange}
-                  isEditable={isEditEnabled}
+                  isEditable={true}
                 />
                 <LabelAndInput
-                  name={"eventTime"}
-                  label={"Time:"}
-                  defaultValue={getFormattedDate(event.event_date)}
+                  name="eventTime"
+                  label="Time:"
                   value={editData.eventTime}
-                  type={"time"}
+                  type="time"
                   handleChange={handleInputChange}
-                  isEditable={isEditEnabled}
+                  isEditable={true}
                 />
                 <LabelAndInput
-                  name={"invitationNote"}
-                  label={"Invitation Note:"}
+                  name="invitationNote"
+                  label="Invitation Note:"
                   value={editData.invitationNote}
-                  type={"text"}
+                  type="text"
                   handleChange={handleInputChange}
-                  isEditable={isEditEnabled}
+                  isEditable={true}
                 />
                 <LabelAndInput
-                  name={"eventLocation"}
-                  label={"Location:"}
+                  name="eventLocation"
+                  label="Location:"
                   value={editData.eventLocation}
-                  type={"text"}
+                  type="text"
                   handleChange={handleInputChange}
-                  isEditable={isEditEnabled}
+                  isEditable={true}
                 />
-              </div>
-              <div className='edit-actions'>
-                {isEditEnabled ? <>
-                  <button className="save-button cancel-button" onClick={handleCancel}>
-                    Cancel
-                  </button>
-                  <button className="save-button" onClick={handleFormSubmit}>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <ActionButton type="submit" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                     Save
-                  </button>
-                </> :
-                <button className="save-button" onClick={handleEditClick}>
-                    Edit
-                  </button>
-                }
-              </div>
+                  </ActionButton>
+                  <ActionButton type="button" onClick={handleCancel} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    Cancel
+                  </ActionButton>
+                </div>
+              </form>
+            </EditForm>
+          )}
+        </AnimatePresence>
+
+        <StyledModal
+          isOpen={isQrModalOpen}
+          onRequestClose={closeQrModal}
+          contentLabel="QR Code"
+          className="qr-modal-content"
+          overlayClassName="modal-overlay"
+        >
+          <ModalOverlay>
+          <ModalContent
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+          >
+            <CloseButton onClick={closeQrModal}><X size={24} /></CloseButton>
+            <h2>QR Code</h2>
+            <QRCodeWrapper ref={qrRef}>
+              <QRCode
+                value={`https://flashback.inc/login/${event?.event_name}`}
+                size={256}
+              />
+            </QRCodeWrapper>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              gap: '2rem', 
+              paddingTop: '1rem' 
+            }}>
+              <ActionButton onClick={downloadQRCode} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                Download QR
+              </ActionButton>
+              <ActionButton onClick={sendInvite} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                Send Invite
+              </ActionButton>
             </div>
-            <div className="ed-form-footer">
-              <button className="footer-buttons" onClick={openQrModal}>
-                Invite / QR
-              </button>
-              <button className="footer-buttons" onClick={openUploadFilesModal}>
-                Upload Files
-              </button>
-              <button className="footer-buttons" onClick={sendCollab}>
-                Collab
-              </button>
-              <button
-                className="footer-buttons"
-                onClick={() => {
-                  navigate(`/proV1/${event?.event_id}`, { state: { event } });
-                }}
-              >
-                Attendees / Send Photos
-              </button>
-              {/* <button className="footer-buttons" onClick={sendWhatsappMsg}>
-                Send Photos
-              </button> */}
-              {/* {event?.uploaded_files && ( */}
-                <button className="footer-buttons" onClick={() => {
-                  navigate(`/eventPhotos/${event?.folder_name}`);
-                }}>
-                Uploaded Photos
-              </button>
-              {/* )} */}
-              
-              {isImageProcessingDone &&(
-                <button
-                  className="footer-buttons"
-                  onClick={() => {
-                    navigate(`/relationsV1/${event?.event_id}`);
-                  }}
-                >
-                  Relation Mapping
-                </button>
+
+          </ModalContent>
+          </ModalOverlay>
+        </StyledModal>
+
+        <StyledModal
+          isOpen={isUploadFilesModelOpen}
+          onRequestClose={closeUploadFilesModal}
+          contentLabel="Upload Files"
+          className="uploadfiles-modal-content"
+          overlayClassName="modal-overlay"
+        >
+          <ModalOverlay>
+          <ModalContent
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+          >
+            <CloseButton onClick={closeUploadFilesModal}><X size={24} /></CloseButton>
+            <h2>Upload Files</h2>
+            <Dropzone {...getRootProps()} isDragActive={isDragActive}>
+              <input {...getInputProps()} />
+              {isDragActive ? (
+                <p>Drop the files here ...</p>
+              ) : (
+                <p>Drag 'n' drop files here, or click to select files from your machine</p>
               )}
-
-            </div>
-            {event.invitation_url && (
-              <a
-                href={event.invitation_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="event-link"
-              >
-                View Invitation
-              </a>
-            )}
-          </div>
-          <Modal
-            isOpen={isQrModalOpen}
-            onRequestClose={closeQrModal}
-            contentLabel="QR Code"
-            className="qr-modal-content"
-            overlayClassName="modal-overlay"
-          >
-            {event && (
-              <div className='event-details-qr-modal'>
-                <div className="modal-header">
-                  <h2 className="modal-title">
-                    QR Code
-                  </h2>
-                  <button className="close-button" onClick={closeQrModal}>
-                    x
-                  </button>
-                </div>
-                <div className="qr-modal-body">
-                  <div ref={qrRef} style={{ marginBottom: "20px" }}>
-                    <QRCode
-                      value={`https://flashback.inc/login/${event?.event_name}`}
-                      size={256}
-                    />
-                  </div>
-                  <button className="qr-footer-buttons" onClick={downloadQRCode}>
-                    Download QR
-                  </button>
-                </div>
-                <hr className="modal-separator" />
-                <div className="qr-modal-footer">
-                  <p className="invite-text">Send an invitation for your event</p>
-                  <button className="qr-footer-buttons" onClick={sendInvite}>
-                    Invite
-                  </button>
-                </div>
-              </div>
-            )}
-          </Modal>
-
-          <Modal
-      isOpen={isUploadFilesModelOpen}
-      onRequestClose={closeUploadFilesModal}
-      contentLabel="Upload Files"
-      className="uploadfiles-modal-content"
-      overlayClassName="modal-overlay"
-    >
-      <div>
-        <div className="uploadfiles-modal-header">
-          <h2 className="uploadfiles-modal-title">Upload Files</h2>
-          <button className="close-button" onClick={closeUploadFilesModal}>
-            x
-          </button>
-        </div>
-        <div className="modal-body">
-          <div
-            {...getRootProps()}
-            className={`dropzone ${isDragActive ? "active" : ""}`}
-            style={dropzoneStyle}
-          >
-            <input {...getInputProps()} />
-            {isDragActive ? (
-              <p>Drop the files here ...</p>
-            ) : (
+            </Dropzone>
+            {fileCount > 0 && (
               <p>
-                Drag 'n' drop files here, or click to select files from your
-                machine
+                {fileCount} file(s) selected.{" "}
+                {canUpload ? (
+                  <>
+                    {requiredCoins} <UnityLogo src='/unityLogo.png' alt='Coin' />
+                    will be deducted from your wallet.
+                  </>
+                ) : (
+                  "Insufficient balance."
+                )}
               </p>
             )}
-          </div>
-          {fileCount > 0 && (
-            <p>
-              {fileCount} file(s) selected.{" "}
-              {canUpload ? (
-                <>
-                  {requiredCoins} <img className='unityLogo' src='/unityLogo.png' alt='Coin' />
-                  will be deducted from your wallet.
-                </>
-              ) : (
-                "Insufficient balance."
-              )}
-            </p>
-          )}
-          {uploadStatus && <p>{uploadStatus}</p>}
-          <button 
-            onClick={uploadFiles} 
-            className="upload-button" 
-            disabled={!canUpload || fileCount > 500}
-          >
-            {/* {canUpload 
-              ? `Pay ${requiredCoins} coins to upload` 
-              : 'Insufficient coins'} */}
+            {uploadStatus && <p>{uploadStatus}</p>}
+            <div style={{              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              gap: '2rem', 
+              paddingTop: '1rem' }}>
+            <ActionButton 
+              onClick={uploadFiles} 
+              whileHover={{ scale: 1.05 }} 
+              whileTap={{ scale: 0.95 }} 
+              disabled={!canUpload || fileCount > 500} 
+            >
               Upload
-          </button>
-
-          {uploading && (
-            <div className="processing-bar-container">
-              <div
-                className="processing-bar-fill"
-                style={{ width: `${overallProgress}%` }}
-              ></div>
-              <div className="processing-bar-text">
-                {overallProgress < 100 ? `${overallProgress}% Processing...` : 'Finalizing...'}
-              </div>
+            </ActionButton>
             </div>
-          )}
-        </div>
-      </div>
-    </Modal>
-        </div>
-      )}
-    </div>
+            {uploading && (
+              <ProgressBar>
+                <ProgressFill progress={overallProgress} />
+              </ProgressBar>
+            )}
+          </ModalContent>
+          </ModalOverlay>
+        </StyledModal>
+      </ContentWrapper>
+    </PageWrapper>
   );
-};
-
-const dropzoneStyle = {
-  border: "2px dashed #cccccc",
-  borderRadius: "4px",
-  padding: "20px",
-  textAlign: "center",
-  cursor: "pointer",
 };
 
 export default EventDetails;
