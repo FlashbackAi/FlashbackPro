@@ -660,10 +660,16 @@ const StyledInput = styled.input`
   }
 `;
 
-const LabelAndInput = ({ label, ...props }) => (
+const LabelAndInput = ({ label, name, value, type, handleChange, isEditable, ...props }) => (
   <div>
     <StyledLabel>{label}</StyledLabel>
-    <StyledInput {...props} />
+    <StyledInput
+      name={name}
+      value={value}
+      type={type}
+      onChange={handleChange}
+      disabled={!isEditable}
+    />
   </div>
 );
 
