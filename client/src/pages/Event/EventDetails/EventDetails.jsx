@@ -1,18 +1,20 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useDropzone } from 'react-dropzone';
-import Modal from 'react-modal';
-import QRCode from 'qrcode.react';
-import { toast } from 'react-toastify';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
-import API_UTIL from '../../../services/AuthIntereptor';
-import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
-import './EventDetails.css';
+import styled, { createGlobalStyle } from 'styled-components';
+import QRCode from 'qrcode.react';
+import { useDropzone } from 'react-dropzone';
+import { toast } from 'react-toastify';
+import Masonry from 'react-masonry-css';
+import Modal from 'react-modal'
+import ImageModal from "../../../components/ImageModal/ImageModal";
+import { LazyLoadImage } from 'react-lazy-load-image-component';
+import { Edit2, Calendar, Clock, MapPin, Download, Share2, Users, Images, Album, Network, Handshake, Plus, X, Upload } from 'lucide-react';
+import API_UTIL from '../../../services/AuthIntereptor';
 import AppBar from '../../../components/AppBar/AppBar';
 import LabelAndInput from '../../../components/molecules/LabelAndInput/LabelAndInput';
-import ClaimRewardsPopup from '../../../components/ClaimRewardsPopup/ClaimRewardsPopup';
-import { Edit2, Calendar, Clock, MapPin, Share2, Upload, Users, Image, Link, HandshakeIcon, X, Cable, QrCode, Handshake } from 'lucide-react';
-
+import MergeDuplicateUsers from '../../../pages/Pro/ProShare/MergeHandler/MergeDuplicateUsers'
+import LoadingSpinner from '../../../components/Loader/LoadingSpinner';
 
 const PageWrapper = styled.div`
   background-color: #121212;
@@ -21,64 +23,100 @@ const PageWrapper = styled.div`
 `;
 
 const ContentWrapper = styled.div`
-  max-width: 75rem;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
+  display: flex;
+  gap: 2rem;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    padding: 1rem;
+  }
+`;
+
+
+const UploadTile = styled(motion.div)`
+  background-color: #2a2a2a;
+  border-radius: 0.5rem;
+  height: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+
+  &:hover {
+    background-color: #3a3a3a;
+    transform: translateY(-2px);
+  }
+
+  svg {
+    margin-bottom: 0.5rem;
+    color: #ffffff;
+  }
+`;
+
+const UploadText = styled.span`
+  color: #ffffff;
+  font-size: 0.9rem;
+`;
+
+
+const SidePanel = styled.div`
+  flex: 0 0 300px;
+  background-color: #1e1e1e;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  height: fit-content;
+
+  @media (max-width: 768px) {
+    flex: 1;
+  }
+`;
+
+const MainContent = styled.div`
+  flex: 1;
 `;
 
 const EventImage = styled.div`
-  position: relative;
   width: 100%;
-  height: 30rem;
-  border-radius: 1.25rem;
+  height: 200px;
+  border-radius: 1rem;
   overflow: hidden;
-  margin-bottom: 2rem;
-  box-shadow: 0 0.25rem 1rem rgba(0, 255, 255, 0.1);
+  margin-bottom: 1.5rem;
+  position: relative;
 
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.3s ease;
-  }
-
-  &:hover img {
-    transform: scale(1.05);
-  }
-
-  &::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.7));
   }
 `;
 
 const EventTitle = styled.h1`
-  font-size: 3rem;
+  font-size: 1.5rem;
   font-weight: 700;
   margin-bottom: 1rem;
-  background: white;
+  background: linear-gradient(90deg, #66d3ff, #9a6aff 38%, #ee75cb 71%, #fd4d77);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 `;
 
 const EventInfo = styled.div`
   display: flex;
-  justify-content: flex-start;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
 `;
 
 const InfoItem = styled.div`
   display: flex;
   align-items: center;
-  font-size: 1rem;
+  font-size: 0.9rem;
   color: white;
-  margin: 0.5rem 1rem 0.5rem 0;
 
   svg {
     margin-right: 0.5rem;
@@ -86,35 +124,37 @@ const InfoItem = styled.div`
   }
 `;
 
-const ActionButtons = styled.div`
+const QRCodeWrapper = styled.div`
   display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 2rem;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 1.5rem;
 `;
 
-const ActionButton = styled(motion.button)`
+const QRActions = styled.div`
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.75rem 1.5rem;
+  gap: 1rem;
+  margin-top: 1rem;
+`;
+
+const ActionButton = styled.button`
   background-color: #2a2a2a;
-  color: #ffffff;
+  color: white;
   border: none;
-  border-radius: 1.875rem;
-  font-size: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
   cursor: pointer;
   transition: all 0.3s ease;
-
-  svg {
-    margin-right: 0.5rem;
-    color: #00ffff;
-  }
+  font-size: 0.9rem;
+  margin: 0 0.5rem;
 
   &:hover {
-    background-color: #3a3a3a;
-    box-shadow: 0 0 0.5rem rgba(0, 255, 255, 0.5);
+    box-shadow: 0 0 10px rgba(64, 224, 208, 0.5);
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 
   &:disabled {
@@ -123,17 +163,148 @@ const ActionButton = styled(motion.button)`
   }
 `;
 
-const EditForm = styled(motion.div)`
+const MergeButton = styled(ActionButton)`
+  background-color: #2a2a2a;
+  &:hover {
+    box-shadow: 0 0 10px rgba(64, 224, 208, 0.5);
+  }
+`;
+
+const CancelButton = styled(ActionButton)`
+  background-color: #2a2a2a;
+  &:hover {
+    box-shadow: 0 0 10px rgba(255, 99, 71, 0.5);
+  }
+`;
+
+const StyledTabs = styled.div`
+  .tab-list {
+    display: flex;
+    border-bottom: 1px solid #3a3a3a;
+    margin-bottom: 1.5rem;
+  }
+
+  .tab {
+    color: #ffffff;
+    border: none;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    background-color: transparent;
+
+    &:hover {
+      background-color: #2a2a2a;
+    }
+
+    &.active {
+      background-color: #3a3a3a;
+      border-radius: 0.5rem 0.5rem 0 0;
+      background: 0 0 10px rgba(64, 224, 208, 0.5);
+    }
+  }
+`;
+
+const UserCategoryTabs = styled(StyledTabs)`
+  margin-bottom: 1rem;
+`;
+
+const UserCategoryContent = styled.div`
+  display: ${props => props.active ? 'block' : 'none'};
+`;
+
+// const TabContent = styled(motion.div)`
+//   background-color: #1e1e1e;
+//   border-radius: 0 0 1rem 1rem;
+//   padding: 1.5rem;
+// `;
+
+const TabContent = styled(motion.div)`
   background-color: #1e1e1e;
-  padding: 2rem;
-  border-radius: 1.25rem;
-  margin-top: 2rem;
-  box-shadow: 0 0.25rem 1rem rgba(0, 255, 255, 0.1);
+  border-radius: 0 0 1rem 1rem;
+  padding: 1.5rem;
+  min-height: 300px; // Add this to ensure a minimum height
+  position: relative; // Add this for absolute positioning of spinner
+`;
+
+const CenteredSpinner = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+`;
+
+const AlbumGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+`;
+
+const AlbumTile = styled.div`
+  background-color: #2a2a2a;
+  border-radius: 0.5rem;
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+
+  &:hover {
+    background-color: #3a3a3a;
+    transform: translateY(-2px);
+  }
+`;
+
+const ImageWrapper = styled.div`
+  margin-bottom: 16px;
+  break-inside: avoid;
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  cursor: pointer;
+
+  img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+`;
+
+const StyledMasonry = styled(Masonry)`
+  display: flex;
+  margin-left: -16px; /* Adjust the gutter size */
+  width: auto;
+
+  .my-masonry-grid_column {
+    padding-left: 16px; /* Adjust the gutter size */
+    background-clip: padding-box;
+  }
+
+  .image-item {
+    margin-bottom: 16px;
+    break-inside: avoid;
+  }
+
+  img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    transition: transform 0.3s ease;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
 `;
 
 const StyledModal = styled(Modal)`
-  &.qr-modal-content,
-  &.uploadfiles-modal-content {
+  &.modal-content {
     background-color: transparent;
     border: none;
     padding: 0;
@@ -184,13 +355,6 @@ const CloseButton = styled.button`
   }
 `;
 
-const QRCodeWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: 1rem;
-`;
-
 const Dropzone = styled.div`
   border: 0.125rem dashed #3a3a3a;
   border-radius: 0.625rem;
@@ -222,95 +386,289 @@ const ProgressFill = styled.div`
   transition: width 0.3s ease;
 `;
 
-const UnityLogo = styled.img`
-  width: 1rem;
-  height: 1rem;
-  vertical-align: middle;
-  margin-left: 0.25rem;
+const AttendeesSummary = styled.div`
+  background-color: #2a2a2a;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const TotalAttendees = styled.div`
+  font-size: 1.2rem;
+  font-weight: bold;
+`;
+
+const UserCategoryTitle = styled.h3`
+  color: ${props => props.color};
+  margin-bottom: 1rem;
+`;
+
+const GlobalStyle = createGlobalStyle`
+  .wrapper-pro {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+  }
+
+  .wrapper-images-pro {
+    position: relative;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+
+    img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+    }
+
+    p {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      margin: 0;
+      padding: 0.25rem;
+      text-align: center;
+    }
+
+    &.selectable {
+      &:hover {
+        transform: scale(1.05);
+      }
+    }
+
+    &.selected {
+      border: 2px solid #00ffff;
+    }
+
+    .tick-mark {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background-color: #00ffff;
+      color: #1e1e1e;
+      border-radius: 50%;
+      width: 1.5rem;
+      height: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+  }
+
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  .my-masonry-grid {
+    display: flex;
+    margin-left: -30px;
+    width: auto;
+  }
+  .my-masonry-grid_column {
+    padding-left: 30px;
+    background-clip: padding-box;
+  }
+  .my-masonry-grid_column > div {
+    background: grey;
+    margin-bottom: 30px;
+  }
 `;
 
 const EventDetails = () => {
-  const location = useLocation();
   const { eventName } = useParams();
-  const [error, setError] = useState(null);
+  const [event, setEvent] = useState(null);
+  const [editMode, setEditMode] = useState(false);
   const [editData, setEditData] = useState(null);
-  const [event, setEvent] = useState([]);
-  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
-  const [isUploadFilesModelOpen, setUploadFilesModeOpen] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState({});
+  const [isPageLoading, setIsPageLoading] = useState(true);
+  const [isPeopleLoading, setIsPeopleLoading] = useState(false);
+  const [eventDetails, setEventDetails] = useState(null);
+  const [images, setImages] = useState([]);
+  const [continuationToken, setContinuationToken] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [files, setFiles] = useState([]);
-  const [uploadStatus, setUploadStatus] = useState('');
-  const [uploadFilesModalStatus, setUploadFilesModalStatus] = useState('');
-  const [isUploadFilesFailed, setIsUploadFilesFailed] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [isEditEnabled, setIsEditEnabled] = useState(false);
-  const qrRef = useRef();
-  const userDetails = location.state?.userDetails;
-  const navigate = useNavigate();
-  const [fileCount, setFileCount] = useState(0);
-  const [overallProgress, setOverallProgress] = useState(0);
-  const [uploadedFilesCount, setUploadedFilesCount] = useState(0);  
-  const [isImageProcessingDone, setIsImageProcessingDone]  = useState(true);
-  const [totalUploadedBytes, setTotalUploadedBytes] = useState(0);
-  const userPhoneNumber = localStorage.userPhoneNumber;
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [userThumbnails, setUserThumbnails] = useState([]);
+  const [mergeMode, setMergeMode] = useState(false);
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [activeTab, setActiveTab] = useState('gallery');
+  const [userDetails, setUserDetails] = useState(null);
   const [requiredCoins, setRequiredCoins] = useState(0);
-  const [canUpload, setCanUpload] = useState(false); // To manage button state
-  const [isCoinsDedcuted,setIsCoinsDeducted] = useState(false);
+  const [canUpload, setCanUpload] = useState(false);
+  const [showMergePopup, setShowMergePopup] = useState(false);
+  const [showMergeDuplicateUsers, setShowMergeDuplicateUsers] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isImageProcessingDone, setIsImageProcessingDone] = useState(true);
+  const [isSendModalOpen, setIsSendModalOpen] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [selectedMainUser, setSelectedMainUser] = useState(null);
+  const [selectedDuplicateUsers, setSelectedDuplicateUsers] = useState([]);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isWarningModalOpen, setIsWarningModalOpen] = useState(false);
+  const [mergeMessage, setMergeMessage] = useState("");
+  const isDataFetched = useRef(false);
+  const [clickedImg, setClickedImg] = useState(null);
+  const [clickedImgIndex, setClickedImgIndex] = useState(null);
+  const [clickedImgFavourite, setClickedImgFavourite] = useState(null);
+  const [clickedUrl, setClickedUrl] = useState(null);
+  const [rewardPoints, setRewardPoints] = useState();
+  const [clientDetails, setClientDetails] = useState([]);
+  const [showRewardPointsPopUp, setShowRewardPointsPopUp] = useState(null);
+  const [isGalleryLoading, setIsGalleryLoading] = useState(false);
   const [isClaimPopupOpen, setIsClaimPopupOpen] = useState(true);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [userCategoryTab, setUserCategoryTab] = useState('registered');
+  const [isImageLoading, setIsImageLoading] = useState(true);
+  const navigate = useNavigate();
+  const qrRef = useRef();
+  const loader = useRef(null);
 
-    // Fetch event data function
-    const fetchEventData = async (eventName) => {
-      try {
-        const response = await API_UTIL.get(`/getEventDetails/${eventName}`);
-        setEvent(response.data);
-        setUploadedFilesCount(response.data.uploaded_files || 0);
-        setEditData({
-          eventName: response.data.event_name,
-          eventDate: response.data.event_date.split('T')[0],
-          eventTime: response.data.event_date.split('T')[1].slice(0, 5),
-          invitationNote: response.data.invitation_note,
-          eventLocation: response.data.event_location
-        });
-        setIsImageProcessingDone(response.data.uploaded_files === response.data.files_indexed);
-      } catch (error) {
-        setError(error.message);
-      }
-    };
+
+  const onLoad = () => {
+    setIsImageLoading(false);
+    const lazySpan = document.querySelector(".lazyImage");
+    lazySpan && lazySpan.classList.add("visible");
+  };
 
   useEffect(() => {
     fetchEventData(eventName);
-    const interval = setInterval(() => {
-      fetchEventData(eventName);
-    }, 10000);
-    return () => clearInterval(interval);
+    fetchUserDetails();
   }, [eventName]);
 
+  const fetchEventData = async (eventName) => {
+    setIsPageLoading(true);
+    try {
+      const response = await API_UTIL.get(`/getEventDetails/${eventName}`);
+      setEvent(response.data);
+      setEditData({
+        eventName: response.data.event_name,
+        eventDate: response.data.event_date.split('T')[0],
+        eventTime: response.data.event_date.split('T')[1].slice(0, 5),
+        invitationNote: response.data.invitation_note,
+        eventLocation: response.data.event_location,
+        folder_name: response.data.folder_name
+      });
+      setIsImageProcessingDone(response.data.uploaded_files === response.data.files_indexed);
+    } catch (error) {
+      console.error("Error fetching event data:", error);
+    } finally {
+      setIsPageLoading(false);
+    }
+  };
+
+  const fetchUserDetails = async () => {
+    if (isLoading || !hasMore) return;
+
+    setIsLoading(true)
+    try {
+      const response = await API_UTIL.get(`/getUserDetails/${localStorage.userPhoneNumber}`);
+      if (response.status === 200) {
+        setUserDetails(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching user details:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const closeImageModal = () => {
+    setSelectedImage(null);
+  };
+  
+  const fetchImages = useCallback(async () => {
+    if (!event || !hasMore || isGalleryLoading) return;
+  
+    setIsGalleryLoading(true);
+    try {
+      const response = await API_UTIL.get(`/getEventImages/${event.folder_name}?continuationToken=${encodeURIComponent(continuationToken || '')}`);
+      
+      if (response.status === 200) {
+        const { images: s3Urls, lastEvaluatedKey } = response.data;
+  
+        const formattedImages = s3Urls.map((url) => ({
+          original: url,
+          thumbnail: url,
+          isFavourites: false,
+        }));
+  
+        setImages((prevImages) => [...prevImages, ...formattedImages]);
+        setContinuationToken(lastEvaluatedKey);
+        setHasMore(Boolean(lastEvaluatedKey));
+      } else {
+        setHasMore(false);
+      }
+    } catch (error) {
+      console.error("Error fetching images:", error);
+      setHasMore(false);
+    } finally {
+      setIsGalleryLoading(false);
+    }
+  }, [continuationToken, hasMore, isGalleryLoading, event]);
+
   useEffect(() => {
-    setRequiredCoins(files.length);
-    setCanUpload(userDetails && userDetails.reward_points >= files.length); // Enable/disable upload based on user's coins
-  }, [files, userDetails]);
+    if (event && activeTab === 'gallery' && images.length === 0) {
+      fetchImages();
+    }
+  }, [event, activeTab, images.length, fetchImages]);
 
-  const handleEditClick = () => {
-    setEditData({
-      eventName: event.event_name,
-      eventDate: event.event_date.split('T')[0],
-      eventTime: event.event_date.split('T')[1].slice(0, 5),
-      invitationNote: event.invitation_note,
-      eventLocation: event.event_location
-    });
-    setIsEditEnabled(true);
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isGalleryLoading) {
+          fetchImages();
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    if (loader.current) {
+      observer.observe(loader.current);
+    }
+
+    return () => {
+      if (loader.current) {
+        observer.unobserve(loader.current);
+      }
+    };
+  }, [fetchImages, hasMore, isGalleryLoading]);
+  
+  const fetchUserThumbnails = async () => {
+    setIsPeopleLoading(true);
+    try {
+      const response = await API_UTIL.get(`/userThumbnailsByEventId/${event.event_id}`);
+      if (response.status === 200) {
+        setUserThumbnails(response.data);
+      } else {
+        throw new Error("Failed to fetch user thumbnails");
+      }
+    } catch (error) {
+      console.error("Error fetching user thumbnails:", error);
+    } finally {
+      setIsPeopleLoading(false);
+    }
   };
 
-  const handleCancel = () => {
-    setEditData({
-      eventName: event.event_name,
-      eventDate: event.event_date.split('T')[0],
-      eventTime: event.event_date.split('T')[1].slice(0, 5),
-      invitationNote: event.invitation_note,
-      eventLocation: event.event_location
-    });
-    setIsEditEnabled(false);
-  };
+  useEffect(() => {
+    if (event && activeTab === 'people') {
+      fetchUserThumbnails();
+    }
+  }, [event, activeTab]);
+
+  const handleEditClick = () => setEditMode(true);
+  const handleCancelEdit = () => setEditMode(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -319,21 +677,18 @@ const EventDetails = () => {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-    const combinedDateTime = `${editData.eventDate}T${editData.eventTime}:00`;
-
     try {
       const response = await API_UTIL.put(`/updateEvent/${event.event_id}`, {
         eventName: editData.eventName,
-        eventDate: combinedDateTime,
+        eventDate: `${editData.eventDate}T${editData.eventTime}:00`,
         invitationNote: editData.invitationNote,
         eventLocation: editData.eventLocation,
-        uploadedFiles: uploadedFilesCount
       });
 
       if (response.status === 200) {
-        setIsEditEnabled(false);
+        setEditMode(false);
+        fetchEventData(eventName);
         toast.success('Event updated successfully');
-        navigate('/event');
       }
     } catch (error) {
       console.error('Error updating event:', error);
@@ -341,205 +696,311 @@ const EventDetails = () => {
     }
   };
 
-  const openQrModal = () => {
-    setIsQrModalOpen(true);
-  };
-
-  const closeClaimPopup = () => {
-    setIsClaimPopupOpen(false);
-  };
-
-
-  const closeQrModal = () => {
-    setIsQrModalOpen(false);
-  };
+  // const downloadQRCode = () => {
+  //   const qrCanvas = qrRef.current.querySelector('canvas');
+  //   const qrImage = qrCanvas.toDataURL('image/png');
+  //   const downloadLink = document.createElement('a');
+  //   downloadLink.href = qrImage;
+  //   downloadLink.download = `${event.event_name}_QR.png`;
+  //   downloadLink.click();
+  // };
 
   const downloadQRCode = () => {
-    const qrCanvas = qrRef.current.querySelector('canvas');
-    const qrImage = qrCanvas.toDataURL('image/png');
-    const downloadLink = document.createElement('a');
-    downloadLink.href = qrImage;
-    downloadLink.download = `${event.event_name}_QR.png`;
-    downloadLink.click();
+    if (qrRef.current) {
+      const canvas = qrRef.current.querySelector('canvas');
+      if (canvas) {
+        const pngUrl = canvas
+          .toDataURL("image/png")
+          .replace("image/png", "image/octet-stream");
+        let downloadLink = document.createElement("a");
+        downloadLink.href = pngUrl;
+        downloadLink.download = `${event.event_name}_QR.png`;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+      }
+    }
   };
 
-  const openUploadFilesModal = () => {
-    setUploadFilesModeOpen(true);
+  const UsershareOnWhatsApp = (item) => {
+    const userId = item.user_id;
+    const count = item.count;
+    const text = `*Greetings*,\nWe have discovered your *${count}* images captured during the event *"${eventDetails?.event_name}"*.\nKindly proceed to the provided URL to access and view your photographs:\nhttps://flashback.inc/photosV1/${eventDetails?.folder_name}/${userId}\n\nCheers,\n*Flashback*`;
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(whatsappUrl, "_blank");
   };
 
-  const closeUploadFilesModal = () => {
-    setUploadFilesModeOpen(false);
-    setFiles([]);
-    setUploadProgress({});
-    setUploadStatus('');
-    setUploading(false);
-    setFileCount(0);
-  };
+  const shareOnWhatsApp = async () => {
+    const message = editData
+    ? `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(editData?.eventDate)} at ${getFormattedTime(editData?.eventDate)}. Location: ${editData?.eventLocation} , Url: https://flashback.inc/invite/${event?.event_id}`
+    : `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(event.event_date)} at ${getFormattedTime(event.event_date)}. Location: ${event.event_location} , Url: https://flashback.inc/invite/${event?.event_id}`;
+  const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+  
+  window.open(url, '_blank');
+  await transferChewyCoins(userDetails.user_phone_number,10);
+};
+
+const handleCollabClick = async () => {
+  try {
+    const collabLink = `https://flashback.inc/collab/${event.event_id}`;
+    const message = `Join the collaboration for the event: ${formatEventName(event?.event_name)}. Collaborate using the following link: ${collabLink}`;
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+
+    window.open(url, '_blank');
+    await transferChewyCoins(userDetails.user_phone_number, 10);
+  } catch (error) {
+    console.error('Error generating collaboration link:', error);
+    toast.error('Failed to generate collaboration link. Please try again.');
+  }
+};
 
   const onDrop = useCallback((acceptedFiles) => {
-    const totalFiles = acceptedFiles.length;
-    if (totalFiles > 500) {
-      setFileCount(totalFiles);
-      setUploadStatus(`You have selected ${totalFiles} files. You can upload a maximum of 500 files at a time.`);
-      setUploading(false);
-    } else {
-      setFiles(acceptedFiles);
-      setFileCount(totalFiles);
-      setUploadProgress({});
-      setUploadStatus('');
-      setUploading(false);
+    setFiles(acceptedFiles);
+    setRequiredCoins(acceptedFiles.length);
+    setCanUpload(userDetails && userDetails.reward_points >= acceptedFiles.length);
+  }, [userDetails]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
+
+  const uploadFiles = async () => {
+    if (files.length === 0) {
+      toast.error('Please select files to upload');
+      return;
     }
-  }, []);
+
+    if (!canUpload) {
+      toast.error('Insufficient coins to upload files');
+      return;
+    }
+
+    try {
+      await deductCoins(files.length);
+
+      for (let i = 0; i < files.length; i++) {
+        const formData = new FormData();
+        formData.append('files', files[i]);
+        formData.append('eventName', event.event_name);
+        formData.append('eventDate', event.event_date);
+        formData.append('folderName', event.folder_name);
+
+        const response = await API_UTIL.post(`/uploadFiles/${event.event_name}/${localStorage.userPhoneNumber}/${event.folder_name}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+          onUploadProgress: (progressEvent) => {
+            const progress = ((i + progressEvent.loaded / progressEvent.total) / files.length) * 100;
+            setUploadProgress(progress);
+          },
+        });
+
+        if (response.status === 200) {
+          toast.success(`File ${i + 1} of ${files.length} uploaded successfully`);
+        }
+      }
+
+      setFiles([]);
+      setUploadProgress(0);
+      setIsUploadModalOpen(false);
+      fetchImages();
+      fetchUserDetails();
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      toast.error('Failed to upload files. Please try again.');
+    }
+  };
 
   const deductCoins = async (numberOfImages) => {
     try {
-      // Prepare the request payload
       const payload = {
-        amount: numberOfImages.toString(), // The number of images is the amount to deduct
-        senderMobileNumber: userPhoneNumber, // The current user's phone number
-        recipientMobileNumber: "+919090401234" // The fixed recipient phone number
+        amount: numberOfImages.toString(),
+        senderMobileNumber: userDetails.user_phone_number,
+        recipientMobileNumber: "+919090401234"
       };
-  
-      // Call the API to transfer Chewy coins
+
       const response = await API_UTIL.post('/transfer-chewy-coins', payload);
-  
+
       if (response.status === 200) {
-        setIsCoinsDeducted(true);
+        toast.success(`${numberOfImages} coins deducted for file upload`);
       } else {
         throw new Error('Failed to deduct coins.');
       }
     } catch (error) {
       console.error('Error deducting coins:', error);
       toast.error('Failed to deduct coins. Please try again.');
+      throw error;
     }
   };
-  
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-  });
-
-  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-  const uploadFiles = async () => {
-    if (files.length === 0) {
-      setUploadStatus('Please select files to upload');
-      return;
+  const handleClick = (item) => {
+    if (mergeMode) {
+      handleThumbnailClick(item);
+    } else {
+      saveShareDetails(item);
+      UsershareOnWhatsApp(item);
     }
-  
-    setUploading(true);
-    setUploadFilesModalStatus('Uploading files...');
-    setIsUploadFilesFailed(false);
-    setOverallProgress(0); // Start at 0% progress
-  
-    const MAX_CONCURRENT_UPLOADS = 3; // Reduced to avoid 429 error
-    const MAX_RETRIES = 3;
-    let index = 0;
-    const totalFiles = files.length;
-    const totalBytes = files.reduce((acc, file) => acc + file.size, 0); // Total size of all files
-  
-    // Use React state to safely track the total uploaded bytes
+  };
 
-    const uploadFile = async (file) => {
-      const formData = new FormData();
-      formData.append('files', file);
-      formData.append('eventName', event.event_name);
-      formData.append('eventDate', event.event_date);
-      formData.append('folderName', event.folder_name);
+  const handleMergeClick = () => {
+    if (!isImageProcessingDone) {
+      setIsWarningModalOpen(true); // Show warning if images are still processing
+    }else{
+      setShowMergeDuplicateUsers(true);
+      setMergeMode(true);
+      setSelectedMainUser(null);
+      setSelectedDuplicateUsers([]);
+    }
+  };
+
+  const handleCancelManageUsers = () => {
+    setMergeMode(false);
+    setShowMergePopup(false);
+    setSelectedUsers([]);
+    setMergeMessage("");
+    setShowMergeDuplicateUsers(false);
+  };
   
-      let attempts = 0;
-      let delayTime = 1000; // Start with 1 second delay
-  
-      while (attempts < MAX_RETRIES) {
-        try {
-          const response = await API_UTIL.post(`/uploadFiles/${event.event_name}/${userPhoneNumber}/${event.folder_name}`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-            onUploadProgress: (progressEvent) => {
-              // Dynamically update the total uploaded bytes using state update function
-              setTotalUploadedBytes((prevUploadedBytes) => {
-                const updatedUploadedBytes = prevUploadedBytes + progressEvent.loaded;
-                
-                // Calculate and update overall progress based on total uploaded bytes
-                const overallProgress = (updatedUploadedBytes / totalBytes) * 100;
-                setOverallProgress(Math.ceil(overallProgress)); // Round to nearest integer
-                
-                return updatedUploadedBytes;
-              });
-            },
-          });
-  
-          return response.data;
-        } catch (error) {
-          if (error.response && error.response.status === 429) {
-            console.error(`Error uploading file ${file.name}, attempt ${attempts}: Too many requests, retrying after ${delayTime / 1000} seconds`);
-            await delay(delayTime);
-            delayTime *= 2; // Double the delay time for exponential backoff
-          } else {
-            console.error(`Error uploading file ${file.name}, attempt ${attempts}:`, error);
-          }
-          attempts++;
-          if (attempts === MAX_RETRIES) throw error;
+  const handleThumbnailClick = (user) => {
+    if (!mergeMode) return;
+
+    setSelectedUsers((prev) => {
+      const isSelected = prev.some((u) => u.user_id === user.user_id);
+      if (isSelected) {
+        return prev.filter((u) => u.user_id !== user.user_id);
+      } else if (prev.length < 2) {
+        const newSelected = [...prev, user];
+        if (newSelected.length === 2) {
+          setShowMergePopup(true);
         }
+        return newSelected;
       }
-    };
-  
-    const handleUploads = async () => {
-      while (index < files.length) {
-        const promises = [];
-        for (let i = 0; i < MAX_CONCURRENT_UPLOADS && index < files.length; i++) {
-          promises.push(uploadFile(files[index]));
-          index++;
-        }
-        await Promise.allSettled(promises);
-      }
-    };
-  
+      return prev;
+    });
+  };
+
+  const saveShareDetails = async (item) => {
     try {
-      await handleUploads();
-  
-      // After all files are uploaded successfully, update the uploaded files count
-      const newUploadedFilesCount = uploadedFilesCount + files.length;
-      setUploadedFilesCount(newUploadedFilesCount);
-  
-      try {
-        const response = await API_UTIL.put(`/updateEvent/${event.event_id}`, {
-          eventName: editData.eventName,
-          eventDate: `${editData.eventDate}T${editData.eventTime}:00`,
-          invitationNote: editData.invitationNote,
-          eventLocation: editData.eventLocation,
-          uploadedFiles: newUploadedFilesCount,
-        });
-  
-        if (response.status === 200) {
-          toast.success('Event updated successfully with new file count');
-        }
-      } catch (error) {
-        console.error('Error updating event with new file count:', error);
-        toast.error('Failed to update the event with new file count. Please try again.');
+      const user = localStorage.userPhoneNumber;
+      const response = await API_UTIL.post(`/saveProShareDetails`, {
+        user: user,
+        sharedUser: item.user_id,
+        event_id: event.event_id,
+      });
+      if (response.status === 200) {
+        updateRewardPoints(10);
+      } else {
+        throw new Error("Failed to save share info");
       }
-      await deductCoins(files.length);
-  
-      setUploadStatus('Upload completed successfully');
-      setFiles([]);
     } catch (error) {
-      console.error('Upload failed:', error);
-      setUploadStatus('Upload failed. Please try again.');
-    } finally {
-      setUploading(false);
-      setOverallProgress(100); // Ensure progress bar is set to 100% on completion
-      setFileCount(0);
+      console.error("Error saving share details:", error);
     }
   };
-  
 
-  const sendInvite = async () => {
-    const message = editData
-      ? `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(editData?.eventDate)} at ${getFormattedTime(editData?.eventDate)}. Location: ${editData?.eventLocation} , Url: https://flashback.inc/invite/${event?.event_id}`
-      : `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(event.event_date)} at ${getFormattedTime(event.event_date)}. Location: ${event.event_location} , Url: https://flashback.inc/invite/${event?.event_id}`;
-    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
-    
-    window.open(url, '_blank');
-    await transferChewyCoins(userDetails.user_phone_number,10);
+  const updateRewardPoints = async (points) => {
+    const updateData = {
+      user_phone_number: localStorage.userPhoneNumber,
+      reward_points: userDetails?.reward_points ? userDetails.reward_points + points : 50 + points,
+    };
+
+    try {
+      const response = await API_UTIL.post("/updateUserDetails", updateData);
+      if (response.status === 200) {
+        setRewardPoints(points);
+        setShowRewardPointsPopUp(true);
+        setUserDetails(response.data.data);
+      } else {
+        console.log("Failed to update user details. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error updating user details:", error);
+    }
+  };
+
+  useEffect(() => {
+    const fetchEventDetailsInterval = () => {
+      if (event && event.event_id) {
+        fetchEventDetails(event.event_id);
+      }
+    };
+  
+    fetchEventDetailsInterval(); // Fetch event details initially
+  
+    const interval = setInterval(fetchEventDetailsInterval, 30000); // Fetch event details every 30 seconds
+  
+    return () => clearInterval(interval); // Clean up interval on component unmount
+  }, [event?.event_id]); // Dependency on event.event_id
+  
+  useEffect(() => {
+    if (isDataFetched.current) return;
+    fetchThumbnails();
+    isDataFetched.current = true;
+  }, []);
+
+  const fetchThumbnails = async () => {
+    if(!event) return;
+    if (userThumbnails.length === 0) setIsLoading(true);
+
+    try {
+      const response = await API_UTIL.get(`/userThumbnailsByEventId/${event.event_id}`);
+      if (response.status === 200) {
+        setUserThumbnails(response.data);
+        fetchClientDetails();
+      } else {
+        throw new Error("Failed to fetch user thumbnails");
+      }
+    } catch (error) {
+      console.error("Error fetching user thumbnails:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchClientDetails = async () => {
+    if (userThumbnails.length === 0) setIsLoading(true);
+
+    try {
+      const response = await API_UTIL.get(`/userThumbnailsByEventId/${event.event_id}`);
+      if (response.status === 200) {
+        setClientDetails(response.data);
+        fetchUserDetails();
+      } else {
+        throw new Error("Failed to fetch client Details");
+      }
+    } catch (error) {
+      console.error("Error fetching user thumbnails:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleImageClick = (imageData, index) => {
+    console.log("Image clicked");
+    setClickedImg(imageData.thumbnail);
+    setClickedImgIndex(index);
+    setClickedImgFavourite(imageData.isFavourites);
+    setClickedUrl(imageData.original);
+    window.history.pushState({ id: 1 }, null, "?image=" + `${imageData.original.split('/').pop()}`);
+  };
+  
+  // const handleCloseModal = () => {
+  //   setClickedImg(null);
+  //   setClickedImgIndex(null);
+  //   setClickedImgFavourite(null);
+  //   setClickedUrl(null);
+  //   window.history.back();
+  // };
+  
+  const handleBackButton = () => {
+    setClickedImg(null);
+  };
+  
+  useEffect(() => {
+    window.addEventListener("popstate", handleBackButton);
+    return () => {
+      window.removeEventListener("popstate", handleBackButton);
+    };
+  }, []);
+
+  const handleFavourite = (index, imageUrl, isFavourite) => {
+    // Implement your favourite logic here
+    console.log(`Image at index ${index} is now ${isFavourite ? 'favourite' : 'not favourite'}`);
   };
 
   const formatEventName = (name) => {
@@ -550,8 +1011,7 @@ const EventDetails = () => {
     }
     return event.trim();
   };
-
-
+  
   function getFormattedDate(datetime) {
     console.log("inside format" );
     console.log(datetime);
@@ -561,7 +1021,7 @@ const EventDetails = () => {
     const year = date.getFullYear();
     return `${day}-${month}-${year}`;
   }
-
+  
   function getFormattedTime(datetime) {
     const date = new Date(datetime);
     let hours = date.getHours();
@@ -571,23 +1031,135 @@ const EventDetails = () => {
     hours = hours ? String(hours).padStart(2, '0') : '12';
     return `${hours}:${minutes} ${ampm}`;
   }
+
+
+  const fetchEventDetails = async () => {
+    try {
+      const response = await API_UTIL.get(`/getEventDetails/${event.event_id}`);
+      if (response.status === 200) {
+        setEventDetails(response.data); // Set event details in state
+        if( response.data.uploaded_files === response.data.files_indexed){
+          if(isImageProcessingDone === false)
+            fetchThumbnails()
+          setIsImageProcessingDone(true);
+        }
+        else{
+            setIsImageProcessingDone(false);
   
+        }
+      } else {
+        throw new Error("Failed to fetch event details");
+      }
+    } catch (error) {
+      console.error("Error fetching event details:", error);
+    }
+  };
+  
+
+  const handleMerge = async (reason) => {
+    if(!event) return;
+    try {
+      const user_phone_number = localStorage.getItem("userPhoneNumber");
+      const response = await API_UTIL.post("/mergeUsers", {
+        userIds: selectedUsers.map((u) => u.user_id),
+        reason: reason,
+        eventId: event.event_id,
+        user_phone_number: user_phone_number,
+      });
+
+      if (response.data.success) {
+        await transferChewyCoins(user_phone_number, 50);
+        await fetchThumbnails();
+      }
+      return response.data;
+    } catch (error) {
+      console.error("Error merging users:", error);
+      return { success: false, message: "Error merging users. Please try again." };
+    }
+  };
+
+
+  const sendWhatsappMsg = async () => {
+    try {
+      const userIdMappingResponse = await API_UTIL.post("/generateUserIdsForExistingUsers", {
+        eventName: eventDetails?.folder_name,
+      });
+      if (userIdMappingResponse.status === 200) {
+        const sendFlashbacksResponse = await API_UTIL.post("/send-flashbacks", {
+          eventName: eventDetails?.folder_name,
+        });
+
+        if (sendFlashbacksResponse.status === 200) {
+          toast.success("Flashbacks sent successfully!");
+        } else {
+          throw new Error("Failed to send flashbacks.");
+        }
+      } else {
+        throw new Error("Failed to send flashbacks.");
+      }
+    } catch (error) {
+      console.error("Error Publishing Images", error);
+      toast.error("Failed to Publish Images");
+    }
+  };
+
+  const [breakpointColumnsObj, setBreakpointColumnsObj] = useState({
+    default: 5,
+    1200: 5,
+    992: 4,
+    768: 3,
+    576: 2,
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setBreakpointColumnsObj({
+        default: 5,
+        1200: 5,
+        992: 4,
+        768: 3,
+        576: 2,
+      });
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const handleSendPhotos = async () => {
+    if (!isImageProcessingDone) {
+      setIsWarningModalOpen(true); // Show warning if images are still processing
+    } else {
+      setIsSending(true);
+      setIsSendModalOpen(true);
+      try {
+        await sendWhatsappMsg();
+      } finally {
+        setIsSending(false); 
+      }
+    }
+  };
+  const closeWarningModal = () => {
+    setIsWarningModalOpen(false);
+  };
+  const closeClaimPopup = () => {
+    setIsClaimPopupOpen(false);
+  };
+
   const transferChewyCoins = async (recipientMobileNumber, amount) => {
     try {
-      const senderMobileNumber = "+919090401234"; // The fixed sender phone number
-  
-      // Prepare the request payload
+      const senderMobileNumber = "+919090401234";
       const payload = {
         amount: amount,
         senderMobileNumber: senderMobileNumber,
         recipientMobileNumber: recipientMobileNumber,
       };
-  
-      // Call the API to transfer Chewy coins
+
       const response = await API_UTIL.post('/transfer-chewy-coins', payload);
-  
+
       if (response.status === 200) {
-        toast.success(' Rewards added  successfully!');
+        toast.success('Rewards added successfully!');
+        fetchUserDetails();
       } else {
         throw new Error('Failed to transfer Chewy Coins.');
       }
@@ -597,302 +1169,380 @@ const EventDetails = () => {
     }
   };
 
-  const sendCollab = async () => {
-    try {
-      const collabLink = `https://flashback.inc/collab/${event.event_id}`;
-      const message = `Join the collaboration for the event: ${formatEventName(event?.event_name)}. Collaborate using the following link: ${collabLink}`;
-      const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+  const registeredUsers = userThumbnails.filter((thumbnail) => thumbnail.is_registered);
+  const unregisteredUsers = userThumbnails.filter((thumbnail) => !thumbnail.is_registered);
 
-      window.open(url, '_blank');
-      await transferChewyCoins(userDetails.user_phone_number,10);
-    } catch (error) {
-      console.error('Error generating collaboration link:', error);
-      toast.error('Failed to generate collaboration link. Please try again.');
-    }
-  };
 
-  const sendWhatsappMsg = async () => {
-    try {
-      
-      const userIdMappingResponse = await API_UTIL.post('/generateUserIdsForExistingUsers', { eventName: event.folder_name });
-      if(userIdMappingResponse.status === 200){
-      const sendFlashbacksResponse = await API_UTIL.post('/send-flashbacks', { eventName: event.folder_name });
-
-      if (sendFlashbacksResponse.status === 200) {
-        toast.success('Flashbacks sent successfully!');
-      } else {
-        throw new Error('Failed to send flashbacks.');
-      }
-    }
-    else{
-      throw new Error('Failed to send flashbacks.');
-    }
-    } catch (error) {
-      console.error('Error Publishing Images', error);
-      toast.error('Failed to Publish Images');
-    }
-  };
+  if (isPageLoading) {
+    return <LoadingSpinner />;
+  }
 
   if (!event) {
-    return <div>Loading Event Info</div>;
+    return <div>No event data available. Please try again later.</div>;
   }
-
-  const StyledLabel = styled.label`
-  color: white;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-  display: block;
-`;
-
-const StyledInput = styled.input`
-  width: 100%;
-  padding: 0.75rem;
-  background-color: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  border-radius: 0.5rem;
-  color: #ffffff;
-  font-size: 1rem;
-  margin-bottom: 1rem;
-
-  &:focus {
-    outline: none;
-    border-color: #00ffff;
-  }
-`;
-
-const LabelAndInput = ({ label, name, value, type, handleChange, isEditable, ...props }) => (
-  <div>
-    <StyledLabel>{label}</StyledLabel>
-    <StyledInput
-      name={name}
-      value={value}
-      type={type}
-      onChange={handleChange}
-      disabled={!isEditable}
-    />
-  </div>
-);
 
   return (
     <PageWrapper>
+      <GlobalStyle />
       <AppBar showCoins={true} />
-      {/*<ClaimRewardsPopup isOpen={isClaimPopupOpen} onClose={closeClaimPopup} /> */}
       <ContentWrapper>
-        <EventImage>
-          <img src={event.event_image} alt="Event" />
-        </EventImage>
-        <EventTitle>{formatEventName(event?.event_name)}</EventTitle>
-        <EventInfo>
-          <InfoItem>
-            <Calendar size={18} />
-            {getFormattedDate(event.event_date)}
-          </InfoItem>
-          <InfoItem>
-            <Clock size={18} />
-            {getFormattedTime(event.event_date)}
-          </InfoItem>
-          <InfoItem>
-            <MapPin size={18} />
-            {event.event_location || 'Location not set'}
-          </InfoItem>
-        </EventInfo>
-        <ActionButtons>
-          <ActionButton whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={handleEditClick}>
-            <Edit2 size={18} />
-            Edit
-          </ActionButton>
-          <ActionButton whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={openQrModal}>
-            <QrCode size={18} />
-            Invite / QR
-          </ActionButton>
-          <ActionButton whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={openUploadFilesModal}>
-            <Upload size={18} />
-            Upload
-          </ActionButton>
-          <ActionButton whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={sendCollab}>
-            <HandshakeIcon size={18} />
-            Collab
-          </ActionButton>
-          <ActionButton whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => navigate(`/proV1/${event?.event_id}`, { state: { event } })}>
-            <Users size={18} />
-            Attendees
-          </ActionButton>
-          <ActionButton whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => navigate(`/eventPhotos/${event?.folder_name}`)}>
-            <Image size={18} />
-            Photos
-          </ActionButton>
-          {isImageProcessingDone && (
-            <ActionButton whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => navigate(`/relationsV1/${event?.event_id}`)}>
-              <Cable size={18} />
-              Relations
+        <SidePanel>
+          <EventImage>
+            <img src={event.event_image} alt="Event" />
+            <ActionButton onClick={handleEditClick} style={{ position: 'absolute', top: '0.5rem', right: '0.5rem' }}>
+              <Edit2 size={18} />
             </ActionButton>
-          )}
-        </ActionButtons>
-
-        <AnimatePresence>
-          {isEditEnabled && (
-            <EditForm
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              <form onSubmit={handleFormSubmit}>
-                <LabelAndInput
-                  name="eventName"
-                  label="Event Name:"
-                  value={editData.eventName}
-                  type="text"
-                  handleChange={handleInputChange}
-                  isEditable={true}
-                />
-                <LabelAndInput
-                  name="eventDate"
-                  label="Date:"
-                  value={editData.eventDate}
-                  type="date"
-                  handleChange={handleInputChange}
-                  isEditable={true}
-                />
-                <LabelAndInput
-                  name="eventTime"
-                  label="Time:"
-                  value={editData.eventTime}
-                  type="time"
-                  handleChange={handleInputChange}
-                  isEditable={true}
-                />
-                <LabelAndInput
-                  name="invitationNote"
-                  label="Invitation Note:"
-                  value={editData.invitationNote}
-                  type="text"
-                  handleChange={handleInputChange}
-                  isEditable={true}
-                />
-                <LabelAndInput
-                  name="eventLocation"
-                  label="Location:"
-                  value={editData.eventLocation}
-                  type="text"
-                  handleChange={handleInputChange}
-                  isEditable={true}
-                />
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <ActionButton type="submit" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    Save
-                  </ActionButton>
-                  <ActionButton type="button" onClick={handleCancel} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    Cancel
-                  </ActionButton>
-                </div>
-              </form>
-            </EditForm>
-          )}
-        </AnimatePresence>
-
-        <StyledModal
-          isOpen={isQrModalOpen}
-          onRequestClose={closeQrModal}
-          contentLabel="QR Code"
-          className="qr-modal-content"
-          overlayClassName="modal-overlay"
-        >
-          <ModalOverlay>
-          <ModalContent
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-          >
-            <CloseButton onClick={closeQrModal}><X size={24} /></CloseButton>
-            <h2>QR Code</h2>
-            <QRCodeWrapper ref={qrRef}>
-              <QRCode
-                value={`https://flashback.inc/login/${event?.event_name}`}
-                size={256}
-              />
-            </QRCodeWrapper>
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'center', 
-              alignItems: 'center', 
-              gap: '2rem', 
-              paddingTop: '1rem' 
-            }}>
-              <ActionButton onClick={downloadQRCode} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                Download QR
+          </EventImage>
+          <EventTitle>{formatEventName(event?.event_name)}</EventTitle>
+          <EventInfo>
+            <InfoItem>
+              <Calendar size={18} />
+              {new Date(event.event_date).toLocaleDateString()}
+            </InfoItem>
+            <InfoItem>
+              <Clock size={18} />
+              {new Date(event.event_date).toLocaleTimeString()}
+            </InfoItem>
+            <InfoItem>
+              <MapPin size={18} />
+              {event.event_location || 'Location not set'}
+            </InfoItem>
+          </EventInfo>
+          <QRCodeWrapper>
+            <QRCode
+              value={`https://flashback.inc/login/${event.event_name}`}
+              size={200}
+              ref={qrRef}
+            />
+            <QRActions>
+              <ActionButton onClick={downloadQRCode} title="Download QR Code">
+                <Download size={18} />
               </ActionButton>
-              <ActionButton onClick={sendInvite} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                Send Invite
+              <ActionButton onClick={shareOnWhatsApp} title="Share on WhatsApp">
+                <Share2 size={18} />
               </ActionButton>
+              <ActionButton onClick={handleCollabClick} title="Collaborate">
+                <Handshake size={18} />
+              </ActionButton>
+            </QRActions>
+          </QRCodeWrapper>
+        </SidePanel>
+        <MainContent>
+          <StyledTabs>
+            <div className="tab-list">
+            <button className={`tab ${activeTab === 'gallery' ? 'active' : ''}`} onClick={() => setActiveTab('gallery')} style={{ display: 'flex', alignItems: 'center', gap: '0.3em' }}><Images size={24} />Gallery</button>
+              <button className={`tab ${activeTab === 'people' ? 'active' : ''}`} onClick={() => setActiveTab('people')} style={{ display: 'flex', alignItems: 'center', gap: '0.3em' }}><Users size={24} /> People</button>
+              <button className={`tab ${activeTab === 'albums' ? 'active' : ''}`} onClick={() => setActiveTab('albums')} style={{ display: 'flex', alignItems: 'center', gap: '0.3em' }}><Album size={24} /> Albums</button>
             </div>
 
-          </ModalContent>
-          </ModalOverlay>
-        </StyledModal>
+            <AnimatePresence mode="wait">
+              {activeTab === 'gallery' && (
+                <TabContent
+                key="gallery"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                {isGalleryLoading && images.length === 0 ? (
+                  <CenteredSpinner>
+                    <LoadingSpinner color="#40E0D0" />
+                  </CenteredSpinner>
+                ) : (
+                  <>
+                      <StyledMasonry
+                        breakpointCols={breakpointColumnsObj}
+                        className="my-masonry-grid"
+                        columnClassName="my-masonry-grid_column"
+                      >
+                        <UploadTile onClick={() => setIsUploadModalOpen(true)}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}>
+                          <Upload size={24} />
+                        </UploadTile>
+                        { images.length && images.map((imageData, index) => (
+                          <ImageWrapper key={index} >
+                            <img
+                              src={imageData.thumbnail}
+                              alt={`img ${index}`}
+                              onClick={() => handleImageClick(imageData, index)}
+                            />
+                            </ImageWrapper>
+                        ))}
+                      </StyledMasonry>
+                      <div ref={loader} style={{ height: '20px', marginTop: '20px' }} />
+              </>
+                )}
+                </TabContent>
+              )}
 
-        <StyledModal
-          isOpen={isUploadFilesModelOpen}
-          onRequestClose={closeUploadFilesModal}
-          contentLabel="Upload Files"
-          className="uploadfiles-modal-content"
-          overlayClassName="modal-overlay"
-        >
-          <ModalOverlay>
+              {activeTab === 'people' && (
+                <TabContent
+                  key="people"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                {isLoading ? (
+                      <CenteredSpinner>
+                        <LoadingSpinner color="#40E0D0" />
+                      </CenteredSpinner>
+                    ) : (
+                      <>
+                  <AttendeesSummary>
+                    <TotalAttendees>Total Attendees: {userThumbnails.length}</TotalAttendees>
+                      <div>
+                        {!mergeMode ? (
+                          <ActionButton onClick={handleMergeClick}>Manage Faces</ActionButton>
+                        ) : (
+                          <ActionButton onClick={handleCancelManageUsers}>Cancel</ActionButton>
+                        )}
+                        <ActionButton onClick={handleSendPhotos} disabled={isSending}>
+                          {isSending ? "Sending..." : "Send Photos"}
+                        </ActionButton>
+                  </div>
+                  </AttendeesSummary>
+                  <UserCategoryTabs>
+                    <div className="tab-list">
+                      <button className={`tab ${userCategoryTab === 'registered' ? 'active' : ''}`} onClick={() => setUserCategoryTab('registered')}>Registered Users</button>
+                      <button className={`tab ${userCategoryTab === 'unregistered' ? 'active' : ''}`} onClick={() => setUserCategoryTab('unregistered')}>Unregistered Users</button>
+                    </div>
+                  </UserCategoryTabs>
+                  <UserCategoryContent active={userCategoryTab === 'registered'}>
+                  {mergeMessage && <div className="merge-message">{mergeMessage}</div>}
+                  {!isImageProcessingDone && (
+                    <div className="image-processing-message">
+                      <span>Some of the images are still being processed. Stay tuned for updates.</span>
+                    </div>
+                  )}
+                  {mergeMode && (
+                    <div className="merge-message">
+                      Select 2 duplicate faces to merge
+                    </div>
+                  )}
+                  <div className="wrapper-pro">
+                    {registeredUsers.map((item, index) => (
+                      <motion.div
+                        key={index}
+                        className={`wrapper-images-pro ${mergeMode ? "selectable" : ""} ${
+                          selectedUsers.some((u) => u.user_id === item.user_id) ? "selected" : ""
+                        }`}
+                        onClick={() => handleClick(item)}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <LazyLoadImage src={item.face_url} alt={`User ${index + 1}`} />
+                        <p>{item.count}</p>
+                        {mergeMode && selectedUsers.some((u) => u.user_id === item.user_id) && (
+                          <div className="tick-mark">✓</div>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                  </UserCategoryContent>
+                  <UserCategoryContent active={userCategoryTab === 'unregistered'}>
+                  <div className="wrapper-pro">
+                    {unregisteredUsers.map((item, index) => (
+                      <motion.div
+                        key={index}
+                        className={`wrapper-images-pro ${mergeMode ? "selectable" : ""} ${
+                          selectedUsers.some((u) => u.user_id === item.user_id) ? "selected" : ""
+                        }`}
+                        onClick={() => handleClick(item)}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <LazyLoadImage src={item.face_url} alt={`User ${index + 1}`} />
+                        <p>{item.count}</p>
+                        {mergeMode && selectedUsers.some((u) => u.user_id === item.user_id) && (
+                          <div className="tick-mark">✓</div>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                  </UserCategoryContent>
+                  </>
+                    )}
+                </TabContent>
+              )}
+
+              {activeTab === 'albums' && (
+                <TabContent
+                  key="albums"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <AlbumGrid>
+                    <AlbumTile onClick={() => setIsUploadModalOpen(true)}>
+                      <Plus size={24} />
+                    </AlbumTile>
+                    <AlbumTile onClick={() => navigate(`/relationsV1/${event.event_id}`)}>
+                    <Network size={24} />
+                    <span style={{ marginTop: '8px', display: 'block', textAlign: 'center', paddingLeft: '1em'}}>Relation Mapping</span>
+                    </AlbumTile>
+                  </AlbumGrid>
+                </TabContent>
+              )}
+            </AnimatePresence>
+          </StyledTabs>
+        </MainContent>
+      </ContentWrapper>
+      {clickedImg && (
+        <ImageModal
+        clickedImg={clickedImg}
+        clickedImgIndex={clickedImgIndex}
+        clickedImgFavourite={clickedImgFavourite}
+        setClickedImg={setClickedImg}
+        clickedUrl={clickedUrl}
+        handleBackButton={handleBackButton}
+        images={images}
+        />
+      )}
+      <StyledModal
+        isOpen={isUploadModalOpen}
+        onRequestClose={() => setIsUploadModalOpen(false)}
+        contentLabel="Upload Files"
+        className="modal-content"
+        overlayClassName="modal-overlay"
+      >
+        <ModalOverlay>
           <ModalContent
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
           >
-            <CloseButton onClick={closeUploadFilesModal}><X size={24} /></CloseButton>
+            <CloseButton onClick={() => setIsUploadModalOpen(false)}><X size={24} /></CloseButton>
             <h2>Upload Files</h2>
             <Dropzone {...getRootProps()} isDragActive={isDragActive}>
               <input {...getInputProps()} />
-              {isDragActive ? (
-                <p>Drop the files here ...</p>
-              ) : (
-                <p>Drag 'n' drop files here, or click to select files from your machine</p>
-              )}
+              <p>Drag 'n' drop files here, or click to select files</p>
             </Dropzone>
-            {fileCount > 0 && (
-              <p>
-                {fileCount} file(s) selected.{" "}
-                {canUpload ? (
-                  <>
-                    {requiredCoins} <UnityLogo src='/unityLogo.png' alt='Coin' />
-                    will be deducted from your wallet.
-                  </>
-                ) : (
-                  "Insufficient balance."
-                )}
-              </p>
+            {files.length > 0 && (
+              <p>{files.length} file(s) selected. {requiredCoins} coins will be deducted.</p>
             )}
-            {uploadStatus && <p>{uploadStatus}</p>}
-            <div style={{              display: 'flex', 
-              justifyContent: 'center', 
-              alignItems: 'center', 
-              gap: '2rem', 
-              paddingTop: '1rem' }}>
-            <ActionButton 
-              onClick={uploadFiles} 
-              whileHover={{ scale: 1.05 }} 
-              whileTap={{ scale: 0.95 }} 
-              disabled={!canUpload || fileCount > 500} 
-            >
+            <ActionButton onClick={uploadFiles} disabled={!canUpload || files.length === 0}>
               Upload
             </ActionButton>
-            </div>
-            {uploading && (
+            {uploadProgress > 0 && (
               <ProgressBar>
-                <ProgressFill progress={overallProgress} />
+                <ProgressFill progress={uploadProgress} />
               </ProgressBar>
             )}
           </ModalContent>
-          </ModalOverlay>
-        </StyledModal>
-      </ContentWrapper>
+        </ModalOverlay>
+      </StyledModal>
+      {showMergePopup && (
+      <MergeDuplicateUsers
+        users={selectedUsers}
+        onClose={handleCancelManageUsers}
+        isOpen={showMergePopup}
+        onMerge={handleMerge}
+      />
+    )}
+      <StyledModal
+        isOpen={isSendModalOpen}
+        onRequestClose={() => setIsSendModalOpen(false)}
+        contentLabel="Send Photos"
+        className="modal-content"
+        overlayClassName="modal-overlay"
+      >
+        <ModalOverlay>
+          <ModalContent
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+          >
+            <CloseButton onClick={() => setIsSendModalOpen(false)}><X size={24} /></CloseButton>
+            <h2>Send Photos</h2>
+            <p>Only registered users will receive Photos.</p>
+            <p>For unregistered users, you can click on their thumbnail and send photos through your WhatsApp.</p>
+          </ModalContent>
+        </ModalOverlay>
+      </StyledModal>
+
+      <AnimatePresence>
+        {editMode && (
+          <StyledModal
+            isOpen={editMode}
+            onRequestClose={handleCancelEdit}
+            contentLabel="Edit Event"
+            className="modal-content"
+            overlayClassName="modal-overlay"
+          >
+            <ModalOverlay>
+              <ModalContent
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+              >
+                <CloseButton onClick={handleCancelEdit}><X size={24} /></CloseButton>
+                <h2>Edit Event</h2>
+                <form onSubmit={handleFormSubmit}>
+                  <LabelAndInput
+                    label="Event Name"
+                    name="eventName"
+                    value={editData.eventName}
+                    onChange={handleInputChange}
+                  />
+                  <LabelAndInput
+                    label="Event Date"
+                    name="eventDate"
+                    type="date"
+                    value={editData.eventDate}
+                    onChange={handleInputChange}
+                  />
+                  <LabelAndInput
+                    label="Event Time"
+                    name="eventTime"
+                    type="time"
+                    value={editData.eventTime}
+                    onChange={handleInputChange}
+                  />
+                  <LabelAndInput
+                    label="Invitation Note"
+                    name="invitationNote"
+                    value={editData.invitationNote}
+                    onChange={handleInputChange}
+                  />
+                  <LabelAndInput
+                    label="Event Location"
+                    name="eventLocation"
+                    value={editData.eventLocation}
+                    onChange={handleInputChange}
+                  />
+                  <ActionButton type="submit">Save Changes</ActionButton>
+                </form>
+              </ModalContent>
+            </ModalOverlay>
+          </StyledModal>
+        )}
+      </AnimatePresence>
     </PageWrapper>
   );
 };
+
+const LoadMoreButton = styled.button`
+  background-color: #2a2a2a;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: background-color 0.3s ease;
+
+  &:hover {
+    background-color: #3a3a3a;
+  }
+
+  &:disabled {
+    background-color: #1a1a1a;
+    cursor: not-allowed;
+  }
+`;
+
 
 export default EventDetails;
