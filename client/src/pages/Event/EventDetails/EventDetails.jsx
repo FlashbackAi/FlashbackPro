@@ -1210,7 +1210,7 @@ const handleCollabClick = async () => {
           </EventInfo>
           <QRCodeWrapper>
             <QRCode
-              value={`https://flashback.inc/login/${event.event_name}`}
+              value={`https://flashback.inc/login/${event.folder_name}`}
               size={200}
               ref={qrRef}
             />
