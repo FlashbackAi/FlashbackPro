@@ -31,8 +31,15 @@ const ContentWrapper = styled.div`
 
   @media (max-width: 768px) {
     flex-direction: column;
-    padding: 1rem;
+    padding: 0.5rem;
   }
+`;
+
+const UnityLogo = styled.img`
+  width: 1rem;
+  height: 1rem;
+  vertical-align: middle;
+  margin-left: 0.25rem;
 `;
 
 
@@ -141,7 +148,7 @@ const ActionButton = styled.button`
   background-color: #2a2a2a;
   color: white;
   border: none;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem;
   border-radius: 0.25rem;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -158,9 +165,14 @@ const ActionButton = styled.button`
   }
 
   &:disabled {
-    opacity: 0.5;
+    opacity: 1;
     cursor: not-allowed;
   }
+
+  @media (max-width: 768px) {
+  padding: 0.3rem;
+  font-size: 0.8rem;
+}
 `;
 
 const MergeButton = styled(ActionButton)`
@@ -198,6 +210,7 @@ const StyledTabs = styled.div`
 
     &.active {
       background-color: #3a3a3a;
+      box-shadow: 0 0 5px rgba(64, 224, 208, 0.5);
       border-radius: 0.5rem 0.5rem 0 0;
       background: 0 0 10px rgba(64, 224, 208, 0.5);
     }
@@ -212,18 +225,16 @@ const UserCategoryContent = styled.div`
   display: ${props => props.active ? 'block' : 'none'};
 `;
 
-// const TabContent = styled(motion.div)`
-//   background-color: #1e1e1e;
-//   border-radius: 0 0 1rem 1rem;
-//   padding: 1.5rem;
-// `;
-
 const TabContent = styled(motion.div)`
   background-color: #1e1e1e;
   border-radius: 0 0 1rem 1rem;
   padding: 1.5rem;
   min-height: 300px; // Add this to ensure a minimum height
   position: relative; // Add this for absolute positioning of spinner
+
+  @media (max-width: 768px) {
+  padding: 0.75rem;
+}
 `;
 
 const CenteredSpinner = styled.div`
@@ -276,29 +287,80 @@ const ImageWrapper = styled.div`
   }
 `;
 
-const StyledMasonry = styled(Masonry)`
+const ImageModalWrapper = styled.div`
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 50%;
+  background-color: rgba(0, 0, 0, 1);
+  z-index: 1000;
   display: flex;
-  margin-left: -16px; /* Adjust the gutter size */
-  width: auto;
+  align-items: center;
+  justify-content: center;
 
-  .my-masonry-grid_column {
-    padding-left: 16px; /* Adjust the gutter size */
-    background-clip: padding-box;
+  @media (max-width: 768px) {
+    width: 100%;
   }
+`;
 
-  .image-item {
-    margin-bottom: 16px;
-    break-inside: avoid;
+
+const UserThumbnail = styled(motion.div)`
+  width: 7rem;
+  height: 7rem;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  cursor: pointer;
+  transition: box-shadow 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 0 0 0.25rem rgba(64, 224, 208, 0.5);
   }
 
   img {
     width: 100%;
-    height: auto;
-    border-radius: 8px;
-    transition: transform 0.3s ease;
+    height: 100%;
+    object-fit: cover;
+  }
 
-    &:hover {
-      transform: scale(1.05);
+  p {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    margin: 0;
+    padding: 0.25rem;
+    text-align: center;
+    font-size: 0.8rem;
+  }
+
+  @media (max-width: 768px) {
+  width: 5rem;
+  height: 5rem;
+}
+`;
+
+
+const StyledMasonry = styled(Masonry)`
+  display: flex;
+  margin-left: -1rem;
+  width: auto;
+
+  .my-masonry-grid_column {
+    padding-left: 1rem;
+    background-clip: padding-box;
+  }
+
+  .image-item {
+    margin-bottom: 0.5rem;
+    break-inside: avoid;
+  }
+
+    @media (max-width: 768px) {
+    .my-masonry-grid_column {
+      padding-left: 0.5rem;
     }
   }
 `;
@@ -497,6 +559,12 @@ const EventDetails = () => {
   const [continuationToken, setContinuationToken] = useState(null);
   const [hasMore, setHasMore] = useState(true);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [fileCount, setFileCount] = useState(0);
+  const [totalUploadedBytes, setTotalUploadedBytes] = useState(0);
+  const [uploadedFilesCount, setUploadedFilesCount] = useState(0);
+  const [isUploadFilesModelOpen, setUploadFilesModeOpen] = useState(false);
   const [files, setFiles] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [userThumbnails, setUserThumbnails] = useState([]);
@@ -509,14 +577,19 @@ const EventDetails = () => {
   const [showMergePopup, setShowMergePopup] = useState(false);
   const [showMergeDuplicateUsers, setShowMergeDuplicateUsers] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const userPhoneNumber = localStorage.userPhoneNumber;
   const [isImageProcessingDone, setIsImageProcessingDone] = useState(true);
   const [isSendModalOpen, setIsSendModalOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [selectedMainUser, setSelectedMainUser] = useState(null);
   const [selectedDuplicateUsers, setSelectedDuplicateUsers] = useState([]);
+  const [overallProgress, setOverallProgress] = useState(0);
+  const [uploadFilesModalStatus, setUploadFilesModalStatus] = useState('');
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [isWarningModalOpen, setIsWarningModalOpen] = useState(false);
+  const [isUploadFilesFailed, setIsUploadFilesFailed] = useState(false);
+  const [isCoinsDedcuted,setIsCoinsDeducted] = useState(false);
   const [mergeMessage, setMergeMessage] = useState("");
   const isDataFetched = useRef(false);
   const [clickedImg, setClickedImg] = useState(null);
@@ -573,7 +646,7 @@ const EventDetails = () => {
 
     setIsLoading(true)
     try {
-      const response = await API_UTIL.get(`/getUserDetails/${localStorage.userPhoneNumber}`);
+      const response = await API_UTIL.get(`/getUserDetails/${userPhoneNumber}`);
       if (response.status === 200) {
         setUserDetails(response.data);
       }
@@ -696,29 +769,18 @@ const EventDetails = () => {
     }
   };
 
-  // const downloadQRCode = () => {
-  //   const qrCanvas = qrRef.current.querySelector('canvas');
-  //   const qrImage = qrCanvas.toDataURL('image/png');
-  //   const downloadLink = document.createElement('a');
-  //   downloadLink.href = qrImage;
-  //   downloadLink.download = `${event.event_name}_QR.png`;
-  //   downloadLink.click();
-  // };
-
   const downloadQRCode = () => {
-    if (qrRef.current) {
-      const canvas = qrRef.current.querySelector('canvas');
-      if (canvas) {
-        const pngUrl = canvas
-          .toDataURL("image/png")
-          .replace("image/png", "image/octet-stream");
-        let downloadLink = document.createElement("a");
-        downloadLink.href = pngUrl;
-        downloadLink.download = `${event.event_name}_QR.png`;
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
-      }
+    const canvas = qrRef.current.querySelector('canvas');
+    if (canvas) {
+      const pngUrl = canvas.toDataURL('image/png').replace('image/png', 'image/octet-stream');
+      let downloadLink = document.createElement('a');
+      downloadLink.href = pngUrl;
+      downloadLink.download = `${event.event_name}_QR.png`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+    } else {
+      console.error('QR Code canvas not found');
     }
   };
 
@@ -754,78 +816,157 @@ const handleCollabClick = async () => {
   }
 };
 
-  const onDrop = useCallback((acceptedFiles) => {
+const onDrop = useCallback((acceptedFiles) => {
+  const totalFiles = acceptedFiles.length;
+  if (totalFiles > 500) {
+    setFileCount(totalFiles);
+    setUploadStatus(`You have selected ${totalFiles} files. You can upload a maximum of 500 files at a time.`);
+    setUploading(false);
+  } else {
     setFiles(acceptedFiles);
-    setRequiredCoins(acceptedFiles.length);
-    setCanUpload(userDetails && userDetails.reward_points >= acceptedFiles.length);
-  }, [userDetails]);
+    setFileCount(totalFiles);
+    setUploadProgress({});
+    setUploadStatus('');
+    setUploading(false);
+  }
+  setRequiredCoins(totalFiles);
+  setCanUpload(userDetails && userDetails.reward_points >= totalFiles);
+}, [userDetails]);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
+const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
-  const uploadFiles = async () => {
-    if (files.length === 0) {
-      toast.error('Please select files to upload');
-      return;
-    }
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-    if (!canUpload) {
-      toast.error('Insufficient coins to upload files');
-      return;
-    }
+const uploadFiles = async () => {
+  if (files.length === 0) {
+    setUploadStatus('Please select files to upload');
+    return;
+  }
 
-    try {
-      await deductCoins(files.length);
+  setUploading(true);
+  setUploadFilesModalStatus('Uploading files...');
+  setIsUploadFilesFailed(false);
+  setOverallProgress(0); // Start at 0% progress
 
-      for (let i = 0; i < files.length; i++) {
-        const formData = new FormData();
-        formData.append('files', files[i]);
-        formData.append('eventName', event.event_name);
-        formData.append('eventDate', event.event_date);
-        formData.append('folderName', event.folder_name);
+  const MAX_CONCURRENT_UPLOADS = 3; // Reduced to avoid 429 error
+  const MAX_RETRIES = 3;
+  let index = 0;
+  const totalFiles = files.length;
+  const totalBytes = files.reduce((acc, file) => acc + file.size, 0); // Total size of all files
 
-        const response = await API_UTIL.post(`/uploadFiles/${event.event_name}/${localStorage.userPhoneNumber}/${event.folder_name}`, formData, {
+  // Use React state to safely track the total uploaded bytes
+
+  const uploadFile = async (file) => {
+    const formData = new FormData();
+    formData.append('files', file);
+    formData.append('eventName', event.event_name);
+    formData.append('eventDate', event.event_date);
+    formData.append('folderName', event.folder_name);
+
+    let attempts = 0;
+    let delayTime = 1000; // Start with 1 second delay
+
+    while (attempts < MAX_RETRIES) {
+      try {
+        const response = await API_UTIL.post(`/uploadFiles/${event.event_name}/${userPhoneNumber}/${event.folder_name}`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
           onUploadProgress: (progressEvent) => {
-            const progress = ((i + progressEvent.loaded / progressEvent.total) / files.length) * 100;
-            setUploadProgress(progress);
+            // Dynamically update the total uploaded bytes using state update function
+            setTotalUploadedBytes((prevUploadedBytes) => {
+              const updatedUploadedBytes = prevUploadedBytes + progressEvent.loaded;
+              
+              // Calculate and update overall progress based on total uploaded bytes
+              const overallProgress = (updatedUploadedBytes / totalBytes) * 100;
+              setOverallProgress(Math.ceil(overallProgress)); // Round to nearest integer
+              
+              return updatedUploadedBytes;
+            });
           },
         });
 
-        if (response.status === 200) {
-          toast.success(`File ${i + 1} of ${files.length} uploaded successfully`);
+        return response.data;
+      } catch (error) {
+        if (error.response && error.response.status === 429) {
+          console.error(`Error uploading file ${file.name}, attempt ${attempts}: Too many requests, retrying after ${delayTime / 1000} seconds`);
+          await delay(delayTime);
+          delayTime *= 2; // Double the delay time for exponential backoff
+        } else {
+          console.error(`Error uploading file ${file.name}, attempt ${attempts}:`, error);
         }
+        attempts++;
+        if (attempts === MAX_RETRIES) throw error;
       }
-
-      setFiles([]);
-      setUploadProgress(0);
-      setIsUploadModalOpen(false);
-      fetchImages();
-      fetchUserDetails();
-    } catch (error) {
-      console.error('Error uploading files:', error);
-      toast.error('Failed to upload files. Please try again.');
     }
   };
 
-  const deductCoins = async (numberOfImages) => {
-    try {
-      const payload = {
-        amount: numberOfImages.toString(),
-        senderMobileNumber: userDetails.user_phone_number,
-        recipientMobileNumber: "+919090401234"
-      };
+  const handleUploads = async () => {
+    while (index < files.length) {
+      const promises = [];
+      for (let i = 0; i < MAX_CONCURRENT_UPLOADS && index < files.length; i++) {
+        promises.push(uploadFile(files[index]));
+        index++;
+      }
+      await Promise.allSettled(promises);
+    }
+  };
 
-      const response = await API_UTIL.post('/transfer-chewy-coins', payload);
+  try {
+    await handleUploads();
+
+    // After all files are uploaded successfully, update the uploaded files count
+    const newUploadedFilesCount = uploadedFilesCount + files.length;
+    setUploadedFilesCount(newUploadedFilesCount);
+
+    try {
+      const response = await API_UTIL.put(`/updateEvent/${event.event_id}`, {
+        eventName: editData.eventName,
+        eventDate: `${editData.eventDate}T${editData.eventTime}:00`,
+        invitationNote: editData.invitationNote,
+        eventLocation: editData.eventLocation,
+        uploadedFiles: newUploadedFilesCount,
+      });
 
       if (response.status === 200) {
-        toast.success(`${numberOfImages} coins deducted for file upload`);
+        toast.success('Event updated successfully with new file count');
+      }
+    } catch (error) {
+      console.error('Error updating event with new file count:', error);
+      toast.error('Failed to update the event with new file count. Please try again.');
+    }
+    await deductCoins(files.length);
+
+    setUploadStatus('Upload completed successfully');
+    setFiles([]);
+  } catch (error) {
+    console.error('Upload failed:', error);
+    setUploadStatus('Upload failed. Please try again.');
+  } finally {
+    setUploading(false);
+    setOverallProgress(100); // Ensure progress bar is set to 100% on completion
+    setFileCount(0);
+  }
+};
+
+  const deductCoins = async (numberOfImages) => {
+    try {
+      // Prepare the request payload
+      const payload = {
+        amount: numberOfImages.toString(), // The number of images is the amount to deduct
+        senderMobileNumber: userPhoneNumber, // The current user's phone number
+        recipientMobileNumber: "+919090401234" // The fixed recipient phone number
+      };
+  
+      // Call the API to transfer Chewy coins
+      const response = await API_UTIL.post('/transfer-chewy-coins', payload);
+  
+      if (response.status === 200) {
+        setIsCoinsDeducted(true);
       } else {
         throw new Error('Failed to deduct coins.');
       }
     } catch (error) {
       console.error('Error deducting coins:', error);
       toast.error('Failed to deduct coins. Please try again.');
-      throw error;
     }
   };
 
@@ -877,7 +1018,7 @@ const handleCollabClick = async () => {
 
   const saveShareDetails = async (item) => {
     try {
-      const user = localStorage.userPhoneNumber;
+      const user = userPhoneNumber;
       const response = await API_UTIL.post(`/saveProShareDetails`, {
         user: user,
         sharedUser: item.user_id,
@@ -895,7 +1036,7 @@ const handleCollabClick = async () => {
 
   const updateRewardPoints = async (points) => {
     const updateData = {
-      user_phone_number: localStorage.userPhoneNumber,
+      user_phone_number: userPhoneNumber,
       reward_points: userDetails?.reward_points ? userDetails.reward_points + points : 50 + points,
     };
 
@@ -977,6 +1118,19 @@ const handleCollabClick = async () => {
     setClickedImgFavourite(imageData.isFavourites);
     setClickedUrl(imageData.original);
     window.history.pushState({ id: 1 }, null, "?image=" + `${imageData.original.split('/').pop()}`);
+  };
+
+  const openUploadFilesModal = () => {
+    setUploadFilesModeOpen(true);
+  };
+
+  const closeUploadFilesModal = () => {
+    setUploadFilesModeOpen(false);
+    setFiles([]);
+    setUploadProgress({});
+    setUploadStatus('');
+    setUploading(false);
+    setFileCount(0);
   };
   
   // const handleCloseModal = () => {
@@ -1105,20 +1259,20 @@ const handleCollabClick = async () => {
 
   const [breakpointColumnsObj, setBreakpointColumnsObj] = useState({
     default: 5,
-    1200: 5,
-    992: 4,
-    768: 3,
-    576: 2,
+    1200: 4,
+    992: 3,
+    768: 2,
+    576: 1,
   });
 
   useEffect(() => {
     const handleResize = () => {
       setBreakpointColumnsObj({
         default: 5,
-        1200: 5,
-        992: 4,
-        768: 3,
-        576: 2,
+        1200: 4,
+        992: 3,
+        768: 2,
+        576: 1,
       });
     };
 
@@ -1177,6 +1331,47 @@ const handleCollabClick = async () => {
     return <LoadingSpinner />;
   }
 
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
+
+  const StyledLabel = styled.label`
+  color: white;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  display: block;
+`;
+
+const StyledInput = styled.input`
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 0.5rem;
+  color: #ffffff;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+
+  &:focus {
+    outline: none;
+    border-color: #00ffff;
+  }
+`;
+
+const LabelAndInput = ({ label, name, value, type, handleChange, isEditable, ...props }) => (
+  <div>
+    <StyledLabel>{label}</StyledLabel>
+    <StyledInput
+      name={name}
+      value={value}
+      type={type}
+      onChange={handleChange}
+      disabled={!isEditable}
+    />
+  </div>
+);
+
   if (!event) {
     return <div>No event data available. Please try again later.</div>;
   }
@@ -1197,11 +1392,16 @@ const handleCollabClick = async () => {
           <EventInfo>
             <InfoItem>
               <Calendar size={18} />
-              {new Date(event.event_date).toLocaleDateString()}
+              {event.event_date && !isNaN(Date.parse(event.event_date)) 
+                ? new Date(event.event_date).toLocaleDateString() 
+                : 'Date not set'}
             </InfoItem>
             <InfoItem>
               <Clock size={18} />
-              {new Date(event.event_date).toLocaleTimeString()}
+              {event.event_date && !isNaN(new Date(event.event_date).getTime()) 
+              ? new Date(event.event_date).toLocaleTimeString() 
+              : 'Time not set'}
+
             </InfoItem>
             <InfoItem>
               <MapPin size={18} />
@@ -1209,11 +1409,12 @@ const handleCollabClick = async () => {
             </InfoItem>
           </EventInfo>
           <QRCodeWrapper>
-            <QRCode
-              value={`https://flashback.inc/login/${event.event_name}`}
-              size={200}
-              ref={qrRef}
-            />
+            <div ref={qrRef}>
+              <QRCode
+                value={`https://flashback.inc/login/${event.folder_name}`}
+                size={200}
+              />
+            </div>
             <QRActions>
               <ActionButton onClick={downloadQRCode} title="Download QR Code">
                 <Download size={18} />
@@ -1255,7 +1456,7 @@ const handleCollabClick = async () => {
                         className="my-masonry-grid"
                         columnClassName="my-masonry-grid_column"
                       >
-                        <UploadTile onClick={() => setIsUploadModalOpen(true)}
+                        <UploadTile onClick={openUploadFilesModal}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}>
                           <Upload size={24} />
@@ -1284,7 +1485,7 @@ const handleCollabClick = async () => {
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3 }}
                 >
-                {isLoading ? (
+                {userThumbnails.length === 0 ? (
                       <CenteredSpinner>
                         <LoadingSpinner color="#40E0D0" />
                       </CenteredSpinner>
@@ -1376,7 +1577,7 @@ const handleCollabClick = async () => {
                   transition={{ duration: 0.3 }}
                 >
                   <AlbumGrid>
-                    <AlbumTile onClick={() => setIsUploadModalOpen(true)}>
+                    <AlbumTile>
                       <Plus size={24} />
                     </AlbumTile>
                     <AlbumTile onClick={() => navigate(`/relationsV1/${event.event_id}`)}>
@@ -1391,6 +1592,7 @@ const handleCollabClick = async () => {
         </MainContent>
       </ContentWrapper>
       {clickedImg && (
+        <ImageModalWrapper>
         <ImageModal
         clickedImg={clickedImg}
         clickedImgIndex={clickedImgIndex}
@@ -1400,10 +1602,11 @@ const handleCollabClick = async () => {
         handleBackButton={handleBackButton}
         images={images}
         />
+        </ImageModalWrapper>
       )}
       <StyledModal
-        isOpen={isUploadModalOpen}
-        onRequestClose={() => setIsUploadModalOpen(false)}
+        isOpen={isUploadFilesModelOpen}
+        onRequestClose={closeUploadFilesModal}
         contentLabel="Upload Files"
         className="modal-content"
         overlayClassName="modal-overlay"
@@ -1414,21 +1617,38 @@ const handleCollabClick = async () => {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
           >
-            <CloseButton onClick={() => setIsUploadModalOpen(false)}><X size={24} /></CloseButton>
+            <CloseButton onClick={closeUploadFilesModal}><X size={24} /></CloseButton>
             <h2>Upload Files</h2>
             <Dropzone {...getRootProps()} isDragActive={isDragActive}>
               <input {...getInputProps()} />
               <p>Drag 'n' drop files here, or click to select files</p>
             </Dropzone>
             {files.length > 0 && (
-              <p>{files.length} file(s) selected. {requiredCoins} coins will be deducted.</p>
+              <p>
+              {fileCount} file(s) selected.{" "}
+                {canUpload ? (
+                  <>
+                    {requiredCoins} <UnityLogo src='/unityLogo.png' alt='Coin' /> coins will be deducted from your wallet.
+                  </>
+                ) : (
+                  "Insufficient balance."
+                )}
+              </p>
             )}
-            <ActionButton onClick={uploadFiles} disabled={!canUpload || files.length === 0}>
+            {uploadStatus && <p>{uploadStatus}</p>}
+            <div style={{
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              gap: '2rem', 
+              paddingTop: '1rem' }}>
+            <ActionButton onClick={uploadFiles} disabled={!canUpload || files.length === 0 || fileCount > 500}>
               Upload
             </ActionButton>
-            {uploadProgress > 0 && (
+            </div>
+            {uploading && (
               <ProgressBar>
-                <ProgressFill progress={uploadProgress} />
+                <ProgressFill progress={overallProgress} />
               </ProgressBar>
             )}
           </ModalContent>
@@ -1479,7 +1699,6 @@ const handleCollabClick = async () => {
                 exit={{ opacity: 0, scale: 0.9 }}
               >
                 <CloseButton onClick={handleCancelEdit}><X size={24} /></CloseButton>
-                <h2>Edit Event</h2>
                 <form onSubmit={handleFormSubmit}>
                   <LabelAndInput
                     label="Event Name"
@@ -1513,7 +1732,7 @@ const handleCollabClick = async () => {
                     value={editData.eventLocation}
                     onChange={handleInputChange}
                   />
-                  <ActionButton type="submit">Save Changes</ActionButton>
+                  <ActionButton type="submit" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>Save</ActionButton>
                 </form>
               </ModalContent>
             </ModalOverlay>
