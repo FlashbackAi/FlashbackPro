@@ -1409,12 +1409,11 @@ const LabelAndInput = ({ label, name, value, type, handleChange, isEditable, ...
             </InfoItem>
           </EventInfo>
           <QRCodeWrapper>
-            <div ref={qrRef}>
-              <QRCode
-                value={`https://flashback.inc/login/${event.folder_name}`}
-                size={200}
-              />
-            </div>
+            <QRCode
+              value={`https://flashback.inc/login/${event.folder_name}`}
+              size={200}
+              ref={qrRef}
+            />
             <QRActions>
               <ActionButton onClick={downloadQRCode} title="Download QR Code">
                 <Download size={18} />
