@@ -25,7 +25,8 @@
   },
   "devDependencies": {
     "eslint": "^8.54.0",
-    "eslint-config-react-app": "^7.0.1"
+    "eslint-config-react-app": "^7.0.1",
+    "nodemon": "^3.1.7"
   },
   "name": "flashbackpro",
   "description": "•\tInitialize a Node.js project",
