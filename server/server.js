@@ -4990,6 +4990,33 @@ app.delete('/deleteEvent/:eventId/:userPhoneNumber', async (req, res) => {
         };
 
         try {
+          // Step 1: Delete image records from DynamoDB (ImageUploadData table) using s3_url
+          logger.info(`Step 1: Deleting image records from DynamoDB (ImageUploadData table) using s3_url values`);
+
+          for (const object of listedObjects.Contents) {
+            const s3Url = `https://${indexBucketName}.s3.ap-south-1.amazonaws.com/${object.Key}`; // Construct the s3_url
+
+            const deleteImageDataParams = {
+              TableName: ImageUploadData,
+              Key: {
+                s3_url: s3Url
+              }
+            };
+
+            try {
+              const res = await docClient.delete(deleteImageDataParams).promise();
+              logger.info(res);
+              //logger.info(`Deleted image record from ImageUploadData table for s3_url: ${s3Url}`);
+            } catch (deleteError) {
+              logger.error(`Failed to delete image record from ImageUploadData table for s3_url: ${s3Url} - Error: ${deleteError.message}`);
+              return res.status(500).json({ message: 'Error deleting image records from ImageUploadData table', error: deleteError.message });
+            }
+          }
+
+          logger.info(`Step 1a Completed: Deleted image records from DynamoDB (ImageUploadData table)`);
+
+          // Step 2: Delete the objects from indexBucketName
+  
           // Delete the objects from indexBucketName
           const deleteResultIndex = await s3.deleteObjects(deleteParamsIndex).promise();
           if (deleteResultIndex.Errors && deleteResultIndex.Errors.length > 0) {
@@ -5348,63 +5375,64 @@ app.get('/imagesForFederated/:userPhoneNumber', async (req, res) => {
 });
 
 
-
 async function updateEnableSharingForUserPhoneNumber(userPhoneNumber) {
   let lastEvaluatedKey = null;
-  const updatePromises = [];
+  logger.info("Updating Enable sharing for userPhoneNumber: " + userPhoneNumber);
 
   do {
-      // Step 1: Fetch records in batches
-      const params = {
+    // Step 1: Fetch records in batches
+    const params = {
+      TableName: ImageUploadData,
+      IndexName: 'user_phone_number-index',
+      KeyConditionExpression: 'user_phone_number = :userPhoneNumber',
+      FilterExpression: 'attribute_not_exists(enable_sharing) OR enable_sharing <> :true',
+      ExpressionAttributeValues: {
+        ':userPhoneNumber': userPhoneNumber,
+        ':true': true
+      },
+      ExclusiveStartKey: lastEvaluatedKey, // Start key for pagination
+    };
+
+    try {
+      const data = await docClient.query(params).promise();
+      const itemsToUpdate = data.Items;
+
+      // Step 2: Update each item one by one synchronously
+      for (let item of itemsToUpdate) {
+        const updateParams = {
           TableName: ImageUploadData,
-          IndexName: 'user_phone_number-index',
-          KeyConditionExpression: 'user_phone_number = :userPhoneNumber',
-          FilterExpression: 'attribute_not_exists(enable_sharing) OR enable_sharing <> :true',
-          ExpressionAttributeValues: {
-              ':userPhoneNumber': userPhoneNumber,
-              ':true': true
+          Key: {
+            s3_url: item.s3_url
           },
-          ExclusiveStartKey: lastEvaluatedKey, // Start key for pagination
-      };
+          UpdateExpression: 'set enable_sharing = :true',
+          ExpressionAttributeValues: {
+            ':true': true
+          }
+        };
 
-      try {
-          const data = await docClient.query(params).promise();
-          const itemsToUpdate = data.Items;
+     
 
-          // Step 2: Collect update promises
-          itemsToUpdate.forEach(item => {
-              const updateParams = {
-                  TableName: ImageUploadData,
-                  Key: {
-                      s3_url:item.s3_url
-                  },
-                  UpdateExpression: 'set enable_sharing = :true',
-                  ExpressionAttributeValues: {
-                      ':true': true
-                  }
-              };
-              updatePromises.push(docClient.update(updateParams).promise());
-          });
-
-          // Step 3: Prepare for the next batch
-          lastEvaluatedKey = data.LastEvaluatedKey;
-
-      } catch (error) {
-          console.error('Error fetching images:', error);
-          throw new Error('Error fetching images');
+        // Wait for each item to be updated sequentially
+        const res=await docClient.update(updateParams).promise();
+        logger.info(res);
       }
+      logger.info(`Fetched ${itemsToUpdate.length} items in this batch.`);
+      // Step 3: Prepare for the next batch
+      lastEvaluatedKey = data.LastEvaluatedKey;
+
+    } catch (error) {
+      console.error('Error fetching or updating images:', error);
+      throw new Error('Error fetching or updating images');
+    }
 
   } while (lastEvaluatedKey); // Continue until no more items to fetch
 
-  // Step 4: Execute all update operations
-  try {
-      await Promise.all(updatePromises);
-      return { message: 'All records updated successfully' };
-  } catch (error) {
-      console.error('Error updating records:', error);
-      throw new Error('Error updating records');
-  }
+  // Step 4: Return success after all batches are processed
+  logger.info("Updating Enable sharing for userPhoneNumber completed: " + userPhoneNumber);
+  return { message: 'All records updated successfully' };
 }
+
+
 
 // Example usage (Node.js Express route handler)
 app.post("/updateImageEnableSharing",async(req, res) =>{
