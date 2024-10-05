@@ -36,7 +36,7 @@ const crypto = require('crypto');
 const config = new AptosConfig({ network: Network.MAINNET});
   const aptosClient = new Aptos(config);
 const oldEvents = ["Aarthi_Vinay_19122021","Convocation_PrathimaCollege","KSL_25042024","Jahnavi_Vaishnavi_SC_28042024","KSL_22052024","KSL_16052024","V20_BootCamp_2024","Neha_ShivaTeja_18042024"]
-const APTOS_AMOUNT = 30000000;
+const APTOS_AMOUNT = 3;
 const CHEWY_AMOUNT =1000;
 dotenv.config();
 app.use(cors()); // Allow cross-origin requests
@@ -8005,33 +8005,89 @@ app.get('/transactionsByUserPhoneNumber/:userPhoneNumber', async (req, res) => {
 });
 
 
-/** Register the receiver account to receive transfers for Chewy Coin. */
-async function registerChewyCoinStore(receiver){
+// /** Register the receiver account to receive transfers for Chewy Coin. */
+// async function registerChewyCoinStore(account){
+//   try {
+//     // Build the transaction for registering the CoinStore
+//     const transaction = await aptosClient.transaction.build.simple({
+//       sender: account.accountAddress,
+//       data: {
+//         function: "0x1::managed_coin::register",  // Use the managed_coin::register function
+//         typeArguments: [`0xc26a8eda1c3ab69a157815183ddda88c89d6758ee491dd1647a70af2907ce074::coin::Chewy`],
+//        // typeArguments: [`0xc26a8eda1c3ab69a157815183ddda88c89d6758ee491dd1647a70af2907ce074::coin::Chewy`],
+//         functionArguments: [],  // No arguments needed
+//       },
+//     });
+
+//     const [userTransactionResponse] = await aptosClient.transaction.simulate.simple({
+//       signerPublicKey: account.publicKey,
+//       transaction,
+//   });
+//   logger.info(userTransactionResponse)
+
+//     // Sign the transaction with the receiver's account
+//     const senderAuthenticator = aptosClient.transaction.sign({ signer: account, transaction });
+
+//     // Submit the transaction to the blockchain
+//     const pendingTxn = await aptosClient.transaction.submit.simple({
+//       transaction,
+//       senderAuthenticator,
+//     });
+
+//     console.log(`Transaction submitted. Hash: ${pendingTxn.hash}`);
+
+//     // Wait for the transaction to be confirmed
+//     await aptosClient.waitForTransaction({ transactionHash: pendingTxn.hash });
+//     console.log(`Transaction confirmed. Hash: ${pendingTxn.hash}`);
+
+//     return pendingTxn.hash;
+//   } catch (error) {
+//     console.error(`Error registering Chewy Coin: ${error.message}`);
+//     throw new Error(error.message);
+//   }
+// }
+/** Register the receiver account to receive transfers for Chewy Coin, paid by feePayer. */
+async function registerChewyCoinStore(account, feePayer) {
   try {
+    const privateKeyHex = feePayer.encrypted_private_key.startsWith('0X')
+    ? feePayer.encrypted_private_key.slice(2) // Remove the '0x' prefix
+    : feePayer.encrypted_private_key;
+  
+    // Derive an account with a private key and account address
+    const privateKey = new Ed25519PrivateKey(privateKeyHex);
+    const address = AccountAddress.from(feePayer.wallet_address);
+    const feePayerAccount = Account.fromPrivateKey({ privateKey, address });
     // Build the transaction for registering the CoinStore
     const transaction = await aptosClient.transaction.build.simple({
-      sender: receiver.accountAddress,
+      sender: account.accountAddress,  // Primary account (Receiver in your case)
+      withFeePayer: true,
       data: {
-        function: "0x1::managed_coin::register",  // Use the managed_coin::register function
-        typeArguments: [`0xc26a8eda1c3ab69a157815183ddda88c89d6758ee491dd1647a70af2907ce074::coin::Chewy`],
-       // typeArguments: [`0xc26a8eda1c3ab69a157815183ddda88c89d6758ee491dd1647a70af2907ce074::coin::Chewy`],
-        functionArguments: [],  // No arguments needed
+        function: "0x1::managed_coin::register",  // Managed coin register function
+        typeArguments: ["0xc26a8eda1c3ab69a157815183ddda88c89d6758ee491dd1647a70af2907ce074::coin::Chewy"],  // Chewy coin type
+        functionArguments: [],  // No arguments needed for registration
       },
     });
 
-    const [userTransactionResponse] = await aptosClient.transaction.simulate.simple({
-      signerPublicKey: receiver.publicKey,
+    // Simulate the transaction with both signer (receiver) and fee payer
+    const [simulationResult] = await aptosClient.transaction.simulate.multiAgent({
+      signerPublicKey: account.publicKey,
+      feePayerPublicKey: feePayerAccount.publicKey, // Fee payer as secondary signer
       transaction,
-  });
-  logger.info(userTransactionResponse)
+    });
+    logger.info("Transaction simulation result: ", simulationResult);
 
-    // Sign the transaction with the receiver's account
-    const senderAuthenticator = aptosClient.transaction.sign({ signer: receiver, transaction });
+    // Sign the transaction with both the receiver and fee payer accounts
+    const senderAuthenticator = aptosClient.transaction.sign({ signer: account, transaction });
+    const feePayerAuthenticator = aptosClient.transaction.signAsFeePayer({
+      signer: feePayerAccount,
+      transaction
+  })
 
-    // Submit the transaction to the blockchain
-    const pendingTxn = await aptosClient.transaction.submit.simple({
+    // Submit the multi-agent transaction to the blockchain
+    const pendingTxn = await aptosClient.transaction.submit.multiAgent({
       transaction,
-      senderAuthenticator,
+      senderAuthenticator:senderAuthenticator,
+      feePayerAuthenticator: feePayerAuthenticator, // Include fee payer's authenticator
     });
 
     console.log(`Transaction submitted. Hash: ${pendingTxn.hash}`);
@@ -8042,7 +8098,7 @@ async function registerChewyCoinStore(receiver){
 
     return pendingTxn.hash;
   } catch (error) {
-    console.error(`Error registering Chewy Coin: ${error.message}`);
+    console.error(`Error registering Chewy Coin with fee payer: ${error.message}`);
     throw new Error(error.message);
   }
 }
@@ -8261,14 +8317,15 @@ async function handleWalletCreation(mobileNumber) {
     logger.info(`Aptos Wallet created for mobile number: ${mobileNumber} with wallet address: ${walletDetails.walletAddress}`);
 
     // Transfer Aptos coins to the newly created wallet
-    const transactionStatus = await transferAptosCoins(walletDetails.walletAddress, APTOS_AMOUNT || aptosConfig.DEFAULT_TRANSFER_AMOUNT,aptosConfig.SENDER_MOBILE_NUMBER, mobileNumber);
+   // const transactionStatus = await transferAptosCoins(walletDetails.walletAddress, APTOS_AMOUNT || aptosConfig.DEFAULT_TRANSFER_AMOUNT,aptosConfig.SENDER_MOBILE_NUMBER, mobileNumber);
 
-    if (transactionStatus !== true) {
-      throw new Error("Transaction failed");
-    }
+    // if (transactionStatus !== true) {
+    //   throw new Error("Transaction failed");
+    // }
 
+    const parentWallet = await fetchWalletDetails('+919090401234');
     // Register the wallet with ChewyCoin store and transfer coins
-    await registerChewyCoinStore(aptosAccount, aptosAccount.accountAddress);
+    await registerChewyCoinStore(aptosAccount, parentWallet);
     await transferChewyCoins(walletDetails.walletAddress, CHEWY_AMOUNT, aptosConfig.SENDER_MOBILE_NUMBER, mobileNumber);
 
     // Return wallet details and transaction status
