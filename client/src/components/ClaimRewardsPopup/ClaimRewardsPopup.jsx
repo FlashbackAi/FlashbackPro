@@ -27,7 +27,7 @@ const ClaimRewardsPopup = ({ isOpen, onClose, datasetDetails, requests, updateRe
 
     return (
         <>
-            {rewards && (
+            {!isOpen && rewards > 0 && (
                 <Modal
                     isOpen={isOpen}
                     onRequestClose={onClose}

@@ -1,31 +1,48 @@
 import React, { useEffect, useState } from 'react';
+import styled from 'styled-components';
+import { motion, AnimatePresence } from 'framer-motion';
 import API_UTIL from '../../services/AuthIntereptor';
 import Modal from 'react-modal';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import styled from 'styled-components';
 import AppBar from '../../components/AppBar/AppBar';
 import Footer from '../../components/Footer/Footer';
 import LoadingSpinner from '../../components/Loader/LoadingSpinner';
 import LabelAndInput from '../../components/molecules/LabelAndInput/LabelAndInput';
-import { X, Plus, Calendar, MapPin, Clock, Trash2 } from 'lucide-react';
 import ClaimRewardsPopup from '../../components/ClaimRewardsPopup/ClaimRewardsPopup';
+import { X, Plus, Calendar, MapPin, Clock, Trash2 } from 'lucide-react';
+import SidePanel from '../../components/SidePanel/SidePanel';
 
 const PageWrapper = styled.div`
   display: flex;
-  flex-direction: column;
   min-height: 100vh;
+  flex-direction: column;
   background-color: #121212;
   color: #ffffff;
 `;
 
-const ContentWrapper = styled.div`
+const MainContent = styled.div`
+  display: flex;
+  flex: 1;
+`;
+
+const ContentWrapper = styled(motion.div)`
   flex: 1;
   padding: 2rem;
+  margin-left: 120px;
+  transition: margin-left 0.3s ease;
+
   @media (max-width: 768px) {
+    margin-left: 0;
     padding: 1rem;
   }
+`;
+
+const TabContent = styled(motion.div)`
+  background: #1e1e1e;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.1);
 `;
 
 const TabSwitcher = styled.div`
@@ -42,7 +59,7 @@ const TabButton = styled.button`
   border: none;
   font-size: 1rem;
   font-weight: 600;
-  color: ${props => props.active ? '#ffffff' : '#a0a0a0'};
+  color: ${props => props.active ? '#00ffff' : '#a0a0a0'};
   padding: 0.5rem 1rem;
   position: relative;
   cursor: pointer;
@@ -63,12 +80,8 @@ const TabButton = styled.button`
 
 const EventGrid = styled(motion.div)`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 2rem;
-  @media (max-width: 768px) {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1rem;
-  }
 `;
 
 const EventCard = styled(motion.div)`
@@ -81,7 +94,7 @@ const EventCard = styled(motion.div)`
 
   &:hover {
     transform: translateY(-5px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
   }
 `;
 
@@ -129,7 +142,7 @@ const CreateEventCard = styled(motion.div)`
 
   &:hover {
     transform: translateY(-5px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
   }
 `;
 
@@ -146,27 +159,46 @@ const CreateEventText = styled.p`
   text-align: center;
 `;
 
-const StyledModal = styled(Modal)`
-  &.modal-content {
-    background-color: #1e1e1e;
-    border-radius: 1rem;
-    padding: 2rem;
-    max-width: 500px;
-    width: 90%;
-    margin: 2rem auto;
-    outline: none;
-    color: #ffffff;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  }
+const DeleteButton = styled(Trash2)`
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  color: #ffffff;
+  background: #2a2a2a;
+  padding: 0.25rem;
+  border-radius: 50%;
+  cursor: pointer;
 
-  .modal-overlay {
-    background-color: rgba(0, 0, 0, 0.75);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
   }
 `;
 
+
+const BaseModalContent = styled.div`
+  background-color: #1e1e1e;
+  border-radius: 1rem;
+  padding: 2rem;
+  outline: none;
+  color: #ffffff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+`;
+
+const UserDetailsModalContent = styled(BaseModalContent)`
+  max-width: 400px;
+  width: 90%;
+`;
+
+const DeleteModalContent = styled(BaseModalContent)`
+  max-width: 300px;
+  width: 90%;
+`;
+
+const CreateEventModalContent = styled(BaseModalContent)`
+  max-width: 800px;
+  width: 90%;
+`;
 
 const ModalHeader = styled.div`
   display: flex;
@@ -177,31 +209,82 @@ const ModalHeader = styled.div`
 
 const ModalTitle = styled.h2`
   font-size: 1.5rem;
-  color: #ffffff;
+  color: #00ffff;
+  margin: 0;
 `;
 
-const CloseButton = styled(X)`
+
+const CloseButton = styled.button`
+  background: #2a2a2a;
+  border: 2rem;
+  font-size: 1.2rem;
   cursor: pointer;
-  color: #a0a0a0;
+  color: #ffffff;
+
+    &:hover {
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+    transform: scale(1.03);
+  }
 `;
 
 const Form = styled.form`
   display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 1rem;
 `;
 
+const FormGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const Label = styled.label`
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+`;
+
+const Input = styled.input`
+  background-color: #ffffff;
+  border: 1px solid #3a3a3a;
+  color: #000000;
+  padding: 0.5rem;
+  border-radius: 4px;
+`;
+
+const Select = styled.select`
+  background-color: #ffffff;
+  border: 1px solid #3a3a3a;
+  color: #000000;
+  padding: 0.5rem;
+  border-radius: 4px;
+`;
+
+const TextArea = styled.textarea`
+  background-color: #ffffff;
+  border: 1px solid #3a3a3a;
+  color: #000000;
+  padding: 0.5rem;
+  border-radius: 4px;
+  resize: vertical;
+  min-height: 100px;
+`;
+
 const SubmitButton = styled.button`
-  background: linear-gradient(90deg, #66d3ff, #9a6aff 38%, #ee75cb 71%, #fd4d77);
+  background-color: #2a2a2a;
   color: #ffffff;
   border: none;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
   font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.3s ease;
+  transition: all 0.3s ease;
+  grid-column: 1 / -1;
 
   &:hover {
-    opacity: 0.9;
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+    transform: scale(1.03);
   }
 
   &:disabled {
@@ -210,55 +293,21 @@ const SubmitButton = styled.button`
   }
 `;
 
-const DeleteButton = styled(Trash2)`
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  color: #ffffff;
-  background-color: rgba(0, 0, 0, 0.5);
-  padding: 0.25rem;
-  border-radius: 50%;
+const ProjectButton = styled.button`
+  background: #2a2a2a;
+  border: none;
+  font-size: 1.2rem;
   cursor: pointer;
-  transition: background-color 0.3s ease;
-  z-index: 10;
+  color: #ffffff;
+  font-weight: bold;
+  margin-top: 12px; // Add margin-top to create space from the text box
 
   &:hover {
-    background-color: rgba(0, 0, 0, 0.7);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+    transform: scale(1.03);
   }
 `;
 
-const Select = styled.select`
-  width: 100%;
-  padding: 0.5rem;
-  border-radius: 0.25rem;
-  background-color: #2a2a2a;
-  color: #ffffff;
-  border: 1px solid #3a3a3a;
-`;
-
-const Input = styled.input`
-  width: 100%;
-  padding: 0.5rem;
-  border-radius: 0.25rem;
-  background-color: #2a2a2a;
-  color: #ffffff;
-  border: 1px solid #3a3a3a;
-`;
-
-const TextArea = styled.textarea`
-  width: 100%;
-  padding: 0.5rem;
-  border-radius: 0.25rem;
-  background-color: #2a2a2a;
-  color: #ffffff;
-  border: 1px solid #3a3a3a;
-  resize: vertical;
-`;
-
-const Label = styled.label`
-  color: #ffffff;
-  margin-bottom: 0.25rem;
-`;
 
 const Event = () => {
   const [events, setEvents] = useState([]);
@@ -273,9 +322,14 @@ const Event = () => {
   const [displayNone, setDisplayNone] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedTab, setSelectedTab] = useState('myFlashbacks');
-  const userPhoneNumber = localStorage.userPhoneNumber;
   const [eventToDelete, setEventToDelete] = useState(null);
-  const [isClaimPopupOpen, setIsClaimPopupOpen] = useState(true);
+  const [isClaimPopupOpen, setIsClaimPopupOpen] = useState(false);
+  const userPhoneNumber = localStorage.userPhoneNumber;
+  const [activeTab, setActiveTab] = useState('flashbacks');
+  const [isSidePanelOpen, setIsSidePanelOpen] = useState(true);
+
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     eventName: '',
     eventDate: '',
@@ -298,7 +352,6 @@ const Event = () => {
   });
   const [newProjectName, setNewProjectName] = useState('');
   const [uploading, setUploading] = useState(false);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const loadDefaultImage = async () => {
@@ -392,10 +445,10 @@ const Event = () => {
     setIsDeleteModalOpen(false);
     setEventToDelete(null);
   };
-  
+
   const openCreateEventModal = () => {
     if (userDetails.user_name === userPhoneNumber) {
-        setIsUserDetailsModalOpen(true);
+      setIsUserDetailsModalOpen(true);
     } else {
       setIsCreateModalOpen(true); 
     }
@@ -512,268 +565,286 @@ const Event = () => {
   };
 
   if (loading) return <LoadingSpinner />;
-  if (error) return <div className="loading-screen">Error: {error}</div>;
+  if (error) return <div>Error: {error}</div>;
 
   return (
     <PageWrapper>
       <AppBar showCoins={true} />
       <ClaimRewardsPopup isOpen={isClaimPopupOpen} onClose={closeClaimPopup} />
-      <ContentWrapper>
-        <TabSwitcher>
-          <TabButton
-            active={selectedTab === 'myFlashbacks'}
-            onClick={() => setSelectedTab('myFlashbacks')}
-          >
-            My Flashbacks
-          </TabButton>
-          <TabButton
-            active={selectedTab === 'attendedFlashbacks'}
-            onClick={() => setSelectedTab('attendedFlashbacks')}
-          >
-            Attended Flashbacks
-          </TabButton>
-        </TabSwitcher>
-
-        <AnimatePresence mode="wait">
-          {selectedTab === 'myFlashbacks' && (
-            <EventGrid
-              key="myFlashbacks"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
+      <MainContent>
+        <SidePanel
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          isOpen={isSidePanelOpen}
+        />
+      <ContentWrapper
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+      >
+        <TabContent
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.3 }}
+        >
+          <TabSwitcher>
+            <TabButton
+              active={selectedTab === 'myFlashbacks'}
+              onClick={() => setSelectedTab('myFlashbacks')}
             >
-              <CreateEventCard onClick={openCreateEventModal}>
-                <PlusIcon />
-                <CreateEventText>Create New Event</CreateEventText>
-              </CreateEventCard>
-              {events.map((event) => (
-                <EventCard
-                  key={event.event_id}
-                  onClick={() => onEventClick(event.event_id)}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <EventImage src={event.event_image} alt={event.event_name} />
-                  <EventInfo>
-                    <EventName>{event.event_name}</EventName>
-                    <EventDetail>
-                    <Calendar size={16} />
-                      {event.event_date && !isNaN(Date.parse(event.event_date)) 
-                        ? new Date(event.event_date).toLocaleDateString() 
-                        : 'Date not set'}
-                    </EventDetail>
-                    <EventDetail>
-                    <Clock size={16} />
-                      {event.event_date && !isNaN(Date.parse(event.event_date)) 
-                        ? new Date(event.event_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
-                        : 'Time not set'}
-                    </EventDetail>
-                    <EventDetail>
-                      <MapPin size={16} />
-                      {event.event_location || 'Location not set'}
-                    </EventDetail>
-                  </EventInfo>
-                  <DeleteButton onClick={(e) => {
-                    e.stopPropagation();
-                    openDeleteModal(event);
-                  }} />
-                </EventCard>
-              ))}
-            </EventGrid>
-          )}
-
-          {selectedTab === 'attendedFlashbacks' && (
-            <EventGrid
-              key="attendedFlashbacks"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
+              My Flashbacks
+            </TabButton>
+            <TabButton
+              active={selectedTab === 'attendedFlashbacks'}
+              onClick={() => setSelectedTab('attendedFlashbacks')}
             >
-              {attendedEvents.length > 0 ? (
-                attendedEvents.map((event) => (
+              Tagged Flashbacks
+            </TabButton>
+          </TabSwitcher>
+
+          <AnimatePresence mode="wait">
+            {selectedTab === 'myFlashbacks' && (
+              <EventGrid
+                key="myFlashbacks"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <CreateEventCard onClick={openCreateEventModal}>
+                  <PlusIcon />
+                  <CreateEventText>Create New Event</CreateEventText>
+                </CreateEventCard>
+                {events.map((event) => (
                   <EventCard
                     key={event.event_id}
-                    onClick={() => onAttendEventClick(event.folder_name)}
+                    onClick={() => onEventClick(event.event_id)}
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.98 }}
                   >
                     <EventImage src={event.event_image} alt={event.event_name} />
                     <EventInfo>
                       <EventName>{event.event_name}</EventName>
+                      <EventDetail>
+                        <Calendar size={16} />
+                        {event.event_date && !isNaN(Date.parse(event.event_date)) 
+                          ? new Date(event.event_date).toLocaleDateString() 
+                          : 'Date not set'}
+                      </EventDetail>
+                      <EventDetail>
+                        <Clock size={16} />
+                        {event.event_date && !isNaN(Date.parse(event.event_date)) 
+                          ? new Date(event.event_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+                          : 'Time not set'}
+                      </EventDetail>
+                      <EventDetail>
+                        <MapPin size={16} />
+                        {event.event_location || 'Location not set'}
+                      </EventDetail>
                     </EventInfo>
+                    <DeleteButton onClick={(e) => {
+                      e.stopPropagation();
+                      openDeleteModal(event);
+                    }} />
                   </EventCard>
-                ))
-              ) : (
-                <p>No Attended Events</p>
-              )}
-            </EventGrid>
-          )}
-        </AnimatePresence>
+                ))}
+              </EventGrid>
+            )}
+
+            {selectedTab === 'attendedFlashbacks' && (
+              <EventGrid
+                key="attendedFlashbacks"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                {attendedEvents.length > 0 ? (
+                  attendedEvents.map((event) => (
+                    <EventCard
+                      key={event.event_id}
+                      onClick={() => onAttendEventClick(event.folder_name)}
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <EventImage src={event.event_image} alt={event.event_name} />
+                      <EventInfo>
+                        <EventName>{event.event_name}</EventName>
+                      </EventInfo>
+                    </EventCard>
+                  ))
+                ) : (
+                  <p>No Attended Events</p>
+                )}
+              </EventGrid>
+            )}
+          </AnimatePresence>
+        </TabContent>
       </ContentWrapper>
+      </MainContent>
 
       {/* User Details Modal */}
-      <StyledModal
+      <Modal
         isOpen={isUserDetailsModalOpen}
         onRequestClose={() => setIsUserDetailsModalOpen(false)}
         contentLabel="User Details"
+        className="modal-content"
+        overlayClassName="modal-overlay"
       >
+        <UserDetailsModalContent>
         <ModalHeader>
           <ModalTitle>User Details</ModalTitle>
-          <CloseButton onClick={() => setIsUserDetailsModalOpen(false)} />
+          <CloseButton onClick={() => setIsUserDetailsModalOpen(false)}>×</CloseButton>
         </ModalHeader>
         <Form onSubmit={handleUserDetailsSubmit}>
-          <LabelAndInput
-            label="User Name:"
-            type="text"
-            id="userName"
-            name="userName"
-            value={userFormData.org_name}
-            handleChange={(e) =>
-              setUserFormData({ ...userFormData, org_name: e.target.value })
-            }
-            placeholder="Enter your photography name"
-            isRequired={true}
-            isEditable={true}
-          />
-          <LabelAndInput
-            label="Instagram URL:"
-            type="text"
-            id="instagram"
-            name="instagram"
-            value={userFormData.social_media.instagram}
-            handleChange={(e) =>
-              setUserFormData({
+          <FormGroup>
+            <LabelAndInput
+              label="User Name:"
+              type="text"
+              id="userName"
+              name="userName"
+              value={userFormData.org_name}
+              handleChange={(e) => setUserFormData({ ...userFormData, org_name: e.target.value })}
+              placeholder="Enter your photography name"
+              isRequired={true}
+              isEditable={true}
+            />
+          </FormGroup>
+          <FormGroup>
+            <LabelAndInput
+              label="Instagram URL:"
+              type="text"
+              id="instagram"
+              name="instagram"
+              value={userFormData.social_media.instagram}
+              handleChange={(e) => setUserFormData({
                 ...userFormData,
                 social_media: {
                   ...userFormData.social_media,
                   instagram: e.target.value,
                 },
-              })
-            }
-            isEditable={true}
-          />
-          <LabelAndInput
-            label="YouTube URL:"
-            type="text"
-            id="youtube"
-            name="youtube"
-            value={userFormData.social_media.youtube}
-            handleChange={(e) =>
-              setUserFormData({
+              })}
+              isEditable={true}
+            />
+          </FormGroup>
+          <FormGroup>
+            <LabelAndInput
+              label="YouTube URL:"
+              type="text"
+              id="youtube"
+              name="youtube"
+              value={userFormData.social_media.youtube}
+              handleChange={(e) => setUserFormData({
                 ...userFormData,
                 social_media: {
                   ...userFormData.social_media,
                   youtube: e.target.value,
                 },
-              })
-            }
-            isEditable={true}
-          />
+              })}
+              isEditable={true}
+            />
+          </FormGroup>
           <SubmitButton type="submit">Save</SubmitButton>
-          <SubmitButton type="button" onClick={() => navigate("/portfolioForm")}>
-            Create Portfolio
-          </SubmitButton>
         </Form>
-      </StyledModal>
+        </UserDetailsModalContent>
+      </Modal>
 
       {/* Delete Confirmation Modal */}
-      <StyledModal
+      <Modal
         isOpen={isDeleteModalOpen}
         onRequestClose={closeDeleteModal}
         contentLabel="Delete Confirmation"
+        className="modal-content"
+        overlayClassName="modal-overlay"
       >
+        <DeleteModalContent>
         <ModalHeader>
           <ModalTitle>Confirm Delete</ModalTitle>
-          <CloseButton onClick={closeDeleteModal} />
+          <CloseButton onClick={closeDeleteModal}>×</CloseButton>
         </ModalHeader>
-        <p>Do you want to delete this event?</p>
-        <SubmitButton onClick={() => deleteEvent(eventToDelete.event_id)}>Confirm</SubmitButton>
-        <SubmitButton onClick={closeDeleteModal}>Cancel</SubmitButton>
-      </StyledModal>
+        <p>Are you sure you want to delete this event?</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem' }}>
+          <SubmitButton onClick={() => deleteEvent(eventToDelete.event_id)}>Delete</SubmitButton>
+          <SubmitButton onClick={closeDeleteModal} style={{ backgroundColor: '#3a3a3a' }}>Cancel</SubmitButton>
+        </div>
+        </DeleteModalContent>
+      </Modal>
 
       {/* Create Event Modal */}
-      <StyledModal
+      <Modal
         isOpen={isCreateModalOpen}
         onRequestClose={() => setIsCreateModalOpen(false)}
         contentLabel="Create Event"
+        className="modal-content"
+        overlayClassName="modal-overlay"
       >
+        <CreateEventModalContent>
         <ModalHeader>
           <ModalTitle>Create Event</ModalTitle>
-          <CloseButton onClick={() => setIsCreateModalOpen(false)} />
+          <CloseButton onClick={() => setIsCreateModalOpen(false)}>×</CloseButton>
         </ModalHeader>
         <Form onSubmit={handleCreateEvent}>
-          <div>
-            <Label htmlFor="eventName">Event Name:</Label>
-            <Input
-              type="text"
-              id="eventName"
-              name="eventName"
-              value={formData.eventName}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
-          <div>
-          <Label htmlFor="eventDate">Event Date:</Label>
-            <Input
-              type="date"
-              id="eventDate"
-              name="eventDate"
-              value={formData.eventDate}
-              onChange={handleInputChange}
-            />
-          </div>
-          <div>
-            <Label htmlFor="eventTime">Event Time:</Label>
-            <Input
-              type="time"
-              id="eventTime"
-              name="eventTime"
-              value={formData.eventTime}
-              onChange={handleInputChange}
-            />
-          </div>
-          <div>
-            <Label htmlFor="eventLocation">Event Location:</Label>
-            <Input
-              type="text"
-              id="eventLocation"
-              name="eventLocation"
-              value={formData.eventLocation}
-              onChange={handleInputChange}
-            />
-          </div>
-          <div>
-            <Label htmlFor="projectName">Project Name:</Label>
-            <Select
-              id="projectName"
-              name="projectName"
-              value={formData.projectName}
-              onChange={handleInputChange}
-              required
-            >
-              <option value="">Select Project</option>
-              {projects.map((project, index) => (
-                <option key={index} value={project}>
-                  {project}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <div>
-            <Label>Create New Project</Label>
-            <SubmitButton
-              type="button"
-              onClick={() => {
-                setShowNewProjectInput(!showNewProjectInput);
-                setDisplayNone(!displayNone);
-              }}
-            >
-              {!showNewProjectInput ? "+" : "x"}
-            </SubmitButton>
-            {showNewProjectInput && (
+        <FormGroup>
+              <Label htmlFor="eventName">Event Name</Label>
+              <Input
+                type="text"
+                id="eventName"
+                name="eventName"
+                value={formData.eventName}
+                onChange={handleInputChange}
+                required
+              />
+            </FormGroup>
+            <FormGroup>
+              <Label htmlFor="eventDate">Event Date</Label>
+              <Input
+                type="date"
+                id="eventDate"
+                name="eventDate"
+                value={formData.eventDate}
+                onChange={handleInputChange}
+              />
+            </FormGroup>
+            <FormGroup>
+              <Label htmlFor="eventTime">Event Time</Label>
+              <Input
+                type="time"
+                id="eventTime"
+                name="eventTime"
+                value={formData.eventTime}
+                onChange={handleInputChange}
+              />
+            </FormGroup>
+            <FormGroup>
+              <Label htmlFor="eventLocation">Event Location</Label>
+              <Input
+                type="text"
+                id="eventLocation"
+                name="eventLocation"
+                value={formData.eventLocation}
+                onChange={handleInputChange}
+              />
+            </FormGroup>
+            <FormGroup>
+              <Label htmlFor="projectName">Project Name</Label>
+              <Select
+                id="projectName"
+                name="projectName"
+                value={formData.projectName}
+                onChange={handleInputChange}
+                required
+              >
+                <option value="">Select Project</option>
+                {projects.map((project, index) => (
+                  <option key={index} value={project}>
+                    {project}
+                  </option>
+                ))}
+              </Select>
+            </FormGroup>
+            <FormGroup>
+              <Label>Create New Project</Label>
               <div>
                 <Input
                   type="text"
@@ -781,38 +852,36 @@ const Event = () => {
                   value={newProjectName}
                   onChange={handleNewProjectChange}
                 />
-                <SubmitButton type="button" onClick={handleCreateProject}>
-                  Save
-                </SubmitButton>
+                <ProjectButton type="button" onClick={handleCreateProject}>
+                  Add Project
+                </ProjectButton>
               </div>
-            )}
-          </div>
-          <div>
-            <Label htmlFor="invitationNote">Invitation Note:</Label>
-            <TextArea
-              id="invitationNote"
-              name="invitationNote"
-              value={formData.invitationNote}
-              onChange={handleInputChange}
-              rows={4}
-            />
-          </div>
-          <div>
-            <Label htmlFor="eventImage">Upload Image:</Label>
-            <Input
-              type="file"
-              id="eventImage"
-              name="eventImage"
-              accept="image/*"
-              onChange={handleFileChange}
-            />
-          </div>
-          <SubmitButton type="submit" disabled={uploading}>
-            {uploading ? "Creating..." : "Create"}
-          </SubmitButton>
-        </Form>
-      </StyledModal>
-
+            </FormGroup>
+            <FormGroup style={{ gridColumn: '1 / -1' }}>
+              <Label htmlFor="invitationNote">Invitation Note</Label>
+              <TextArea
+                id="invitationNote"
+                name="invitationNote"
+                value={formData.invitationNote}
+                onChange={handleInputChange}
+              />
+            </FormGroup>
+            <FormGroup>
+              <Label htmlFor="eventImage">Upload Image</Label>
+              <Input
+                type="file"
+                id="eventImage"
+                name="eventImage"
+                accept="image/*"
+                onChange={handleFileChange}
+              />
+            </FormGroup>
+            <SubmitButton type="submit" disabled={uploading}>
+              {uploading ? "Creating..." : "Create Event"}
+            </SubmitButton>
+          </Form>
+        </CreateEventModalContent>
+      </Modal>
       <Footer />
     </PageWrapper>
   );
