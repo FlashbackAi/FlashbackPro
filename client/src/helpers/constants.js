@@ -22,34 +22,34 @@ export const QAGroups = [
     {
       question: "01. Scan QR Code at Event",
       answer:
-        "Register with us and get your photos from this event in the next 24 hours.",
+        "Scan the QR code provided at the event location to quickly access our platform.",
     },
     {
       question: "02. Register Your Face",
       answer:
-        "Register with us and get your photos from this event in the next 24 hours.",
+        "Click a selfie to help us recognize you in event photos. You’ll receive your personalized photos soon.",
     },
     {
       question: "03. Get Your Memories on Whatsapp",
       answer:
-        "Register with us and get your photos from this event in the next 24 hours.",
+        "Receive your event memories directly on WhatsApp within 24 hours after registration. Enjoy easy access to your moments!",
     },
   ],
   [
     {
       question: "01. Upload Photographs",
       answer:
-        "Register with us and get your photos from this event in the next 24 hours.",
+        "Share your event photos with us to begin creating your personalized album. Simply upload the photos you want to include",
     },
     {
       question: "02. Confirm Relationships",
       answer:
-        "Register with us and get your photos from this event in the next 24 hours.",
+        "Identify and confirm the relationships between people in the photos. Help us organize your memories better by tagging familiar faces.",
     },
     {
       question: "03. Create Album",
       answer:
-        "Register with us and get your photos from this event in the next 24 hours.",
+        "Once everything is set, we'll create a beautiful album for you. Receive it on WhatsApp and cherish your event memories.",
     },
   ],
 ];
