@@ -24,12 +24,8 @@ const PageContainer = styled.div`
 
 const Header = styled.header`
   position: relative;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   overflow: hidden;
-  background-color: #121212;
+  color: white;
   padding: 100px 0;
   text-align: center;
 `;
@@ -47,12 +43,11 @@ const BackgroundImage = styled.img`
 
 const HeaderContent = styled.div`
   position: relative;
-  text-align: center;
   z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  max-width: 80%;
+  justify-content: center;
   animation: fadeIn 1s ease-in-out;
 
   @keyframes fadeIn {
@@ -68,26 +63,40 @@ const HeaderContent = styled.div`
 `;
 
 const HeaderTitle = styled.h1`
-  font-size: 4rem;
-  margin: 0rem;
-  color: #ffffff;
+  font-size: 48px;
+  margin-bottom: 10px;
+  color: white;
   text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
-
-  @media (max-width: 768px) {
-    font-size: 3rem;
-  }
 `;
 
 const HeaderSubtitle = styled.p`
-  font-size: 1.3rem;
-  margin-bottom: 2rem;
-  color: #ffffff;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-
-  @media (max-width: 768px) {
-    font-size: 1rem;
-  }
+  font-size: 18px;
+  margin: 0;
+  color: white;
 `;
+
+
+// const HeaderTitle = styled.h1`
+//   font-size: 4rem;
+//   margin: 0rem;
+//   color: #ffffff;
+//   text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+
+//   @media (max-width: 768px) {
+//     font-size: 3rem;
+//   }
+// `;
+
+// const HeaderSubtitle = styled.p`
+//   font-size: 1.3rem;
+//   margin-bottom: 2rem;
+//   color: #ffffff;
+//   text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+
+//   @media (max-width: 768px) {
+//     font-size: 1rem;
+//   }
+// `;
 
 const CTAButton = styled(motion.button)`
   background: #2a2a2a;
@@ -222,7 +231,7 @@ const CloseButton = styled.button`
   border: none;
   font-size: 24px;
   cursor: pointer;
-  color: #ffffff;
+  color: #000000;
 
   @media (max-width: 768px) {
     top: 5px;
