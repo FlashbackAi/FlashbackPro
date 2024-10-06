@@ -8047,16 +8047,17 @@ app.get('/transactionsByUserPhoneNumber/:userPhoneNumber', async (req, res) => {
 //   }
 // }
 /** Register the receiver account to receive transfers for Chewy Coin, paid by feePayer. */
-async function registerChewyCoinStore(account, feePayer) {
+async function registerChewyCoinStore(account) {
   try {
-    const privateKeyHex = feePayer.encrypted_private_key.startsWith('0X')
-    ? feePayer.encrypted_private_key.slice(2) // Remove the '0x' prefix
-    : feePayer.encrypted_private_key;
+    // const privateKeyHex = feePayer.encrypted_private_key.startsWith('0X')
+    // ? feePayer.encrypted_private_key.slice(2) // Remove the '0x' prefix
+    // : feePayer.encrypted_private_key;
   
-    // Derive an account with a private key and account address
-    const privateKey = new Ed25519PrivateKey(privateKeyHex);
-    const address = AccountAddress.from(feePayer.wallet_address);
-    const feePayerAccount = Account.fromPrivateKey({ privateKey, address });
+    // // Derive an account with a private key and account address
+    // const privateKey = new Ed25519PrivateKey(privateKeyHex);
+    // const address = AccountAddress.from(feePayer.wallet_address);
+    // const feePayerAccount = Account.fromPrivateKey({ privateKey, address });
+    const feePayerAccount =  await getAccountInfo(aptosConfig.SENDER_MOBILE_NUMBER)
     // Build the transaction for registering the CoinStore
     const transaction = await aptosClient.transaction.build.simple({
       sender: account.accountAddress,  // Primary account (Receiver in your case)
@@ -8069,7 +8070,7 @@ async function registerChewyCoinStore(account, feePayer) {
     });
 
     // Simulate the transaction with both signer (receiver) and fee payer
-    const [simulationResult] = await aptosClient.transaction.simulate.multiAgent({
+    const [simulationResult] = await aptosClient.transaction.simulate.simple({
       signerPublicKey: account.publicKey,
       feePayerPublicKey: feePayerAccount.publicKey, // Fee payer as secondary signer
       transaction,
@@ -8084,26 +8085,25 @@ async function registerChewyCoinStore(account, feePayer) {
   })
 
     // Submit the multi-agent transaction to the blockchain
-    const pendingTxn = await aptosClient.transaction.submit.multiAgent({
+    const pendingTxn = await aptosClient.transaction.submit.simple({
       transaction,
       senderAuthenticator:senderAuthenticator,
       feePayerAuthenticator: feePayerAuthenticator, // Include fee payer's authenticator
     });
 
-    console.log(`Transaction submitted. Hash: ${pendingTxn.hash}`);
+    logger.info(`Transaction submitted. Hash: ${pendingTxn.hash}`);
 
     // Wait for the transaction to be confirmed
-    await aptosClient.waitForTransaction({ transactionHash: pendingTxn.hash });
-    console.log(`Transaction confirmed. Hash: ${pendingTxn.hash}`);
+    const transRes = await aptosClient.waitForTransaction({ transactionHash: pendingTxn.hash });
+    logger.info(`Transaction confirmed. Hash: ${pendingTxn.hash}`);
+    logger.info('User Registration Status : '+transRes);
 
     return pendingTxn.hash;
   } catch (error) {
     console.error(`Error registering Chewy Coin with fee payer: ${error.message}`);
-    throw new Error(error.message);
+    return new Error(error.message);
   }
 }
-
-
 
 // Function to fund the account
 const transferAptosCoins = async ( recipientAddress, amount, senderMobileNumber,recipientMobileNumber) => {
@@ -8171,20 +8171,14 @@ const transferAptosCoins = async ( recipientAddress, amount, senderMobileNumber,
 
 const transferChewyCoins = async (recipientAddress, amount, senderMobileNumber, recipientMobileNumber) => {
   try {
-    // Fetch wallet details for the sender
-    const senderWalletDetails = await fetchWalletDetails(senderMobileNumber);
-    const privateKeyHex = senderWalletDetails.encrypted_private_key.startsWith('0X')
-  ? senderWalletDetails.encrypted_private_key.slice(2) // Remove the '0x' prefix
-  : senderWalletDetails.encrypted_private_key;
-
-    // Derive an account with a private key and account address
-    const privateKey = new Ed25519PrivateKey(privateKeyHex);
-    const address = AccountAddress.from(senderWalletDetails.wallet_address);
-    const senderAccount = Account.fromPrivateKey({ privateKey, address });
+    
+    const senderAccount = await getAccountInfo(senderMobileNumber);
+    const parentAccount = await getAccountInfo(aptosConfig.SENDER_MOBILE_NUMBER);
 
     // Generate and sign the transaction
     const transaction = await aptosClient.transaction.build.simple({
       sender: senderAccount.accountAddress,
+      withFeePayer:true,
       data: {
         type: 'entry_function_payload',
         function: '0x1::coin::transfer',
@@ -8198,10 +8192,15 @@ const transferChewyCoins = async (recipientAddress, amount, senderMobileNumber, 
       signer: senderAccount,
       transaction,
     });
+    const parentAccountAuthenticator = aptosClient.transaction.signAsFeePayer({
+      signer: parentAccount,
+      transaction
+  })
 
     logger.info("Transaction generated and Signed Successfully");
     const [userTransactionResponse] = await aptosClient.transaction.simulate.simple({
       signerPublicKey: senderAccount.publicKey,
+      feePayerPublicKey: parentAccount.publicKey,
       transaction,
   });
   logger.info(userTransactionResponse.max_gas_amount)
@@ -8209,7 +8208,8 @@ const transferChewyCoins = async (recipientAddress, amount, senderMobileNumber, 
     // Submit the transaction    
     const committedTransaction = await aptosClient.transaction.submit.simple({
       transaction,
-      senderAuthenticator,
+      senderAuthenticator : senderAuthenticator,
+      feePayerAuthenticator : parentAccountAuthenticator,
     });
     logger.info(`Transaction submitted: ${committedTransaction.hash}`);
 
@@ -8222,7 +8222,7 @@ const transferChewyCoins = async (recipientAddress, amount, senderMobileNumber, 
       executedTransaction.hash,
       senderMobileNumber,
       recipientMobileNumber,
-      senderWalletDetails.wallet_address, // Sender's wallet address (from_address)
+      senderAccount.accountAddress.toString('hex'), // Sender's wallet address (from_address)
       recipientAddress, // Receiver's wallet address (to_address)
       amount,
       executedTransaction.success,
@@ -8241,6 +8241,27 @@ const transferChewyCoins = async (recipientAddress, amount, senderMobileNumber, 
     throw new Error(error.message);
   }
 };
+
+
+const getAccountInfo = async(mobileNumber)=>{
+  try{
+
+    // Fetch wallet details for the sender
+    const walletDetails = await fetchWalletDetails(mobileNumber);
+    const privateKeyHex = walletDetails.encrypted_private_key.startsWith('0X')
+  ? walletDetails.encrypted_private_key.slice(2) // Remove the '0x' prefix
+  : walletDetails.encrypted_private_key;
+
+    // Derive an account with a private key and account address
+    const privateKey = new Ed25519PrivateKey(privateKeyHex);
+    const address = AccountAddress.from(walletDetails.wallet_address);
+    const account = Account.fromPrivateKey({ privateKey, address });
+    return account;
+  }
+  catch(err){
+    return new Error(err.message);
+  }
+}
 
 const updateRewards = async (senderMobileNumber, recipientMobileNumber, amount) => {
   try {
@@ -8323,16 +8344,15 @@ async function handleWalletCreation(mobileNumber) {
     //   throw new Error("Transaction failed");
     // }
 
-    const parentWallet = await fetchWalletDetails('+919090401234');
+    //const parentWallet = await fetchWalletDetails(aptosConfig.SENDER_MOBILE_NUMBER);
     // Register the wallet with ChewyCoin store and transfer coins
-    await registerChewyCoinStore(aptosAccount, parentWallet);
+    await registerChewyCoinStore(aptosAccount);
     await transferChewyCoins(walletDetails.walletAddress, CHEWY_AMOUNT, aptosConfig.SENDER_MOBILE_NUMBER, mobileNumber);
 
     // Return wallet details and transaction status
     return {
       message: 'Aptos Wallet created and coins transferred successfully',
       walletAddress: walletDetails.walletAddress,
-      transactionStatus: transactionStatus,
       balance: CHEWY_AMOUNT || aptosConfig.DEFAULT_TRANSFER_AMOUNT,
       status: 201
     };
