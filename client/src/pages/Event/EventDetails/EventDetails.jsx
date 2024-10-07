@@ -1461,7 +1461,7 @@ const LabelAndInput = ({ label, name, value, type, handleChange, isEditable, ...
                         whileTap={{ scale: 0.95 }}>
                           <Upload size={24} />
                         </UploadTile>
-                        { images.length && images.map((imageData, index) => (
+                        { images.map((imageData, index) => (
                           <ImageWrapper key={index} >
                             <img
                               src={imageData.thumbnail}
@@ -1485,12 +1485,16 @@ const LabelAndInput = ({ label, name, value, type, handleChange, isEditable, ...
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3 }}
                 >
-                {userThumbnails.length === 0 ? (
-                      <CenteredSpinner>
-                        <LoadingSpinner color="#40E0D0" />
-                      </CenteredSpinner>
-                    ) : (
-                      <>
+                  {isPeopleLoading ? (
+                    <CenteredSpinner>
+                      <LoadingSpinner color="#40E0D0" />
+                    </CenteredSpinner>
+                  ) : userThumbnails.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '2rem', color: '#ffffff' }}>
+                      No people detected in the photos you've uploaded. Try uploading more photos that contain human faces.
+                    </div>
+                  ) : (
+                    <>
                   <AttendeesSummary>
                     <TotalAttendees>Total Attendees: {userThumbnails.length}</TotalAttendees>
                       <div>
