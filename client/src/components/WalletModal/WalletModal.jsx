@@ -590,7 +590,7 @@ const fetchModelData = async (request) => {
               </CopyButton>
             </HashCode>
             <QRCodeWrapper>
-              <CustomQRCode value={hashCode} size={200} logoUrl={'logo.png'} logoSize={50} />
+              <CustomQRCode value={hashCode} size={200} logoUrl={'unityLogo.png'} logoSize={50} />
             </QRCodeWrapper>
             <>
                 <SlideToAction onSlideComplete={handleSlideComplete} label={label} />
