@@ -15,7 +15,7 @@ const PanelContainer = styled.div`
   height: fit-content;
   background-color: #121212;
   transition: left 0.3s ease;
-  z-index: 0;
+  z-index: 1000;
   overflow-y: auto;
   box-shadow: 0 0 15px rgba(0, 255, 255, 0.1);
   display: flex;

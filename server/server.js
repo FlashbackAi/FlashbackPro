@@ -6741,7 +6741,7 @@ app.get('/getBannerImage/:orgName/:userName', async (req, res) => {
       logger.info(`fetched banner: ${imageUrl}`);
       res.json({ imageUrl });
     } else {
-      res.status(404).json({ message: 'Banner image not found' });
+      logger.info('Banner image not found');
     }
   } catch (error) {
     console.error('Error fetching banner image:', error);
