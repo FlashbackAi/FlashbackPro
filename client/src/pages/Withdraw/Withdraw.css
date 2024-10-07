@@ -1,6 +1,5 @@
 .withdraw-page {
   background-color: white;
-  min-height: 100vh;
   font-family: Arial, sans-serif;
 }
 
@@ -8,7 +7,6 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2em 1em;
 }
 
 .send-header {
@@ -16,7 +14,7 @@
   margin-bottom: 2em;
 }
 .send-title{
-  font-size: 2.5em;
+  font-size: 1.5em;
   color:black ;
 }
 .send-avatar {
@@ -106,7 +104,7 @@
 
 /* Transactions list container */
 .transactions-list {
-  max-height: 30em;
+  max-height: 10em;
   overflow-y: auto;
   border: 0.1em solid #ccc;
   border-radius: 0.5em;
