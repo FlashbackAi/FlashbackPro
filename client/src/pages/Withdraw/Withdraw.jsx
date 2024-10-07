@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import API_UTIL from '../../services/AuthIntereptor';
 import './Withdraw.css';
-import AppBar from '../../components/AppBar/AppBar';
 import { toast } from 'react-toastify'; // Import toast for notifications
 
 function Withdraw() {
@@ -105,7 +104,6 @@ function Withdraw() {
 
   return (
     <div className="withdraw-page">
-      <AppBar showCoins={true} />
       <div className="withdraw-body">
         <div className="send-section">
           <div className="send-header">
