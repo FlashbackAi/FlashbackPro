@@ -8580,7 +8580,7 @@ app.get("/getAccountInfo/:walletAddress", async (req, res) => {
 
 
 
-  // const httpsServer = https.createServer(credentials, app);
+  const httpsServer = https.createServer(credentials, app);
 
   httpsServer.listen(PORT, () => {
     logger.info(`Server is running on https://localhost:${PORT}`);
