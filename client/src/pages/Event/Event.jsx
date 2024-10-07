@@ -11,26 +11,33 @@ import LoadingSpinner from '../../components/Loader/LoadingSpinner';
 import LabelAndInput from '../../components/molecules/LabelAndInput/LabelAndInput';
 import ClaimRewardsPopup from '../../components/ClaimRewardsPopup/ClaimRewardsPopup';
 import { X, Plus, Calendar, MapPin, Clock, Trash2 } from 'lucide-react';
-import SidePanel from '../../components/SidePanel/SidePanel';
+import ProfilePanel from '../../components/ProfilePanel/ProfilePanel';
 
 const PageWrapper = styled.div`
   display: flex;
-  min-height: 100vh;
   flex-direction: column;
+  min-height: 100vh;
   background-color: #121212;
+  overflow: hidden;
   color: #ffffff;
+  z-index: 0;
 `;
 
 const MainContent = styled.div`
   display: flex;
   flex: 1;
+  position: relative;
+  overflow: hidden;
+  z-index: 0;
 `;
 
 const ContentWrapper = styled(motion.div)`
   flex: 1;
   padding: 2rem;
-  margin-left: 120px;
+  margin-left: ${({ isPanelOpen }) => (isPanelOpen ? '320px' : '0')};
   transition: margin-left 0.3s ease;
+  overflow-y: auto;
+  height: calc(100vh - 60px); // Adjust based on your AppBar height
 
   @media (max-width: 768px) {
     margin-left: 0;
@@ -325,8 +332,7 @@ const Event = () => {
   const [eventToDelete, setEventToDelete] = useState(null);
   const [isClaimPopupOpen, setIsClaimPopupOpen] = useState(false);
   const userPhoneNumber = localStorage.userPhoneNumber;
-  const [activeTab, setActiveTab] = useState('flashbacks');
-  const [isSidePanelOpen, setIsSidePanelOpen] = useState(true);
+  const [isPanelOpen, setIsPanelOpen] = useState(true);
 
   const navigate = useNavigate();
 
@@ -567,20 +573,25 @@ const Event = () => {
   if (loading) return <LoadingSpinner />;
   if (error) return <div>Error: {error}</div>;
 
+  const togglePanel = () => {
+    setIsPanelOpen(!isPanelOpen);
+  };
+
   return (
     <PageWrapper>
       <AppBar showCoins={true} />
       <ClaimRewardsPopup isOpen={isClaimPopupOpen} onClose={closeClaimPopup} />
       <MainContent>
-        <SidePanel
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          isOpen={isSidePanelOpen}
+      <ProfilePanel 
+          userDetails={userDetails} 
+          isOpen={isPanelOpen} 
+          togglePanel={togglePanel}
         />
       <ContentWrapper
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
+        isPanelOpen={isPanelOpen}
       >
         <TabContent
           initial={{ opacity: 0, y: 20 }}

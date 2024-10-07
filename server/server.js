@@ -6695,6 +6695,59 @@ app.get('/getPortfolioImages/:org_name/:user_name', async (req, res) => {
   }
 });
 
+app.post('/updateBannerImage', upload.single('bannerImage'), async (req, res) => {
+  const { orgName, userName } = req.body;
+  const file = req.file;
+
+  if (!file) {
+    return res.status(400).send('No file uploaded.');
+  }
+
+  const folderPath = `${orgName}-${userName}/Banner/`;
+  const fileName = `${Date.now()}-${file.originalname}`;
+
+  const params = {
+    Bucket: portfolioBucketName,
+    Key: `${folderPath}${fileName}`,
+    Body: file.buffer,
+    ContentType: file.mimetype
+  };
+
+  try {
+    await s3.upload(params).promise();
+    const imageUrl = `https://${portfolioBucketName}.s3.amazonaws.com/${folderPath}${fileName}`;
+    res.json({ imageUrl });
+  } catch (error) {
+    console.error('Error uploading to S3:', error);
+    res.status(500).send('Error uploading image');
+  }
+});
+
+// In your backend API
+app.get('/getBannerImage/:orgName/:userName', async (req, res) => {
+  const { orgName, userName } = req.params;
+
+  const folderPath = `${orgName}-${userName}/Banner/`;
+
+  try {
+    const s3Objects = await s3.listObjectsV2({
+      Bucket: portfolioBucketName,
+      Prefix: folderPath
+    }).promise();
+
+    if (s3Objects.Contents.length > 0) {
+      const bannerObject = s3Objects.Contents[0];
+      const imageUrl = `https://${portfolioBucketName}.s3.amazonaws.com/${bannerObject.Key}`;
+      logger.info(`fetched banner: ${imageUrl}`);
+      res.json({ imageUrl });
+    } else {
+      res.status(404).json({ message: 'Banner image not found' });
+    }
+  } catch (error) {
+    console.error('Error fetching banner image:', error);
+    res.status(500).json({ message: 'Error fetching banner image' });
+  }
+});
 
 app.get("/getDatasets/:orgName", async (req, res) => {
   
@@ -8527,7 +8580,7 @@ app.get("/getAccountInfo/:walletAddress", async (req, res) => {
 
 
 
-  const httpsServer = https.createServer(credentials, app);
+  // const httpsServer = https.createServer(credentials, app);
 
   httpsServer.listen(PORT, () => {
     logger.info(`Server is running on https://localhost:${PORT}`);

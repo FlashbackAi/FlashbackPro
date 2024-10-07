@@ -23,17 +23,18 @@ const PageWrapper = styled.div`
 `;
 
 const ContentWrapper = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
   display: flex;
-  gap: 2rem;
+  padding: 1rem;
+  gap: 1rem;
+  max-width: 100%;
+  margin: 0 auto;
 
   @media (max-width: 768px) {
     flex-direction: column;
     padding: 0.5rem;
   }
 `;
+
 
 const UnityLogo = styled.img`
   width: 1rem;
@@ -71,7 +72,6 @@ const UploadText = styled.span`
   font-size: 0.9rem;
 `;
 
-
 const SidePanel = styled.div`
   flex: 0 0 300px;
   background-color: #1e1e1e;
@@ -86,6 +86,7 @@ const SidePanel = styled.div`
 
 const MainContent = styled.div`
   flex: 1;
+  min-width: 0;
 `;
 
 const EventImage = styled.div`
