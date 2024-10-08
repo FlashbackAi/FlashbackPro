@@ -4439,10 +4439,14 @@ app.post('/saveEventDetails', upload.single('eventImage'), async (req, res) => {
     Body: ''
   };
 
+  const compressedBuffer = await sharp(file.buffer)
+  .resize(600, 600) // Adjust the size as needed for your thumbnails
+  .toBuffer();
+
   const params = {
     Bucket: "flashbackeventthumbnail",
     Key: fileKey,
-    Body: file.buffer,
+    Body: compressedBuffer,
     ContentType: file.mimetype,
   };
 
@@ -4808,11 +4812,10 @@ app.put('/updateEvent/:eventId', async (req, res) => {
     Key: {
       event_id: eventId
     },
-    UpdateExpression: "set event_location = :eventLocation,event_date = :eventDate, invitation_note = :invitationNote, uploaded_files = :uploadedFiles",
+    UpdateExpression: "set event_location = :eventLocation,event_date = :eventDate, invitation_note = :invitationNote",
     ExpressionAttributeValues: {
       ":eventLocation": eventLocation,
       ":invitationNote": invitationNote,
-      ":uploadedFiles": uploadedFiles,
       ":eventDate":eventDate
     },
     ReturnValues: "ALL_NEW",
@@ -6565,6 +6568,7 @@ app.post('/uploadPortfolioImages', upload.any(), async (req, res) => {
         const uniqueFileName = `${org_name}-${user_name}/${folderName}/${Date.now()}-${path.basename(file.originalname)}`;
         const thumbnailFileName = `${org_name}-${user_name}/thumbnails/${folderName}/${Date.now()}-${path.basename(file.originalname)}`;
 
+        
         // Upload original image
         const originalParams = {
           Bucket: portfolioBucketName,
@@ -6722,10 +6726,14 @@ app.post('/updateBannerImage', upload.single('bannerImage'), async (req, res) =>
     fileName = '${userName}Banner';
   }
 
+  const compressedBuffer = await sharp(file.buffer)
+  .resize(600, 600) // Adjust the size as needed for your thumbnails
+  .toBuffer();
+
   const params = {
     Bucket: portfolioBucketName,
     Key: `${folderPath}${fileName}`,
-    Body: file.buffer,
+    Body: compressedBuffer,
     ContentType: file.mimetype
   };
 
@@ -8265,7 +8273,7 @@ const transferChewyCoins = async (recipientAddress, amount, senderMobileNumber, 
     const parentAccountAuthenticator = aptosClient.transaction.signAsFeePayer({
       signer: parentAccount,
       transaction
-  })
+    })
 
     logger.info("Transaction generated and Signed Successfully");
     const [userTransactionResponse] = await aptosClient.transaction.simulate.simple({
@@ -8592,6 +8600,52 @@ app.get("/getAccountInfo/:walletAddress", async (req, res) => {
     return res.status(404).json({
       message: "No account found with wallet address"
     });
+  }
+});
+
+app.post("/saveInvitationDetails", async (req, res) => {
+  const { user_phone_number, event_id, ...otherDetails } = req.body;
+
+  // Build the update expression and attribute values
+  let updateExpression = "SET";
+  const ExpressionAttributeNames = {};
+  const ExpressionAttributeValues = {};
+
+  Object.keys(otherDetails).forEach((key, index) => {
+    const attributeKey = `#attr${index}`;
+    const attributeValue = `:val${index}`;
+    updateExpression += ` ${attributeKey} = ${attributeValue},`;
+    ExpressionAttributeNames[attributeKey] = key;
+    ExpressionAttributeValues[attributeValue] = otherDetails[key];
+  });
+
+  // Remove the last comma
+  updateExpression = updateExpression.slice(0, -1);
+
+  try {
+    const params = {
+      TableName: "invitation_details",
+      Key: {
+        user_phone_number: user_phone_number,
+        event_id: event_id,
+      },
+      UpdateExpression: updateExpression,
+      ExpressionAttributeNames: ExpressionAttributeNames,
+      ExpressionAttributeValues: ExpressionAttributeValues,
+      ReturnValues: "ALL_NEW",
+    };
+
+    const result = await docClient.update(params).promise();
+    logger.info(
+      `Invitation has been upserted for: ${user_phone_number} for event: ${event_id}`
+    );
+    res.send({
+      message: "Successfully upserted record",
+      data: result.Attributes,
+    });
+  } catch (err) {
+    logger.error("Error upserting invitation details: " + err.message);
+    res.status(500).send(err.message);
   }
 });
 

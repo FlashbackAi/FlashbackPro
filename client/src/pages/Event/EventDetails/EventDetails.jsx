@@ -9,10 +9,9 @@ import Masonry from 'react-masonry-css';
 import Modal from 'react-modal'
 import ImageModal from "../../../components/ImageModal/ImageModal";
 import { LazyLoadImage } from 'react-lazy-load-image-component';
-import { Edit2, Calendar, Clock, MapPin, Download, Share2, Users, Images, Album, Network, Handshake, Plus, X, Upload } from 'lucide-react';
+import { Edit2, Calendar, Clock, MapPin, Download, Share2, Users, Images, Album, Network, Handshake, Plus, X, Upload, ScrollText } from 'lucide-react';
 import API_UTIL from '../../../services/AuthIntereptor';
 import AppBar from '../../../components/AppBar/AppBar';
-import LabelAndInput from '../../../components/molecules/LabelAndInput/LabelAndInput';
 import MergeDuplicateUsers from '../../../pages/Pro/ProShare/MergeHandler/MergeDuplicateUsers'
 import LoadingSpinner from '../../../components/Loader/LoadingSpinner';
 
@@ -746,8 +745,14 @@ const EventDetails = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setEditData({ ...editData, [name]: value });
+    console.log('Before Update:', editData);
+    setEditData((prevData) => {
+      const updatedData = { ...prevData, [name]: value };
+      console.log('After Update:', updatedData);
+      return updatedData;
+    });
   };
+  
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
@@ -795,8 +800,8 @@ const EventDetails = () => {
 
   const shareOnWhatsApp = async () => {
     const message = editData
-    ? `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(editData?.eventDate)} at ${getFormattedTime(editData?.eventDate)}. Location: ${editData?.eventLocation} , Url: https://flashback.inc/invite/${event?.event_id}`
-    : `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(event.event_date)} at ${getFormattedTime(event.event_date)}. Location: ${event.event_location} , Url: https://flashback.inc/invite/${event?.event_id}`;
+    ? `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(editData?.eventDate)} at ${getFormattedTime(editData?.eventDate)}. Location: ${editData?.eventLocation} , Url: https://flashback.inc/invite/${event?.folder_name}`
+    : `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(event.event_date)} at ${getFormattedTime(event.event_date)}. Location: ${event.event_location} , Url: https://flashback.inc/invite/${event?.folder_name}`;
   const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
   
   window.open(url, '_blank');
@@ -1408,6 +1413,10 @@ const LabelAndInput = ({ label, name, value, type, handleChange, isEditable, ...
               <MapPin size={18} />
               {event.event_location || 'Location not set'}
             </InfoItem>
+            <InfoItem>
+              <ScrollText size={18} />
+              {event.invitation_note || 'Invitation Note not set'}
+            </InfoItem>
           </EventInfo>
           <QRCodeWrapper>
           <div ref={qrRef}>
@@ -1709,33 +1718,38 @@ const LabelAndInput = ({ label, name, value, type, handleChange, isEditable, ...
                     label="Event Name"
                     name="eventName"
                     value={editData.eventName}
-                    onChange={handleInputChange}
+                    handleChange={handleInputChange}
+                    isEditable={true}
                   />
                   <LabelAndInput
                     label="Event Date"
                     name="eventDate"
                     type="date"
                     value={editData.eventDate}
-                    onChange={handleInputChange}
+                    handleChange={handleInputChange}
+                    isEditable={true}
                   />
                   <LabelAndInput
                     label="Event Time"
                     name="eventTime"
                     type="time"
                     value={editData.eventTime}
-                    onChange={handleInputChange}
+                    handleChange={handleInputChange}
+                    isEditable={true}
                   />
                   <LabelAndInput
                     label="Invitation Note"
                     name="invitationNote"
                     value={editData.invitationNote}
-                    onChange={handleInputChange}
+                    handleChange={handleInputChange}
+                    isEditable={true}
                   />
                   <LabelAndInput
                     label="Event Location"
                     name="eventLocation"
                     value={editData.eventLocation}
-                    onChange={handleInputChange}
+                    handleChange={handleInputChange}
+                    isEditable={true}
                   />
                   <ActionButton type="submit" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>Save</ActionButton>
                 </form>
