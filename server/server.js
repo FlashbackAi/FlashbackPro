@@ -6696,6 +6696,7 @@ app.get('/getPortfolioImages/:org_name/:user_name', async (req, res) => {
 });
 
 app.post('/updateBannerImage', upload.single('bannerImage'), async (req, res) => {
+
   const { orgName, userName } = req.body;
   const file = req.file;
 
@@ -6704,7 +6705,22 @@ app.post('/updateBannerImage', upload.single('bannerImage'), async (req, res) =>
   }
 
   const folderPath = `${orgName}-${userName}/Banner/`;
-  const fileName = `${Date.now()}-${file.originalname}`;
+
+  logger.info(`Updating banner for : ${userName}`);
+
+  const s3Objects = await s3.listObjectsV2({
+    Bucket: portfolioBucketName,
+    Prefix: folderPath
+  }).promise();
+
+  let fileName;
+  if (s3Objects.Contents.length > 0) {
+    const fullPath = s3Objects.Contents[0].Key; // e.g. "orgName-userName/Banner/somefile.jpg"
+    fileName = fullPath.split('/').pop();       // Extracts just "somefile.jpg"
+  } else {
+    // If no file exists, let's name the file as below.
+    fileName = '${userName}Banner';
+  }
 
   const params = {
     Bucket: portfolioBucketName,
@@ -6713,9 +6729,10 @@ app.post('/updateBannerImage', upload.single('bannerImage'), async (req, res) =>
     ContentType: file.mimetype
   };
 
-  try {
+  try {  
     await s3.upload(params).promise();
     const imageUrl = `https://${portfolioBucketName}.s3.amazonaws.com/${folderPath}${fileName}`;
+    logger.info(`Sending back the updated banner: ${imageUrl}`);
     res.json({ imageUrl });
   } catch (error) {
     console.error('Error uploading to S3:', error);
