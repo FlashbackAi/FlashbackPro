@@ -1,11 +1,12 @@
 import styled from 'styled-components';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Wallet, Edit3, ExternalLink, Image, Video, MessageCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Edit3, WalletMinimal, ExternalLink, Image, Video, MessageCircle } from 'lucide-react';
 import { RiYoutubeLine, RiInstagramLine, RiTwitterXLine, RiFacebookBoxFill} from "react-icons/ri";
 import { useNavigate } from 'react-router-dom';
 import defaultBanner from '../../media/images/defaultbanner.jpg';
 import API_UTIL from '../../services/AuthIntereptor';
 import LoadingSpinner from '../Loader/LoadingSpinner';
+import Wallet from '../WalletModal/WalletModal';
 
 const PanelContainer = styled.div`
   position: fixed;
@@ -170,6 +171,7 @@ const ProfilePanel = ({ userDetails, isOpen, togglePanel }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [timestamp, setTimestamp] = useState(Date.now());
     const fileInputRef = useRef(null);
+    const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   
     useEffect(() => {
         if (userDetails.org_name && userDetails.user_name) {
@@ -181,6 +183,14 @@ const ProfilePanel = ({ userDetails, isOpen, togglePanel }) => {
         return uri.replace(/ /g, '+');
       };
       
+      const openQrModal = () => {
+        setIsWalletModalOpen(true);
+      };
+    
+      const closeQrModal = () => {
+        setIsWalletModalOpen(false);
+      };
+    
     const fetchBannerImage = useCallback(async () => {
         setIsLoading(true);
       if (userDetails.org_name && userDetails.user_name) {
@@ -205,10 +215,7 @@ const ProfilePanel = ({ userDetails, isOpen, togglePanel }) => {
     const handleEditPortfolio = () => {
       navigate('/edit-portfolio');
     };
-  
-    const handleWalletClick = () => {
-      // Implement wallet popup logic here
-    };
+
   
     const handleBannerEdit = () => {
       fileInputRef.current.click();
@@ -291,8 +298,8 @@ const ProfilePanel = ({ userDetails, isOpen, togglePanel }) => {
           </PanelContent>
           <FixedContent>
             <ActionButtons>
-              <ActionButton onClick={handleWalletClick}>
-                <Wallet size={20} />
+              <ActionButton onClick={openQrModal}>
+                <WalletMinimal size={20} />
                 Wallet
               </ActionButton>
               <ActionButton onClick={handleEditPortfolio}>
@@ -302,6 +309,14 @@ const ProfilePanel = ({ userDetails, isOpen, togglePanel }) => {
               {/* Add more action buttons here */}
             </ActionButtons>
           </FixedContent>
+          {isWalletModalOpen &&(
+            <Wallet
+                isOpen={isWalletModalOpen}
+                onClose={closeQrModal}
+                userPhoneNumber={localStorage.getItem('userPhoneNumber')}
+                datasetName={`Memories-${userDetails?.user_name}`}
+              />
+            )}
         </PanelContainer>
       </>
     );

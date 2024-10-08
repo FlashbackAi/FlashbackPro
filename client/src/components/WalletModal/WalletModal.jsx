@@ -1,15 +1,14 @@
-// Wallet.js
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import styled from 'styled-components';
+import { motion, AnimatePresence } from 'framer-motion';
 import Modal from 'react-modal';
-import { Copy, X } from 'lucide-react';
+import { Copy, X, ChevronRight, CheckCircle } from 'lucide-react';
 import API_UTIL from '../../services/AuthIntereptor';
 import { useNavigate } from 'react-router-dom';
 import CustomQRCode from '../CustomQRCode/CustomQRCode';
 import SlideToAction from '../SlideToAction/SlideToAction';
-import { toast } from 'react-toastify'; // Import toast for notifications
+import { toast } from 'react-toastify';
 import LabelAndInput from '../molecules/LabelAndInput/LabelAndInput';
-
 
 const StyledModal = styled(Modal)`
   &.wallet-modal-content {
@@ -18,10 +17,21 @@ const StyledModal = styled(Modal)`
     padding: 2em;
     margin: 2em auto;
     border-radius: 1em;
-    min-height:40em;
-    width:40em;
+    width: 90%;
+    max-width: 600px;
+    height: 80vh;
     outline: none;
     box-shadow: 0 0.5em 2em rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  @media (max-width: 768px) {
+    &.wallet-modal-content {
+      width: 95%;
+      padding: 1em;
+    }
   }
 `;
 
@@ -29,80 +39,21 @@ const ModalHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5em;
+  margin-bottom: 1em;
 `;
 
 const ModalTitle = styled.h2`
   font-size: 1.5em;
   margin: 0;
+  color: #00ffff;
 `;
 
-const CloseButton = styled.button`
+const CloseButton = styled(motion.button)`
   background: none;
   border: none;
   color: white;
   font-size: 1.5em;
   cursor: pointer;
-`;
-
-const WalletDetails = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-`;
-
-const Balance = styled.div`
-  font-size: 2em;
-  margin-bottom: 1em;
-  display: flex;
-  align-items: center;
-  
-  img {
-    height: 1.5em;
-    width: 1.5em;
-    margin-left: 0.5em;
-  }
-`;
-
-const HashCode = styled.div`
-  display: flex;
-  align-items: center;
-  background: #2a2a2a;
-  padding: 0.5em 1em;
-  border-radius: 2em;
-  margin-bottom: 1em;
-`;
-
-const CopyButton = styled.button`
-  background: none;
-  border: none;
-  color: #00ffff;
-  cursor: pointer;
-  margin-left: 0.5em;
-  display: flex;
-  align-items: center;
-`;
-
-const QRCodeWrapper = styled.div`
-  background: white;
-  // padding: 1em;
-  border-radius: 0.5em;
-  margin-bottom: 1em;
-`;
-
-const WithdrawButton = styled.button`
-  background: linear-gradient(90deg, #66D3FF 0%, #9A6AFF 38%, #EE75CB 71%, #FD4D77 100%);
-  border: none;
-  color: white;
-  padding: 0.75em 2em;
-  border-radius: 2em;
-  cursor: pointer;
-  font-weight: bold;
-  transition: opacity 0.3s ease;
-
-  &:hover {
-    opacity: 0.9;
-  }
 `;
 
 const Tabs = styled.div`
@@ -111,7 +62,7 @@ const Tabs = styled.div`
   background: #2a2a2a;
   border-radius: 0.5em;
   overflow: hidden;
-  margin-top: 1em; /* Space between content and tabs */
+  margin-bottom: 1em;
 
   button {
     flex: 1;
@@ -121,12 +72,156 @@ const Tabs = styled.div`
     border: none;
     cursor: pointer;
     font-weight: bold;
-    transition: background 0.3s ease;
+    transition: all 0.3s ease;
 
     &.active {
-      background: #9A6AFF;
+      background: #2a2a2a;
+      box-shadow: 0 0 25px rgba(0, 255, 255, 1);
     }
+
+      &:hover {
+    background: #4a4a4a;
   }
+  }
+`;
+
+const TabContent = styled(motion.div)`
+  flex: 1;
+  overflow-y: auto;
+  padding: 1em;
+  background: #2a2a2a;
+  border-radius: 0.5em;
+`;
+
+const TabHeading = styled.h3`
+  color: #00ffff;
+  margin-bottom: 1em;
+`;
+
+const WalletDetails = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;
+
+const HashCode = styled.div`
+  display: flex;
+  align-items: center;
+  background: #3a3a3a;
+  padding: 0.5em 1em;
+  border-radius: 2em;
+  margin-bottom: 1em;
+  font-size: 0.9em;
+`;
+
+const CopyButton = styled(motion.button)`
+  background: none;
+  border: none;
+  color: #00ffff;
+  cursor: pointer;
+  margin-left: 0.5em;
+  display: flex;
+  align-items: center;
+`;
+
+const CopyMessage = styled(motion.span)`
+  color: #00ffff;
+  margin-left: 0.5em;
+  font-size: 0.8em;
+`;
+
+const QRCodeWrapper = styled.div`
+  background: white;
+  border-radius: 0.5em;
+  margin-bottom: 1em;
+  padding: 1em;
+`;
+
+const DatasetInfo = styled.div`
+  width: 100%;
+  background: #2a2a2a;
+  border-radius: 0.5em;
+  // padding: 1em;
+  margin-top: -1em;
+`;
+
+const DatasetInfoItem = styled.p`
+  margin: 0.5em 0;
+  display: flex;
+  color: #ffffff;
+  justify-content: center;
+`;
+
+const SendForm = styled.form`
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  margin-bottom: 1em;
+`;
+
+const StyledInput = styled.input`
+  background: #3a3a3a;
+  border: none;
+  padding: 0.75em;
+  border-radius: 0.5em;
+  color: white;
+`;
+
+const ErrorMessage = styled.div`
+  color: #ff6b6b;
+  font-size: 0.8em;
+  margin-top: 0.25em;
+`;
+
+const SendButton = styled(motion.button)`
+  background: #2a2a2a;
+  border: none;
+  padding: 0.75em;
+  border-radius: 0.5em;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 10px rgba(0, 255, 255, 1);
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+
+const DisclaimerText = styled.span`
+  color: #a0a0a0;
+  font-size: 0.8em;
+  text-align: center;
+  margin-top: 0.5em;
+  max-width: 80%;
+`;
+
+const TransactionList = styled.div`
+  max-height: 300px;
+  overflow-y: auto;
+`;
+
+const TransactionItem = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75em;
+  background: #3a3a3a;
+  margin-bottom: 0.5em;
+  border-radius: 0.5em;
+`;
+
+const TransactionInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const TransactionAmount = styled.span`
+  font-weight: bold;
+  color: ${props => props.type === 'sent' ? '#ff6b6b' : '#4CAF50'};
 `;
 
 const RequestTabs = styled.div`
@@ -137,7 +232,7 @@ const RequestTabs = styled.div`
 const RequestTabButton = styled.button`
   flex: 1;
   padding: 0.75em 1.5em;
-  background: #2a2a2a;
+  background: #3a3a3a;
   color: #fff;
   border: none;
   cursor: pointer;
@@ -145,106 +240,110 @@ const RequestTabButton = styled.button`
   font-weight: bold;
 
   &.active {
-    background: #9A6AFF;
+    background: #3a3a3a;
     color: #fff;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
   }
 
   &:hover {
-    background: #555;
+    background: #4a4a4a;
   }
 `;
 
-const RequestCard = styled.div`
-  background: #1e1e1e;
-  border: 1px solid #333;
-  border-radius: 8px;
+const RequestList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+`;
+
+const RequestItem = styled.div`
+  background: #3a3a3a;
   padding: 1em;
+  border-radius: 0.5em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+`;
+
+const RequestInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+`;
+
+const RequestActions = styled.div`
+  display: flex;
+  align-items: center;
+`;
+
+const ActionButton = styled(motion.button)`
+  background: ${props => props.accept ? '#4CAF50' : '#ff6b6b'};
+  border: none;
+  padding: 0.5em 1em;
+  border-radius: 0.5em;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+`;
+
+const RequestStatus = styled.div`
+  display: flex;
+  align-items: center;
+`;
+
+const SlideActionWrapper = styled.div`
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1em;
+`;
+
+const StatusBadge = styled.span`
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-size: 0.8em;
+  font-weight: bold;
+  background-color: ${props => props.status === 'Accepted' ? '#4CAF50' : '#ff6b6b'};
+  color: white;
+`;
+// const RequestStatus = styled.span`
+//   padding: 5px 10px;
+//   border-radius: 15px;
+//   font-size: 0.8em;
+//   font-weight: bold;
+//   background-color: ${props => props.status === 'Accepted' ? '#4CAF50' : '#ff6b6b'};
+//   color: white;
+// `;
+
+// const BalanceDisplay = styled.div`
+//   font-size: 1.5em;
+//   font-weight: bold;
+//   text-align: center;
+//   margin-bottom: 1em;
+//   color: #00ffff;
+// `;
+
+const Balance = styled(motion.div)`
+  font-size: 1.5em;
   margin-bottom: 1em;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-`;
-
-const RequestDetails = styled.div`
-  flex: 1;
-  margin-left: 1em;
-  color: #fff;
-`;
-
-const RequestButtonSection = styled.div`
-  display: flex;
-  gap: 0.5em;
-   bottom: 0.0005em;
-`;
-
-const RequestButton = styled.button`
-  background: #66D3FF;
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-  padding: 0.5em 1em;
-  cursor: pointer;
-  font-size: 0.9em;
-
-  &:hover {
-    background: #559ac8;
-  }
-
-  &.reject {
-    background: #ff6666;
-
-    &:hover {
-      background: #cc5555;
-    }
-  }
-
-  &:disabled {
-    background: #777;
-    cursor: not-allowed;
+  font-weight: bold;
+  
+  img {
+    height: 1.5em;
+    width: 1.5em;
+    margin-left: 0.5em;
   }
 `;
 
-const HistoryRequestItem = styled.div`
-  background: #1e1e1e;
-  border: 1px solid #333;
-  border-radius: 8px;
-  padding: 1em;
-  margin-bottom: 1em;
-`;
 
-const HistoryText = styled.span`
-  display: block;
-  color: #fff;
-  margin-bottom: 0.5em;
-
-  .label-left {
-    font-weight: bold;
-    color: #ccc;
-  }
-
-  .label-right {
-    color: #fff;
-  }
-`;
-
-const UnityLogo = styled.img`
-  width: 16px;
-  height: 16px;
-  vertical-align: middle;
-  margin-left: 0.25em;
-`;
-
-const ModalSeparator = styled.hr`
-  border: 0;
-  border-top: 1px solid #444;
-  margin: 1em 0;
-`;
-
-
-const Wallet = ({ isOpen, onClose,userPhoneNumber, datasetName, showCoins }) => {
+const Wallet = ({ isOpen, onClose, userPhoneNumber, datasetName, showCoins }) => {
   const [walletDetails, setWalletDetails] = useState(null);
   const [hashCode, setHashCode] = useState('');
-  const [copyStatus, setCopyStatus] = useState('Copy');
+  const [copyStatus, setCopyStatus] = useState('');
   const [balance, setBalance] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
   const navigate = useNavigate();
@@ -269,7 +368,13 @@ const Wallet = ({ isOpen, onClose,userPhoneNumber, datasetName, showCoins }) => 
   const [selectedModel, setSelectedModel] = useState(null);
   const [activeRequestTab, setActiveRequestTab] = useState('active');
 
-
+  useEffect(() => {
+    if (isOpen) {
+      fetchWalletDetails(userPhoneNumber);
+      fetchTransactionsByPhoneNumber(userPhoneNumber);
+      fetchDataSetDetails(datasetName);
+    }
+  }, [isOpen, userPhoneNumber, datasetName]);
 
   useEffect(() => {
     const fetchBalance = async (walletAddress) => {
@@ -335,15 +440,6 @@ const Wallet = ({ isOpen, onClose,userPhoneNumber, datasetName, showCoins }) => 
   const formatHashCode = (code) => {
     if (!code || code.length <= 8) return code;
     return `${code.slice(0, 4)}...${code.slice(-4)}`;
-  };
-
-  const copyHashCode = () => {
-    navigator.clipboard.writeText(hashCode).then(() => {
-      setCopyStatus('Copied');
-      setTimeout(() => setCopyStatus('Copy Code'), 1000);
-    }).catch((err) => {
-      console.error('Failed to copy hash code:', err);
-    });
   };
 
   useEffect(() => {
@@ -447,7 +543,8 @@ const transferChewyCoins = async (recipientMobileNumber, amount) => {
 };
 
 
-const handleSend = async () => {
+const handleSend = async (e) => {
+  e.preventDefault();
   // Start loading
   setLoading(true);
 
@@ -531,6 +628,15 @@ const updateRequestStatus = async (requestToUpdate, newStatus) => {
   }
 };
 
+const handleCopyHashCode = () => {
+  navigator.clipboard.writeText(hashCode).then(() => {
+    setCopyStatus('Copied!');
+    setTimeout(() => setCopyStatus(''), 2000);
+  }).catch((err) => {
+    console.error('Failed to copy hash code:', err);
+  });
+};
+
 const fetchDatasetRequests = async (dataset) => {
   try {
     console.log('Requests: called'+dataset);
@@ -542,6 +648,17 @@ const fetchDatasetRequests = async (dataset) => {
     setCompletedRequests(requestsResponse.data.filter(request => request.status === 'Accepted' || request.status === 'Rejected'));
   } catch (error) {
       console.error('Error fetching dataset requests:', error);
+  }
+};
+
+
+const fetchDataSetDetails = async (datasetName) => {
+  try {
+    const response = await API_UTIL.get(`/getDatasetDetails/Flashback/${datasetName}`);
+    setDatasetDetails(response.data[0]);
+    fetchDatasetRequests(response.data[0]);
+  } catch (error) {
+    console.error('Error fetching dataset details:', error);
   }
 };
 
@@ -573,213 +690,164 @@ const fetchModelData = async (request) => {
     switch (activeTab) {
       case 'overview':
         return (
-          <WalletDetails>
-            <Balance>
-              {balance !== null ? (
-                <>
-                  {balance} <img className='unityLogo' src='/unityLogo.png' alt='' />
-                </>
-              ) : (
-                'Loading...'
-              )}
-            </Balance>
-            <HashCode>
-              {formatHashCode(hashCode)}
-              <CopyButton onClick={copyHashCode} title={copyStatus}>
-                <Copy size={18} /> {copyStatus}
-              </CopyButton>
-            </HashCode>
-            <QRCodeWrapper>
-              <CustomQRCode value={hashCode} size={200} logoUrl={'unityLogo.png'} logoSize={50} />
-            </QRCodeWrapper>
-            <>
-                <SlideToAction onSlideComplete={handleSlideComplete} label={label} />
-                <span className='disclaimer-text'>* Enabling sharing will allow Flashback partners to gain permission to train on your data.</span>
-            </>
-            <div className="dataset-details-content">
-              {datasetDetails?.dataset_name && (
-                  <div className="dd-form-group">
-
-                    <span>dataset name : {datasetDetails.dataset_name}</span>
-                    <span>dataset category : {datasetDetails.dataset_category}</span>
-                    <span>dataset size : {datasetDetails.dataset_size}</span>
-                      
-                  </div>
-              )}
-          </div>
-          </WalletDetails>
+          <TabContent>
+            <TabHeading>Wallet Details</TabHeading>
+            <WalletDetails>
+              <HashCode>
+                {formatHashCode(hashCode)}
+                <CopyButton onClick={handleCopyHashCode}>
+                  <Copy size={18} />
+                </CopyButton>
+                {copyStatus && <CopyMessage>{copyStatus}</CopyMessage>}
+              </HashCode>
+              <QRCodeWrapper>
+                <CustomQRCode value={hashCode} size={150} logoUrl={'unityLogo.png'} logoSize={40} />
+              </QRCodeWrapper>
+              <SlideActionWrapper>
+              <SlideToAction onSlideComplete={handleSlideComplete} label="Slide to earn" />
+              <DisclaimerText>
+                * Enabling sharing will allow Flashback partners to gain permission to train on your data.
+                </DisclaimerText>
+              </SlideActionWrapper>
+              <DatasetInfo>
+          <DatasetInfoItem>
+            <strong>Dataset Name:</strong> <span>{datasetDetails?.dataset_name}</span>
+          </DatasetInfoItem>
+          <DatasetInfoItem>
+            <strong>Dataset Category:</strong> <span>{datasetDetails?.dataset_category}</span>
+          </DatasetInfoItem>
+          <DatasetInfoItem>
+            <strong>Dataset Size:</strong> <span>{datasetDetails?.dataset_size}</span>
+          </DatasetInfoItem>
+        </DatasetInfo>
+            </WalletDetails>
+          </TabContent>
         );
       case 'transactions':
         return (
-          <div className="withdraw-page">
-            <div className="withdraw-body">
-              <div className="send-section">
-                <div className="send-header">
-                  <span className="send-title">Send Unity Coins</span>
-                </div>
-      
-                <div className="send-container">
-                  <input
-                    type="text"
-                    className="input-address"
-                    placeholder="Recipient's Wallet Address"
-                    value={accountAddress}
-                    onChange={(e) => setAccountAddress(e.target.value)}
-                  />
-                  {walletError && <div className="wallet-error">{walletError}</div>} {/* Show wallet error if present */}
-                  
-                  <input
-                    type="number"
-                    className="input-amount"
-                    placeholder="Amount"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                  />
-                </div>
-      
-                <div className="balance-info">
-                  <span className="available-balance">
-                    Available: {balance !== null ? `${balance} ` : 'Fetching...'}
-                  </span>
-                </div>
-      
-                <button
-                  onClick={handleSend}
-                  className={`send-button ${loading ? 'loading' : ''}`}
-                  disabled={isSendDisabled}
-                >
-                  {loading ? 'Sending...' : 'Send'}
-                </button>
-              </div>
-      
-              {/* Transactions Section */}
-              <hr className="modal-separator" />
-              <div className="withdraw-container">
-                <span className="withdraw-title">Recent Activity</span>
-      
-                <div className="transactions-list">
-                  {transactions.map((transaction) => {
-                    const isSender = transaction.from_mobile_number === userPhoneNumber;
-                    const displayName = isSender ? transaction.to_address : transaction.from_address;
-                    const displayAmount = isSender ? `-${transaction.amount}` : `+${transaction.amount}`;
-                    const displayColor = isSender ? 'red' : 'green'; // Set color based on whether it's sent or received
-      
-                    return (
-                      <div className="transaction-item" key={transaction.transaction_id}>
-                        <div className="transaction-info">
-                          <span>{displayName}</span>
-                          <div className="transaction-date">{new Date(transaction.transaction_date).toLocaleString()}</div>
-                        </div>
-                        <div className="transaction-amount" style={{ color: displayColor }}>
-                          {displayAmount}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-        case 'requests':
-          return (
-            <>
-            {activeTab === 'requests' && (
-              <div className="dataset-req-container">
-                <RequestTabs>
-                  <RequestTabButton
-                    className={activeRequestTab === 'active' ? 'active' : ''}
-                    onClick={() => setActiveRequestTab('active')}
-                  >
-                    Active
-                  </RequestTabButton>
-                  <RequestTabButton
-                    className={activeRequestTab === 'completed' ? 'active' : ''}
-                    onClick={() => setActiveRequestTab('completed')}
-                  >
-                    Completed
-                  </RequestTabButton>
-                </RequestTabs>
-
-                {activeRequestTab === 'active' && (
-                  <div className="requests-content">
-                    {pendingRequests.length > 0 ? (
-                      <>
-                        {pendingRequests.map((request) => (
-                          <div className="request-card" key={request.model}>
-                          <span className="req-model-name">{request.model_name}</span>  
-                          <img className="req-model-img" src="/modelIcon.jpg" alt="img" onClick={() => openRequestDetailsModal(request)} />
-                          <div className="req-model-button-sec">
-                              <button
-                                  className="req-model-button"
-                                  onClick={() => handleAccept(request)}
-                                  disabled={acceptingRequests[request.model]} // Disable button only for the current request
-                              >
-                                  {acceptingRequests[request.model] ? 'Accepting...' : 'Accept'}
-                              </button>
-                              <button
-                                  className="req-model-button"
-                                  onClick={() => handleReject(request)}
-                                  disabled={rejectingRequests[request.model]} // Disable button only for the current request
-                              >
-                                  {rejectingRequests[request.model] ? 'Rejecting...' : 'Reject'}
-                              </button>
-                          </div>
-                      </div>
-                        ))}
-                      </>
-                    ) : (
-                      <p>No Active requests found.</p>
-                    )}
-                  </div>
-                )}
-
-                {activeRequestTab === 'completed' && (
-                  <div className="requests-content">
-                    {completedRequests.length > 0 ? (
-                      <>
-                        {completedRequests.map((request) => (
-                          <HistoryRequestItem key={request.model}>
-                            <HistoryText>
-                              <span className="label-left">Model:</span>
-                              <span className="label-right">{request.model_name}</span>
-                            </HistoryText>
-                            <HistoryText>
-                              <span className="label-left">Owner:</span>
-                              <span className="label-right">{request.model_org_name}</span>
-                            </HistoryText>
-                            <HistoryText>
-                              <span className="label-left">Request Status:</span>
-                              <span className="label-right">{request.status}</span>
-                            </HistoryText>
-                            {request?.status === 'Accepted' && (
-                              <HistoryText>
-                                <span className="label-left">Coins Credited:</span>
-                                <span className="label-right">
-                                  {Math.floor(request.dataset_size / 2)}
-                                  <UnityLogo src="/unityLogo.png" alt="Coin" />
-                                </span>
-                              </HistoryText>
-                            )}
-                            <HistoryText>
-                              <span className="label-left">Model URL:</span>
-                              <span className="label-right">{request.model_url}</span>
-                            </HistoryText>
-                            <ModalSeparator />
-                          </HistoryRequestItem>
-                        ))}
-                      </>
-                    ) : (
-                      <p>No completed requests found.</p>
-                    )}
-                  </div>
-                )}
-              </div>
+          <TabContent>
+            <TabHeading>Transfer Unity Coins</TabHeading>
+            <SendForm onSubmit={handleSend}>
+              <StyledInput
+                type="text"
+                placeholder="Recipient's Wallet Address"
+                value={accountAddress}
+                onChange={(e) => setAccountAddress(e.target.value)}
+              />
+              {walletError && <ErrorMessage>{walletError}</ErrorMessage>}
+              <StyledInput
+                type="number"
+                placeholder="Amount"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+              <SendButton
+                type="submit"
+                disabled={isSendDisabled}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {loading ? 'Sending...' : 'Send'}
+              </SendButton>
+            </SendForm>
+            <TabHeading>Recent Transactions</TabHeading>
+            <TransactionList>
+              { transactions. length > 0 ? (
+              transactions.map((transaction) => (
+                <TransactionItem key={transaction.transaction_id}>
+                  <TransactionInfo>
+                    <span>{transaction.from_address}</span>
+                    <small>{new Date(transaction.transaction_date).toLocaleString()}</small>
+                  </TransactionInfo>
+                  <TransactionAmount type={transaction.from_mobile_number === userPhoneNumber ? 'sent' : 'received'}>
+                    {transaction.from_mobile_number === userPhoneNumber ? '-' : '+'}
+                    {transaction.amount}
+                  </TransactionAmount>
+                </TransactionItem>
+              ))
+            ) : (
+              <NoDataMessage>No recent transactions to display.</NoDataMessage>
             )}
-          </>
-
-          );
-        default:
+            </TransactionList>
+          </TabContent>
+        );
+      case 'requests':
+        return (
+          <TabContent>
+            <TabHeading>Dataset Requests</TabHeading>
+            <RequestTabs>
+              <RequestTabButton
+                className={activeRequestTab === 'active' ? 'active' : ''}
+                onClick={() => setActiveRequestTab('active')}
+              >
+                Active
+              </RequestTabButton>
+              <RequestTabButton
+                className={activeRequestTab === 'completed' ? 'active' : ''}
+                onClick={() => setActiveRequestTab('completed')}
+              >
+                Past Activity
+              </RequestTabButton>
+            </RequestTabs>
+            <RequestList>
+              {activeRequestTab === 'active' ? (
+                pendingRequests.length > 0 ? (
+                  pendingRequests.map((request) => (
+                    <RequestItem key={request.model} onClick={() => openRequestDetailsModal(request)}>
+                      <RequestInfo>
+                        <span>{request.model_name}</span>
+                        <small>{request.model_org_name}</small>
+                      </RequestInfo>
+                      <RequestActions>
+                        <ActionButton
+                          accept
+                          onClick={(e) => { e.stopPropagation(); handleAccept(request); }}
+                          disabled={acceptingRequests[request.model]}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          {acceptingRequests[request.model] ? 'Accepting...' : 'Accept'}
+                        </ActionButton>
+                        <ActionButton
+                          onClick={(e) => { e.stopPropagation(); handleReject(request); }}
+                          disabled={rejectingRequests[request.model]}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          {rejectingRequests[request.model] ? 'Rejecting...' : 'Reject'}
+                        </ActionButton>
+                      </RequestActions>
+                    </RequestItem>
+                  ))
+                ) : (
+                  <NoDataMessage>No active requests at the moment.</NoDataMessage>
+                )
+              ) : (
+                completedRequests.length > 0 ? (
+                  completedRequests.map((request) => (
+                    <RequestItem key={request.model} onClick={() => openRequestDetailsModal(request)}>
+                      <RequestInfo>
+                        <span>{request.model_name}</span>
+                        <small>{request.model_org_name}</small>
+                      </RequestInfo>
+                      <RequestStatus>
+                        <StatusBadge status={request.status}>{request.status}</StatusBadge>
+                        {request.status === 'Accepted' && (
+                          <CoinsEarned>
+                            {Math.floor(request.dataset_size / 2)} <img src='/unityLogo.png' alt='Coin' />
+                          </CoinsEarned>
+                        )}
+                      </RequestStatus>
+                    </RequestItem>
+                  ))
+                ) : (
+                  <NoDataMessage>No completed requests to display.</NoDataMessage>
+                )
+              )}
+            </RequestList>
+          </TabContent>
+        );
+      default:
         return null;
     }
   };
@@ -794,137 +862,290 @@ const fetchModelData = async (request) => {
     >
       <ModalHeader>
         <ModalTitle>Wallet</ModalTitle>
-        <CloseButton onClick={onClose}><X size={25} /></CloseButton>
+        <CloseButton
+          onClick={onClose}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+        >
+          <X size={25} />
+        </CloseButton>
       </ModalHeader>
-      
-      {renderTabContent()}
 
-      {/* {activeTab === 'overview' && (
-        <WithdrawButton onClick={() => navigate('/withdraw')}>
-          Withdraw
-        </WithdrawButton>
-      )} */}
+      {/* <BalanceDisplay>
+        Balance: {balance !== null ? `${balance} ` : 'Loading...'}
+        {balance !== null && <img className='unityLogo' src='/unityLogo.png' alt='Unity Coin' />}
+      </BalanceDisplay>
+       */}
+      <Balance
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+      >
+        Balance: {balance !== null ? (
+          <>
+            {balance} <img className='unityLogo' src='/unityLogo.png' alt='Unity Coin' />
+          </>
+        ) : (
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+          >
+            ⟳
+          </motion.div>
+        )}
+      </Balance>
+
 
       <Tabs>
-        <button
+        <motion.button
           className={activeTab === 'overview' ? 'active' : ''}
           onClick={() => setActiveTab('overview')}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
-          Details
-        </button>
-        <button
+          Overview
+        </motion.button>
+        <motion.button
           className={activeTab === 'transactions' ? 'active' : ''}
           onClick={() => setActiveTab('transactions')}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
           Transfer
-        </button>
-        <button
+        </motion.button>
+        <motion.button
           className={activeTab === 'requests' ? 'active' : ''}
           onClick={() => setActiveTab('requests')}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
           Requests
-        </button>
-        
+        </motion.button>
       </Tabs>
 
-      <Modal
-                isOpen={isRequestModalOpen}
-                contentLabel="Request Details"
-                className="modal-content event-modal"
-                overlayClassName="modal-overlay"
-                onRequestClose={closeRequestDetailsModal}
-                >
-                <div className="modal-header">
-                
-                    <h2 className="modal-title">Request Details</h2>
-                    <button className="close-button" onClick={closeRequestDetailsModal}>
-                    x
-                  </button>
-                </div>
-                <div className="modal-body">
-                    {selectedRequest ? (
+      <AnimatePresence mode="wait">
+        {renderTabContent()}
+      </AnimatePresence>
 
-                      <>
-                        
-                    
-                          <div className="form-group">
-                          <LabelAndInput
-                              label="Model Name:"
-                              type="text"
-                              value={selectedModel.model_name}
-                              isEditable={false}
-                          />
-                          </div>
-                          <div className="form-group">
-                          <LabelAndInput
-                              label="Model Category:"
-                              type="text"
-                              value={selectedModel.model_category}
-                              isEditable={false}
-                          />
-                          </div>
-                          <div className="model-org-section">
-                          {/* <LabelAndInput
-                              label="Organization Name:"
-                              type="text"
-                              value={selectedModel.org_name}
-                              isEditable={false}
-                          /> */}
-                          <span className='model-org-label'>Organisation:</span>
-                          <button className='model-org-button' onClick={()=>navigate(`/orgDetails/${selectedModel.org_name}`)}>{selectedModel.org_name}</button>
-                          </div>
-                          <div className="form-group">
-                          <LabelAndInput
-                              label="Model_url:"
-                              type="text"
-                              value={selectedModel.model_url}
-                              isEditable={false}
-                          />
-                          </div>
-                          <div className="form-group">
-                          <LabelAndInput
-                              label="Model desc"
-                              type="text"
-                              value={selectedModel.model_desc}
-                              isEditable={false}
-                          />
-                          </div>
-                          <div className="form-group">
-                          <LabelAndInput
-                              label="Model Audit Status"
-                              type="text"
-                              value={selectedModel.is_audited}
-                              isEditable={false}
-                          />
-                          </div>
-                          <div className="req-model-details-button-sec"> 
-                              <button
-                                  className="req-model-details-button"
-                                  onClick={() => handleAccept(selectedRequest)}
-                                  disabled={isAccepting} // Disable button while accepting
-                                  >
-                                  {isAccepting ? 'Accepting...' : 'Accept'}
-                                  </button>
-
-                              <button
-                                  className='req-model-details-button'
-                                  onClick={() => handleReject(selectedRequest)}
-                                  disabled={isRejecting} // Disable button while rejecting
-                              >
-                                  {isRejecting ? 'Rejecting...' : 'Reject'}
-                              </button>
-                          </div>
-                          <span className='req-accept-info'>* Accept the requst to earn {Math.floor(selectedRequest.dataset_size/2)} <img className='unityLogo' src='/unityLogo.png' alt='Coin' /> </span>
-
-                      </>
-                    ) : (
-                    <p>Loading request details...</p>
-                    )}
-                </div>
-                </Modal>
+      <RequestDetailsModal
+        isOpen={isRequestModalOpen}
+        onClose={closeRequestDetailsModal}
+        request={selectedRequest}
+        model={selectedModel}
+        onAccept={handleAccept}
+        onReject={handleReject}
+        isAccepting={isAccepting}
+        isRejecting={isRejecting}
+      />
     </StyledModal>
-    
   );
 };
+
+const RequestDetailsModal = ({ isOpen, onClose, request, model, onAccept, onReject, isAccepting, isRejecting }) => {
+  return (
+    <Modal
+      isOpen={isOpen}
+      onRequestClose={onClose}
+      contentLabel="Request Details"
+      className="modal-content request-modal"
+      overlayClassName="modal-overlay"
+    >
+      <RequestModalContent>
+        <RequestModalHeader>
+          <RequestModalTitle>Request Details</RequestModalTitle>
+          <CloseButton onClick={onClose}>
+            <X size={20} />
+          </CloseButton>
+        </RequestModalHeader>
+        <RequestModalBody>
+          {request && model ? (
+            <>
+              <RequestDetailItem>
+                <Label>Model Name:</Label>
+                <Value>{model.model_name}</Value>
+              </RequestDetailItem>
+              <RequestDetailItem>
+                <Label>Model Category:</Label>
+                <Value>{model.model_category}</Value>
+              </RequestDetailItem>
+              <RequestDetailItem>
+                <Label>Organization:</Label>
+                <OrganizationButton onClick={() => window.open(`/orgDetails/${model.org_name}`, '_blank')}>
+                  {model.org_name}
+                </OrganizationButton>
+              </RequestDetailItem>
+              <RequestDetailItem>
+                <Label>Model URL:</Label>
+                <Value>{model.model_url}</Value>
+              </RequestDetailItem>
+              <RequestDetailItem>
+                <Label>Model Description:</Label>
+                <Value>{model.model_desc}</Value>
+              </RequestDetailItem>
+              <RequestDetailItem>
+                <Label>Model Audit Status:</Label>
+                <Value>{model.is_audited}</Value>
+              </RequestDetailItem>
+              {request.status === 'pending' && (
+                <RequestActionButtons>
+                  <ActionButton
+                    accept
+                    onClick={() => onAccept(request)}
+                    disabled={isAccepting}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    {isAccepting ? 'Accepting...' : 'Accept'}
+                  </ActionButton>
+                  <ActionButton
+                    onClick={() => onReject(request)}
+                    disabled={isRejecting}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    {isRejecting ? 'Rejecting...' : 'Reject'}
+                  </ActionButton>
+                </RequestActionButtons>
+              )}
+              {request.status === 'Accepted' && (
+                <RequestAcceptInfo>
+                  Coins Credited: {Math.floor(request.dataset_size / 2)}
+                  <UnityLogo src='/unityLogo.png' alt='Coin' />
+                </RequestAcceptInfo>
+              )}
+            </>
+          ) : (
+            <LoadingMessage>Loading request details...</LoadingMessage>
+          )}
+        </RequestModalBody>
+      </RequestModalContent>
+    </Modal>
+  );
+};
+
+// Additional styled components for the RequestDetailsModal
+const RequestModalContent = styled.div`
+  background-color: #1e1e1e;
+  color: white;
+  padding: 2em;
+  border-radius: 1em;
+  max-width: 500px;
+  width: 90%;
+  margin: 2em auto;
+`;
+
+const CoinsEarned = styled.span`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4CAF50;
+  font-weight: bold;
+  margin-left: 1em;
+
+  img {
+    width: 16px;
+    height: 16px;
+    margin-left: 0.5em;
+  }
+`;
+
+
+// const CoinsEarned = styled.span`
+//   display: flex;
+//   align-items: center;
+//   color: #4CAF50;
+//   font-weight: bold;
+//   margin-top: 0.5em;
+
+//   img {
+//     width: 16px;
+//     height: 16px;
+//     margin-left: 0.5em;
+//   }
+// `;
+
+const RequestModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5em;
+`;
+
+const RequestModalTitle = styled.h3`
+  font-size: 1.5em;
+  margin: 0;
+  color: #00ffff;
+`;
+
+const RequestModalBody = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+`;
+
+const RequestDetailItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+`;
+
+const Label = styled.span`
+  font-weight: bold;
+  color: #a0a0a0;
+`;
+
+const Value = styled.span`
+  color: #ffffff;
+`;
+
+const OrganizationButton = styled.button`
+  background: #2a2a2a;
+  border: none;
+  padding: 0.5em 1em;
+  border-radius: 0.5em;
+  color: #00ffff;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: #3a3a3a;
+  }
+`;
+
+const RequestActionButtons = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1em;
+`;
+
+const RequestAcceptInfo = styled.span`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1em;
+  font-size: 0.9em;
+  color: #ffffff;
+`;
+
+const UnityLogo = styled.img`
+  width: 16px;
+  height: 16px;
+  margin-left: 0.5em;
+`;
+
+const NoDataMessage = styled.p`
+  text-align: center;
+  color: #a0a0a0;
+  padding: 1em;
+  background: #2a2a2a;
+  border-radius: 0.5em;
+  margin: 1em 0;
+`;
+
+const LoadingMessage = styled.p`
+  text-align: center;
+  color: #a0a0a0;
+`;
 
 export default Wallet;

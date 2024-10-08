@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import styled from "styled-components";
+import {keyframes, styled } from "styled-components";
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
 import PhotoSharing from "./PhotoSharing";
@@ -75,6 +75,17 @@ const HeaderSubtitle = styled.p`
   color: white;
 `;
 
+const blinkingShadow = keyframes`
+  0% {
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0);
+  }
+`;
 
 const CTAButton = styled(motion.button)`
   background: #2a2a2a;
@@ -91,8 +102,10 @@ const CTAButton = styled(motion.button)`
   gap: 0.5rem;
   margin-top: 20px;
   font-weight: bold;
+  animation: ${blinkingShadow} 2s infinite;
 
   &:hover {
+    animation: none;
     box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
     transform: scale(1.03);
   }
@@ -102,7 +115,6 @@ const CTAButton = styled(motion.button)`
     padding: 8px 16px;
   }
 `;
-
 
 const RocketIcon = styled(Rocket)`
   color: #ffffff;
@@ -239,7 +251,7 @@ const About = () => {
     <PageContainer>
       <AppBar showLogout={false} />
       <Header>
-        <BackgroundImage src="https://flashbackportfoliouploads.s3.amazonaws.com/Aarvi Media-aarvimedia/Wedding/1723054857157-S_Y03064 copy.jpg" alt="Background" />
+        <BackgroundImage src="https://flashbackportfoliouploads.s3.ap-south-1.amazonaws.com/Aarvi+Media-aarvimedia/Wedding/cover_image.jpg" alt="Background" />
         <HeaderContent>
           <HeaderTitle>Flashback Inc</HeaderTitle>
           <HeaderSubtitle>Auto Curate & Instant Share Memories</HeaderSubtitle>

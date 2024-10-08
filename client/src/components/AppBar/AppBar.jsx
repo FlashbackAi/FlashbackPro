@@ -239,9 +239,9 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
               >
                 <MenuItem><User size={18} /> {userDetails.user_phone_number}</MenuItem>
                 {/* <MenuItem><User size={18} /> Profile</MenuItem> */}
-                <MenuItem><UserPlus size={18} /> Refer</MenuItem>
-                <MenuItem onClick={() => {navigate(`/dataSharing`)}}><Coins size={18} /> Earn Rewards</MenuItem>
-                <MenuItem><Settings size={18} /> Settings</MenuItem>
+                {/* <MenuItem><UserPlus size={18} /> Refer</MenuItem> */}
+                {/* <MenuItem onClick={() => {navigate(`/dataSharing`)}}><Coins size={18} /> Earn Rewards</MenuItem> */}
+                {/* <MenuItem><Settings size={18} /> Settings</MenuItem> */}
                 <MenuItem onClick={() => { localStorage.clear(); navigate('/'); }}><LogOut size={18} /> Logout</MenuItem>
               </MenuPanel>
               )}
@@ -283,7 +283,7 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
           </WithdrawButton>
         </WalletDetails>
       </StyledModal> */}
-    {isWalletModalOpen &&(
+    {/* {isWalletModalOpen &&(
 
    
     <Wallet
@@ -293,7 +293,7 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
         datasetName={`Memories-${userDetails?.user_name}`}
         showCoins={showCoins}
       />
-    )}
+    )} */}
     </StyledAppBar>
   );
 };
