@@ -76,28 +76,6 @@ const HeaderSubtitle = styled.p`
 `;
 
 
-// const HeaderTitle = styled.h1`
-//   font-size: 4rem;
-//   margin: 0rem;
-//   color: #ffffff;
-//   text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
-
-//   @media (max-width: 768px) {
-//     font-size: 3rem;
-//   }
-// `;
-
-// const HeaderSubtitle = styled.p`
-//   font-size: 1.3rem;
-//   margin-bottom: 2rem;
-//   color: #ffffff;
-//   text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-
-//   @media (max-width: 768px) {
-//     font-size: 1rem;
-//   }
-// `;
-
 const CTAButton = styled(motion.button)`
   background: #2a2a2a;
   border: none;

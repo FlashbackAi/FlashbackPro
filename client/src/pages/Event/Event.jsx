@@ -10,7 +10,7 @@ import Footer from '../../components/Footer/Footer';
 import LoadingSpinner from '../../components/Loader/LoadingSpinner';
 import LabelAndInput from '../../components/molecules/LabelAndInput/LabelAndInput';
 import ClaimRewardsPopup from '../../components/ClaimRewardsPopup/ClaimRewardsPopup';
-import { X, Plus, Calendar, MapPin, Clock, Trash2 } from 'lucide-react';
+import { X, Plus, Calendar, MapPin, Clock, Trash2, CheckCircle } from 'lucide-react';
 import ProfilePanel from '../../components/ProfilePanel/ProfilePanel';
 
 const PageWrapper = styled.div`
@@ -182,6 +182,17 @@ const DeleteButton = styled(Trash2)`
   }
 `;
 
+const DeleteMessage = styled.p`
+  text-align: center;
+  margin: 1rem 0;
+`;
+
+const SuccessIcon = styled(motion.div)`
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0;
+`;
+
 
 const BaseModalContent = styled.div`
   background-color: #1e1e1e;
@@ -333,6 +344,8 @@ const Event = () => {
   const [isClaimPopupOpen, setIsClaimPopupOpen] = useState(false);
   const userPhoneNumber = localStorage.userPhoneNumber;
   const [isPanelOpen, setIsPanelOpen] = useState(true);
+  const [deleteMessage, setDeleteMessage] = useState("");
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
 
   const navigate = useNavigate();
 
@@ -462,11 +475,19 @@ const Event = () => {
 
   const deleteEvent = async (eventId) => {
     try {
+      setDeleteMessage("Deleting event...");
       await API_UTIL.delete(`/deleteEvent/${eventId}/${userPhoneNumber}`);
       setEvents(events.filter(event => event.event_id !== eventId));
-      setIsDeleteModalOpen(false);
+      setDeleteMessage("Delete successful");
+      setShowSuccessAnimation(true);
+      setTimeout(() => {
+        setIsDeleteModalOpen(false);
+        setDeleteMessage("");
+        setShowSuccessAnimation(false);
+      }, 2000);
     } catch (error) {
       console.error("Error deleting event:", error);
+      setDeleteMessage("Failed to delete the event. Please try again.");
       toast.error('Failed to delete the event. Please try again.');
     }
   };
@@ -769,17 +790,34 @@ const Event = () => {
         className="modal-content"
         overlayClassName="modal-overlay"
       >
-        <DeleteModalContent>
-        <ModalHeader>
-          <ModalTitle>Confirm Delete</ModalTitle>
-          <CloseButton onClick={closeDeleteModal}>×</CloseButton>
-        </ModalHeader>
-        <p>Are you sure you want to delete this event?</p>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem' }}>
-          <SubmitButton onClick={() => deleteEvent(eventToDelete.event_id)}>Delete</SubmitButton>
-          <SubmitButton onClick={closeDeleteModal} style={{ backgroundColor: '#3a3a3a' }}>Cancel</SubmitButton>
-        </div>
-        </DeleteModalContent>
+<DeleteModalContent>
+  <ModalHeader>
+    <ModalTitle>Confirm Delete</ModalTitle>
+    <CloseButton onClick={closeDeleteModal}>×</CloseButton>
+  </ModalHeader>
+  {deleteMessage ? (
+    <>
+      <DeleteMessage>{deleteMessage}</DeleteMessage>
+      {showSuccessAnimation && (
+        <SuccessIcon
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <CheckCircle size={48} color="#00ffff" />
+        </SuccessIcon>
+      )}
+    </>
+  ) : (
+    <>
+      <p>Are you sure you want to delete this event?</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem' }}>
+        <SubmitButton onClick={() => deleteEvent(eventToDelete.event_id)}>Delete</SubmitButton>
+        <SubmitButton onClick={closeDeleteModal} style={{ backgroundColor: '#3a3a3a' }}>Cancel</SubmitButton>
+      </div>
+    </>
+  )}
+</DeleteModalContent>
       </Modal>
 
       {/* Create Event Modal */}
