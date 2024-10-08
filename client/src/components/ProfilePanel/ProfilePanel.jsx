@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Wallet, Edit3, ExternalLink, Image, Video, MessageCircle } from 'lucide-react';
 import { RiYoutubeLine, RiInstagramLine, RiTwitterXLine, RiFacebookBoxFill} from "react-icons/ri";
 import { useNavigate } from 'react-router-dom';
@@ -168,6 +168,7 @@ const ProfilePanel = ({ userDetails, isOpen, togglePanel }) => {
     const navigate = useNavigate();
     const [bannerImage, setBannerImage] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [timestamp, setTimestamp] = useState(Date.now());
     const fileInputRef = useRef(null);
   
     useEffect(() => {
@@ -180,7 +181,7 @@ const ProfilePanel = ({ userDetails, isOpen, togglePanel }) => {
         return uri.replace(/ /g, '+');
       };
       
-    const fetchBannerImage = async () => {
+    const fetchBannerImage = useCallback(async () => {
         setIsLoading(true);
       if (userDetails.org_name && userDetails.user_name) {
         try {
@@ -190,14 +191,16 @@ const ProfilePanel = ({ userDetails, isOpen, togglePanel }) => {
           if (response.data && response.data.imageUrl) {
             const formattedUrl = encodeURIWithPlus(response.data.imageUrl);
             console.log(`formattedUrl:`, formattedUrl);
-            setBannerImage(formattedUrl);
+            setBannerImage(`${formattedUrl}?t=${Date.now()}`);
           }
         } catch (error) {
           console.error('Error fetching banner image:', error);
           setBannerImage(defaultBanner);
+        } finally {
+          setIsLoading(false);
         }
       }
-    };
+    }, [userDetails.org_name, userDetails.user_name, timestamp]);
   
     const handleEditPortfolio = () => {
       navigate('/edit-portfolio');
@@ -214,6 +217,7 @@ const ProfilePanel = ({ userDetails, isOpen, togglePanel }) => {
     const handleImageUpload = async (event) => {
       const file = event.target.files[0];
       if (file) {
+        setIsLoading(true);
         const formData = new FormData();
         formData.append('bannerImage', file);
         formData.append('orgName', userDetails.org_name);
@@ -226,10 +230,14 @@ const ProfilePanel = ({ userDetails, isOpen, togglePanel }) => {
           if (response.data && response.data.imageUrl) {
             const formattedUrl = encodeURIWithPlus(response.data.imageUrl);
             console.log(`formattedUrl:`, formattedUrl);
-            setBannerImage(formattedUrl);
+          
+            setBannerImage(`${formattedUrl}?t=${Date.now()}`);
+  
           }
         } catch (error) {
           console.error('Error uploading banner image:', error);
+        } finally {
+          setIsLoading(false);
         }
       }
     };
@@ -242,7 +250,13 @@ const ProfilePanel = ({ userDetails, isOpen, togglePanel }) => {
         <PanelContainer isOpen={isOpen}>
           <PanelContent>
             <BannerImageContainer>
+            {isLoading ? (
+              <SpinnerContainer>
+                <LoadingSpinner />
+              </SpinnerContainer>
+            ) : (
               <BannerImage src={bannerImage} />
+            )}
               <EditBannerButton onClick={handleBannerEdit}>
                 <Edit3 size={16} />
               </EditBannerButton>

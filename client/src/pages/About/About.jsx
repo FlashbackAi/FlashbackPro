@@ -38,7 +38,7 @@ const BackgroundImage = styled.img`
   height: 100%;
   object-fit: cover;
   opacity: 0.6;
-  filter: grayscale(100%);
+  // filter: grayscale(100%);
 `;
 
 const HeaderContent = styled.div`
