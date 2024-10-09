@@ -222,7 +222,7 @@ const ProfilePanel = ({ userDetails, isOpen, togglePanel }) => {
     }, [userDetails.org_name, userDetails.user_name, timestamp]);
   
     const handleEditPortfolio = () => {
-      navigate('/edit-portfolio');
+      navigate('/portfolioForm');
     };
 
   

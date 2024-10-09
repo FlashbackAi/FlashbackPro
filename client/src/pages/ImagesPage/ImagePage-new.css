@@ -9,7 +9,6 @@
 
 .my-masonry-grid_column {
   background-clip: padding-box;
-  /* padding-left: 0.1em; Adjust for gutter using em */
   width: 19%;
 }
 

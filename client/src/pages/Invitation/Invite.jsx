@@ -99,48 +99,9 @@ const InfoItem = styled.div`
   }
 `;
 
-const QRCodeWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: 1.5rem;
-`;
 
-const QRActions = styled.div`
-  display: flex;
-  gap: 1rem;
-  margin-top: 1rem;
-`;
-const ActionButton = styled.button`
-  background-color: #2a2a2a;
-  color: white;
-  border: none;
-  padding: 0.5rem;
-  border-radius: 0.25rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 0.9rem;
-  margin: 0 0.5rem;
 
-  &:hover {
-    box-shadow: 0 0 10px rgba(64, 224, 208, 0.5);
-    transform: translateY(-2px);
-  }
 
-  &:active {
-    transform: translateY(0);
-  }
-
-  &:disabled {
-    opacity: 1;
-    cursor: not-allowed;
-  }
-
-  @media (max-width: 768px) {
-  padding: 0.3rem;
-  font-size: 0.8rem;
-}
-`;
 
 const MainContent = styled.div`
   flex: 1;
@@ -216,8 +177,10 @@ const AttendeesInput = styled.input`
 
 
 
-const Invite = () => {
-  const { eventId } = useParams();
+const Invite = ({ eventId: propEventId }) => {
+  const { eventId: paramEventId } = useParams();
+  const eventId = propEventId || paramEventId; // Use the prop if provided, otherwise fallback to the URL parameter.
+
   const [event, setEvent] = useState(null);
   const navigate = useNavigate();
   const userPhoneNumber = localStorage?.userPhoneNumber;
