@@ -71,7 +71,7 @@ function Login({ name, onLoginSuccess, showAppBar = true }) {
   useEffect(() => {
     const userPhoneNumber = localStorage.getItem("userPhoneNumber");
     if (userPhoneNumber && !location.state?.from?.pathname?.includes('/photos')) {
-      navigate(location.state?.from?.pathname || "/event");
+      navigate(location.state?.from?.pathname || "/dashboard");
     }
   }, [navigate, location.state]);
 
@@ -81,7 +81,7 @@ function Login({ name, onLoginSuccess, showAppBar = true }) {
     isToastDisp.current = true;
   }, []);
 
-  const fromUrl = location.state?.from?.pathname || "/event";
+  const fromUrl = location.state?.from?.pathname || "/dashboard";
   console.log(fromUrl);
 
   const handlePhoneNumberChange = (e) => {

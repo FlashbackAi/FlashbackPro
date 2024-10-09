@@ -425,13 +425,14 @@ const Wallet = ({ isOpen, onClose, userPhoneNumber, datasetName, showCoins }) =>
     }
   };
     const userPhoneNumber = localStorage.getItem('userPhoneNumber');
+     fetchBalance(userPhoneNumber);
     const interval = setInterval(() => {
       if (userPhoneNumber) {
         fetchBalance(userPhoneNumber);
       }
     }, 5000);
 
-    return () => clearInterval(interval);
+     return () => clearInterval(interval);
   });
 
   useEffect(() => {
@@ -742,12 +743,14 @@ const fetchModelData = async (request) => {
               <QRCodeWrapper>
                 <CustomQRCode value={hashCode} size={150} logoUrl={'unityLogo.png'} logoSize={40} />
               </QRCodeWrapper>
+              {photoCount &&(
               <SlideActionWrapper>
-              <SlideToAction onSlideComplete={handleSlideComplete} label="Slide to earn" />
+              <SlideToAction onSlideComplete={handleSlideComplete} label={label} />
               <DisclaimerText>
                 * Enabling sharing will allow Flashback partners to gain permission to train on your data.
                 </DisclaimerText>
               </SlideActionWrapper>
+              )}
               <DatasetInfo>
           <DatasetInfoItem>
             <strong>Dataset Name:</strong> <span>{datasetDetails?.dataset_name}</span>

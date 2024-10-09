@@ -793,15 +793,15 @@ const EventDetails = () => {
   const UsershareOnWhatsApp = (item) => {
     const userId = item.user_id;
     const count = item.count;
-    const text = `*Greetings*,\nWe have discovered your *${count}* images captured during the event *"${eventDetails?.event_name}"*.\nKindly proceed to the provided URL to access and view your photographs:\nhttps://flashback.inc/photosV1/${eventDetails?.folder_name}/${userId}\n\nCheers,\n*Flashback*`;
+    const text = `*Greetings*,\nWe have discovered your *${count}* images captured during the event *"${eventDetails?.event_name}"*.\nKindly proceed to the provided URL to access and view your photographs:\nhttps://flashback.wtf/photosV1/${eventDetails?.folder_name}/${userId}\n\nCheers,\n*Flashback*`;
     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
     window.open(whatsappUrl, "_blank");
   };
 
   const shareOnWhatsApp = async () => {
     const message = editData
-    ? `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(editData?.eventDate)} at ${getFormattedTime(editData?.eventDate)}. Location: ${editData?.eventLocation} , Url: https://flashback.inc/invite/${event?.folder_name}`
-    : `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(event.event_date)} at ${getFormattedTime(event.event_date)}. Location: ${event.event_location} , Url: https://flashback.inc/invite/${event?.folder_name}`;
+    ? `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(editData?.eventDate)} at ${getFormattedTime(editData?.eventDate)}. Location: ${editData?.eventLocation} , Url: https://flashback.wtf/invite/${event?.event_id}`
+    : `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(event.event_date)} at ${getFormattedTime(event.event_date)}. Location: ${event.event_location} , Url: https://flashback.wtf/invite/${event?.folder_name}`;
   const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
   
   window.open(url, '_blank');
@@ -810,7 +810,7 @@ const EventDetails = () => {
 
 const handleCollabClick = async () => {
   try {
-    const collabLink = `https://flashback.inc/collab/${event.event_id}`;
+    const collabLink = `https://flashback.wtf/collab/${event.event_id}`;
     const message = `Join the collaboration for the event: ${formatEventName(event?.event_name)}. Collaborate using the following link: ${collabLink}`;
     const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
 
@@ -1421,7 +1421,7 @@ const LabelAndInput = ({ label, name, value, type, handleChange, isEditable, ...
           <QRCodeWrapper>
           <div ref={qrRef}>
             <QRCode
-              value={`https://flashback.inc/login/${event.folder_name}`}
+              value={`https://flashback.wtf/login/${event.folder_name}`}
               size={200}
             />
             </div>

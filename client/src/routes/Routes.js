@@ -233,7 +233,7 @@ const ROUTES=[
     //     component:CreateEventForm
     // },
     {
-        path:"/Event",
+        path:"/dashboard",
         exact:false,
         protected:true,
         component:Event,

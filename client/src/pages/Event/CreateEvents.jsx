@@ -147,7 +147,7 @@ const CreateEventForm = () => {
       }
       toast.success('Events created successfully');
       setTimeout(() => {
-        navigate('/event');
+        navigate('/dashboard');
       }, 1000);
       return response;
     } catch (error) {

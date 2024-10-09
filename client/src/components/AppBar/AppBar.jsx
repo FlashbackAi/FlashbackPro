@@ -205,7 +205,7 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
 
   return (
     <StyledAppBar>
-      <Logo onClick={() => navigate('/')}>
+      <Logo onClick={() => navigate('/dashboard')}>
         <img src='assets/Images/logo.svg' alt='Logo' />
         <span>{COMPANY_NAME}</span>
       </Logo>

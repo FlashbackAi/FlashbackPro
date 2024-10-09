@@ -4871,6 +4871,25 @@ const getEventDetailsById = async (eventId) => {
   }
 };
 
+app.get("/getEventDetailsByFolderName/:folderName", async (req, res) => {
+  const folderName = req.params.folderName;
+  logger.info(`Fetching event details for ${folderName}`);
+  
+  try {
+    const eventDetails = await getEventDetailsByFolderName(folderName);
+
+    if (eventDetails) {
+      logger.info(`Fetched event details for ${folderName}`);
+      res.status(200).send(eventDetails);
+    } else {
+      res.status(404).send({ message: "Event not found" });
+    }
+  } catch (err) {
+    logger.info(err.message);
+    res.status(500).send({ message: err.message });
+  }
+});
+
 const getEventDetailsByFolderName = async (folderName) => {
   const eventParams = {
     TableName: eventsDetailsTable,
