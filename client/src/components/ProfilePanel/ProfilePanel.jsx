@@ -10,7 +10,7 @@ import Wallet from '../WalletModal/WalletModal';
 
 const PanelContainer = styled.div`
   position: fixed;
-  top: 75px; // Adjust based on your AppBar height
+  top: 105px; // Adjust based on your AppBar height
   left: ${({ isOpen }) => (isOpen ? '0' : '-320px')};
   width: 320px;
   height: fit-content;
@@ -30,7 +30,7 @@ const PanelContainer = styled.div`
 
 const ToggleButton = styled.button`
   position: fixed;
-  top: 80px; // Adjust to align with the top of the content area
+  top: 115px; // Adjust to align with the top of the content area
   left: ${({ isOpen }) => (isOpen ? '320px' : '0')};
   background-color: #2a2a2a;
   border: none;

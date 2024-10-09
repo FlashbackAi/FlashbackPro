@@ -11,11 +11,12 @@ const LabelAndInput = ({
   handleChange,
   placeholder ,
   isRequired,
-  accept
+  accept,
+  style
 }) => {
   return (
     <div className="label-text-field">
-      <label >{label}</label>
+      <label style = {style} >{label}</label>
       <InputBox
         value={value}
         defaultValue={defaultValue}

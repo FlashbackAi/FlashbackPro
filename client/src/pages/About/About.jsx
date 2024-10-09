@@ -90,9 +90,9 @@ const blinkingShadow = keyframes`
 const CTAButton = styled(motion.button)`
   background: linear-gradient(90deg, #66D3FF 0%, #9A6AFF 100%);
   border: none;
-  color: #ffffff;
-  padding: 10px 20px;
-  font-size: 18px;
+  color: #000000;
+  padding: 14px 28px;
+  font-size: 22px;
   cursor: pointer;
   border-radius: 2rem;
   transition: all 0.3s ease;
