@@ -42,7 +42,7 @@
   }
   
   .otp-input:focus {
-    border-color: #007bff;
+    border-color: #00ffff;
     outline: none;
   }
   
@@ -54,6 +54,7 @@
     color: white;
     border: none;
     border-radius: 8px;
+    background: #2a2a2a;
     cursor: pointer;
     transition: background-color 0.3s ease, opacity 0.3s ease;
   }
@@ -68,7 +69,9 @@
   }
   
   .resend-button {
-    background-color: #6c757d;
+    background: #2a2a2a;
+    color: #ffffff;
+    font-weight: bold;
   }
   
   .resend-button:hover:not(:disabled) {

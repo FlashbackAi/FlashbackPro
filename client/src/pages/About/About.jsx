@@ -88,7 +88,7 @@ const blinkingShadow = keyframes`
 `;
 
 const CTAButton = styled(motion.button)`
-  background: #2a2a2a;
+  background: linear-gradient(90deg, #66D3FF 0%, #9A6AFF 100%);
   border: none;
   color: #ffffff;
   padding: 10px 20px;
@@ -260,7 +260,6 @@ const About = () => {
             whileTap={{ scale: 0.95 }}
             onClick={openModal}
           >
-            <RocketIcon size={22} />
             Get Started
           </CTAButton>
         </HeaderContent>

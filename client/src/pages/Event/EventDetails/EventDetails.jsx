@@ -53,7 +53,7 @@ const UploadTile = styled(motion.div)`
   justify-content: center;
   cursor: pointer;
   transition: background-color 0.3s, transform 0.2s;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0px 5px rgba(0, 255, 255, 0.5);
 
   &:hover {
     background-color: #3a3a3a;
@@ -1470,6 +1470,7 @@ const LabelAndInput = ({ label, name, value, type, handleChange, isEditable, ...
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}>
                           <Upload size={24} />
+                          <UploadText> Upload images </UploadText>
                         </UploadTile>
                         { images.map((imageData, index) => (
                           <ImageWrapper key={index} >

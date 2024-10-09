@@ -283,7 +283,7 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
           </WithdrawButton>
         </WalletDetails>
       </StyledModal> */}
-    {/* {isWalletModalOpen &&(
+    {isWalletModalOpen &&(
 
    
     <Wallet
@@ -293,7 +293,7 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
         datasetName={`Memories-${userDetails?.user_name}`}
         showCoins={showCoins}
       />
-    )} */}
+    )}
     </StyledAppBar>
   );
 };

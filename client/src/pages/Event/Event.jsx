@@ -146,6 +146,7 @@ const CreateEventCard = styled(motion.div)`
   cursor: pointer;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   padding: 2rem;
+  box-shadow: 0 0 2px rgba(0, 255, 255, 0.5);
 
   &:hover {
     transform: translateY(-5px);

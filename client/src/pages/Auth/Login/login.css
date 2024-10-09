@@ -2,7 +2,7 @@
   display: flex;
   align-items: center;
   flex-direction: column;
-  background-color: white;
+  background-color: #2a2a2a;
   height: 100%;
 }
 
@@ -37,10 +37,12 @@
 
 .privacyNotice p{
     text-align: left;
+    color: #ffffff;
 }
 
 .privacyNotice a{
     display: contents;
+    color: #00ffff;
 }
 
 @keyframes rotate {
@@ -98,11 +100,11 @@
 }
 
 h1, h4{
-    color: black;
+    color: #ffffff;
 }
 
 .privacyNotice{
-    color: black;
+    color: #ffffff;
     font-size: 0.75em;
 }
 
@@ -134,16 +136,19 @@ h1, h4{
 
 /* Adjust the submit button style to match OTP verify button */
 .submit, .verify-button {
-  background-image: linear-gradient(90deg, #66d3ff, #9a6aff 38%, #ee75cb 71%, #fd4d77);
-  color: white;
+  background: linear-gradient(90deg, #66D3FF 0%, #9A6AFF 100%);
+  color: #000000;
+  font-weight: bold;
   border: none;
   padding: 0.625rem 1.25rem;
   border-radius: 0.3125rem;
   cursor: pointer;
   transition: opacity 0.3s ease;
+  box-shadow: 0 0 10px rgba(0, 255, 255, 1);
 }
 
 .submit:disabled, .verify-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  box-shadow: 0 0 10px rgba(0, 255, 255, 1);
 }

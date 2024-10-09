@@ -63,6 +63,7 @@ const Tabs = styled.div`
   border-radius: 0.5em;
   overflow: hidden;
   margin-bottom: 1em;
+  padding: 0.25em; // Added padding to allow glow to be visible
 
   button {
     flex: 1;
@@ -73,15 +74,34 @@ const Tabs = styled.div`
     cursor: pointer;
     font-weight: bold;
     transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
 
-    &.active {
-      background: #2a2a2a;
-      box-shadow: 0 0 25px rgba(0, 255, 255, 1);
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border-radius: 0.3em;
+      opacity: 0;
+      transition: opacity 0.3s ease;
     }
 
-      &:hover {
-    background: #4a4a4a;
-  }
+    &.active::before,
+    &:hover::before {
+      opacity: 1;
+    }
+
+    &.active {
+      background: #3a3a3a;
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+    }
+
+    &:hover {
+      background: #3a3a3a;
+    }
   }
 `;
 
@@ -236,13 +256,32 @@ const RequestTabButton = styled.button`
   color: #fff;
   border: none;
   cursor: pointer;
-  transition: background 0.3s ease;
+  transition: all 0.3s ease;
   font-weight: bold;
+  position: relative;
+  overflow: visible;
+  margin: 0 1.2px;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
 
   &.active {
     background: #3a3a3a;
     color: #fff;
     box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+  }
+
+  &.active::before,
+  &:hover::before {
+    opacity: 1;
   }
 
   &:hover {

@@ -167,7 +167,7 @@ const PanelContent = styled.div`
 
 const ProfilePanel = ({ userDetails, isOpen, togglePanel }) => {
     const navigate = useNavigate();
-    const [bannerImage, setBannerImage] = useState(null);
+    const [bannerImage, setBannerImage] = useState(defaultBanner);
     const [isLoading, setIsLoading] = useState(true);
     const [timestamp, setTimestamp] = useState(Date.now());
     const fileInputRef = useRef(null);
@@ -192,6 +192,7 @@ const ProfilePanel = ({ userDetails, isOpen, togglePanel }) => {
       };
     
     const fetchBannerImage = useCallback(async () => {
+      console.log('Entering FetchBannerImage Method and started loading');
         setIsLoading(true);
       if (userDetails.org_name && userDetails.user_name) {
         try {
@@ -202,13 +203,21 @@ const ProfilePanel = ({ userDetails, isOpen, togglePanel }) => {
             const formattedUrl = encodeURIWithPlus(response.data.imageUrl);
             console.log(`formattedUrl:`, formattedUrl);
             setBannerImage(`${formattedUrl}?t=${Date.now()}`);
+          } else {
+            console.log('[catch1]Falling back to default banner');
+            setBannerImage(defaultBanner);
           }
         } catch (error) {
           console.error('Error fetching banner image:', error);
+          console.log(`[catch2]Falling back to default banner`);
           setBannerImage(defaultBanner);
         } finally {
           setIsLoading(false);
         }
+      } else {
+        console.log(`[catch3]Falling back to default banner`);
+        setBannerImage(defaultBanner);
+        setIsLoading(false);
       }
     }, [userDetails.org_name, userDetails.user_name, timestamp]);
   
@@ -257,13 +266,13 @@ const ProfilePanel = ({ userDetails, isOpen, togglePanel }) => {
         <PanelContainer isOpen={isOpen}>
           <PanelContent>
             <BannerImageContainer>
-            {isLoading ? (
+            {/* {isLoading ? (
               <SpinnerContainer>
                 <LoadingSpinner />
               </SpinnerContainer>
-            ) : (
+            ) : ( */}
               <BannerImage src={bannerImage} />
-            )}
+            {/* )} */}
               <EditBannerButton onClick={handleBannerEdit}>
                 <Edit3 size={16} />
               </EditBannerButton>
