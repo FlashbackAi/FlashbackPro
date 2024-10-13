@@ -6482,8 +6482,86 @@ app.get("/getAllImages/:eventName", async(req,res) =>{
 //   }
 // });
 
+// app.post("/updatePortfolioDetails", async (req, res) => {
+//   const { user_phone_number, org_name, social_media,role } = req.body;
+
+//   logger.info("Updating portfolio details for the user_phone_number: ", user_phone_number);
+
+//   if (!user_phone_number) {
+//     return res.status(400).json({ error: "User phone number is required" });
+//   }
+
+//   // Initialize the update fields object
+//   let updateFields = {};
+
+//   // Convert org_name to lowercase, remove spaces, and handle the username generation
+//   if (org_name) {
+//     let username = org_name.toLowerCase().replace(/\s+/g, '');
+//     logger.info(username)
+
+//     // Check if the generated username already exists and create a unique one if necessary
+//     let isUsernameTaken = true;
+//     let counter = 1;
+//     let baseUsername = username;
+
+//     while (isUsernameTaken) {
+//       const existingUser = await getUserObjectByUserName(username);
+//       logger.info(existingUser)
+//       if (existingUser.length!==0) {
+//         username = `${baseUsername}${counter}`;
+//         counter++;
+//       } else {
+//         isUsernameTaken = false;
+//       }
+//     }
+
+//     updateFields.user_name = username; // Add the generated username to update fields
+//   }
+
+//   // Add other fields to the updateFields object
+//   if (social_media) {
+//     updateFields.social_media = social_media;
+//   }
+//   if (org_name) {
+//     updateFields.org_name = org_name;
+//   }
+//   if(role){
+//     updateFields.role = role;
+//   }
+
+//   const updateExpressions = [];
+//   const expressionAttributeNames = {};
+//   const expressionAttributeValues = {};
+
+//   Object.keys(updateFields).forEach(key => {
+//     updateExpressions.push(`#${key} = :${key}`);
+//     expressionAttributeNames[`#${key}`] = key;
+//     expressionAttributeValues[`:${key}`] = updateFields[key];
+//   });
+
+//   const params = {
+//     TableName: userrecordstable,
+//     Key: {
+//       user_phone_number: user_phone_number
+//     },
+//     UpdateExpression: `SET ${updateExpressions.join(', ')}`,
+//     ExpressionAttributeNames: expressionAttributeNames,
+//     ExpressionAttributeValues: expressionAttributeValues,
+//     ReturnValues: 'ALL_NEW'
+//   };
+
+//   try {
+//     const result = await docClient.update(params).promise();
+//     res.status(200).json({ message: "Portfolio details updated successfully", data: result.Attributes });
+//   } catch (error) {
+//     console.error("Error updating portfolio details:", error);
+//     res.status(500).json({ error: "Could not update portfolio details" });
+//   }
+// });
+
+
 app.post("/updatePortfolioDetails", async (req, res) => {
-  const { user_phone_number, org_name, social_media,role } = req.body;
+  const { user_phone_number } = req.body;
 
   logger.info("Updating portfolio details for the user_phone_number: ", user_phone_number);
 
@@ -6494,10 +6572,11 @@ app.post("/updatePortfolioDetails", async (req, res) => {
   // Initialize the update fields object
   let updateFields = {};
 
-  // Convert org_name to lowercase, remove spaces, and handle the username generation
-  if (org_name) {
+  // Check if org_name is provided and handle username generation
+  if (req.body.user_name) {
+    const org_name = req.body.user_name;
     let username = org_name.toLowerCase().replace(/\s+/g, '');
-    logger.info(username)
+    logger.info(`Generated username: ${username}`);
 
     // Check if the generated username already exists and create a unique one if necessary
     let isUsernameTaken = true;
@@ -6506,8 +6585,8 @@ app.post("/updatePortfolioDetails", async (req, res) => {
 
     while (isUsernameTaken) {
       const existingUser = await getUserObjectByUserName(username);
-      logger.info(existingUser)
-      if (existingUser.length!==0) {
+      logger.info(`Existing user object: ${existingUser}`);
+      if (existingUser.length !== 0) {
         username = `${baseUsername}${counter}`;
         counter++;
       } else {
@@ -6515,49 +6594,39 @@ app.post("/updatePortfolioDetails", async (req, res) => {
       }
     }
 
-    updateFields.user_name = username; // Add the generated username to update fields
-  }
-
-  // Add other fields to the updateFields object
-  if (social_media) {
-    updateFields.social_media = social_media;
-  }
-  if (org_name) {
+    // Add the generated username and org_name to update fields
+    updateFields.user_name = username;
     updateFields.org_name = org_name;
   }
-  if(role){
-    updateFields.role = role;
+
+  // Conditionally add other fields to the updateFields object if they exist in the request
+  if (req.body.social_media) {
+    updateFields.social_media = req.body.social_media;
+  }
+  if (req.body.role) {
+    updateFields.role = req.body.role;
+  }
+  if (req.body.org_name) {
+    updateFields.org_name = req.body.org_name;
   }
 
-  const updateExpressions = [];
-  const expressionAttributeNames = {};
-  const expressionAttributeValues = {};
 
-  Object.keys(updateFields).forEach(key => {
-    updateExpressions.push(`#${key} = :${key}`);
-    expressionAttributeNames[`#${key}`] = key;
-    expressionAttributeValues[`:${key}`] = updateFields[key];
-  });
-
-  const params = {
-    TableName: userrecordstable,
-    Key: {
-      user_phone_number: user_phone_number
-    },
-    UpdateExpression: `SET ${updateExpressions.join(', ')}`,
-    ExpressionAttributeNames: expressionAttributeNames,
-    ExpressionAttributeValues: expressionAttributeValues,
-    ReturnValues: 'ALL_NEW'
-  };
+  // If no fields are present to update, return a 400 error
+  if (Object.keys(updateFields).length === 0) {
+    return res.status(400).json({ error: "No valid fields provided for update" });
+  }
 
   try {
-    const result = await docClient.update(params).promise();
-    res.status(200).json({ message: "Portfolio details updated successfully", data: result.Attributes });
+    // Use the generic update function to update the user details
+    const updatedUser = await updateUserDetails(user_phone_number, updateFields);
+
+    res.status(200).json({ message: "Portfolio details updated successfully", data: updatedUser });
   } catch (error) {
     console.error("Error updating portfolio details:", error);
     res.status(500).json({ error: "Could not update portfolio details" });
   }
 });
+
 
 app.post('/uploadPortfolioImages', upload.any(), async (req, res) => {
   try {
@@ -6584,8 +6653,8 @@ app.post('/uploadPortfolioImages', upload.any(), async (req, res) => {
     for (const [folderName, folderFiles] of Object.entries(folders)) {
       for (const file of folderFiles) {
         // Define unique file names for original and thumbnail versions
-        const uniqueFileName = `${org_name}-${user_name}/${folderName}/${Date.now()}-${path.basename(file.originalname)}`;
-        const thumbnailFileName = `${org_name}-${user_name}/thumbnails/${folderName}/${Date.now()}-${path.basename(file.originalname)}`;
+        const uniqueFileName = `${user_name}/${folderName}/${Date.now()}-${path.basename(file.originalname)}`;
+        const thumbnailFileName = `${user_name}/thumbnails/${folderName}/${Date.now()}-${path.basename(file.originalname)}`;
 
         
         // Upload original image
@@ -6670,15 +6739,15 @@ app.post('/uploadPortfolioImages', upload.any(), async (req, res) => {
 
 // This is the code for the protocol backend 
 
-app.get('/getPortfolioImages/:org_name/:user_name', async (req, res) => {
+app.get('/getPortfolioImages/:user_name', async (req, res) => {
   try {
-    const { org_name, user_name } = req.params;
+    const { user_name } = req.params;
 
-    if (!org_name || !user_name) {
-      return res.status(400).json({ message: 'org_name and user_name are required' });
+    if (!user_name) {
+      return res.status(400).json({ message: 'user_name is required' });
     }
 
-    const folderName = `${org_name}-${user_name}`;
+    const folderName = `${user_name}`;
     const params = {
       Bucket: portfolioBucketName,
       // Prefix: folderName+'/thumbnails',
@@ -6720,58 +6789,68 @@ app.get('/getPortfolioImages/:org_name/:user_name', async (req, res) => {
 
 app.post('/updateBannerImage', upload.single('bannerImage'), async (req, res) => {
 
-  const { orgName, userName } = req.body;
+  const { userName } = req.body;
   const file = req.file;
 
   if (!file) {
     return res.status(400).send('No file uploaded.');
   }
 
-  const folderPath = `${orgName}-${userName}/Banner/`;
+  const folderPath = `${userName}/Banner/`;
 
-  logger.info(`Updating banner for : ${userName}`);
+  logger.info(`Updating banner for: ${userName}`);
 
-  const s3Objects = await s3.listObjectsV2({
-    Bucket: portfolioBucketName,
-    Prefix: folderPath
-  }).promise();
+  try {
+    // Step 1: List and delete all existing objects in the banner folder
+    const s3Objects = await s3.listObjectsV2({
+      Bucket: portfolioBucketName,
+      Prefix: folderPath
+    }).promise();
 
-  let fileName;
-  if (s3Objects.Contents.length > 0) {
-    const fullPath = s3Objects.Contents[0].Key; // e.g. "orgName-userName/Banner/somefile.jpg"
-    fileName = fullPath.split('/').pop();       // Extracts just "somefile.jpg"
-  } else {
-    // If no file exists, let's name the file as below.
-    fileName = '${userName}Banner';
-  }
+    if (s3Objects.Contents.length > 0) {
+      const deleteParams = {
+        Bucket: portfolioBucketName,
+        Delete: {
+          Objects: s3Objects.Contents.map((obj) => ({ Key: obj.Key }))
+        }
+      };
+      await s3.deleteObjects(deleteParams).promise();
+      logger.info(`Deleted existing banner images for: ${userName}`);
+    }
 
-  const compressedBuffer = await sharp(file.buffer)
-  .resize(600, 600) // Adjust the size as needed for your thumbnails
-  .toBuffer();
+    // Step 2: Prepare the file name and compress the image
+    const fileName = path.basename(file.originalname);
+    const compressedBuffer = await sharp(file.buffer)
+      .resize(600, 600) // Adjust the size as needed for your thumbnails
+      .toBuffer();
 
-  const params = {
-    Bucket: portfolioBucketName,
-    Key: `${folderPath}${fileName}`,
-    Body: compressedBuffer,
-    ContentType: file.mimetype
-  };
+    // Step 3: Upload the new banner image
+    const uploadParams = {
+      Bucket: portfolioBucketName,
+      Key: `${folderPath}${fileName}`,
+      Body: compressedBuffer,
+      ContentType: file.mimetype
+    };
 
-  try {  
-    await s3.upload(params).promise();
+    await s3.upload(uploadParams).promise();
+
     const imageUrl = `https://${portfolioBucketName}.s3.amazonaws.com/${folderPath}${fileName}`;
-    logger.info(`Sending back the updated banner: ${imageUrl}`);
+    logger.info(`Uploaded and updated banner: ${imageUrl}`);
+
+    // Step 4: Send response back with the new image URL
     res.json({ imageUrl });
+
   } catch (error) {
-    console.error('Error uploading to S3:', error);
-    res.status(500).send('Error uploading image');
+    console.error('Error processing banner update:', error);
+    res.status(500).send('Error updating banner image');
   }
 });
 
 // In your backend API
-app.get('/getBannerImage/:orgName/:userName', async (req, res) => {
-  const { orgName, userName } = req.params;
+app.get('/getBannerImage/:userName', async (req, res) => {
+  const {userName } = req.params;
 
-  const folderPath = `${orgName}-${userName}/Banner/`;
+  const folderPath = `${userName}/Banner/`;
 
   try {
     const s3Objects = await s3.listObjectsV2({

@@ -495,7 +495,7 @@ const ImageWrapper = styled.div`
 
     const fetchPortfolioImages = async (user_name, org_name) => {
       try {
-        const response = await API_UTIL.get(`/getBannerImage/${org_name}/${user_name}`);
+        const response = await API_UTIL.get(`/getBannerImage/${user_name}`);
         if (response.status !== 200) {
           
             setBannerImg('')

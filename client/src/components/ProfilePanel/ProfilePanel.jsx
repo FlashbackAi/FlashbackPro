@@ -196,7 +196,7 @@ const ProfilePanel = ({ userDetails, isOpen, togglePanel }) => {
         setIsLoading(true);
       if (userDetails.org_name && userDetails.user_name) {
         try {
-          const response = await API_UTIL.get(`/getBannerImage/${userDetails.org_name}/${userDetails.user_name}`);
+          const response = await API_UTIL.get(`/getBannerImage/${userDetails.user_name}`);
           console.log(`ImageURl:`, response.data.imageUrl);
             
           if (response.data && response.data.imageUrl) {
@@ -236,7 +236,6 @@ const ProfilePanel = ({ userDetails, isOpen, togglePanel }) => {
         setIsLoading(true);
         const formData = new FormData();
         formData.append('bannerImage', file);
-        formData.append('orgName', userDetails.org_name);
         formData.append('userName', userDetails.user_name);
   
         try {

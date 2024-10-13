@@ -738,7 +738,7 @@ const Event = () => {
               id="userName"
               name="userName"
               value={userFormData.org_name}
-              handleChange={(e) => setUserFormData({ ...userFormData, org_name: e.target.value })}
+              handleChange={(e) => setUserFormData({ ...userFormData, org_name: e.target.value, user_name: e.target.value })}
               placeholder="Enter your photography name"
               isRequired={true}
               isEditable={true}

@@ -99,7 +99,7 @@ function EventImages() {
 
   const fetchPortfolioImages = async (user_name, org_name) => {
     try {
-      const response = await API_UTIL.get(`/getPortfolioImages/${org_name}/${user_name}`);
+      const response = await API_UTIL.get(`/getPortfolioImages/${user_name}`);
       if (response.status !== 200) {
         setBannerImg('');
       } else {
