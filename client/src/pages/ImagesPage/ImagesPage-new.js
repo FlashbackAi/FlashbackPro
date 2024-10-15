@@ -663,6 +663,7 @@ const ImageWrapper = styled.div`
       {clientObj &&(
       <MiniHeroComponent 
         orgName={clientObj?.org_name}
+        userName={clientObj?.user_name}
         socialMediaLinks={clientObj?.social_media}
         backdropImage={bannerImg}
       />

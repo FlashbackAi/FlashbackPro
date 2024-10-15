@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import API_UTIL from '../../services/AuthIntereptor';
 import Modal from 'react-modal'; // Assuming you are using react-modal
 // import { FaCopy , FaBars} from 'react-icons/fa'; // Font Awesome Copy icon (install using: npm install react-icons)
-import {  Menu, User, Settings, LogOut, UserPlus, Coins} from 'lucide-react';
+import {  Menu, User, LogOut} from 'lucide-react';
 import Wallet from '../WalletModal/WalletModal';
 
 

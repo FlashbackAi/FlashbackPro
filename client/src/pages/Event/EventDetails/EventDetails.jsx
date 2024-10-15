@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import styled, { createGlobalStyle } from 'styled-components';
 import QRCode from 'qrcode.react';
@@ -463,10 +463,6 @@ const TotalAttendees = styled.div`
   font-weight: bold;
 `;
 
-const UserCategoryTitle = styled.h3`
-  color: ${props => props.color};
-  margin-bottom: 1rem;
-`;
 
 const GlobalStyle = createGlobalStyle`
   .wrapper-pro {

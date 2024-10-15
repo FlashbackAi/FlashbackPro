@@ -1,10 +1,11 @@
 import React from "react";
 import "./MiniHeroComponent.css";
 
-const MiniHeroComponent = ({ orgName, socialMediaLinks, backdropImage }) => {
+import { useNavigate } from 'react-router-dom';
 
-  console.log("MInIHeRo Component");
-  console.log(backdropImage);
+const MiniHeroComponent = ({ userName,orgName, socialMediaLinks, backdropImage }) => {
+
+  const navigate = useNavigate()
 
   const icons = {
     instagram: "assets/Images/icon-instagram.svg",
@@ -23,7 +24,7 @@ const MiniHeroComponent = ({ orgName, socialMediaLinks, backdropImage }) => {
         filter: 'grayscale(100%)',
       }}
     >
-      <span>{orgName}</span>
+      <span onClick={() => navigate(`/portfolio/${userName}`)}>{orgName}</span>
       <div className="social-icons">
         {Object.keys(socialMediaLinks).map((platform) => (
           <a

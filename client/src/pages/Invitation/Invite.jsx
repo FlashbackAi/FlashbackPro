@@ -221,7 +221,7 @@ const Invite = ({ eventId: propEventId }) => {
       toast.error('Failed to confirm attendance. Please try again.');
     }
     if (userResponse === 'no') {
-      navigate('/event');
+      navigate('/dashboard');
     }
   };
 
@@ -241,7 +241,7 @@ const Invite = ({ eventId: propEventId }) => {
         });
   
         toast.success('Event attendance confirmed.');
-        navigate('/event');
+        navigate('/dashboard');
       }
     } catch (error) {
       console.error('Error confirming event attendance:', error);
