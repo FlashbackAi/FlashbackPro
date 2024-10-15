@@ -131,6 +131,7 @@ const imagesBucketName = 'flashbackusercollection';
 // const indexBucketName = 'devtestdnd';
 // const imagesBucketName = 'devtestdnd';
 const portfolioBucketName = 'flashbackportfoliouploads';
+const portfolioImagesTable = 'portfolio_images';
 
 const rekognition = new AWS.Rekognition({ region: 'ap-south-1' });
 
@@ -2576,6 +2577,33 @@ app.post('/setFavouritesNew', async (req, res) => {
       TableName: userImageActivityTableName,
       Item: {
         user_id: userId,
+        s3_url: imageUrl,
+        is_favourite: isFav,
+        folder_name:folderName
+      }
+    };
+
+    const result = await docClient.put(params).promise();
+    logger.info("Put operation succeeded:", result);
+    res.send(result);
+  } catch (err) {
+    logger.error("Unable to update item. Error JSON:", err);
+    res.status(500).send('Unable to mark the photo as favourite');
+  }
+});
+
+app.post('/setPortfolioFavourites', async (req, res) => {
+  try {
+    
+    const username = req.body.username;
+    const imageUrl = req.body.imageUrl;
+    const isFav = req.body.isFav;
+    const folderName = extractFolderName(imageUrl);
+    logger.info("Selecting Image:"+imageUrl);
+    const params = {
+      TableName: portfolioImagesTable,
+      Item: {
+        username: username,
         s3_url: imageUrl,
         is_favourite: isFav,
         folder_name:folderName
@@ -6627,19 +6655,19 @@ app.post("/updatePortfolioDetails", async (req, res) => {
   }
 });
 
-
 app.post('/uploadPortfolioImages', upload.any(), async (req, res) => {
   try {
-    const { org_name, user_name } = req.body;
+    const {user_name } = req.body;
     const files = req.files;
 
-    logger.info(`Uploading Portfolio Images of orgName: ${org_name}, userName: ${user_name}`);
+    logger.info(`Uploading Portfolio Images of userName: ${user_name}`);
 
     if (!files || files.length === 0) {
       return res.status(400).json({ message: 'No files uploaded' });
     }
 
     const uploadPromises = [];
+    const dynamoDBPromises = [];
 
     // Group files by folder names based on the field names in the request
     const folders = files.reduce((acc, file) => {
@@ -6653,10 +6681,9 @@ app.post('/uploadPortfolioImages', upload.any(), async (req, res) => {
     for (const [folderName, folderFiles] of Object.entries(folders)) {
       for (const file of folderFiles) {
         // Define unique file names for original and thumbnail versions
-        const uniqueFileName = `${user_name}/${folderName}/${Date.now()}-${path.basename(file.originalname)}`;
-        const thumbnailFileName = `${user_name}/thumbnails/${folderName}/${Date.now()}-${path.basename(file.originalname)}`;
+        const uniqueFileName = `${user_name}/${folderName}/${path.basename(file.originalname)}`;
+        const thumbnailFileName = `${user_name}/thumbnails/${folderName}/${path.basename(file.originalname)}`;
 
-        
         // Upload original image
         const originalParams = {
           Bucket: portfolioBucketName,
@@ -6665,7 +6692,21 @@ app.post('/uploadPortfolioImages', upload.any(), async (req, res) => {
           ContentType: file.mimetype,
         };
 
-        uploadPromises.push(s3.upload(originalParams).promise());
+        // Push S3 upload promise to uploadPromises array
+        uploadPromises.push(s3.upload(originalParams).promise().then(uploadResult => {
+          // Prepare DynamoDB entry for the thumbnail image
+          const dynamoDBParams = {
+            TableName: portfolioImagesTable,
+            Item: {
+              username: user_name,
+              folder_name: folderName,
+              s3_url: uploadResult.Location,
+              uploadDate: Date.now(), // Timestamp
+              is_favourite:false
+            }
+          };
+          dynamoDBPromises.push(docClient.put(dynamoDBParams).promise());
+        }));
 
         // Compress and upload the thumbnail image
         const compressedBuffer = await sharp(file.buffer)
@@ -6679,22 +6720,41 @@ app.post('/uploadPortfolioImages', upload.any(), async (req, res) => {
           ContentType: file.mimetype,
         };
 
+        // Push S3 upload promise for thumbnail to uploadPromises array
         uploadPromises.push(s3.upload(thumbnailParams).promise());
+        //.then(uploadResult => {
+        //   // Prepare DynamoDB entry for the thumbnail image
+        //   const dynamoDBParams = {
+        //     TableName: portfolioImagesTable,
+        //     Item: {
+        //       username: user_name,
+        //       folder_name: folderName,
+        //       s3_url: uploadResult.Location,
+        //       uploadDate: Date.now(), // Timestamp
+        //       is_favourite:false
+        //     }
+        //   };
+        //   dynamoDBPromises.push(docClient.put(dynamoDBParams).promise());
+        //}));
       }
     }
-
+    // Wait for all S3 uploads and DynamoDB inserts to complete
     const uploadResults = await Promise.all(uploadPromises);
+    await Promise.all(dynamoDBPromises);
+
+    // Filter out only the valid S3 upload results
+    const validUploadResults = uploadResults.filter(result => result && result.Key && result.Location);
 
     res.status(200).json({
-      message: 'Files uploaded successfully',
-      files: uploadResults.map(result => ({
+      message: 'Files uploaded successfully and entries added to DynamoDB',
+      files: validUploadResults.map(result => ({
         fileName: result.Key,
         location: result.Location,
       }))
     });
   } catch (error) {
-    console.error('Error uploading files to S3:', error);
-    res.status(500).json({ message: 'Error uploading files to S3', error: error.message });
+    console.error('Error uploading files to S3 or inserting into DynamoDB:', error);
+    res.status(500).json({ message: 'Error processing request', error: error.message });
   }
 });
 
@@ -6738,54 +6798,66 @@ app.post('/uploadPortfolioImages', upload.any(), async (req, res) => {
 
 
 // This is the code for the protocol backend 
-
-app.get('/getPortfolioImages/:user_name', async (req, res) => {
+app.get('/getPortfolioImages/:username', async (req, res) => {
   try {
-    const { user_name } = req.params;
+    const { username } = req.params;
 
-    if (!user_name) {
-      return res.status(400).json({ message: 'user_name is required' });
+    if (!username) {
+      return res.status(400).json({ message: 'Username is required' });
     }
 
-    const folderName = `${user_name}`;
+    const sanitizedUserName = String(username);
+
     const params = {
-      Bucket: portfolioBucketName,
-      // Prefix: folderName+'/thumbnails',
-      Prefix: folderName
+      TableName: portfolioImagesTable,
+      KeyConditionExpression: "username = :username",
+      ExpressionAttributeValues: {
+        ":username": sanitizedUserName,
+      }
     };
 
-    const s3Data = await s3.listObjectsV2(params).promise();
+    // Query DynamoDB for images of the specified user
+    const data = await docClient.query(params).promise();
 
-    if (!s3Data.Contents || s3Data.Contents.length === 0) {
-      // return res.status(404).json({ message: 'No images found' });
-      return res.status(200).json({ message: 'No images found' });
+    if (!data.Items || data.Items.length === 0) {
+      return res.status(200).json([]);
     }
 
-    const folderWiseImages = {};
+    // Format the response data
+    const folderMap = data.Items.reduce((acc, item) => {
+      const folderName = item.folder_name || 'default_folder';
 
-    s3Data.Contents.forEach(item => {
-      const fullPath = item.Key;
-      const parts = fullPath.split('/');
-      const folder = parts.length > 2 ? parts[1] : 'Uncategorized'; // Assuming folder is the second part in the key structure
-      const fileName = parts[parts.length - 1];
-      const url = `https://${portfolioBucketName}.s3.amazonaws.com/${item.Key}`;
-
-      if (!folderWiseImages[folder]) {
-        folderWiseImages[folder] = [];
+      if (!acc[folderName]) {
+        acc[folderName] = [];
       }
 
-      folderWiseImages[folder].push({ fileName, url });
-    });
+      acc[folderName].push({
+        s3_url: item.s3_url,
+        uploadDate: item.uploadDate,
+        file_name: item.file_name,
+        is_favourite: item.is_favourite || false
+      });
 
-    res.status(200).json({
-      message: 'Images retrieved successfully',
-      images: folderWiseImages,
-    });
+      return acc;
+    }, {});
+
+    // Transform the folderMap into the desired array format
+    const images = Object.entries(folderMap).map(([folderName, images]) => ({
+      folderName,
+      images: images.sort((a, b) => b.is_favourite - a.is_favourite)  // Sort by is_favourite
+    }));
+    
+
+    // Return the formatted response
+    res.status(200).json(images);
+
   } catch (error) {
-    console.error('Error retrieving images from S3:', error);
-    res.status(500).json({ message: 'Error retrieving images from S3', error: error.message });
+    console.error('Error retrieving images from DynamoDB:', error);
+    res.status(500).json({ message: 'Error retrieving images from DynamoDB', error: error.message });
   }
 });
+
+
 
 app.post('/updateBannerImage', upload.single('bannerImage'), async (req, res) => {
 

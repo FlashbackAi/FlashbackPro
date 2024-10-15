@@ -2,11 +2,14 @@ import React from "react";
 import "./MiniHeroComponent.css";
 
 const MiniHeroComponent = ({ orgName, socialMediaLinks, backdropImage }) => {
+
+  console.log("MInIHeRo Component");
+  console.log(backdropImage);
+
   const icons = {
     instagram: "assets/Images/icon-instagram.svg",
     youtube: "assets/Images/icon-youtube.svg",
     facebook: "assets/Images/icon-facebook.svg",
-    // Add more icons here if needed
   };
 
   return (
