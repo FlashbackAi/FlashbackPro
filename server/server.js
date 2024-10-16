@@ -1292,6 +1292,8 @@ app.post('/sendOTP', async (req, res) => {
   }
 });
 
+
+
 app.post('/verifyOTP', async (req, res) => {
   const { phoneNumber, otp, login_platform } = req.body;
   
@@ -1402,6 +1404,28 @@ async function deleteOTP(phoneNumber) {
 //       }
 //     });
 //   });
+
+app.post('/sendRegistrationMessage', async (req, res) => {
+  const { user_phone_number,eventName,orgName, portfolioLink} = req.body;
+  
+  try {
+   
+    try {
+    // Send the OTP via WhatsApp
+    const event = eventName.split('_').join(' ');
+
+    await whatsappSender.sendRegistrationMessage(user_phone_number,event,orgName,portfolioLink)
+    res.status(200).json({ message: 'Message sent successfully' });
+  } catch (whatsappError) {
+    logger.error('Error sending Message via WhatsApp:', whatsappError);
+    
+    res.status(500).json({ message: 'Message sent unsuccessfully' });
+  }
+  } catch (error) {
+    logger.error('Error sending OTP:', error);
+    res.status(500).json({ error: 'Error sending Message' });
+  }
+});
 
 
 const storage = multer.memoryStorage();
@@ -4551,6 +4575,20 @@ app.get("/getClientDetailsByEventname/:eventName", async (req, res) => {
   logger.info(`Fetching event details for ${eventName}`)
   try {
    const clientObj = await getClientObject(eventName);
+   res.send(clientObj);
+  } catch (err) {
+    logger.info(err.message);
+    res.status(500).send(err.message);
+  }
+});
+
+
+app.get("/getClientDetailsByEventId/:eventId", async (req, res) => {
+  
+  const eventId = req.params.eventId; // Adjust based on your token payload
+  logger.info(`Fetching event details for ${eventId}`)
+  try {
+   const clientObj = await getClientObjectNew(eventId);
    res.send(clientObj);
   } catch (err) {
     logger.info(err.message);
@@ -8818,6 +8856,32 @@ app.post("/saveInvitationDetails", async (req, res) => {
     res.status(500).send(err.message);
   }
 });
+
+app.get("/getInvitationDetails/:eventId/:userPhoneNumber", async (req, res) => {
+  const { eventId, userPhoneNumber} = req.params;
+  logger.info(
+    `Fetching Invitation details for: ${userPhoneNumber} for event: ${eventId}`
+  );
+  try {
+    const params = {
+      TableName: "invitation_details",
+      Key: {
+        user_phone_number: userPhoneNumber,
+        event_id: eventId,
+      },
+    };
+
+    const result = await docClient.get(params).promise();
+    logger.info(
+      `Invitation has been fetched for: ${userPhoneNumber} for event: ${eventId}`
+    );
+    res.send(result.Item);
+  } catch (err) {
+    logger.error("Error upserting invitation details: " + err.message);
+    res.status(500).send(err.message);
+  }
+});
+
 
 
 

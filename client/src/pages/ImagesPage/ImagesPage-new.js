@@ -287,7 +287,7 @@ const ImageWrapper = styled.div`
   function ImagesPageNew() {
     const [lastEvaluatedKey, setLastEvaluatedKey] = useState(undefined);
     const [fetchTimeout, setFetchTimeout] = useState(false);
-    const [totalImages, setTotalImages] = useState(null);
+    const [totalImages, setTotalImages] = useState(0);
     const [clickedUrl, setClickedUrl] = useState(null);
     const [clickedImgIndex, setClickedImgIndex] = useState(null);
     const [clickedImgFavourite, setClickedImgFavourite] = useState(null);
@@ -347,6 +347,8 @@ const ImageWrapper = styled.div`
         setEvent(response.data);
         console.log(response);
   
+        fetchClientDetails(response.data);
+       
         // Check the event date and time condition before fetching images
         // if (!response.data.event_date || new Date(response.data.event_date) < new Date()) {
           fetchAllImages(); // Fetch images if the date is not set or the date has passed
@@ -379,8 +381,6 @@ const ImageWrapper = styled.div`
         });
     
         if (response.status === 200) {
-          setClientObj(response.data.clientObj);
-          await fetchPortfolioImages(response.data.clientObj.user_name, response.data.clientObj.org_name);
           setUserObj(response.data.userObj);
     
           const favoriteImages = response.data.images.map((img) => ({
@@ -423,6 +423,20 @@ const ImageWrapper = styled.div`
       });
     };
     
+    const fetchClientDetails = async (event) => {
+  
+      try {
+        const response = await API_UTIL.get(`/getClientDetailsByEventId/${event.event_id}`);
+        if (response.status === 200) {
+          setClientObj(response.data);
+          await fetchPortfolioImages(response.data.user_name);
+        } else {
+          throw new Error("Failed to fetch client Details");
+        }
+      } catch (error) {
+        console.error("Error fetching user thumbnails:", error);
+      } 
+    };
     
 
      const fetchImages = async (favoriteImages = []) => {
@@ -493,7 +507,7 @@ const ImageWrapper = styled.div`
     }, [fetchImages, hasMore, isGalleryLoading]);
     
 
-    const fetchPortfolioImages = async (user_name, org_name) => {
+    const fetchPortfolioImages = async (user_name) => {
       try {
         const response = await API_UTIL.get(`/getBannerImage/${user_name}`);
         if (response.status !== 200) {
@@ -508,7 +522,9 @@ const ImageWrapper = styled.div`
     };
 
     const fetchAllImages = async () => {
-      fetchFavouriteImages()
+      if(userId === undefined){
+        fetchFavouriteImages()
+      }
       
     };
 

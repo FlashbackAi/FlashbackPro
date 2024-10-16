@@ -101,6 +101,56 @@ class WhatsAppSender {
       throw error;
     }
   }
+  async sendRegistrationMessage(recipientPhoneNumber, eventName, orgName, PortfolioLink) {
+    try {
+      const response = await axios.post(
+        this.apiUrl,
+        {
+          messaging_product: 'whatsapp',
+          to: recipientPhoneNumber,
+          type: 'template',
+          template: {
+            name: 'flashback_event_registration',
+            language: {
+              code: 'en'
+            },
+            components: [
+              {
+                type: 'body',
+                parameters: [
+                  { type: 'text', text: eventName },
+                  { type: 'text', text: orgName },
+                  { type: 'text', text: PortfolioLink }
+                ]
+              },{
+                type: 'button',
+                sub_type: 'url',
+                index: 0,
+                parameters: [
+                  {
+                    type: 'text',
+                    text: PortfolioLink
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      console.log('Message sent successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error sending Message via WhatsApp:', error.response ? error.response.data : error.message);
+      throw error;
+    }
+  }
 }
 
 module.exports = WhatsAppSender;

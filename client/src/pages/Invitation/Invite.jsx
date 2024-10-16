@@ -6,6 +6,7 @@ import AppBar from '../../components/AppBar/AppBar';
 import './Invite.css';
 import styled, { createGlobalStyle } from 'styled-components';
 import {  Calendar, Clock, MapPin} from 'lucide-react';
+import Portfolio from '../Portfolio/Portfolio/Portfolio';
 
 
 
@@ -174,7 +175,20 @@ const AttendeesInput = styled.input`
   border-radius: 0.25em;
   border: 1px solid #ccc;
 `;
+const Label = styled.label`
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+`;
 
+
+const Input = styled.input`
+  background-color: #ffffff;
+  border: 1px solid #3a3a3a;
+  color: #000000;
+  padding: 0.5rem;
+  border-radius: 4px;
+`;
 
 
 const Invite = ({ eventId: propEventId }) => {
@@ -186,21 +200,72 @@ const Invite = ({ eventId: propEventId }) => {
   const userPhoneNumber = localStorage?.userPhoneNumber;
   const [response, setResponse] = useState('');
   const [attendees, setAttendees] = useState(1);
+  const [showUserName, setShowUserName] = useState(false);
+  const [userDetails, setUserDetails] = useState([]);
+  const [userName, setUserName] = useState('');
+  const [clientObj,setClientObj] = useState([]);
 
 
+
+ 
   useEffect(() => {
+    const fetchClientDetails = async (event) => {
+  
+      try {
+        const response = await API_UTIL.get(`/getClientDetailsByEventId/${event.event_id}`);
+        if (response.status === 200) {
+          setClientObj(response.data);
+        } else {
+          throw new Error("Failed to fetch client Details");
+        }
+      } catch (error) {
+        console.error("Error fetching user thumbnails:", error);
+      } 
+    };
     const fetchEventData = async () => {
       try {
         const response = await API_UTIL.get(`/getEventDetails/${eventId}`);
-        setEvent(response.data);
+        if(response.status ===200){
+          setEvent(response.data);
+          fetchClientDetails(response.data);
+
+        }
       } catch (error) {
         console.error('Error fetching event data:', error);
         toast.error('Failed to fetch event details.');
       }
     };
-
+    const fetchInvitationDetails = async () => {
+  
+      try {
+        const response = await API_UTIL.get(`/getInvitationDetails/${eventId}/${userPhoneNumber}`);
+        if (response.status === 200 && response.data?.invitation_status!=="no") {
+              navigate(`/photosV1/${event.folder_name}/${userDetails.user_id}`)          
+        } 
+      } catch (error) {
+        console.error("Error fetching user invitation:", error);
+      } 
+    };
+    const fetchUserDetails = async () => {
+      try {
+        const response = await API_UTIL.get(`/fetchUserDetails/${userPhoneNumber}`);
+        
+        if(response.status === 200){
+          setUserDetails(response.data.data);
+          fetchInvitationDetails();
+          if(response.data.data.user_name === userPhoneNumber){
+            setShowUserName(true);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user details:', error);
+      }
+    };
     fetchEventData();
-  }, [eventId]);
+    fetchUserDetails();
+  }, [event, eventId, navigate, userDetails, userPhoneNumber]);
+
+
 
   const handleResponse = async (userResponse) => {
     setResponse(userResponse);
@@ -214,8 +279,22 @@ const Invite = ({ eventId: propEventId }) => {
 
       if (apiResponse.status === 200) {
         setResponse(userResponse);
+        if(userName){
+          await API_UTIL.post('/updatePortfolioDetails', {
+            user_phone_number: userPhoneNumber,
+            user_name: userName,
+          });
+        }
+       
+        // await API_UTIL.post('/sendRegistrationMessage',{
+        //   user_phone_number:userPhoneNumber,
+        //   eventName:event.event_name,
+        //   orgName:clientObj.org_name,
+        //   portfolioLink:`https://flashback.wtf/portfolio/${clientObj.user_name}`
+        // })
         toast.success('Event attendance confirmed.');
       }
+
     } catch (error) {
       console.error('Error confirming event attendance:', error);
       toast.error('Failed to confirm attendance. Please try again.');
@@ -291,6 +370,16 @@ const Invite = ({ eventId: propEventId }) => {
         <InvitePageContainer>
             <InviteHeading>Event Invitation</InviteHeading>
             <InviteText>Are you attending the event ?</InviteText>
+            {showUserName &&(
+              <>
+            <Label>Enter your user name : </Label>
+                <Input
+                  type="text"
+                  value={userName}
+                  onChange={(e) => setUserName(e.target.value)}
+                />
+              </> 
+              )}
             <ButtonContainer>
               <InviteButton onClick={() => handleResponse('yes')}>Yes</InviteButton>
               <InviteButton onClick={() => handleResponse('no')}>No</InviteButton>
