@@ -6,7 +6,7 @@ import AppBar from '../../components/AppBar/AppBar';
 import './Invite.css';
 import styled, { createGlobalStyle } from 'styled-components';
 import {  Calendar, Clock, MapPin} from 'lucide-react';
-import Portfolio from '../Portfolio/Portfolio/Portfolio';
+import LoadingSpinner from '../../components/Loader/LoadingSpinner';
 
 
 
@@ -204,6 +204,8 @@ const Invite = ({ eventId: propEventId }) => {
   const [userDetails, setUserDetails] = useState([]);
   const [userName, setUserName] = useState('');
   const [clientObj,setClientObj] = useState([]);
+  const [isLoading, setIsLoading] = useState(true); // Add loading state
+
 
 
 
@@ -220,6 +222,7 @@ const Invite = ({ eventId: propEventId }) => {
         }
       } catch (error) {
         console.error("Error fetching user thumbnails:", error);
+        setIsLoading(false);
       } 
     };
     const fetchEventData = async () => {
@@ -232,6 +235,7 @@ const Invite = ({ eventId: propEventId }) => {
       } catch (error) {
         console.error('Error fetching event data:', error);
         toast.error('Failed to fetch event details.');
+        setIsLoading(false);
       }
     };
  
@@ -242,17 +246,23 @@ const Invite = ({ eventId: propEventId }) => {
     if(event){
       const fetchInvitationDetails = async () => {
   
+        setIsLoading(true);
         try {
           const response = await API_UTIL.get(`/getInvitationDetails/${eventId}/${userPhoneNumber}`);
           if (response.status === 200 && (response.data?.invitation_status ==="yes" || response.data?.invitation_status ==="maybe")) {
                 navigate(`/photosV1/${event.folder_name}/${userDetails.user_id}`)          
           } 
+          else{
+            setIsLoading(false);
+          }
         } catch (error) {
           console.error("Error fetching user invitation:", error);
+          setIsLoading(false);
         } 
       };
       const fetchUserDetails = async () => {
         try {
+          
           const response = await API_UTIL.get(`/fetchUserDetails/${userPhoneNumber}`);
           
           if(response.status === 200){
@@ -264,6 +274,10 @@ const Invite = ({ eventId: propEventId }) => {
           }
         } catch (error) {
           console.error('Error fetching user details:', error);
+          setIsLoading(false);
+        }
+        finally{
+          setIsLoading(false)
         }
       };
       fetchUserDetails();
@@ -294,12 +308,12 @@ const Invite = ({ eventId: propEventId }) => {
           });
         }
        
-        // await API_UTIL.post('/sendRegistrationMessage',{
-        //   user_phone_number:userPhoneNumber,
-        //   eventName:event.event_name,
-        //   orgName:clientObj.org_name,
-        //   portfolioLink:`https://flashback.wtf/portfolio/${clientObj.user_name}`
-        // })
+        await API_UTIL.post('/sendRegistrationMessage',{
+          user_phone_number:userPhoneNumber,
+          eventName:event.event_name,
+          orgName:clientObj.org_name,
+          portfolioLink:`/portfolio/${clientObj.user_name}`
+        })
         toast.success('Event attendance confirmed.');
       }
 
@@ -341,10 +355,17 @@ const Invite = ({ eventId: propEventId }) => {
     return event.trim();
   };
 
-  if (!event) return <div>Loading...</div>;
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
 
   return (
+    <>
+    {isLoading ? (
+      <LoadingSpinner/>
+    ) : (
     <PageWrapper>
+      
       <GlobalStyle />
       <AppBar showCoins={true} />
       <ContentWrapper>
@@ -411,6 +432,8 @@ const Invite = ({ eventId: propEventId }) => {
         </MainContent>
       </ContentWrapper>
     </PageWrapper>
+    )}
+    </>
   );
 };
 

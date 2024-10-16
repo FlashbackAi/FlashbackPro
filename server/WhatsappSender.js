@@ -110,19 +110,19 @@ class WhatsAppSender {
           to: recipientPhoneNumber,
           type: 'template',
           template: {
-            name: 'flashback_event_registration',
+            name: 'registration_confirmation',
             language: {
-              code: 'en'
+              code: 'en_US'
             },
             components: [
               {
                 type: 'body',
                 parameters: [
                   { type: 'text', text: eventName },
-                  { type: 'text', text: orgName },
-                  { type: 'text', text: PortfolioLink }
+                  { type: 'text', text: orgName }
                 ]
-              },{
+              }
+              ,{
                 type: 'button',
                 sub_type: 'url',
                 index: 0,
