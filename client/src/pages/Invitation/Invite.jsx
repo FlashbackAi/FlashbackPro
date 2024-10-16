@@ -239,7 +239,7 @@ const Invite = ({ eventId: propEventId }) => {
   
       try {
         const response = await API_UTIL.get(`/getInvitationDetails/${eventId}/${userPhoneNumber}`);
-        if (response.status === 200 && response.data?.invitation_status!=="no") {
+        if (response.status === 200 && (response.data?.invitation_status ==="yes" || response.data?.invitation_status ==="maybe")) {
               navigate(`/photosV1/${event.folder_name}/${userDetails.user_id}`)          
         } 
       } catch (error) {
