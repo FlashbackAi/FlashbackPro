@@ -263,7 +263,7 @@ const Invite = ({ eventId: propEventId }) => {
     };
     fetchEventData();
     fetchUserDetails();
-  }, [event, eventId, navigate, userDetails, userPhoneNumber]);
+  }, [eventId]);
 
 
 
