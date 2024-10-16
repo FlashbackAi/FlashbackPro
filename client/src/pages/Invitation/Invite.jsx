@@ -228,42 +228,50 @@ const Invite = ({ eventId: propEventId }) => {
         if(response.status ===200){
           setEvent(response.data);
           fetchClientDetails(response.data);
-
         }
       } catch (error) {
         console.error('Error fetching event data:', error);
         toast.error('Failed to fetch event details.');
       }
     };
-    const fetchInvitationDetails = async () => {
-  
-      try {
-        const response = await API_UTIL.get(`/getInvitationDetails/${eventId}/${userPhoneNumber}`);
-        if (response.status === 200 && (response.data?.invitation_status ==="yes" || response.data?.invitation_status ==="maybe")) {
-              navigate(`/photosV1/${event.folder_name}/${userDetails.user_id}`)          
-        } 
-      } catch (error) {
-        console.error("Error fetching user invitation:", error);
-      } 
-    };
-    const fetchUserDetails = async () => {
-      try {
-        const response = await API_UTIL.get(`/fetchUserDetails/${userPhoneNumber}`);
-        
-        if(response.status === 200){
-          setUserDetails(response.data.data);
-          fetchInvitationDetails();
-          if(response.data.data.user_name === userPhoneNumber){
-            setShowUserName(true);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching user details:', error);
-      }
-    };
+ 
     fetchEventData();
-    fetchUserDetails();
   }, [eventId]);
+
+  useEffect(() =>{
+    if(event){
+      const fetchInvitationDetails = async () => {
+  
+        try {
+          const response = await API_UTIL.get(`/getInvitationDetails/${eventId}/${userPhoneNumber}`);
+          if (response.status === 200 && (response.data?.invitation_status ==="yes" || response.data?.invitation_status ==="maybe")) {
+                navigate(`/photosV1/${event.folder_name}/${userDetails.user_id}`)          
+          } 
+        } catch (error) {
+          console.error("Error fetching user invitation:", error);
+        } 
+      };
+      const fetchUserDetails = async () => {
+        try {
+          const response = await API_UTIL.get(`/fetchUserDetails/${userPhoneNumber}`);
+          
+          if(response.status === 200){
+            setUserDetails(response.data.data);
+            fetchInvitationDetails();
+            if(response.data.data.user_name === userPhoneNumber){
+              setShowUserName(true);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching user details:', error);
+        }
+      };
+      fetchUserDetails();
+    }
+
+  },[event])
+
+  
 
 
 
@@ -320,7 +328,7 @@ const Invite = ({ eventId: propEventId }) => {
         });
   
         toast.success('Event attendance confirmed.');
-        navigate('/dashboard');
+        navigate(`/photosV1/${event.folder_name}/${userDetails.user_id}`) ;
       }
     } catch (error) {
       console.error('Error confirming event attendance:', error);
