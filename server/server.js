@@ -2970,6 +2970,7 @@ app.post('/downloadImage', async (req, res) => {
           if(!existingUser){
           await createUser(username,userSource,role,reward_points);
           console.log("created sucessfulyy ->"+username)
+          logger.info('Successfully created new user: ', username);
           }
           const updateParamsUserEvent = {
             TableName: userEventTableName,
