@@ -34,7 +34,8 @@ const crypto = require('crypto');
 //const aptosClient = new Aptos(config);
 //const aptosClient = new AptosClient(aptosConfig.APTOS_NODE_URL);
 const config = new AptosConfig({ network: Network.MAINNET});
-  const aptosClient = new Aptos(config);
+const aptosClient = new Aptos(config);
+const schedule = require('node-schedule');
 const oldEvents = ["Aarthi_Vinay_19122021","Convocation_PrathimaCollege","KSL_25042024","Jahnavi_Vaishnavi_SC_28042024","KSL_22052024","KSL_16052024","V20_BootCamp_2024","Neha_ShivaTeja_18042024"]
 const APTOS_AMOUNT = 3;
 const CHEWY_AMOUNT =1000;
@@ -1406,24 +1407,23 @@ async function deleteOTP(phoneNumber) {
 //   });
 
 app.post('/sendRegistrationMessage', async (req, res) => {
-  const { user_phone_number,eventName,orgName, portfolioLink} = req.body;
-  
-  try {
+  const { user_phone_number,eventId,orgName, portfolioLink} = req.body;
+
    
     try {
     // Send the OTP via WhatsApp
-    const event = eventName.split('_').join(' ');
+    const eventDetails = await getEventDetailsById(eventId);
+    const event = eventDetails.event_name.split('_').join(' ');
 
     await whatsappSender.sendRegistrationMessage(user_phone_number,event,orgName,portfolioLink)
+    
+    await scheduleEventReminder(user_phone_number,eventDetails,orgName);
+
     res.status(200).json({ message: 'Message sent successfully' });
   } catch (whatsappError) {
     logger.error('Error sending Message via WhatsApp:', whatsappError);
     
     res.status(500).json({ message: 'Message sent unsuccessfully' });
-  }
-  } catch (error) {
-    logger.error('Error sending OTP:', error);
-    res.status(500).json({ error: 'Error sending Message' });
   }
 });
 
@@ -8881,6 +8881,122 @@ app.get("/getInvitationDetails/:eventId/:userPhoneNumber", async (req, res) => {
     res.status(500).send(err.message);
   }
 });
+
+(async function() {
+  try {
+      // await recoverMissedJobs();
+      logger.info('Missed jobs recovered successfully');
+  } catch (error) {
+      console.error('Error recovering missed jobs:', error);
+  }
+})();
+
+// API to schedule job with multiple notifications
+app.post('/schedule', async (req, res) => {
+  const { userPhoneNumber, eventId, orgName } = req.body;
+
+  if (!userPhoneNumber || !eventId ||  !orgName) {
+      return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  try {
+    const event = await getEventDetailsById(eventId);
+      const jobs = await scheduleEventReminder(userPhoneNumber, event, orgName);
+      res.status(200).json({ jobs, message: 'Jobs scheduled successfully' });
+  } catch (error) {
+      console.error('Error scheduling job:', error);
+      res.status(500).json({ error: 'Failed to schedule jobs' });
+  }
+});
+
+
+
+async function scheduleEventReminder(userPhoneNumber, event, orgName) {
+  const jobs = [];
+  try {
+    const now = new Date();
+    const eventDateObj = new Date(event.event_date);
+
+    // Check if the event date has already passed
+    if (now > eventDateObj) {
+      logger.info(`Event ${event.event_id} has already passed, no reminders will be sent.`);
+      return jobs; // Skip reminder scheduling if the event has passed
+    }
+
+    const notifications = [];
+
+    // Notification 1: One day before at 08:00 AM
+    const notification1 = new Date(eventDateObj);
+    notification1.setDate(eventDateObj.getDate() - 1); // Set to one day before
+    notification1.setHours(8, 0, 0, 0); // Set time to 08:00 AM
+
+    // Notification 2: On the day of the event at 08:00 AM
+    const notification2 = new Date(eventDateObj);
+    notification2.setHours(8, 0, 0, 0); // Set time to 08:00 AM
+
+    // Add both notifications to the array if they are in the future
+    if (notification1 > now) {
+      notifications.push({'time':notification1,'day':'Tomorrow'}); // One day before reminder
+    }
+    if (notification2 > now) {
+      notifications.push({'time':notification2,'day':'Today'}); // Event day reminder
+    }
+
+    for (let notification of notifications) {
+      const jobId = uuidv4();
+      const jobData = {
+        job_id: jobId,
+        user_phone_number: userPhoneNumber,
+        event_id: event.event_id,
+        event_time: event.event_time,
+        notification_time: notification.time.toISOString(),
+        status: 'pending',
+      };
+
+      // Save job in DynamoDB
+      const params = {
+        TableName: 'scheduled_jobs',
+        Item: jobData,
+      };
+      await docClient.put(params).promise();
+
+      // Schedule the job
+      const job = schedule.scheduleJob(notification.time, function () {
+        logger.info(`Reminder: Your event ${event.event_id} is scheduled for ${event.event_time}`);
+        completeJob(jobId, notification.day, userPhoneNumber, event); // Mark job as completed in DynamoDB
+      });
+      jobs.push(jobId);
+      logger.info(job);
+    }
+  } catch (err) {
+    logger.info(err.message);
+    throw new Error(err.message);
+  }
+  return jobs;
+}
+
+
+// Mark job as completed
+async function completeJob(jobId, day, userPhoneNumber, event) {
+  try{
+  const params = {
+      TableName: 'scheduled_jobs',
+      Key: { job_id: jobId },
+      UpdateExpression: 'set #status = :status',
+      ExpressionAttributeNames: { '#status': 'status' },
+      ExpressionAttributeValues: { ':status': 'completed' }
+  };
+  const eventName  = event.event_name.split('_').join(' ');
+  const eventTime = event.event_date.split('T')[1];
+  
+  await docClient.update(params).promise();
+  await whatsappSender.sendEventReminder(userPhoneNumber, day, eventName, eventTime, event.event_location, "/")
+  logger.info("Scheduled Job executed successfully");
+  }catch(err){
+    logger.error(err.message);
+    throw new Error("Error in running scheduled job");
+  }
+}
 
 
 
