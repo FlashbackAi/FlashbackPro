@@ -1,6 +1,6 @@
 const winston = require('winston');
 const WinstonCloudWatch = require('winston-cloudwatch');
-const { ENV } = require('./config');
+const { ENV, AWS} = require('./config', 'aws-sdk');
 
 
 const logFormat = winston.format.combine(
