@@ -1,5 +1,4 @@
 const express = require('express');
-const winston = require('winston');
 const multer = require('multer');
 const multerS3 = require('multer-s3');
 const cors = require('cors');
@@ -26,9 +25,9 @@ const ExcelJS = require('exceljs');
 const dotenv = require('dotenv');
 const rateLimit = require('express-rate-limit');
 const WhatsAppSender = require('./WhatsappSender');
-const WinstonCloudWatch = require('winston-cloudwatch');
 const { v4: uuidv4 } = require('uuid');
 const { log } = require('console');
+const logger = require('./logger');
 //const App = require('..\\client');
 const oldEvents = ["Aarthi_Vinay_19122021","Convocation_PrathimaCollege","KSL_25042024","Jahnavi_Vaishnavi_SC_28042024","KSL_22052024","KSL_16052024","V20_BootCamp_2024","Neha_ShivaTeja_18042024"]
 
@@ -70,37 +69,6 @@ server.listen(PORT, () => {
 });
 
 // Server config end
-
-
-const logFormat = winston.format.combine(
-    winston.format.timestamp({
-      format: 'YYYY-MM-DD HH:mm:ss'
-    }),
-    winston.format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`)
-  );
-  
-const logger = winston.createLogger({
-  level: ENV === 'production' ? 'info' : 'debug',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({ filename: 'logs/application.log' }),
-    new WinstonCloudWatch({
-      logGroupName: 'Flashback/ApplicationLogs',
-      logStreamName: `${ENV}-${new Date().toISOString().split('T')[0]}`,
-      awsRegion: 'ap-south-1',
-      jsonMessage: true,
-      messageFormatter: ({ level, message, additionalInfo }) => 
-        JSON.stringify({ level, message, additionalInfo, timestamp: new Date().toISOString() }),
-      uploadRate: 2000,
-      retentionInDays: 14,
-      errorHandler: (err) => console.error('CloudWatch error', err)
-    })
-  ]
-});
 
 const whatsappSender = new WhatsAppSender(
   dotenv.config.WHATSAPP_ACCESS_TOKEN,
