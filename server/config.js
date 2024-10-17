@@ -1,6 +1,9 @@
 
 const AWS = require('aws-sdk');
 const AmazonCognitoIdentity = require('amazon-cognito-identity-js');
+
+const ENV = process.env.NODE_ENV || 'production';  // Change this to ```production``` for production build & ```development``` for local dev/test
+
 AWS.config.region = 'ap-south-1';
 
 // Set the AWS SDK region
@@ -26,6 +29,7 @@ const poolData = {
 const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
 
 module.exports = {
+  ENV: ENV,
   AWS: AWS,
   AmazonCognitoIdentity: AmazonCognitoIdentity,
   userPool: userPool,

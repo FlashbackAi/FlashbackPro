@@ -4,6 +4,7 @@ const multer = require('multer');
 const multerS3 = require('multer-s3');
 const cors = require('cors');
 const sharp = require('sharp');
+const http = require('http');
 const path = require('path');
 const fs = require('fs');
 const { AWS, AmazonCognitoIdentity, userPool, whatsapp } = require('./config', 'aws-sdk');
@@ -14,6 +15,8 @@ const { fold, last } = require('prelude-ls');
 const { func } = require('prop-types');
 const app = express();
 const PORT = process.env.PORT || 5000;
+const { ENV } = require('./config');
+const logger = require('./Logger/logger');
 const base64 = require('base64-js');
 const { Readable } = require('stream');
 const axios = require('axios');
@@ -24,6 +27,7 @@ const ExcelJS = require('exceljs');
 const dotenv = require('dotenv');
 const rateLimit = require('express-rate-limit');
 const WhatsAppSender = require('./WhatsappSender');
+const WinstonCloudWatch = require('winston-cloudwatch');
 const { v4: uuidv4 } = require('uuid');
 const { log } = require('console');
 //const App = require('..\\client');
@@ -40,6 +44,33 @@ app.use(express.json({ limit: '15mb' }));
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "SSR"));
 app.use(express.static(path.join(__dirname, "SSR/public")));
+
+// Server Configuration Start
+let server;
+
+if (ENV === 'production') {
+
+const privateKey = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/privkey.pem', 'utf8');
+const certificate = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/fullchain.pem', 'utf8');
+
+const credentials = {
+  key: privateKey,
+  cert: certificate
+}
+
+  server = https.createServer(credentials, app);
+} else {
+  console.log('Running server on development')
+  server = http.createServer(app);
+}
+
+server.listen(PORT, () => {
+  logger.info(`Server is running in ${ENV} mode on ${ENV === 'production' ? 'https' : 'http'}://localhost:${PORT}`);
+  server.keepAliveTimeout = 60000;
+  server.headersTimeout = 65000;
+});
+
+// Server config end
 
 const whatsappSender = new WhatsAppSender(
   dotenv.config.WHATSAPP_ACCESS_TOKEN,
@@ -71,44 +102,6 @@ app.get("/share/:eventName/:userId", async(req, res) => {
       res.status(500).send('Error getting images from S3');
   }
 });
-
-// SSR ends
-
-// // Configuring winston application logger
-
-// const logger = winston.createLogger({
-//   transports: [
-//     new winston.transports.Console(),
-//     new winston.transports.File({ filename: 'logs/application.log' })
-//    ]
-//  });
-
-
-// Create a format that includes the timestamp
-const logFormat = winston.format.combine(
-  winston.format.timestamp({
-    format: 'YYYY-MM-DD HH:mm:ss'  // This is the default format, you can customize it
-  }),
-  winston.format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`)
-);
-
-// Create the logger
-const logger = winston.createLogger({
-  format: logFormat,  // Apply the log format
-  transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({ filename: 'logs/application.log' })
-  ]
-});
-
-//  // *** Comment these certificates while testing changes in local developer machine. And, uncomment while pushing to mainline***
-const privateKey = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/privkey.pem', 'utf8');
-const certificate = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/fullchain.pem', 'utf8');
-
-const credentials = {
-  key: privateKey,
-  cert: certificate
-}
 
 // Set up AWS S3
 const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.js
@@ -7634,20 +7627,3 @@ app.post('/backfillFolderNames', async (req, res) => {
     res.status(500).send('Error occurred during backfilling folder_name');
   }
 });
-
-
-
-  const httpsServer = https.createServer(credentials, app);
-
-  httpsServer.listen(PORT, () => {
-    logger.info(`Server is running on https://localhost:${PORT}`);
-    httpsServer.keepAliveTimeout = 60000; // Increase keep-alive timeout
-    httpsServer.headersTimeout = 65000; // Increase headers timeout
-  });
-
-// **Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
-//  const server = app.listen(PORT ,() => {
-//  logger.info(`Server started on http://localhost:${PORT}`);
-//  server.keepAliveTimeout = 60000; // Increase keep-alive timeout
-//  server.headersTimeout = 65000; // Increase headers timeout
-//  });
