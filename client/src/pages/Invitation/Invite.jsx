@@ -46,10 +46,9 @@ const ContentWrapper = styled.div`
 `;
 
 const SidePanel = styled.div`
-  flex: 0 0 300px;
   background-color: #1e1e1e;
   border-radius: 1rem;
-  padding: 1.5rem;
+  padding: 0.5rem;
   height: fit-content;
 
   @media (max-width: 768px) {
@@ -59,10 +58,9 @@ const SidePanel = styled.div`
 
 const EventImage = styled.div`
   width: 100%;
-  height: 200px;
+  height: 100%;
   border-radius: 1rem;
   overflow: hidden;
-  margin-bottom: 1.5rem;
   position: relative;
 
   img {
@@ -73,12 +71,13 @@ const EventImage = styled.div`
 `;
 
 const EventTitle = styled.h1`
-  font-size: 1.5rem;
+  font-size: 4rem;
   font-weight: 700;
   margin-bottom: 1rem;
   background: linear-gradient(90deg, #66d3ff, #9a6aff 38%, #ee75cb 71%, #fd4d77);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+ 
 `;
 
 const EventInfo = styled.div`
@@ -91,8 +90,21 @@ const EventInfo = styled.div`
 const InfoItem = styled.div`
   display: flex;
   align-items: center;
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: white;
+
+  svg {
+    margin-right: 0.5rem;
+    color: #00ffff;
+  }
+`;
+
+const InfoHeader = styled.div`
+  display: flex;
+  align-items: center;
+  font-size: 2rem;
+  color: #beb8b8;
+  margin-top:1em;
 
   svg {
     margin-right: 0.5rem;
@@ -109,13 +121,18 @@ const MainContent = styled.div`
   min-width: 0;
 `;
 
+const TopSection = styled.div`
+
+ text-align:center
+`
+
 // Styled Components
 const InvitePageContainer = styled.div`
-  max-width: 37.5em; /* 600px */
-  margin: 3.125em auto; /* 50px */
-  padding: 1.25em; /* 20px */
-  border-radius: 0.5em; /* 8px */
-  box-shadow: 0 0 0.625em rgba(0, 0, 0, 0.1); /* 10px */
+  max-width: 37.5rem; /* 600px */
+  margin: 1.125rem auto;
+  padding: 1.25rem; /* 20px */
+  border-radius: 0.5rem; /* 8px */
+  box-shadow: 0 0 0.625rem rgba(0, 0, 0, 0.1); /* 10px */
   font-family: 'Arial', sans-serif;
 `;
 
@@ -128,9 +145,9 @@ const InviteHeading = styled.h1`
 `;
 
 const InviteText = styled.p`
-  font-size: 1em; /* 16px */
+  font-size: 2em; /* 16px */
   color: white;
-  margin-bottom: 1.875em; /* 30px */
+  margin-bottom: 1em; 
   text-align: center;
 `;
 
@@ -142,7 +159,7 @@ const ButtonContainer = styled.div`
 const InviteButton = styled.button`
   width: 48%;
   padding: 0.625em; /* 10px */
-  font-size: 0.875em; /* 14px */
+  font-size: 1em; /* 14px */
   font-weight: bold;
   color: #fff;
   margin-top:1em;
@@ -310,7 +327,7 @@ const Invite = ({ eventId: propEventId }) => {
        
         await API_UTIL.post('/sendRegistrationMessage',{
           user_phone_number:userPhoneNumber,
-          eventName:event.event_name,
+          eventId:event.event_id,
           orgName:clientObj.org_name,
           portfolioLink:`/portfolio/${clientObj.user_name}`
         })
@@ -373,31 +390,40 @@ const Invite = ({ eventId: propEventId }) => {
           <EventImage>
             <img src={event.event_image} alt="Event" />
           </EventImage>
-          <EventTitle>{formatEventName(event?.event_name)}</EventTitle>
-          <EventInfo>
-            <InfoItem>
-              <Calendar size={18} />
-              {event.event_date && !isNaN(Date.parse(event.event_date)) 
-                ? new Date(event.event_date).toLocaleDateString() 
-                : 'Date not set'}
-            </InfoItem>
-            <InfoItem>
-              <Clock size={18} />
-              {event.event_date && !isNaN(new Date(event.event_date).getTime()) 
-              ? new Date(event.event_date).toLocaleTimeString() 
-              : 'Time not set'}
-
-            </InfoItem>
-            <InfoItem>
-              <MapPin size={18} />
-              {event.event_location || 'Location not set'}
-            </InfoItem>
-          </EventInfo>
-
+          
         </SidePanel>
         <MainContent>
+          <TopSection>
+          <EventTitle>{formatEventName(event?.event_name)}</EventTitle>
+            <EventInfo>
+              <InfoHeader>WHEN</InfoHeader>
+              <InfoItem>
+                <Calendar size={18} />
+                {event.event_date && !isNaN(Date.parse(event.event_date)) 
+                  ? new Date(event.event_date).toLocaleDateString('en-US', {
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric'
+                    }) 
+                  : 'Date not set'}
+              </InfoItem>
+              <InfoItem>
+                <Clock size={18} />
+                {event.event_date && !isNaN(new Date(event.event_date).getTime()) 
+                ? new Date(event.event_date).toLocaleTimeString() 
+                : 'Time not set'}
+
+              </InfoItem>
+              <InfoHeader>WHERE</InfoHeader>
+              <InfoItem>
+                <MapPin size={18} />
+                {event.event_location || 'Location not set'}
+              </InfoItem>
+            </EventInfo>
+          </TopSection>
+
         <InvitePageContainer>
-            <InviteHeading>Event Invitation</InviteHeading>
             <InviteText>Are you attending the event ?</InviteText>
             {showUserName &&(
               <>

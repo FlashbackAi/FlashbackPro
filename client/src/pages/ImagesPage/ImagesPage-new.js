@@ -19,6 +19,8 @@
   import { motion, AnimatePresence } from 'framer-motion';
   import styled, { createGlobalStyle } from 'styled-components';
   import Invite from "../Invitation/Invite";
+  
+import defaultBanner from '../../media/images/defaultbanner.jpg';
 
 
 
@@ -507,22 +509,35 @@ const ImageWrapper = styled.div`
     }, [fetchImages, hasMore, isGalleryLoading]);
     
 
-    const fetchPortfolioImages = async (user_name) => {
-      try {
-        const response = await API_UTIL.get(`/getBannerImage/${user_name}`);
-        if (response.status !== 200) {
-          
-            setBannerImg('')
+    const fetchPortfolioImages = async (userName) => {
+      console.log('Fetching portfolioImage with username:', userName);
+      if (userName) {
+        try {
+          const response = await API_UTIL.get(`/getBannerImage/${userName}`);
+          if (response.data && response.data.imageUrl) {
+            console.log('[fetchPortfolioImages] Response from bannerImage url: ', response.data.imageUrl);
+            const formattedUrl = encodeURIWithPlus(response.data.imageUrl);
+            console.log('[fetchPortfolioImages] Formatted url: ', formattedUrl);
+            setBannerImg(`${formattedUrl}?t=${Date.now()}`);
+          } else {
+            setBannerImg(defaultBanner);
+          }
+        } catch (error) {
+          console.error('Error fetching banner image:', error);
+          setBannerImg(defaultBanner);
         }
-        setBannerImg(response.data.imageUrl.replace(/ /g, "%20"));
-        
-      } catch (error) {
-        console.error('Error fetching portfolio images:', error);
+      } else {
+        setBannerImg(defaultBanner);
       }
     };
+  
+    const encodeURIWithPlus = (uri) => {
+      return uri.replace(/ /g, '+');
+    };
+  
 
     const fetchAllImages = async () => {
-      if(userId === undefined){
+      if(userId !== "undefined"){
         fetchFavouriteImages()
       }
       

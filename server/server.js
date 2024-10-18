@@ -1417,7 +1417,7 @@ app.post('/sendRegistrationMessage', async (req, res) => {
 
     await whatsappSender.sendRegistrationMessage(user_phone_number,event,orgName,portfolioLink)
     
-    await scheduleEventReminder(user_phone_number,eventDetails,orgName);
+    await scheduleEventReminder(user_phone_number,eventDetails,portfolioLink);
 
     res.status(200).json({ message: 'Message sent successfully' });
   } catch (whatsappError) {
@@ -6974,7 +6974,7 @@ app.get('/getBannerImage/:userName', async (req, res) => {
       logger.info(`fetched banner: ${imageUrl}`);
       res.json({ imageUrl });
     } else {
-      logger.info('Banner image not found');
+      res.json({ });
     }
   } catch (error) {
     console.error('Error fetching banner image:', error);
@@ -8884,7 +8884,7 @@ app.get("/getInvitationDetails/:eventId/:userPhoneNumber", async (req, res) => {
 
 (async function() {
   try {
-      // await recoverMissedJobs();
+      // await rescheduleJobs();
       logger.info('Missed jobs recovered successfully');
   } catch (error) {
       console.error('Error recovering missed jobs:', error);
@@ -8911,7 +8911,7 @@ app.post('/schedule', async (req, res) => {
 
 
 
-async function scheduleEventReminder(userPhoneNumber, event, orgName) {
+async function scheduleEventReminder(userPhoneNumber, event, portfolioLink) {
   const jobs = [];
   try {
     const now = new Date();
@@ -8948,8 +8948,11 @@ async function scheduleEventReminder(userPhoneNumber, event, orgName) {
         job_id: jobId,
         user_phone_number: userPhoneNumber,
         event_id: event.event_id,
-        event_time: event.event_time,
-        notification_time: notification.time.toISOString(),
+        event_date: event.event_date,
+        event_location: event_location,
+        job_day:notification.day,
+        notification_time: notification.time,
+        portfolio_link: portfolioLink,
         status: 'pending',
       };
 
@@ -8963,8 +8966,8 @@ async function scheduleEventReminder(userPhoneNumber, event, orgName) {
       // Schedule the job
       const job = schedule.scheduleJob(notification.time, function () {
         logger.info(`Reminder: Your event ${event.event_id} is scheduled for ${event.event_time}`);
-        completeJob(jobId, notification.day, userPhoneNumber, event); // Mark job as completed in DynamoDB
-      });
+        completeJob(jobId, notification.day, userPhoneNumber, event,portfolioLink); // Mark job as completed in DynamoDB
+      }); 
       jobs.push(jobId);
       logger.info(job);
     }
@@ -8977,7 +8980,7 @@ async function scheduleEventReminder(userPhoneNumber, event, orgName) {
 
 
 // Mark job as completed
-async function completeJob(jobId, day, userPhoneNumber, event) {
+async function completeJob(jobId, day, userPhoneNumber, event, portfolioLink) {
   try{
   const params = {
       TableName: 'scheduled_jobs',
@@ -8990,7 +8993,7 @@ async function completeJob(jobId, day, userPhoneNumber, event) {
   const eventTime = event.event_date.split('T')[1];
   
   await docClient.update(params).promise();
-  await whatsappSender.sendEventReminder(userPhoneNumber, day, eventName, eventTime, event.event_location, "/")
+  await whatsappSender.sendEventReminder(userPhoneNumber, day, eventName, eventTime, event.event_location, portfolioLink);
   logger.info("Scheduled Job executed successfully");
   }catch(err){
     logger.error(err.message);
@@ -8998,6 +9001,53 @@ async function completeJob(jobId, day, userPhoneNumber, event) {
   }
 }
 
+// Fetch jobs from DynamoDB
+async function fetchPendingJobs() {
+  const params = {
+      TableName: 'scheduled_jobs',
+      FilterExpression: "#status = :status",
+      ExpressionAttributeNames: {
+          "#status": "status"
+      },
+      ExpressionAttributeValues: {
+          ":status": "pending"
+      }
+  };
+  const result = await docClient.scan(params).promise();
+  return result.Items;
+}
+
+// New function to handle job execution or scheduling
+async function handleJobExecution(jobId, jobDay, userPhoneNumber,event, portfolioLink) {
+  const executionTime = new Date(job.execution_time);
+  const now = new Date();
+
+  // Check if the execution time is in the past
+  if (executionTime < now) {
+      logger.info(`The notification time for event ${event.event_id} has passed.`);
+      
+      // Trigger the job immediately if the time has passed
+      completeJob(jobId, jobDay, userPhoneNumber, event, portfolioLink);
+  } else {
+      // Schedule the job at the correct time if it's in the future
+      const scheduledJob = schedule.scheduleJob(executionTime, function () {
+          logger.info(`Reminder: Your event ${event.event_id} is scheduled for ${event.event_time}`);
+          completeJob(jobId, jobDay, userPhoneNumber, event, portfolioLink); // Mark job as completed in DynamoDB
+      });
+      
+      logger.info(`Scheduled job for event ${event.event_id} at ${executionTime}`);
+  }
+}
+
+// Main function to reschedule jobs
+async function rescheduleJobs() {
+  const jobs = await fetchPendingJobs();
+
+  for (const job of jobs) {
+      const event = await getEventDetailsById(job.event_id); // Fetch event details by ID
+      await handleJobExecution(job, event); // Call the new function for handling each job
+  }
+}
 
 
 
