@@ -8884,7 +8884,7 @@ app.get("/getInvitationDetails/:eventId/:userPhoneNumber", async (req, res) => {
 
 (async function() {
   try {
-      // await rescheduleJobs();
+       await rescheduleJobs();
       logger.info('Missed jobs recovered successfully');
   } catch (error) {
       console.error('Error recovering missed jobs:', error);
@@ -8909,7 +8909,11 @@ app.post('/schedule', async (req, res) => {
   }
 });
 
+function formatDateForScheduling(date) {
+  const pad = (n) => (n < 10 ? '0' + n : n);
 
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
 
 async function scheduleEventReminder(userPhoneNumber, event, portfolioLink) {
   const jobs = [];
@@ -8945,6 +8949,7 @@ async function scheduleEventReminder(userPhoneNumber, event, portfolioLink) {
 
     for (let notification of notifications) {
       const jobId = uuidv4();
+    const formattedDate = formatDateForScheduling(notification.time);
       const jobData = {
         job_id: jobId,
         user_phone_number: userPhoneNumber,
@@ -8952,7 +8957,7 @@ async function scheduleEventReminder(userPhoneNumber, event, portfolioLink) {
         event_date: event.event_date,
         event_location: event.event_location,
         job_day:notification.day,
-        notification_time: notification.time,
+        notification_time: formattedDate,
         portfolio_link: portfolioLink,
         status: 'pending',
       };
@@ -9027,16 +9032,17 @@ async function fetchPendingJobs() {
 }
 
 // New function to handle job execution or scheduling
-async function handleJobExecution(jobId, jobDay, userPhoneNumber,event, portfolioLink) {
-  const executionTime = new Date(job.execution_time);
+async function handleJobExecution(jobId, time,jobDay, userPhoneNumber,event, portfolioLink) {
+  const executionTime = new Date(time);
   const now = new Date();
-
+  logger.info(executionTime);
   // Check if the execution time is in the past
   if (executionTime < now) {
       logger.info(`The notification time for event ${event.event_id} has passed.`);
       
       // Trigger the job immediately if the time has passed
       completeJob(jobId, jobDay, userPhoneNumber, event, portfolioLink);
+      logger.info("Succesfully rescheduled job with JobId: ",jobId," executionTime: ",executionTime);
   } else {
       // Schedule the job at the correct time if it's in the future
       const scheduledJob = schedule.scheduleJob(executionTime, function () {
@@ -9054,19 +9060,19 @@ async function rescheduleJobs() {
 
   for (const job of jobs) {
       const event = await getEventDetailsById(job.event_id); // Fetch event details by ID
-      await handleJobExecution(job.job_id,job.job_day,job.user_phone_number, event,job.portfolio_link); // Call the new function for handling each job
+      await handleJobExecution(job.job_id,job.notification_time,job.job_day,job.user_phone_number, event,job.portfolio_link); // Call the new function for handling each job
   }
 }
 
 
 
-  const httpsServer = https.createServer(credentials, app);
+  // const httpsServer = https.createServer(credentials, app);
 
-  httpsServer.listen(PORT, () => {
-    logger.info(`Server is running on https://localhost:${PORT}`);
-    httpsServer.keepAliveTimeout = 60000; // Increase keep-alive timeout
-    httpsServer.headersTimeout = 65000; // Increase headers timeout
-  });
+  // httpsServer.listen(PORT, () => {
+  //   logger.info(`Server is running on https://localhost:${PORT}`);
+  //   httpsServer.keepAliveTimeout = 60000; // Increase keep-alive timeout
+  //   httpsServer.headersTimeout = 65000; // Increase headers timeout
+  // });
 
 // **Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
 // const server = app.listen(PORT ,() => {
