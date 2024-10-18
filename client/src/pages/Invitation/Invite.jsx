@@ -7,6 +7,10 @@ import './Invite.css';
 import styled, { createGlobalStyle } from 'styled-components';
 import {  Calendar, Clock, MapPin} from 'lucide-react';
 import LoadingSpinner from '../../components/Loader/LoadingSpinner';
+import Modal from 'react-modal';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X } from 'lucide-react';
+
 
 
 
@@ -36,8 +40,9 @@ const ContentWrapper = styled.div`
   display: flex;
   padding: 1rem;
   gap: 1rem;
+  overflow-y: auto;
   max-width: 100%;
-  margin: 0 auto;
+  margin-bottom:6em;
 
   @media (max-width: 768px) {
     flex-direction: column;
@@ -128,12 +133,23 @@ const TopSection = styled.div`
 
 // Styled Components
 const InvitePageContainer = styled.div`
-  max-width: 37.5rem; /* 600px */
-  margin: 1.125rem auto;
+  height:5em;
+  width: 100%;
+  position: fixed;
+  bottom: 0;
+  left: 0;
   padding: 1.25rem; /* 20px */
-  border-radius: 0.5rem; /* 8px */
+  background-color: rgba(0, 0, 0, 0.5);
   box-shadow: 0 0 0.625rem rgba(0, 0, 0, 0.1); /* 10px */
   font-family: 'Arial', sans-serif;
+  z-index: 10; /* Ensure it's above other content */
+  margin-left: 1em;
+  margin-right: 1em;
+  text-align: center;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
 `;
 
 const InviteHeading = styled.h1`
@@ -144,7 +160,7 @@ const InviteHeading = styled.h1`
   text-align: center;
 `;
 
-const InviteText = styled.p`
+const InviteText = styled.span`
   font-size: 2em; /* 16px */
   color: white;
   margin-bottom: 1em; 
@@ -153,11 +169,11 @@ const InviteText = styled.p`
 
 const ButtonContainer = styled.div`
   display: flex;
-  gap: 0.25em; /* 4px */
+  gap: 1.5em; /* 4px */
 `;
 
 const InviteButton = styled.button`
-  width: 48%;
+  width: 35%;
   padding: 0.625em; /* 10px */
   font-size: 1em; /* 14px */
   font-weight: bold;
@@ -184,14 +200,54 @@ const InviteButton = styled.button`
   }
 `;
 
+
+const AttendeesInputContainer = styled.div`
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin-top: 1em;
+`;
+
+const AttendeesButton = styled.button`
+  background-color: #b57156;
+  color: white;
+  border: none;
+  font-size: 1.5em;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  border-radius: 0.25em;
+  transition: background-color 0.3s ease;
+
+  &:hover {
+    background-color: #9f5b47;
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  &:disabled {
+    background-color: #d3d3d3;
+    cursor: not-allowed;
+  }
+`;
+
 const AttendeesInput = styled.input`
   width: 100%;
   padding: 0.625em;
-  margin-top: 1em;
   font-size: 1em;
+  text-align: center;
   border-radius: 0.25em;
   border: 1px solid #ccc;
+  margin: 0 0.5em; /* Add margin to make space for buttons */
 `;
+
+
+
 const Label = styled.label`
   color: #ffffff;
   margin-bottom: 0.5rem;
@@ -205,6 +261,57 @@ const Input = styled.input`
   color: #000000;
   padding: 0.5rem;
   border-radius: 4px;
+`;
+
+const StyledModal = styled(Modal)`
+  &.modal-content {
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    max-width: 100%;
+    width: auto;
+    margin: 0;
+    outline: none;
+  }
+`;
+
+  const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
+
+const ModalContent = styled(motion.div)`
+  background-color: #1e1e1e;
+  padding: 2rem;
+  border-radius: 1.25rem;
+  max-width: 31.25rem;
+  width: 90%;
+  color: #ffffff;
+  position: relative;
+  max-height: 80vh;
+  overflow-y: auto;
+`;
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 1.5rem;
+  cursor: pointer;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  transition: color 0.3s ease;
+
+  &:hover {
+    color: #00ffff;
+  }
 `;
 
 
@@ -222,10 +329,8 @@ const Invite = ({ eventId: propEventId }) => {
   const [userName, setUserName] = useState('');
   const [clientObj,setClientObj] = useState([]);
   const [isLoading, setIsLoading] = useState(true); // Add loading state
-
-
-
-
+  const [isAttendaceModalOpen,setIsAttendaceModalOpen] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
  
   useEffect(() => {
     const fetchClientDetails = async (event) => {
@@ -308,16 +413,49 @@ const Invite = ({ eventId: propEventId }) => {
 
   const handleResponse = async (userResponse) => {
     setResponse(userResponse);
+    if(userResponse === "no"){
+      try {
+        const apiResponse = await API_UTIL.post('/saveInvitationDetails', {
+          event_id: event.event_id,
+          user_phone_number: userPhoneNumber,
+          invitation_status: userResponse,
+        });
+  
+        if (apiResponse.status === 200) {
+          setResponse(userResponse);
+      
+        }
+  
+      } catch (error) {
+        console.error('Error confirming event attendance:', error);
+        toast.error('Failed to confirm attendance. Please try again.');
+      }
+        navigate('/dashboard');
+    }
+    else{
+      setIsAttendaceModalOpen(true);
+    }
 
+  
+  };
+
+  const confirmAttendance = async () => {
+    setIsConfirming(true)
     try {
-      const apiResponse = await API_UTIL.post('/saveInvitationDetails', {
-        event_id: event.event_id,
+      const apiResponse = await API_UTIL.post('/mapUserToEvent', {
+        event_id: event.folder_name,
         user_phone_number: userPhoneNumber,
-        invitation_status: userResponse,
+        
       });
 
       if (apiResponse.status === 200) {
-        setResponse(userResponse);
+        await API_UTIL.post('/saveInvitationDetails', {
+          event_id: event.event_id,
+          user_phone_number: userPhoneNumber,
+          attendees_count: attendees,
+          invitation_status:response
+
+        });
         if(userName){
           await API_UTIL.post('/updatePortfolioDetails', {
             user_phone_number: userPhoneNumber,
@@ -332,31 +470,6 @@ const Invite = ({ eventId: propEventId }) => {
           portfolioLink:`/portfolio/${clientObj.user_name}`
         })
         toast.success('Event attendance confirmed.');
-      }
-
-    } catch (error) {
-      console.error('Error confirming event attendance:', error);
-      toast.error('Failed to confirm attendance. Please try again.');
-    }
-    if (userResponse === 'no') {
-      navigate('/dashboard');
-    }
-  };
-
-  const confirmAttendance = async () => {
-    try {
-      const apiResponse = await API_UTIL.post('/mapUserToEvent', {
-        event_id: event.folder_name,
-        user_phone_number: userPhoneNumber,
-        
-      });
-
-      if (apiResponse.status === 200) {
-        await API_UTIL.post('/saveInvitationDetails', {
-          event_id: event.event_id,
-          user_phone_number: userPhoneNumber,
-          attendees_count: attendees,
-        });
   
         toast.success('Event attendance confirmed.');
         navigate(`/photosV1/${event.folder_name}/${userDetails.user_id}`) ;
@@ -364,6 +477,8 @@ const Invite = ({ eventId: propEventId }) => {
     } catch (error) {
       console.error('Error confirming event attendance:', error);
       toast.error('Failed to confirm attendance. Please try again.');
+    }finally {
+      setIsConfirming(false); // Set confirming state back to false
     }
   };
   const formatEventName = (name) => {
@@ -422,8 +537,9 @@ const Invite = ({ eventId: propEventId }) => {
               </InfoItem>
             </EventInfo>
           </TopSection>
-
-        <InvitePageContainer>
+        </MainContent>
+      </ContentWrapper>
+      <InvitePageContainer>
             <InviteText>Are you attending the event ?</InviteText>
             {showUserName &&(
               <>
@@ -440,23 +556,44 @@ const Invite = ({ eventId: propEventId }) => {
               <InviteButton onClick={() => handleResponse('no')}>No</InviteButton>
               <InviteButton onClick={() => handleResponse('maybe')}>May Be</InviteButton>
             </ButtonContainer>
-            {(response === 'yes' || response === 'maybe') && (
-              <>
+             
+      </InvitePageContainer>
+
+      <StyledModal
+        isOpen={isAttendaceModalOpen}
+        onRequestClose={() => setIsAttendaceModalOpen(false)}
+        contentLabel="Send Photos"
+        className="modal-content"
+        overlayClassName="modal-overlay"
+      >
+        <ModalOverlay>
+          <ModalContent
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+          >
+            <CloseButton onClick={() => setIsAttendaceModalOpen(false)}><X size={24} /></CloseButton>
                 <InviteText>How many are you attending with?</InviteText>
-                <AttendeesInput
-                  type="number"
-                  value={attendees}
-                  min="1"
-                  onChange={(e) => setAttendees(e.target.value)}
-                />
-                <InviteButton onClick={confirmAttendance}>
-                  Confirm Attendance
+                <AttendeesInputContainer>
+                  <AttendeesButton onClick={() => setAttendees(Math.max(0, attendees - 1))} disabled={attendees <= 0}>
+                    -
+                  </AttendeesButton>
+                  <AttendeesInput
+                    type="number"
+                    value={attendees}
+                    min="1"
+                    onChange={(e) => setAttendees(Math.max(1, parseInt(e.target.value) || 1))}
+                  />
+                  <AttendeesButton onClick={() => setAttendees(attendees + 1)}>
+                    +
+                  </AttendeesButton>
+                </AttendeesInputContainer>
+                <InviteButton onClick={confirmAttendance} disabled={isConfirming}>
+                  {isConfirming ? 'Confirming...' : 'Confirm Attendance'}
                 </InviteButton>
-              </>
-            )}
-          </InvitePageContainer>
-        </MainContent>
-      </ContentWrapper>
+          </ModalContent>
+        </ModalOverlay>
+      </StyledModal>
     </PageWrapper>
     )}
     </>

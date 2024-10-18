@@ -26,7 +26,7 @@ const MiniHeroComponent = ({ userName,orgName, socialMediaLinks, backdropImage }
     >
       <span onClick={() => navigate(`/portfolio/${userName}`)}>{orgName}</span>
       <div className="social-icons">
-        {Object.keys(socialMediaLinks).map((platform) => (
+        {socialMediaLinks && Object.keys(socialMediaLinks).map((platform) => (
           <a
             key={platform}
             href={socialMediaLinks[platform]}

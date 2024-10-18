@@ -8932,6 +8932,7 @@ async function scheduleEventReminder(userPhoneNumber, event, portfolioLink) {
 
     // Notification 2: On the day of the event at 08:00 AM
     const notification2 = new Date(eventDateObj);
+    //notification2.setDate(eventDateObj.getDate() - 1);
     notification2.setHours(8, 0, 0, 0); // Set time to 08:00 AM
 
     // Add both notifications to the array if they are in the future
@@ -8949,7 +8950,7 @@ async function scheduleEventReminder(userPhoneNumber, event, portfolioLink) {
         user_phone_number: userPhoneNumber,
         event_id: event.event_id,
         event_date: event.event_date,
-        event_location: event_location,
+        event_location: event.event_location,
         job_day:notification.day,
         notification_time: notification.time,
         portfolio_link: portfolioLink,
@@ -8993,7 +8994,15 @@ async function completeJob(jobId, day, userPhoneNumber, event, portfolioLink) {
   const eventTime = event.event_date.split('T')[1];
   
   await docClient.update(params).promise();
-  await whatsappSender.sendEventReminder(userPhoneNumber, day, eventName, eventTime, event.event_location, portfolioLink);
+  await whatsappSender.sendEventReminder(
+    userPhoneNumber || "Not Defined",
+    day || "Not Defined",
+    eventName || "Not Defined",
+    eventTime || "Not Defined",
+    event.event_location || "Not Defined",
+    portfolioLink || "Not Defined"
+  );
+  
   logger.info("Scheduled Job executed successfully");
   }catch(err){
     logger.error(err.message);
@@ -9045,7 +9054,7 @@ async function rescheduleJobs() {
 
   for (const job of jobs) {
       const event = await getEventDetailsById(job.event_id); // Fetch event details by ID
-      await handleJobExecution(job, event); // Call the new function for handling each job
+      await handleJobExecution(job.job_id,job.job_day,job.user_phone_number, event,job.portfolio_link); // Call the new function for handling each job
   }
 }
 
