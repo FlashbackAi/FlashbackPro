@@ -27,7 +27,6 @@ const logger = winston.createLogger({
       messageFormatter: ({ level, message, additionalInfo }) => 
         JSON.stringify({ level, message, additionalInfo, timestamp: new Date().toISOString() }),
       uploadRate: 2000,
-      retentionInDays: 14,
       errorHandler: (err) => console.error('CloudWatch error', err)
     })
   ]
