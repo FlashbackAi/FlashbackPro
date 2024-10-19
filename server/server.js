@@ -14,36 +14,43 @@ const { fold, last } = require('prelude-ls');
 const { func } = require('prop-types');
 const app = express();
 const PORT = process.env.PORT || 5000;
-const base64 = require('base64-js');
 const { Readable } = require('stream');
-const axios = require('axios');
-const ReactDOMServer = require('react-dom/server');
-const React = require('react');
 const { set } = require('lodash');
 const ExcelJS = require('exceljs');
 const dotenv = require('dotenv');
-const rateLimit = require('express-rate-limit');
 const WhatsAppSender = require('./WhatsappSender');
 const { v4: uuidv4 } = require('uuid');
 const { log } = require('console');
-//const {Account, AptosClient, AptosAccount } = require('aptos');
 const { Account,AptosConfig, Aptos, AptosClient,Network, TxnBuilderTypes, BCS,Ed25519PrivateKey,AccountAddress } = require( '@aptos-labs/ts-sdk');
-const { aptosConfig } = require('./config');
+const { initializeConfig, getConfig } = require('./config');
 const crypto = require('crypto');
-//const App = require('..\\client');
-//const aptosClient = new Aptos(config);
-//const aptosClient = new AptosClient(aptosConfig.APTOS_NODE_URL);
 const config = new AptosConfig({ network: Network.MAINNET});
 const aptosClient = new Aptos(config);
 const schedule = require('node-schedule');
-const oldEvents = ["Aarthi_Vinay_19122021","Convocation_PrathimaCollege","KSL_25042024","Jahnavi_Vaishnavi_SC_28042024","KSL_22052024","KSL_16052024","V20_BootCamp_2024","Neha_ShivaTeja_18042024"]
-const APTOS_AMOUNT = 3;
+const oldEvents = ["Aarthi_Vinay_19122021","Convocation_PrathimaCollege","KSL_25042024","Jahnavi_Vaishnavi_SC_28042024","KSL_22052024","KSL_16052024","V20_BootCamp_2024","Neha_ShivaTeja_18042024"];
 const CHEWY_AMOUNT =1000;
-dotenv.config();
-app.use(cors()); // Allow cross-origin requests
-// app.use(express.json());
 
-// app.use(express.json());
+// Create a format that includes the timestamp
+const logFormat = winston.format.combine(
+  winston.format.timestamp({
+    format: 'YYYY-MM-DD HH:mm:ss'  // This is the default format, you can customize it
+  }),
+  winston.format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`)
+);
+
+// Create the logger
+const logger = winston.createLogger({
+  format: logFormat,  // Apply the log format
+  transports: [
+    new winston.transports.Console(),
+    new winston.transports.File({ filename: 'logs/application.log' })
+  ]
+});
+
+initializeConfig()
+  .then(() => {
+const config = getConfig();
+app.use(cors()); 
 app.use(express.json({ limit: '15mb' })); 
 
 // SSR Start
@@ -52,9 +59,16 @@ app.set("views", path.join(__dirname, "SSR"));
 app.use(express.static(path.join(__dirname, "SSR/public")));
 
 const whatsappSender = new WhatsAppSender(
-  dotenv.config.WHATSAPP_ACCESS_TOKEN,
-  dotenv.config.WHATSAPP_PHONE_NUMBER_ID
+  config.whatsapp.WHATSAPP_ACCESS_TOKEN,
+  config.whatsapp.WHATSAPP_PHONE_NUMBER_ID
 );
+logger.info(whatsappSender);
+const AWS = require('aws-sdk');
+AWS.config.update({
+  region: 'ap-south-1',
+  accessKeyId: config.awsCredentials.accessKeyId,    // Fetched from Secrets Manager
+  secretAccessKey: config.awsCredentials.secretAccessKey,  // Fetched from Secrets Manager
+});
 
 const taskProgress = new Map();
 const COLLECTION_ID = 'FlashbackUserDataCollection';
@@ -94,22 +108,7 @@ app.get("/share/:eventName/:userId", async(req, res) => {
 //  });
 
 
-// Create a format that includes the timestamp
-const logFormat = winston.format.combine(
-  winston.format.timestamp({
-    format: 'YYYY-MM-DD HH:mm:ss'  // This is the default format, you can customize it
-  }),
-  winston.format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`)
-);
 
-// Create the logger
-const logger = winston.createLogger({
-  format: logFormat,  // Apply the log format
-  transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({ filename: 'logs/application.log' })
-  ]
-});
 
 //  // *** Comment these certificates while testing changes in local developer machine. And, uncomment while pushing to mainline***
     const privateKey = fs.readFileSync('/etc/letsencrypt/live/flashback.wtf/privkey.pem', 'utf8');
@@ -168,7 +167,7 @@ const walletDetailsTable = 'wallet_details'
 
 
 const ClientId = '6goctqurrumilpurvtnh6s4fl1'
-const cognito = new AWS.CognitoIdentityServiceProvider({region: 'ap-south-1'});
+//const cognito = new AWS.CognitoIdentityServiceProvider({region: 'ap-south-1'});
 
 
 
@@ -182,94 +181,93 @@ const generateRandomId = (length) => {
   return result;
 };
 
-app.post('/signup', async function(req, res) {
-  try {
-    const username = req.body.username.toLowerCase();
-    const Flash = 'Flash';
-    // This will create a unique userId with format "Flash" as Prefix _"Username"_"randoom number" Eg: Flash_srialla_098
-    const referralId = `${Flash}_${username}_${Math.floor(Math.random() * 1000)}`; 
-    const created_date = new Date().toISOString(); // Created date of the user registration
-    const checkUserParams = {
-      TableName: userDataTableName,
-      Key: {
-        user_name: username,
-      },
-    };
+// app.post('/signup', async function(req, res) {
+//   try {
+//     const username = req.body.username.toLowerCase();
+//     const Flash = 'Flash';
+//     // This will create a unique userId with format "Flash" as Prefix _"Username"_"randoom number" Eg: Flash_srialla_098
+//     const referralId = `${Flash}_${username}_${Math.floor(Math.random() * 1000)}`; 
+//     const created_date = new Date().toISOString(); // Created date of the user registration
+//     const checkUserParams = {
+//       TableName: userDataTableName,
+//       Key: {
+//         user_name: username,
+//       },
+//     };
 
-    // Check if the username already exists in DynamoDB
-    const existingUser = await docClient.get(checkUserParams).promise();
+//     // Check if the username already exists in DynamoDB
+//     const existingUser = await docClient.get(checkUserParams).promise();
 
-    if (existingUser.Item) {
-      return res.status(409).json({ message: 'Username already exists.' });
-    }
-    // DynamoDB params for user_data table
-    const userDataParams = {
-      TableName: userDataTableName,
-      Item: {
-        user_name: username,
-        referral_id: referralId,
-        email: req.body.email,
-        password: req.body.password,
-        phoneNumber: req.body.phoneNumber,
-        created_date: created_date,
-        referrer_Code: req.body.referrerCode,
-      },
-    };
+//     if (existingUser.Item) {
+//       return res.status(409).json({ message: 'Username already exists.' });
+//     }
+//     // DynamoDB params for user_data table
+//     const userDataParams = {
+//       TableName: userDataTableName,
+//       Item: {
+//         user_name: username,
+//         referral_id: referralId,
+//         email: req.body.email,
+//         password: req.body.password,
+//         phoneNumber: req.body.phoneNumber,
+//         created_date: created_date,
+//         referrer_Code: req.body.referrerCode,
+//       },
+//     };
     
-    await docClient.put(userDataParams).promise();
-  var userPool = new CognitoUserPool(poolData);
-  logger.info(req.body)
-  const emailAttribute = new CognitoUserAttribute({
-    Name: "email",
-    Value: req.body.email
-});
+//     await docClient.put(userDataParams).promise();
+//   var userPool = new CognitoUserPool(poolData);
+//   logger.info(req.body)
+//   const emailAttribute = new CognitoUserAttribute({
+//     Name: "email",
+//     Value: req.body.email
+// });
 
-const phoneNumberAttribute = new CognitoUserAttribute({
-    Name: "phone_number",
-    Value: req.body.phoneNumber // Make sure this follows the E.164 format, e.g., '+12345678900'
-});
+// const phoneNumberAttribute = new CognitoUserAttribute({
+//     Name: "phone_number",
+//     Value: req.body.phoneNumber // Make sure this follows the E.164 format, e.g., '+12345678900'
+// });
 
-  var attributeList = [];
-  attributeList.push(emailAttribute);
-  attributeList.push(phoneNumberAttribute);
+//   var attributeList = [];
+//   attributeList.push(emailAttribute);
+//   attributeList.push(phoneNumberAttribute);
 
-  userPool.signUp(req.body.username, req.body.password, attributeList, null, function(err, result){
-      if (err) {
-          res.status(500).send(err.message);
-          logger.info(err.message)
-          return;
-      }
-      const data={
-        status:'Success',
-        message:'User registered successfully'
-      }
-      res.send(data);
-  });
-} catch (err) {
-  logger.error(`Error creating user:`, err);
-  res.status(500).send(err.message);
-}
-});
+//   userPool.signUp(req.body.username, req.body.password, attributeList, null, function(err, result){
+//       if (err) {
+//           res.status(500).send(err.message);
+//           logger.info(err.message)
+//           return;
+//       }
+//       const data={
+//         status:'Success',
+//         message:'User registered successfully'
+//       }
+//       res.send(data);
+//   });
+// } catch (err) {
+//   logger.error(`Error creating user:`, err);
+//   res.status(500).send(err.message);
+// }
+// });
 
+//const cognitoidentityserviceprovider = new AWS.CognitoIdentityServiceProvider();
 
-const cognitoidentityserviceprovider = new AWS.CognitoIdentityServiceProvider();
+// app.post('/resend-verification', (req, res) => {  
+//   const params = {
+//     Username: req.body.username,
+//     ClientId: ClientId
+//   };
+//  // const params = poolData.add(username)
 
-app.post('/resend-verification', (req, res) => {  
-  const params = {
-    Username: req.body.username,
-    ClientId: ClientId
-  };
- // const params = poolData.add(username)
-
-  cognitoidentityserviceprovider.resendConfirmationCode(params, function(err, data) {
-    if (err) {
-      console.error(err);
-      res.status(500).send(err.message);
-    } else {
-      res.send({ message: 'Verification code resent successfully' });
-    }
-  });
-});
+//   cognitoidentityserviceprovider.resendConfirmationCode(params, function(err, data) {
+//     if (err) {
+//       console.error(err);
+//       res.status(500).send(err.message);
+//     } else {
+//       res.send({ message: 'Verification code resent successfully' });
+//     }
+//   });
+// });
 
 
 app.post('/confirmUser', function(req, res) {
@@ -1188,86 +1186,86 @@ app.post('/userIdPhoneNumberMapping',async (req,res) =>{
 
 });
 
-app.post('/login', function(req, res) {
+// app.post('/login', function(req, res) {
   
-  const  username = req.body.username;
-  const password = req.body.password;
+//   const  username = req.body.username;
+//   const password = req.body.password;
 
-  const authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails({
-      Username: username,
-      Password: password
-  });
-  const userData = {
-      Username: username,
-      Pool: userPool
-  };
-  const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+//   const authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails({
+//       Username: username,
+//       Password: password
+//   });
+//   const userData = {
+//       Username: username,
+//       Pool: userPool
+//   };
+//   const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
 
-  cognitoUser.authenticateUser(authenticationDetails, {
-      onSuccess: (result) => {
-          const accessToken = result.getAccessToken().getJwtToken();
-          const decodedCAccessToken = result.getIdToken().decodePayload()
+//   cognitoUser.authenticateUser(authenticationDetails, {
+//       onSuccess: (result) => {
+//           const accessToken = result.getAccessToken().getJwtToken();
+//           const decodedCAccessToken = result.getIdToken().decodePayload()
          
-          // You can also get idToken and refreshToken here
-          const data={
-            status:'Success',
-            message:'User LoggedIn successfully',
-            accessToken:accessToken,
-            username:decodedCAccessToken['cognito:username']
+//           // You can also get idToken and refreshToken here
+//           const data={
+//             status:'Success',
+//             message:'User LoggedIn successfully',
+//             accessToken:accessToken,
+//             username:decodedCAccessToken['cognito:username']
 
-          }
-          res.send(data);
-      },
-      onFailure: (err) => {
-        logger.info(err.message)
-          res.status(500).send(err.message);
-      },
-      mfaSetup: (challengeName, challengeParameters) => {
-        // MFA setup logic here
-        // You might want to send a response to the user indicating that MFA setup is required
-        logger.info("usr logged in")
-    },
-  });
-});
+//           }
+//           res.send(data);
+//       },
+//       onFailure: (err) => {
+//         logger.info(err.message)
+//           res.status(500).send(err.message);
+//       },
+//       mfaSetup: (challengeName, challengeParameters) => {
+//         // MFA setup logic here
+//         // You might want to send a response to the user indicating that MFA setup is required
+//         logger.info("usr logged in")
+//     },
+//   });
+// });
 
 
-app.post('/forgot-password', (req, res) => {
-  const { email } = req.body;
+// app.post('/forgot-password', (req, res) => {
+//   const { email } = req.body;
 
-  const params = {
-      ClientId: poolData.ClientId,
-      Username: email,
-  };
+//   const params = {
+//       ClientId: poolData.ClientId,
+//       Username: email,
+//   };
 
-  cognitoidentityserviceprovider.forgotPassword(params, (err, data) => {
-      if (err) {
-          console.error(err);
-          res.status(500).json({ message: 'Error initiating password reset' });
-      } else {
-          res.json({ message: 'Password reset initiated, check your email' });
-      }
-  });
-});
+//   cognitoidentityserviceprovider.forgotPassword(params, (err, data) => {
+//       if (err) {
+//           console.error(err);
+//           res.status(500).json({ message: 'Error initiating password reset' });
+//       } else {
+//           res.json({ message: 'Password reset initiated, check your email' });
+//       }
+//   });
+// });
 
-app.post('/reset-password', (req, res) => {
-  const { email, code, newPassword } = req.body;
+// app.post('/reset-password', (req, res) => {
+//   const { email, code, newPassword } = req.body;
 
-  const params = {
-      ClientId: poolData.ClientId,
-      Username: email,
-      ConfirmationCode: code,
-      Password: newPassword,
-  };
+//   const params = {
+//       ClientId: poolData.ClientId,
+//       Username: email,
+//       ConfirmationCode: code,
+//       Password: newPassword,
+//   };
 
-  cognitoidentityserviceprovider.confirmForgotPassword(params, (err, data) => {
-      if (err) {
-          console.error(err);
-          res.status(500).json({ message: 'Error resetting password' });
-      } else {
-          res.json({ message: 'Password reset successfully' });
-      }
-  });
-});
+//   cognitoidentityserviceprovider.confirmForgotPassword(params, (err, data) => {
+//       if (err) {
+//           console.error(err);
+//           res.status(500).json({ message: 'Error resetting password' });
+//       } else {
+//           res.json({ message: 'Password reset successfully' });
+//       }
+//   });
+// });
 
 app.post('/sendOTP', async (req, res) => {
   const { phoneNumber } = req.body;
@@ -8343,7 +8341,7 @@ async function registerChewyCoinStore(account) {
     // const privateKey = new Ed25519PrivateKey(privateKeyHex);
     // const address = AccountAddress.from(feePayer.wallet_address);
     // const feePayerAccount = Account.fromPrivateKey({ privateKey, address });
-    const feePayerAccount =  await getAccountInfo(aptosConfig.SENDER_MOBILE_NUMBER)
+    const feePayerAccount =  await getAccountInfo(config.aptosConfig.senderMobileNumber)
     // Build the transaction for registering the CoinStore
     const transaction = await aptosClient.transaction.build.simple({
       sender: account.accountAddress,  // Primary account (Receiver in your case)
@@ -8459,7 +8457,7 @@ const transferChewyCoins = async (recipientAddress, amount, senderMobileNumber, 
   try {
     
     const senderAccount = await getAccountInfo(senderMobileNumber);
-    const parentAccount = await getAccountInfo(aptosConfig.SENDER_MOBILE_NUMBER);
+    const parentAccount = await getAccountInfo(config.aptosConfig.senderMobileNumber);
 
     // Generate and sign the transaction
     const transaction = await aptosClient.transaction.build.simple({
@@ -8633,7 +8631,7 @@ async function handleWalletCreation(mobileNumber) {
     //const parentWallet = await fetchWalletDetails(aptosConfig.SENDER_MOBILE_NUMBER);
     // Register the wallet with ChewyCoin store and transfer coins
     await registerChewyCoinStore(aptosAccount);
-    await transferChewyCoins(walletDetails.walletAddress, CHEWY_AMOUNT, aptosConfig.SENDER_MOBILE_NUMBER, mobileNumber);
+    await transferChewyCoins(walletDetails.walletAddress, CHEWY_AMOUNT, config.aptosConfig.senderMobileNumber, mobileNumber);
 
     // Return wallet details and transaction status
     return {
@@ -8932,12 +8930,12 @@ async function scheduleEventReminder(userPhoneNumber, event, portfolioLink) {
     // Notification 1: One day before at 08:00 AM
     const notification1 = new Date(eventDateObj);
     notification1.setDate(eventDateObj.getDate() - 1); // Set to one day before
-    notification1.setHours(8, 0, 0, 0); // Set time to 08:00 AM
+    notification1.setHours(2, 30, 0, 0); // Set time to 08:00 AM
 
     // Notification 2: On the day of the event at 08:00 AM
     const notification2 = new Date(eventDateObj);
     //notification2.setDate(eventDateObj.getDate() - 1);
-    notification2.setHours(8, 0, 0, 0); // Set time to 08:00 AM
+    notification2.setHours(2, 30, 0, 0); // Set time to 08:00 AM
 
     // Add both notifications to the array if they are in the future
     if (notification1 > now) {
@@ -9080,3 +9078,8 @@ async function rescheduleJobs() {
 //  server.keepAliveTimeout = 60000; // Increase keep-alive timeout
 //  server.headersTimeout = 65000; // Increase headers timeout
 //  });
+})
+.catch((error) => {
+  console.error('Failed to initialize app due to config error:', error);
+  process.exit(1);  // Stop the server if config loading fails
+});

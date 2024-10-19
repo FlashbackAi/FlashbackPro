@@ -1,10 +1,12 @@
 const axios = require('axios');
-const config = require('./config');
+const { initializeConfig, getConfig } = require('./config');
+
 
 class WhatsAppSender {
   constructor() {
-    this.accessToken = config.whatsapp.WHATSAPP_ACCESS_TOKEN;
-    this.phoneNumberId = config.whatsapp.WHATSAPP_PHONE_NUMBER_ID;
+    const config = getConfig();  // Get the loaded config
+    this.accessToken = config.whatsapp.WHATSAPP_ACCESS_TOKEN;//config.whatsapp.WHATSAPP_ACCESS_TOKEN;
+    this.phoneNumberId = config.whatsapp.WHATSAPP_PHONE_NUMBER_ID;//config.whatsapp.WHATSAPP_PHONE_NUMBER_ID;
     this.apiUrl = `https://graph.facebook.com/v17.0/${this.phoneNumberId}/messages`;
   }
 
