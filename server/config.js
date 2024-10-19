@@ -24,7 +24,7 @@ async function fetchAptosSecrets() {
     const secrets = JSON.parse(secretString); // Parse the JSON string to an object
 
     return {
-        senderMobileNumber: secrets.SENDER_MOBILE_NUMBER,
+        senderMobileNumber: secrets.APTOS_SENDER_MOBILE_NUMBER,
         aptosNodeUrl: secrets.APTOS_NODE_URL,
         senderAddress: secrets.SENDER_ADDRESS,
         senderPrivateKey: secrets.SENDER_PRIVATE_KEY,
