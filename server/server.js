@@ -21,8 +21,7 @@ const axios = require('axios');
 const ReactDOMServer = require('react-dom/server');
 const React = require('react');
 const { set } = require('lodash');
-const ExcelJS = require('exceljs');
-const dotenv = require('dotenv');
+const ExcelJS = require('exceljs')
 const rateLimit = require('express-rate-limit');
 const WhatsAppSender = require('./WhatsappSender');
 const { v4: uuidv4 } = require('uuid');
@@ -30,8 +29,13 @@ const { log } = require('console');
 const logger = require('./logger');
 //const App = require('..\\client');
 const oldEvents = ["Aarthi_Vinay_19122021","Convocation_PrathimaCollege","KSL_25042024","Jahnavi_Vaishnavi_SC_28042024","KSL_22052024","KSL_16052024","V20_BootCamp_2024","Neha_ShivaTeja_18042024"]
+const { initializeConfig, getConfig } = require('./config');
 
-dotenv.config();
+
+
+initializeConfig()
+  .then(() => {
+const config = getConfig();
 app.use(cors()); // Allow cross-origin requests
 // app.use(express.json());
 
@@ -71,9 +75,15 @@ server.listen(PORT, () => {
 // Server config end
 
 const whatsappSender = new WhatsAppSender(
-  dotenv.config.WHATSAPP_ACCESS_TOKEN,
-  dotenv.config.WHATSAPP_PHONE_NUMBER_ID
+  config.whatsapp.WHATSAPP_ACCESS_TOKEN,
+  config.whatsapp.WHATSAPP_PHONE_NUMBER_ID
 );
+const AWS = require('aws-sdk');
+AWS.config.update({
+  region: 'ap-south-1',
+  accessKeyId: config.awsCredentials.accessKeyId,    // Fetched from Secrets Manager
+  secretAccessKey: config.awsCredentials.secretAccessKey,  // Fetched from Secrets Manager
+});
 
 const taskProgress = new Map();
 const COLLECTION_ID = 'FlashbackUserDataCollection';
@@ -7625,4 +7635,9 @@ app.post('/backfillFolderNames', async (req, res) => {
     logger.error("Error occurred during backfilling:", err);
     res.status(500).send('Error occurred during backfilling folder_name');
   }
+});
+})
+.catch((error) => {
+  console.error('Failed to initialize app due to config error:', error);
+  process.exit(1);  // Stop the server if config loading fails
 });
