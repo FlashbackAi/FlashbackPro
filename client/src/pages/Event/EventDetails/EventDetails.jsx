@@ -9,7 +9,7 @@ import Masonry from 'react-masonry-css';
 import Modal from 'react-modal'
 import ImageModal from "../../../components/ImageModal/ImageModal";
 import { LazyLoadImage } from 'react-lazy-load-image-component';
-import { Edit2, Calendar, Clock, MapPin, Download, Share2, Users, Images, Album, Network, Handshake, Plus, X, Upload, ScrollText } from 'lucide-react';
+import { Edit2, Calendar, Clock, MapPin, Download, Share2, Users, Images, Album, Network, Handshake, Plus, X, Upload, ScrollText, Heart } from 'lucide-react';
 import API_UTIL from '../../../services/AuthIntereptor';
 import AppBar from '../../../components/AppBar/AppBar';
 import MergeDuplicateUsers from '../../../pages/Pro/ProShare/MergeHandler/MergeDuplicateUsers'
@@ -245,17 +245,18 @@ const CenteredSpinner = styled.div`
   transform: translate(-50%, -50%);
 `;
 
-const AlbumGrid = styled.div`
+const FlashbackGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 1rem;
 `;
 
-const AlbumTile = styled.div`
+const FlashbackTile = styled.div`
   background-color: #2a2a2a;
   border-radius: 0.5rem;
   height: 150px;
   display: flex;
+  flex-direction:column;
   align-items: center;
   justify-content: center;
   cursor: pointer;
@@ -544,6 +545,25 @@ const GlobalStyle = createGlobalStyle`
   }
 `;
 
+const Label = styled.label`
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  margin-right:1em;
+`;
+
+const Input = styled.input`
+  background-color: #ffffff;
+  border: 1px solid #3a3a3a;
+  color: #000000;
+  padding: 0.5rem;
+  border-radius: 4px;
+`;
+const FormGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
 const EventDetails = () => {
   const { eventName } = useParams();
   const [event, setEvent] = useState(null);
@@ -562,6 +582,7 @@ const EventDetails = () => {
   const [totalUploadedBytes, setTotalUploadedBytes] = useState(0);
   const [uploadedFilesCount, setUploadedFilesCount] = useState(0);
   const [isUploadFilesModelOpen, setUploadFilesModeOpen] = useState(false);
+  const [isCreateFlashbackModalOpen,setIsCreateFlashbackModalOpen] = useState(false);
   const [files, setFiles] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [userThumbnails, setUserThumbnails] = useState([]);
@@ -601,6 +622,7 @@ const EventDetails = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [userCategoryTab, setUserCategoryTab] = useState('registered');
   const [isImageLoading, setIsImageLoading] = useState(true);
+  const [flashbackName, setFlashbackName] = useState('');
   const navigate = useNavigate();
   const qrRef = useRef();
   const loader = useRef(null);
@@ -748,6 +770,12 @@ const EventDetails = () => {
       console.log('After Update:', updatedData);
       return updatedData;
     });
+  };
+
+  const handleFlashbackNameChange = (event) => {
+    const { value } = event.target;
+    setFlashbackName(value);
+    setFlashbackName(value);
   };
   
 
@@ -1135,6 +1163,17 @@ const uploadFiles = async () => {
     setUploading(false);
     setFileCount(0);
   };
+
+  const closeFlashbackUploadFilesModal = () => {
+    setIsCreateFlashbackModalOpen(false);
+    setFiles([]);
+    setUploadProgress({});
+    setUploadStatus('');
+    setUploading(false);
+    setFileCount(0);
+  };
+
+
   
   // const handleCloseModal = () => {
   //   setClickedImg(null);
@@ -1375,6 +1414,10 @@ const LabelAndInput = ({ label, name, value, type, handleChange, isEditable, ...
   </div>
 );
 
+const createFlashback =({
+
+});
+
   if (!event) {
     return <div>No event data available. Please try again later.</div>;
   }
@@ -1440,7 +1483,7 @@ const LabelAndInput = ({ label, name, value, type, handleChange, isEditable, ...
             <div className="tab-list">
             <button className={`tab ${activeTab === 'gallery' ? 'active' : ''}`} onClick={() => setActiveTab('gallery')} style={{ display: 'flex', alignItems: 'center', gap: '0.3em' }}><Images size={24} />Gallery</button>
               <button className={`tab ${activeTab === 'people' ? 'active' : ''}`} onClick={() => setActiveTab('people')} style={{ display: 'flex', alignItems: 'center', gap: '0.3em' }}><Users size={24} /> People</button>
-              <button className={`tab ${activeTab === 'albums' ? 'active' : ''}`} onClick={() => setActiveTab('albums')} style={{ display: 'flex', alignItems: 'center', gap: '0.3em' }}><Album size={24} /> Albums</button>
+              <button className={`tab ${activeTab === 'flashbacks' ? 'active' : ''}`} onClick={() => setActiveTab('flashbacks')} style={{ display: 'flex', alignItems: 'center', gap: '0.3em' }}><Album size={24} /> Flashbacks</button>
             </div>
 
             <AnimatePresence mode="wait">
@@ -1580,23 +1623,24 @@ const LabelAndInput = ({ label, name, value, type, handleChange, isEditable, ...
                 </TabContent>
               )}
 
-              {activeTab === 'albums' && (
+              {activeTab === 'flashbacks' && (
                 <TabContent
-                  key="albums"
+                  key="flashbacks"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <AlbumGrid>
-                    <AlbumTile>
+                  <FlashbackGrid>
+                    <FlashbackTile onClick={()=>setIsCreateFlashbackModalOpen(true)}>
                       <Plus size={24} />
-                    </AlbumTile>
-                    <AlbumTile onClick={() => navigate(`/relationsV1/${event.event_id}`)}>
-                    <Network size={24} />
-                    <span style={{ marginTop: '8px', display: 'block', textAlign: 'center', paddingLeft: '1em'}}>Relation Mapping</span>
-                    </AlbumTile>
-                  </AlbumGrid>
+                      <span style={{ marginTop: '8px', display: 'block', textAlign: 'center'}}>Create Falshback</span>
+                    </FlashbackTile>
+                    <FlashbackTile onClick={() => navigate(`/relationsV1/${event.event_id}`)}>
+                    <Heart size={24} />
+                    <span style={{ marginTop: '8px', display: 'block', textAlign: 'center'}}>Favourites</span>
+                    </FlashbackTile>
+                  </FlashbackGrid>
                 </TabContent>
               )}
             </AnimatePresence>
@@ -1756,6 +1800,61 @@ const LabelAndInput = ({ label, name, value, type, handleChange, isEditable, ...
           </StyledModal>
         )}
       </AnimatePresence>
+
+      <StyledModal
+        isOpen={isCreateFlashbackModalOpen}
+        onRequestClose={closeFlashbackUploadFilesModal}
+        contentLabel="Upload Files"
+        className="modal-content"
+        overlayClassName="modal-overlay"
+      >
+        <ModalOverlay>
+          <ModalContent
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+          >
+            <CloseButton onClick={closeFlashbackUploadFilesModal}><X size={24} /></CloseButton>
+            <FormGroup>
+            <Label>FlashBack Name:</Label>
+            <Input
+                type="text"
+                id="flashbackName"
+                name="flashbackName"
+                value={flashbackName}
+                onChange={handleFlashbackNameChange}
+                required
+              />
+              </FormGroup>
+            <h2>Upload Files</h2>
+            <Dropzone {...getRootProps()} isDragActive={isDragActive}>
+              <input {...getInputProps()} />
+              <p>Drag 'n' drop files here, or click to select files</p>
+            </Dropzone>
+            {files.length > 0 && (
+              <p>
+              {fileCount} file(s) selected.{" "}
+              </p>
+            )}
+            {uploadStatus && <p>{uploadStatus}</p>}
+            <div style={{
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              gap: '2rem', 
+              paddingTop: '1rem' }}>
+            <ActionButton onClick={uploadFiles} disabled={!canUpload || files.length === 0 || fileCount > 500}>
+              Upload
+            </ActionButton>
+            </div>
+            {uploading && (
+              <ProgressBar>
+                <ProgressFill progress={overallProgress} />
+              </ProgressBar>
+            )}
+          </ModalContent>
+        </ModalOverlay>
+      </StyledModal>
     </PageWrapper>
   );
 };
