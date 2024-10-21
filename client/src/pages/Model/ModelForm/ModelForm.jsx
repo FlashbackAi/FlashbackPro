@@ -13,7 +13,7 @@ const ModelForm = () => {
     model_category: '',
     model_url: '',
     model_desc: '',
-    dataset_size: ''
+    is_audited:false
   });
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,7 +31,7 @@ const ModelForm = () => {
       const response = await API_UTIL.post('/saveModelDetails', formData);
 
       if (response.status === 200) {
-        await updateRewardPoints();
+        // await updateRewardPoints();
         setTimeout(() => {
           navigate('/model');
         }, 1000);
@@ -119,7 +119,7 @@ const ModelForm = () => {
           isRequired={true}
           isEditable={true}
         />
-        <LabelAndInput
+        {/* <LabelAndInput
           htmlFor="dataset-size"
           label="Training Dataset Size:"
           type="number"
@@ -130,9 +130,10 @@ const ModelForm = () => {
           handleChange={handleInputChange}
           isRequired={true}
           isEditable={true}
-        />
+        /> */}
         <button className="submit-button" type="submit">
-          {formData.dataset_size ? `Pay ${formData.dataset_size} coins` : 'Create'}
+          {/* {formData.dataset_size ? `Pay ${formData.dataset_size} coins` : 'Create'} */}
+          Create
         </button>
       </form>
     </div>

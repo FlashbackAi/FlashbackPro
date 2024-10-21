@@ -70,7 +70,7 @@ const Collab = () => {
       await API_UTIL.put(`/acceptCollab/${eventId}`, { userName:user_name, status });
 
       toast.success(`Collaboration ${status.toLowerCase()}ed successfully`);
-      navigate('/event');
+      navigate('/dashboard');
       }
     } catch (error) {
       console.error(`Error ${status.toLowerCase()}ing collaboration:`, error);
@@ -80,11 +80,10 @@ const Collab = () => {
 
   const updateUserDetails = async () => {
     try {
-      const org_name = userName; // Assume that userName is equivalent to org_name
 
       const response = await API_UTIL.post('/updatePortfolioDetails', {
         user_phone_number: userPhoneNumber,
-        org_name: org_name,
+        user_name: userName,
         social_media: userDetails.social_media,
         role:'creator' // Retain the existing social media details
       });

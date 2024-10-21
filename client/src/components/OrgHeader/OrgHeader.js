@@ -93,7 +93,7 @@ const OrgHeader = ({ orgObj, modelName, showPoints =true }) => {
                 <span>{orgObj.org_name}</span>
               </div>
 
-              {showPoints && <div className="prot-redeem-points" > <span>Points - {points} 🪙</span></div>}
+              {showPoints && <div className="prot-redeem-points" > <span>Points - {points} <img className='unityLogo' src='/unityLogo.png' alt=''></img></span></div>}
             
         </>
         }

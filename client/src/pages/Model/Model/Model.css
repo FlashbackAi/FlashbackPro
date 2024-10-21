@@ -141,7 +141,7 @@
   }
   .model-name {
     position: absolute;
-    height: 3.25rem;
+    height: 2.75rem;
     width: calc(100% - 6px);
     background-color: #000000A0;
     bottom: 3px;

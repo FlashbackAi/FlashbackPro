@@ -71,7 +71,7 @@ function Login({ name, onLoginSuccess, showAppBar = true }) {
   useEffect(() => {
     const userPhoneNumber = localStorage.getItem("userPhoneNumber");
     if (userPhoneNumber && !location.state?.from?.pathname?.includes('/photos')) {
-      navigate(location.state?.from?.pathname || "/event");
+      navigate(location.state?.from?.pathname || "/dashboard");
     }
   }, [navigate, location.state]);
 
@@ -81,7 +81,7 @@ function Login({ name, onLoginSuccess, showAppBar = true }) {
     isToastDisp.current = true;
   }, []);
 
-  const fromUrl = location.state?.from?.pathname || "/event";
+  const fromUrl = location.state?.from?.pathname || "/dashboard";
   console.log(fromUrl);
 
   const handlePhoneNumberChange = (e) => {
@@ -106,8 +106,8 @@ function Login({ name, onLoginSuccess, showAppBar = true }) {
 
   const retake = () => {
     setImgSrc(null);
-    setStep(0);
-    setIsCaptureEnabled(false);
+    //setStep(0);
+    setIsCaptureEnabled(true);
   };
 
   const handleSubmit = async (event) => {
@@ -163,7 +163,7 @@ function Login({ name, onLoginSuccess, showAppBar = true }) {
   const createOrLoginUser = async (fullPhoneNumber) => {
     let userSource = "flashback";
     let role = "user";
-    let reward_points = 50;
+    let reward_points = 0;
     if (typeof fromUrl === 'string' && fromUrl.includes("photos")) {
       userSource = "flashback-pro";
     }

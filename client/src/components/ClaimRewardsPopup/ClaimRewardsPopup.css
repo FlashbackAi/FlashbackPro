@@ -1,0 +1,43 @@
+.claim-modal-content {
+    width: auto; /* 500px / 16 */
+    height: auto;
+    margin: auto;
+    padding: 1.25em; /* 20px / 16 */
+    background-color: white;
+    border-radius: 0.5em; /* 8px / 16 */
+    outline: none;
+}
+
+.claim-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    color:black;
+}
+
+.claim-modal-body {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 1.5em;
+}
+
+.claim-modal-title {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.claim-button, .later-button {
+    width: 8em;
+    height: 2.5em;
+    font-size: 1em;
+    padding: 0.5em;
+    border: none;
+    border-radius: 0.25em;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: .8em;
+}
+

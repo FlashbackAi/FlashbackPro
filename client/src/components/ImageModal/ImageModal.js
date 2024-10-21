@@ -47,6 +47,7 @@ const ImageModal = ({
   };
 
   const handleNext = () => {
+    console.log(currentIndex);
     if (currentIndex < images.length - 1) {
       isNavigatingRef.current = true;  // Set flag to true for navigation
       setCurrentIndex(currentIndex + 1);
@@ -54,6 +55,7 @@ const ImageModal = ({
   };
 
   const handlePrev = () => {
+    console.log(currentIndex);
     if (currentIndex > 0) {
       isNavigatingRef.current = true;  // Set flag to true for navigation
       setCurrentIndex(currentIndex - 1);

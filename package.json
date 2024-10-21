@@ -246,6 +246,7 @@
     "negotiator": "^0.6.3",
     "node-fetch": "^2.7.0",
     "node-releases": "^2.0.13",
+    "nodemon": "^3.1.7",
     "object-assign": "^4.1.1",
     "object-inspect": "^1.13.1",
     "object-keys": "^1.1.1",
@@ -397,7 +398,10 @@
   },
   "reactSnap": {
     "inlineCss": true,
-    "puppeteerArgs": ["--no-sandbox", "--disable-setuid-sandbox"],
+    "puppeteerArgs": [
+      "--no-sandbox",
+      "--disable-setuid-sandbox"
+    ],
     "removeBlobs": true
   },
   "keywords": [],

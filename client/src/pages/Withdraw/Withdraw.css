@@ -1,0 +1,144 @@
+.withdraw-page {
+  background-color: white;
+  font-family: Arial, sans-serif;
+}
+
+.send-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.send-header {
+  text-align: center;
+  margin-bottom: 2em;
+}
+.send-title{
+  font-size: 1.5em;
+  color:black ;
+}
+.send-avatar {
+  width: 5em;
+  height: 5em;
+  border-radius: 50%;
+  margin-bottom: 1em;
+}
+
+
+
+.send-container {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1.5em;
+  width: 100%;
+  margin-right:6em;
+  margin-left: 6em;
+}
+
+.input-address, .input-amount {
+  color: black;
+  padding: 1em;
+  border: 0.1em solid #555;
+  border-radius: 0.5em;
+  margin-bottom: 1em;
+  font-size: 1em;
+ 
+}
+
+.input-group {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+}
+
+.wallet-error {
+  color: red;
+  font-size: 0.9em;
+  margin-bottom: 1em;
+}
+
+
+
+.balance-info {
+  text-align: center;
+  margin-bottom: 2em;
+  margin-bottom: 1em;
+}
+
+.available-balance {
+  font-size: 1.2em;
+  color: black;
+}
+
+.send-button {
+  color: white;
+  padding: 1em 3em;
+  border: none;
+  border-radius: 0.5em;
+  font-size: 1.2em;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.send-button.loading {
+  cursor: not-allowed;
+}
+
+
+/* Container for the entire withdraw section */
+.withdraw-container {
+  padding: 2em;
+  margin: 0 auto;
+  font-family: Arial, sans-serif;
+  color: black;
+}
+
+/* Title styling */
+.withdraw-title {
+  font-size: 2em;
+  margin-bottom: 1em;
+  text-align: center;
+  color:black;
+}
+
+/* Transactions list container */
+.transactions-list {
+  max-height: 10em;
+  overflow-y: auto;
+  border: 0.1em solid #ccc;
+  border-radius: 0.5em;
+  padding: 1em;
+}
+
+/* Individual transaction item */
+.transaction-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 1em 0;
+  border-bottom: 0.1em solid #ddd;
+  align-items: center;
+}
+
+/* Last item without a bottom border */
+.transaction-item:last-child {
+  border-bottom: none;
+}
+
+/* Information section (name, date) */
+.transaction-info {
+  flex: 1;
+  font-size: 0.9em;
+}
+
+/* Transaction date styling */
+.transaction-date {
+  font-size: 0.875em;
+  color: #666;
+}
+
+/* Transaction amount styling */
+.transaction-amount {
+  font-size: 1.25em;
+  font-weight: bold;
+}

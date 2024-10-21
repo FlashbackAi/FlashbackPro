@@ -1,12 +1,16 @@
 import React from "react";
 import "./MiniHeroComponent.css";
 
-const MiniHeroComponent = ({ orgName, socialMediaLinks, backdropImage }) => {
+import { useNavigate } from 'react-router-dom';
+
+const MiniHeroComponent = ({ userName,orgName, socialMediaLinks, backdropImage }) => {
+
+  const navigate = useNavigate()
+
   const icons = {
     instagram: "assets/Images/icon-instagram.svg",
     youtube: "assets/Images/icon-youtube.svg",
     facebook: "assets/Images/icon-facebook.svg",
-    // Add more icons here if needed
   };
 
   return (
@@ -20,9 +24,9 @@ const MiniHeroComponent = ({ orgName, socialMediaLinks, backdropImage }) => {
         filter: 'grayscale(100%)',
       }}
     >
-      <span>{orgName}</span>
+      <span onClick={() => navigate(`/portfolio/${userName}`)}>{orgName}</span>
       <div className="social-icons">
-        {Object.keys(socialMediaLinks).map((platform) => (
+        {socialMediaLinks && Object.keys(socialMediaLinks).map((platform) => (
           <a
             key={platform}
             href={socialMediaLinks[platform]}

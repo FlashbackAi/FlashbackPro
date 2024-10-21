@@ -39,6 +39,9 @@ import Invite from "../pages/Invitation/Invite";
 import EventImages from "../pages/ImagesPage/EventImages";
 import FaceSelectionV1 from "../pages/Pro/FaceSelection/FaceSelectionV1";
 import PhotoSelectionV1 from "../pages/Pro/PhotoSelection/PhotoSelectionV1";
+import DataSharingPage from "../pages/DataSharing/DataSharing";
+import Withdraw from "../pages/Withdraw/Withdraw";
+import OrgDetails from "../pages/orgDetails/orgDetails";
 
 
 const ROUTES=[
@@ -230,7 +233,7 @@ const ROUTES=[
     //     component:CreateEventForm
     // },
     {
-        path:"/Event",
+        path:"/dashboard",
         exact:false,
         protected:true,
         component:Event,
@@ -339,8 +342,26 @@ const ROUTES=[
         exact:false,
         protected:true,
         component:ModelDetails, 
-    }
-
+    },
+    {
+        path:"dataSharing",
+        exact:false,
+        protected:true,
+        component:DataSharingPage, 
+    },
+    {
+        path:"withdraw",
+        exact:false,
+        protected:true,
+        component:Withdraw, 
+    },{
+        path:"orgDetails/:orgname",
+        exact:false,
+        protected:true,
+        component:OrgDetails, 
+    },
+    
+    
 ]
 
 export default ROUTES

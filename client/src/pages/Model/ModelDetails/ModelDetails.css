@@ -83,3 +83,121 @@
 }
 
 
+.dataset-card {
+  width: 13.75em;
+  height: 13.75em;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #FFFFFF;
+  flex-direction: column;
+  border-radius: 0.75em;
+  border: 0.0625em solid #00000090;
+  position: relative;
+  margin: 1em;
+}
+.dataset-card:hover {
+  border: double 2px transparent;
+  background-image: linear-gradient(white, white), linear-gradient(90deg,#66D3FF 0%, #9A6AFF 38%,  #EE75CB 71%, #FD4D77 100%);
+  background-origin: border-box;
+  background-clip: content-box, border-box;
+  cursor: pointer;
+}
+.req-dataset-img {
+  min-width: 13.75em;
+  min-height: 13.75em;
+  max-width: 13.75em;
+  max-height: 13.75em;
+  box-sizing: border-box;
+  padding: 0.125em;
+  object-fit: cover;
+  border-radius: 0.625em;
+}
+
+.req-dataset-name {
+  position: absolute;
+  height: 2.75em;
+  width: calc(100% - 0.5em);
+  background-color: #000000A0;
+  align-items: center;
+  top: 0.1875em;
+  border-radius: inherit;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.req-dataset-name > span {
+  font-size: 1em;
+  color: #FFFFFF;
+  font-weight: 400;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.datasets-content {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-around;
+}
+.req-dataset-button-sec {
+  position: absolute;
+  bottom: 0.5em; /* Adjust this value to control how close to the bottom the buttons are */
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around; /* Evenly distribute the buttons */
+  padding: 0.5em; /* Optional padding for spacing */
+}
+
+.req-dataset-button {
+  font-size: 0.7em; /* Adjust font size if needed */
+  padding: 0.5em; /* Adjust padding for a balanced look */
+  color: white;
+  border: none;
+  border-radius: 0.25em;
+  cursor: pointer;
+}
+
+.req-dataset-details-button-sec{
+  display: flex;
+  justify-content: space-around;
+}
+
+.audit-info{
+  color: gray;
+  font-size: .7em;
+}
+.req-coins{
+  font-size: .7em;
+}
+
+.audit-section{
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+
+}
+
+.model-request-item {
+  background-color: #fff;
+  border-radius: 0.5em;
+  box-shadow: 0 0.125em 0.5em rgba(0, 0, 0, 0.1);
+  padding: 1em;
+  margin-bottom: 1em;
+  font-family: 'Arial', sans-serif;
+}
+
+.model-req-text {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1em;
+  color: #333;
+  margin-bottom: 0.375em;
+}
+
+

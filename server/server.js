@@ -3,81 +3,73 @@ const multer = require('multer');
 const multerS3 = require('multer-s3');
 const cors = require('cors');
 const sharp = require('sharp');
-const http = require('http');
 const path = require('path');
 const fs = require('fs');
-const { AWS, AmazonCognitoIdentity, userPool, whatsapp } = require('./config', 'aws-sdk');
-const { CognitoUserPool, CognitoUserAttribute } = require('amazon-cognito-identity-js');
+//const { AmazonCognitoIdentity, userPool } = require('./config', 'aws-sdk');
+//const { CognitoUserPool, CognitoUserAttribute } = require('amazon-cognito-identity-js');
 const archiver = require('archiver');
 const https = require('https');
-const { fold, last } = require('prelude-ls');
+const http = require('http');
+// const { fold, last } = require('prelude-ls');
 const { func } = require('prop-types');
 const app = express();
 const PORT = process.env.PORT || 5000;
-const { ENV } = require('./config');
-const base64 = require('base64-js');
 const { Readable } = require('stream');
-const axios = require('axios');
-const ReactDOMServer = require('react-dom/server');
-const React = require('react');
-const { set } = require('lodash');
-const ExcelJS = require('exceljs')
-const rateLimit = require('express-rate-limit');
+//const { set } = require('lodash');
+const ExcelJS = require('exceljs');
+//const dotenv = require('dotenv');
 const WhatsAppSender = require('./WhatsappSender');
 const { v4: uuidv4 } = require('uuid');
-const { log } = require('console');
-const logger = require('./logger');
-//const App = require('..\\client');
-const oldEvents = ["Aarthi_Vinay_19122021","Convocation_PrathimaCollege","KSL_25042024","Jahnavi_Vaishnavi_SC_28042024","KSL_22052024","KSL_16052024","V20_BootCamp_2024","Neha_ShivaTeja_18042024"]
+//const { log } = require('console');
+//const { Account,AptosConfig, Aptos, AptosClient,Network, TxnBuilderTypes, BCS,Ed25519PrivateKey,AccountAddress } = require( '@aptos-labs/ts-sdk');
 const { initializeConfig, getConfig } = require('./config');
+const { ENV } = require('./config');
+//const crypto = require('crypto');
+//const config = new AptosConfig({ network: Network.MAINNET});
+//const aptosClient = new Aptos(config);
+const schedule = require('node-schedule');
+const oldEvents = ["Aarthi_Vinay_19122021","Convocation_PrathimaCollege","KSL_25042024","Jahnavi_Vaishnavi_SC_28042024","KSL_22052024","KSL_16052024","V20_BootCamp_2024","Neha_ShivaTeja_18042024"];
+//const CHEWY_AMOUNT =1000;
 
-
+const logger = require('./logger');
 
 initializeConfig()
   .then(() => {
 const config = getConfig();
-app.use(cors()); // Allow cross-origin requests
-// app.use(express.json());
-
-// app.use(express.json());
+app.use(cors()); 
 app.use(express.json({ limit: '15mb' })); 
 
 // SSR Start
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "SSR"));
 app.use(express.static(path.join(__dirname, "SSR/public")));
-
-// Server Configuration Start
-let server;
-
 if (ENV === 'production') {
 
-const privateKey = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/privkey.pem', 'utf8');
-const certificate = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/fullchain.pem', 'utf8');
-
-const credentials = {
-  key: privateKey,
-  cert: certificate
-}
-
-  server = https.createServer(credentials, app);
-} else {
-  console.log('Running server on development')
-  server = http.createServer(app);
-}
-
-server.listen(PORT, () => {
-  logger.info(`Server is running in ${ENV} mode on ${ENV === 'production' ? 'https' : 'http'}://localhost:${PORT}`);
-  server.keepAliveTimeout = 60000;
-  server.headersTimeout = 65000;
-});
-
-// Server config end
+  const privateKey = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/privkey.pem', 'utf8');
+  const certificate = fs.readFileSync('/etc/letsencrypt/live/flashback.inc/fullchain.pem', 'utf8');
+  
+  const credentials = {
+    key: privateKey,
+    cert: certificate
+  }
+  
+    server = https.createServer(credentials, app);
+  } else {
+    console.log('Running server on development')
+    server = http.createServer(app);
+  }
+  
+  server.listen(PORT, () => {
+    logger.info(`Server is running in ${ENV} mode on ${ENV === 'production' ? 'https' : 'http'}://localhost:${PORT}`);
+    server.keepAliveTimeout = 60000;
+    server.headersTimeout = 65000;
+  });
 
 const whatsappSender = new WhatsAppSender(
   config.whatsapp.WHATSAPP_ACCESS_TOKEN,
   config.whatsapp.WHATSAPP_PHONE_NUMBER_ID
 );
+logger.info(whatsappSender);
 const AWS = require('aws-sdk');
 AWS.config.update({
   region: 'ap-south-1',
@@ -111,6 +103,17 @@ app.get("/share/:eventName/:userId", async(req, res) => {
   }
 });
 
+// SSR ends
+
+// // Configuring winston application logger
+
+// const logger = winston.createLogger({
+//   transports: [
+//     new winston.transports.Console(),
+//     new winston.transports.File({ filename: 'logs/application.log' })
+//    ]
+//  });
+
 // Set up AWS S3
 const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.js
     region: 'ap-south-1' // Update with your AWS region 
@@ -121,9 +124,10 @@ const userBucketName='flashbackuserthumbnails';
 const indexBucketName = 'flashbackusercollection';
 const thumbnailBucketName = 'flashbackimagesthumbnail';
 const imagesBucketName = 'flashbackusercollection';
-//const indexBucketName = 'devtestdnd';
-//const imagesBucketName = 'devtestdnd';
+// const indexBucketName = 'devtestdnd';
+// const imagesBucketName = 'devtestdnd';
 const portfolioBucketName = 'flashbackportfoliouploads';
+const portfolioImagesTable = 'portfolio_images';
 
 const rekognition = new AWS.Rekognition({ region: 'ap-south-1' });
 
@@ -148,16 +152,18 @@ const projectsTable = 'projects_data';
 const indexedDataTableName = 'indexed_data'
 const formDataTableName = 'selectionFormData'; 
 const recokgImages = 'RekognitionImageProperties';
-const datasetTable = 'datasets;'
+const datasetTable = 'datasets';
 const modelsTable = 'models';
 const proShareDataTable = 'pro_share_data';
 const modelToDatsetReqTable ='model_dataset_requests';
 const userImageActivityTableName = 'user_image_activity';
 const ImageUploadData  = 'image_upload_data';   
+const walletTransactions = 'wallet_transactions';
+const walletDetailsTable = 'wallet_details'
 
 
 const ClientId = '6goctqurrumilpurvtnh6s4fl1'
-const cognito = new AWS.CognitoIdentityServiceProvider({region: 'ap-south-1'});
+//const cognito = new AWS.CognitoIdentityServiceProvider({region: 'ap-south-1'});
 
 
 
@@ -171,119 +177,118 @@ const generateRandomId = (length) => {
   return result;
 };
 
-app.post('/signup', async function(req, res) {
-  try {
-    const username = req.body.username.toLowerCase();
-    const Flash = 'Flash';
-    // This will create a unique userId with format "Flash" as Prefix _"Username"_"randoom number" Eg: Flash_srialla_098
-    const referralId = `${Flash}_${username}_${Math.floor(Math.random() * 1000)}`; 
-    const created_date = new Date().toISOString(); // Created date of the user registration
-    const checkUserParams = {
-      TableName: userDataTableName,
-      Key: {
-        user_name: username,
-      },
-    };
+// app.post('/signup', async function(req, res) {
+//   try {
+//     const username = req.body.username.toLowerCase();
+//     const Flash = 'Flash';
+//     // This will create a unique userId with format "Flash" as Prefix _"Username"_"randoom number" Eg: Flash_srialla_098
+//     const referralId = `${Flash}_${username}_${Math.floor(Math.random() * 1000)}`; 
+//     const created_date = new Date().toISOString(); // Created date of the user registration
+//     const checkUserParams = {
+//       TableName: userDataTableName,
+//       Key: {
+//         user_name: username,
+//       },
+//     };
 
-    // Check if the username already exists in DynamoDB
-    const existingUser = await docClient.get(checkUserParams).promise();
+//     // Check if the username already exists in DynamoDB
+//     const existingUser = await docClient.get(checkUserParams).promise();
 
-    if (existingUser.Item) {
-      return res.status(409).json({ message: 'Username already exists.' });
-    }
-    // DynamoDB params for user_data table
-    const userDataParams = {
-      TableName: userDataTableName,
-      Item: {
-        user_name: username,
-        referral_id: referralId,
-        email: req.body.email,
-        password: req.body.password,
-        phoneNumber: req.body.phoneNumber,
-        created_date: created_date,
-        referrer_Code: req.body.referrerCode,
-      },
-    };
+//     if (existingUser.Item) {
+//       return res.status(409).json({ message: 'Username already exists.' });
+//     }
+//     // DynamoDB params for user_data table
+//     const userDataParams = {
+//       TableName: userDataTableName,
+//       Item: {
+//         user_name: username,
+//         referral_id: referralId,
+//         email: req.body.email,
+//         password: req.body.password,
+//         phoneNumber: req.body.phoneNumber,
+//         created_date: created_date,
+//         referrer_Code: req.body.referrerCode,
+//       },
+//     };
     
-    await docClient.put(userDataParams).promise();
-  var userPool = new CognitoUserPool(poolData);
-  logger.info(req.body)
-  const emailAttribute = new CognitoUserAttribute({
-    Name: "email",
-    Value: req.body.email
-});
+//     await docClient.put(userDataParams).promise();
+//   var userPool = new CognitoUserPool(poolData);
+//   logger.info(req.body)
+//   const emailAttribute = new CognitoUserAttribute({
+//     Name: "email",
+//     Value: req.body.email
+// });
 
-const phoneNumberAttribute = new CognitoUserAttribute({
-    Name: "phone_number",
-    Value: req.body.phoneNumber // Make sure this follows the E.164 format, e.g., '+12345678900'
-});
+// const phoneNumberAttribute = new CognitoUserAttribute({
+//     Name: "phone_number",
+//     Value: req.body.phoneNumber // Make sure this follows the E.164 format, e.g., '+12345678900'
+// });
 
-  var attributeList = [];
-  attributeList.push(emailAttribute);
-  attributeList.push(phoneNumberAttribute);
+//   var attributeList = [];
+//   attributeList.push(emailAttribute);
+//   attributeList.push(phoneNumberAttribute);
 
-  userPool.signUp(req.body.username, req.body.password, attributeList, null, function(err, result){
-      if (err) {
-          res.status(500).send(err.message);
-          logger.info(err.message)
-          return;
-      }
-      const data={
-        status:'Success',
-        message:'User registered successfully'
-      }
-      res.send(data);
-  });
-} catch (err) {
-  logger.error(`Error creating user:`, err);
-  res.status(500).send(err.message);
-}
-});
+//   userPool.signUp(req.body.username, req.body.password, attributeList, null, function(err, result){
+//       if (err) {
+//           res.status(500).send(err.message);
+//           logger.info(err.message)
+//           return;
+//       }
+//       const data={
+//         status:'Success',
+//         message:'User registered successfully'
+//       }
+//       res.send(data);
+//   });
+// } catch (err) {
+//   logger.error(`Error creating user:`, err);
+//   res.status(500).send(err.message);
+// }
+// });
+
+//const cognitoidentityserviceprovider = new AWS.CognitoIdentityServiceProvider();
+
+// app.post('/resend-verification', (req, res) => {  
+//   const params = {
+//     Username: req.body.username,
+//     ClientId: ClientId
+//   };
+//  // const params = poolData.add(username)
+
+//   cognitoidentityserviceprovider.resendConfirmationCode(params, function(err, data) {
+//     if (err) {
+//       console.error(err);
+//       res.status(500).send(err.message);
+//     } else {
+//       res.send({ message: 'Verification code resent successfully' });
+//     }
+//   });
+// });
 
 
-const cognitoidentityserviceprovider = new AWS.CognitoIdentityServiceProvider();
-
-app.post('/resend-verification', (req, res) => {  
-  const params = {
-    Username: req.body.username,
-    ClientId: ClientId
-  };
- // const params = poolData.add(username)
-
-  cognitoidentityserviceprovider.resendConfirmationCode(params, function(err, data) {
-    if (err) {
-      console.error(err);
-      res.status(500).send(err.message);
-    } else {
-      res.send({ message: 'Verification code resent successfully' });
-    }
-  });
-});
-
-
-app.post('/confirmUser', function(req, res) {
+// app.post('/confirmUser', function(req, res) {
   
-  const  username = req.body.username;
-  const confirmationCode = req.body.verificationCode;
-  const userData = {
-      Username: username,
-      Pool: userPool
-  };
-  const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
-  cognitoUser.confirmRegistration(confirmationCode, true, function(err, result) {
-    if (err) {
-        res.status(500).send(err.message);
-    }
-    else{
-    const data={
-      status:'Success',
-      message:'User confirmed successfully',
-      data:result
-    }
-    res.send(data);
-  }
-});
-});
+//   const  username = req.body.username;
+//   const confirmationCode = req.body.verificationCode;
+//   const userData = {
+//       Username: username,
+//       Pool: userPool
+//   };
+//   const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+//   cognitoUser.confirmRegistration(confirmationCode, true, function(err, result) {
+//     if (err) {
+//         res.status(500).send(err.message);
+//     }
+//     else{
+//     const data={
+//       status:'Success',
+//       message:'User confirmed successfully',
+//       data:result
+//     }
+//     res.send(data);
+//   }
+// });
+// });
 
 // app.post('/request-otp', (req, res) => {
 //   const phoneNumber = req.body.phoneNumber;
@@ -1177,86 +1182,86 @@ app.post('/userIdPhoneNumberMapping',async (req,res) =>{
 
 });
 
-app.post('/login', function(req, res) {
+// app.post('/login', function(req, res) {
   
-  const  username = req.body.username;
-  const password = req.body.password;
+//   const  username = req.body.username;
+//   const password = req.body.password;
 
-  const authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails({
-      Username: username,
-      Password: password
-  });
-  const userData = {
-      Username: username,
-      Pool: userPool
-  };
-  const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+//   const authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails({
+//       Username: username,
+//       Password: password
+//   });
+//   const userData = {
+//       Username: username,
+//       Pool: userPool
+//   };
+//   const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
 
-  cognitoUser.authenticateUser(authenticationDetails, {
-      onSuccess: (result) => {
-          const accessToken = result.getAccessToken().getJwtToken();
-          const decodedCAccessToken = result.getIdToken().decodePayload()
+//   cognitoUser.authenticateUser(authenticationDetails, {
+//       onSuccess: (result) => {
+//           const accessToken = result.getAccessToken().getJwtToken();
+//           const decodedCAccessToken = result.getIdToken().decodePayload()
          
-          // You can also get idToken and refreshToken here
-          const data={
-            status:'Success',
-            message:'User LoggedIn successfully',
-            accessToken:accessToken,
-            username:decodedCAccessToken['cognito:username']
+//           // You can also get idToken and refreshToken here
+//           const data={
+//             status:'Success',
+//             message:'User LoggedIn successfully',
+//             accessToken:accessToken,
+//             username:decodedCAccessToken['cognito:username']
 
-          }
-          res.send(data);
-      },
-      onFailure: (err) => {
-        logger.info(err.message)
-          res.status(500).send(err.message);
-      },
-      mfaSetup: (challengeName, challengeParameters) => {
-        // MFA setup logic here
-        // You might want to send a response to the user indicating that MFA setup is required
-        logger.info("usr logged in")
-    },
-  });
-});
+//           }
+//           res.send(data);
+//       },
+//       onFailure: (err) => {
+//         logger.info(err.message)
+//           res.status(500).send(err.message);
+//       },
+//       mfaSetup: (challengeName, challengeParameters) => {
+//         // MFA setup logic here
+//         // You might want to send a response to the user indicating that MFA setup is required
+//         logger.info("usr logged in")
+//     },
+//   });
+// });
 
 
-app.post('/forgot-password', (req, res) => {
-  const { email } = req.body;
+// app.post('/forgot-password', (req, res) => {
+//   const { email } = req.body;
 
-  const params = {
-      ClientId: poolData.ClientId,
-      Username: email,
-  };
+//   const params = {
+//       ClientId: poolData.ClientId,
+//       Username: email,
+//   };
 
-  cognitoidentityserviceprovider.forgotPassword(params, (err, data) => {
-      if (err) {
-          console.error(err);
-          res.status(500).json({ message: 'Error initiating password reset' });
-      } else {
-          res.json({ message: 'Password reset initiated, check your email' });
-      }
-  });
-});
+//   cognitoidentityserviceprovider.forgotPassword(params, (err, data) => {
+//       if (err) {
+//           console.error(err);
+//           res.status(500).json({ message: 'Error initiating password reset' });
+//       } else {
+//           res.json({ message: 'Password reset initiated, check your email' });
+//       }
+//   });
+// });
 
-app.post('/reset-password', (req, res) => {
-  const { email, code, newPassword } = req.body;
+// app.post('/reset-password', (req, res) => {
+//   const { email, code, newPassword } = req.body;
 
-  const params = {
-      ClientId: poolData.ClientId,
-      Username: email,
-      ConfirmationCode: code,
-      Password: newPassword,
-  };
+//   const params = {
+//       ClientId: poolData.ClientId,
+//       Username: email,
+//       ConfirmationCode: code,
+//       Password: newPassword,
+//   };
 
-  cognitoidentityserviceprovider.confirmForgotPassword(params, (err, data) => {
-      if (err) {
-          console.error(err);
-          res.status(500).json({ message: 'Error resetting password' });
-      } else {
-          res.json({ message: 'Password reset successfully' });
-      }
-  });
-});
+//   cognitoidentityserviceprovider.confirmForgotPassword(params, (err, data) => {
+//       if (err) {
+//           console.error(err);
+//           res.status(500).json({ message: 'Error resetting password' });
+//       } else {
+//           res.json({ message: 'Password reset successfully' });
+//       }
+//   });
+// });
 
 app.post('/sendOTP', async (req, res) => {
   const { phoneNumber } = req.body;
@@ -1281,6 +1286,8 @@ app.post('/sendOTP', async (req, res) => {
     res.status(500).json({ error: 'Error sending OTP' });
   }
 });
+
+
 
 app.post('/verifyOTP', async (req, res) => {
   const { phoneNumber, otp, login_platform } = req.body;
@@ -1392,6 +1399,27 @@ async function deleteOTP(phoneNumber) {
 //       }
 //     });
 //   });
+
+app.post('/sendRegistrationMessage', async (req, res) => {
+  const { user_phone_number,eventId,orgName, portfolioLink} = req.body;
+
+   
+    try {
+    // Send the OTP via WhatsApp
+    const eventDetails = await getEventDetailsById(eventId);
+    const event = eventDetails.event_name.split('_').join(' ');
+
+    await whatsappSender.sendRegistrationMessage(user_phone_number,event,orgName,portfolioLink)
+    
+    await scheduleEventReminder(user_phone_number,eventDetails,portfolioLink);
+
+    res.status(200).json({ message: 'Message sent successfully' });
+  } catch (whatsappError) {
+    logger.error('Error sending Message via WhatsApp:', whatsappError);
+    
+    res.status(500).json({ message: 'Message sent unsuccessfully' });
+  }
+});
 
 
 const storage = multer.memoryStorage();
@@ -2582,6 +2610,33 @@ app.post('/setFavouritesNew', async (req, res) => {
   }
 });
 
+app.post('/setPortfolioFavourites', async (req, res) => {
+  try {
+    
+    const username = req.body.username;
+    const imageUrl = req.body.imageUrl;
+    const isFav = req.body.isFav;
+    const folderName = extractFolderName(imageUrl);
+    logger.info("Selecting Image:"+imageUrl);
+    const params = {
+      TableName: portfolioImagesTable,
+      Item: {
+        username: username,
+        s3_url: imageUrl,
+        is_favourite: isFav,
+        folder_name:folderName
+      }
+    };
+
+    const result = await docClient.put(params).promise();
+    logger.info("Put operation succeeded:", result);
+    res.send(result);
+  } catch (err) {
+    logger.error("Unable to update item. Error JSON:", err);
+    res.status(500).send('Unable to mark the photo as favourite');
+  }
+});
+
 
 app.get('/folders', (req, res) => {
   s3.listObjectsV2({ Bucket: bucketName }, (err, data) => {
@@ -2913,9 +2968,10 @@ app.post('/downloadImage', async (req, res) => {
           const updateResult = await docClient.update(updateParams).promise();
 
           console.log('updating s3 image  url for user is successful:', updateResult);
-
+          //const walletStatus = await handleWalletCreation(username);
           
-          res.json({ potrait_s3_url: data.Location });
+          //res.json({ potrait_s3_url: data.Location , walletInfo:walletStatus});
+          res.json({ potrait_s3_url: data.Location});
         } catch (error) {
           console.error('Error:', error);
           res.status(500).json({ error: 'Error uploading image' });
@@ -2980,7 +3036,6 @@ app.post('/downloadImage', async (req, res) => {
           if(!existingUser){
           await createUser(username,userSource,role,reward_points);
           console.log("created sucessfulyy ->"+username)
-          logger.info('Successfully created new user: ', username);
           }
           const updateParamsUserEvent = {
             TableName: userEventTableName,
@@ -4431,10 +4486,14 @@ app.post('/saveEventDetails', upload.single('eventImage'), async (req, res) => {
     Body: ''
   };
 
+  const compressedBuffer = await sharp(file.buffer)
+  .resize(600, 600) // Adjust the size as needed for your thumbnails
+  .toBuffer();
+
   const params = {
     Bucket: "flashbackeventthumbnail",
     Key: fileKey,
-    Body: file.buffer,
+    Body: compressedBuffer,
     ContentType: file.mimetype,
   };
 
@@ -4511,6 +4570,20 @@ app.get("/getClientDetailsByEventname/:eventName", async (req, res) => {
   logger.info(`Fetching event details for ${eventName}`)
   try {
    const clientObj = await getClientObject(eventName);
+   res.send(clientObj);
+  } catch (err) {
+    logger.info(err.message);
+    res.status(500).send(err.message);
+  }
+});
+
+
+app.get("/getClientDetailsByEventId/:eventId", async (req, res) => {
+  
+  const eventId = req.params.eventId; // Adjust based on your token payload
+  logger.info(`Fetching event details for ${eventId}`)
+  try {
+   const clientObj = await getClientObjectNew(eventId);
    res.send(clientObj);
   } catch (err) {
     logger.info(err.message);
@@ -4800,11 +4873,10 @@ app.put('/updateEvent/:eventId', async (req, res) => {
     Key: {
       event_id: eventId
     },
-    UpdateExpression: "set event_location = :eventLocation,event_date = :eventDate, invitation_note = :invitationNote, uploaded_files = :uploadedFiles",
+    UpdateExpression: "set event_location = :eventLocation,event_date = :eventDate, invitation_note = :invitationNote",
     ExpressionAttributeValues: {
       ":eventLocation": eventLocation,
       ":invitationNote": invitationNote,
-      ":uploadedFiles": uploadedFiles,
       ":eventDate":eventDate
     },
     ReturnValues: "ALL_NEW",
@@ -4859,6 +4931,25 @@ const getEventDetailsById = async (eventId) => {
     throw new Error(`Error fetching event details: ${err.message}`);
   }
 };
+
+app.get("/getEventDetailsByFolderName/:folderName", async (req, res) => {
+  const folderName = req.params.folderName;
+  logger.info(`Fetching event details for ${folderName}`);
+  
+  try {
+    const eventDetails = await getEventDetailsByFolderName(folderName);
+
+    if (eventDetails) {
+      logger.info(`Fetched event details for ${folderName}`);
+      res.status(200).send(eventDetails);
+    } else {
+      res.status(404).send({ message: "Event not found" });
+    }
+  } catch (err) {
+    logger.info(err.message);
+    res.status(500).send({ message: err.message });
+  }
+});
 
 const getEventDetailsByFolderName = async (folderName) => {
   const eventParams = {
@@ -4982,6 +5073,33 @@ app.delete('/deleteEvent/:eventId/:userPhoneNumber', async (req, res) => {
         };
 
         try {
+          // Step 1: Delete image records from DynamoDB (ImageUploadData table) using s3_url
+          logger.info(`Step 1: Deleting image records from DynamoDB (ImageUploadData table) using s3_url values`);
+
+          for (const object of listedObjects.Contents) {
+            const s3Url = `https://${indexBucketName}.s3.ap-south-1.amazonaws.com/${object.Key}`; // Construct the s3_url
+
+            const deleteImageDataParams = {
+              TableName: ImageUploadData,
+              Key: {
+                s3_url: s3Url
+              }
+            };
+
+            try {
+              const res = await docClient.delete(deleteImageDataParams).promise();
+              logger.info(res);
+              //logger.info(`Deleted image record from ImageUploadData table for s3_url: ${s3Url}`);
+            } catch (deleteError) {
+              logger.error(`Failed to delete image record from ImageUploadData table for s3_url: ${s3Url} - Error: ${deleteError.message}`);
+              return res.status(500).json({ message: 'Error deleting image records from ImageUploadData table', error: deleteError.message });
+            }
+          }
+
+          logger.info(`Step 1a Completed: Deleted image records from DynamoDB (ImageUploadData table)`);
+
+          // Step 2: Delete the objects from indexBucketName
+  
           // Delete the objects from indexBucketName
           const deleteResultIndex = await s3.deleteObjects(deleteParamsIndex).promise();
           if (deleteResultIndex.Errors && deleteResultIndex.Errors.length > 0) {
@@ -5295,6 +5413,126 @@ const imageUpload = multer({
 //   }
 // });
 
+// Function to fetch images by user phone number and return the count
+async function fetchImageCountByUserPhoneNumber(userPhoneNumber) {
+  let totalCount = 0;
+  let lastEvaluatedKey = null;
+
+  do {
+      const params = {
+          TableName: ImageUploadData, // Ensure this is the correct table name
+          IndexName: 'user_phone_number-index',
+          KeyConditionExpression: 'user_phone_number = :userPhoneNumber',
+          FilterExpression: 'attribute_not_exists(enable_sharing) OR enable_sharing <> :true',
+          ExpressionAttributeValues: {
+              ':userPhoneNumber': userPhoneNumber,
+              ':true': true
+          },
+          ExclusiveStartKey: lastEvaluatedKey // For pagination
+      };
+
+      try {
+          const data = await docClient.query(params).promise();
+          totalCount += data.Count; // Add the count of the current batch
+          lastEvaluatedKey = data.LastEvaluatedKey; // For pagination
+
+      } catch (error) {
+          console.error('Error fetching images count:', error);
+          throw new Error('Error fetching images count');
+      }
+  } while (lastEvaluatedKey); // Continue querying until all items are fetched
+
+  return totalCount;
+}
+
+// API Endpoint to fetch image count
+app.get('/imagesForFederated/:userPhoneNumber', async (req, res) => {
+  const userPhoneNumber = req.params.userPhoneNumber;
+
+  try {
+      const imageCount = await fetchImageCountByUserPhoneNumber(userPhoneNumber);
+      res.json({ count: imageCount });
+  } catch (error) {
+      res.status(500).json({ error: 'Error fetching images count' });
+  }
+});
+
+
+async function updateEnableSharingForUserPhoneNumber(userPhoneNumber) {
+  let lastEvaluatedKey = null;
+  logger.info("Updating Enable sharing for userPhoneNumber: " + userPhoneNumber);
+
+  do {
+    // Step 1: Fetch records in batches
+    const params = {
+      TableName: ImageUploadData,
+      IndexName: 'user_phone_number-index',
+      KeyConditionExpression: 'user_phone_number = :userPhoneNumber',
+      FilterExpression: 'attribute_not_exists(enable_sharing) OR enable_sharing <> :true',
+      ExpressionAttributeValues: {
+        ':userPhoneNumber': userPhoneNumber,
+        ':true': true
+      },
+      ExclusiveStartKey: lastEvaluatedKey, // Start key for pagination
+    };
+
+    try {
+      const data = await docClient.query(params).promise();
+      const itemsToUpdate = data.Items;
+
+      // Step 2: Update each item one by one synchronously
+      for (let item of itemsToUpdate) {
+        const updateParams = {
+          TableName: ImageUploadData,
+          Key: {
+            s3_url: item.s3_url
+          },
+          UpdateExpression: 'set enable_sharing = :true',
+          ExpressionAttributeValues: {
+            ':true': true
+          }
+        };
+
+     
+
+        // Wait for each item to be updated sequentially
+        const res=await docClient.update(updateParams).promise();
+        logger.info(res);
+      }
+      logger.info(`Fetched ${itemsToUpdate.length} items in this batch.`);
+      // Step 3: Prepare for the next batch
+      lastEvaluatedKey = data.LastEvaluatedKey;
+
+    } catch (error) {
+      console.error('Error fetching or updating images:', error);
+      throw new Error('Error fetching or updating images');
+    }
+
+  } while (lastEvaluatedKey); // Continue until no more items to fetch
+
+  // Step 4: Return success after all batches are processed
+  logger.info("Updating Enable sharing for userPhoneNumber completed: " + userPhoneNumber);
+  return { message: 'All records updated successfully' };
+}
+
+
+
+// Example usage (Node.js Express route handler)
+app.post("/updateImageEnableSharing",async(req, res) =>{
+  const { userPhoneNumber } = req.body;
+
+  if (!userPhoneNumber) {
+      return res.status(400).json({ error: 'userPhoneNumber is required' });
+  }
+
+  try {
+      const result = await updateEnableSharingForUserPhoneNumber(userPhoneNumber);
+      res.json(result);
+  } catch (error) {
+      res.status(500).json({ error: error.message });
+  }
+});
+
 // Function to update DynamoDB
 async function updateImageUploadData(s3Result, userPhoneNumber, originalName, eventName, folderName) {
   const now = new Date();
@@ -5306,7 +5544,9 @@ async function updateImageUploadData(s3Result, userPhoneNumber, originalName, ev
       file_name: originalName,
       event_name: eventName,
       folder_name: folderName,
-      uploaded_date: now.toISOString()
+      uploaded_date: now.toISOString(),
+      enable_sharing:false,
+
     }
   };
 
@@ -5455,82 +5695,57 @@ app.post("/updateStatus", async (req, res) => {
 
 
 
-app.post("/updateUserClientInteraction", async (req, res) => {
-  const { userPhoneNumber, clientName,eventName ,rewardPoints} = req.body;
-  let newRewardPoints;
-  logger.info("Updating User Client Interaction -> " + userPhoneNumber + ":" + clientName);
+app.post("/updateUserDetails", async (req, res) => {
+  const { user_phone_number, ...updateFields } = req.body;
+
+  logger.info("Updating the user info for the user_phone_number: ", user_phone_number);
 
   try {
-    // Step 1: Check if there is an entry with the given userPhoneNumber and clientName
-    // const getParams = {
-    //   TableName: userClientInteractionTable,
-    //   Key: {
-    //     "user_phone_number": userPhoneNumber,
-    //     "client_name": clientName
-    //   }
-    // };
-
-    // const getResult = await docClient.get(getParams).promise();
-
-    const newTimestampEntry = {
-      event_name: eventName,
-      visited_time: new Date().toISOString()
-    };
-
-    let updateParams;
-
-    // if (getResult.Item) {
-    //   // Entry exists, update the visited_time_stamp array
-    //   updateParams = {
-    //     TableName: userClientInteractionTable,
-    //     Key: {
-    //       "user_phone_number": userPhoneNumber,
-    //       "client_name": clientName
-    //     },
-    //     UpdateExpression: "SET visited_time_obj = list_append(visited_time_obj, :newTimestampEntry)",
-    //     ExpressionAttributeValues: {
-    //       ":newTimestampEntry": [newTimestampEntry]
-    //     },
-    //     ReturnValues: "UPDATED_NEW"
-    //   };
-
-    //   await docClient.update(updateParams).promise();
-    //   logger.info("updated the user client interaction table");
-    // } else {
-      updateParams = {
-        TableName: userClientInteractionTable,
-        Item: {
-          "user_phone_number": userPhoneNumber,
-          "client_name": clientName,
-          "visited_time_obj": [newTimestampEntry]
-        }
-      };
-
-      await docClient.put(updateParams).promise();
-      logger.info("updated the user client interaction table");
-
-      // Step 3: Update reward points in the users table
-      newRewardPoints = rewardPoints+10;
-      const rewardPointsUpdateParams = {
-        TableName: userrecordstable,
-        Key: { "user_phone_number": userPhoneNumber },
-        UpdateExpression: "SET reward_points = :rewardPoints",
-        ExpressionAttributeValues: {
-          ":rewardPoints": newRewardPoints 
-        },
-        ReturnValues: "UPDATED_NEW"
-      };
-
-      await docClient.update(rewardPointsUpdateParams).promise();
-      logger.info("updated the users table with updated reward points");
-    
-
-    res.status(200).send({"clientName":clientName,"rewardPoints":newRewardPoints});
-  } catch (err) {
-    logger.error(err.message);
-    res.status(500).send(err.message);
+    // Call the function to update user details
+    const updatedUser = await updateUserDetails(user_phone_number, updateFields);
+    res.status(200).json({ message: "User details updated successfully", data: updatedUser });
+  } catch (error) {
+    console.error("Error updating user details:", error);
+    res.status(500).json({ error: error.message || "Could not update user details" });
   }
 });
+
+
+const updateUserDetails = async (user_phone_number, updateFields) => {
+  if (!user_phone_number) {
+    throw new Error("User phone number is required");
+  }
+
+  if (Object.keys(updateFields).length === 0) {
+    throw new Error("At least one field to update must be provided");
+  }
+
+  const updateExpressions = [];
+  const expressionAttributeNames = {};
+  const expressionAttributeValues = {};
+
+  Object.keys(updateFields).forEach(key => {
+    updateExpressions.push(`#${key} = :${key}`);
+    expressionAttributeNames[`#${key}`] = key;
+    expressionAttributeValues[`:${key}`] = updateFields[key];
+  });
+
+  const params = {
+    TableName: userrecordstable,
+    Key: {
+      user_phone_number: user_phone_number
+    },
+    UpdateExpression: `SET ${updateExpressions.join(', ')}`,
+    ExpressionAttributeNames: expressionAttributeNames,
+    ExpressionAttributeValues: expressionAttributeValues,
+    ReturnValues: 'ALL_NEW'
+  };
+
+  // Perform the update operation
+  const result = await docClient.update(params).promise();
+  return result.Attributes;
+};
+
 
 
 app.get("/fetchUserDetails/:userPhoneNumber",async (req,res)=>{
@@ -5559,48 +5774,48 @@ app.get("/fetchUserDetailsByUserName/:userName", async (req, res) => {
 });
 
 
-app.post("/updateUserDetails", async (req, res) => {
-  const { user_phone_number, ...updateFields } = req.body;
+// app.post("/updateUserDetails", async (req, res) => {
+//   const { user_phone_number, ...updateFields } = req.body;
 
-  logger.info("Updating the user info for the user_name: ",user_phone_number)
+//   logger.info("Updating the user info for the user_name: ",user_phone_number)
   
-  if (!user_phone_number) {
-      return res.status(400).json({ error: "User phone number is required" });
-  }
+//   if (!user_phone_number) {
+//       return res.status(400).json({ error: "User phone number is required" });
+//   }
 
-  if (Object.keys(updateFields).length === 0) {
-      return res.status(400).json({ error: "At least one field to update must be provided" });
-  }
+//   if (Object.keys(updateFields).length === 0) {
+//       return res.status(400).json({ error: "At least one field to update must be provided" });
+//   }
 
-  const updateExpressions = [];
-  const expressionAttributeNames = {};
-  const expressionAttributeValues = {};
+//   const updateExpressions = [];
+//   const expressionAttributeNames = {};
+//   const expressionAttributeValues = {};
 
-  Object.keys(updateFields).forEach(key => {
-      updateExpressions.push(`#${key} = :${key}`);
-      expressionAttributeNames[`#${key}`] = key;
-      expressionAttributeValues[`:${key}`] = updateFields[key];
-  });
+//   Object.keys(updateFields).forEach(key => {
+//       updateExpressions.push(`#${key} = :${key}`);
+//       expressionAttributeNames[`#${key}`] = key;
+//       expressionAttributeValues[`:${key}`] = updateFields[key];
+//   });
 
-  const params = {
-      TableName: userrecordstable,
-      Key: {
-          user_phone_number: user_phone_number
-      },
-      UpdateExpression: `SET ${updateExpressions.join(', ')}`,
-      ExpressionAttributeNames: expressionAttributeNames,
-      ExpressionAttributeValues: expressionAttributeValues,
-      ReturnValues: 'ALL_NEW'
-  };
+//   const params = {
+//       TableName: userrecordstable,
+//       Key: {
+//           user_phone_number: user_phone_number
+//       },
+//       UpdateExpression: `SET ${updateExpressions.join(', ')}`,
+//       ExpressionAttributeNames: expressionAttributeNames,
+//       ExpressionAttributeValues: expressionAttributeValues,
+//       ReturnValues: 'ALL_NEW'
+//   };
 
-  try {
-      const result = await docClient.update(params).promise();
-      res.status(200).json({ message: "User details updated successfully", data: result.Attributes });
-  } catch (error) {
-      console.error("Error updating user details:", error);
-      res.status(500).json({ error: "Could not update user details" });
-  }
-});
+//   try {
+//       const result = await docClient.update(params).promise();
+//       res.status(200).json({ message: "User details updated successfully", data: result.Attributes });
+//   } catch (error) {
+//       console.error("Error updating user details:", error);
+//       res.status(500).json({ error: "Could not update user details" });
+//   }
+// });
 
 app.post("/saveProShareDetails",async (req, res) =>{
 
@@ -6328,8 +6543,86 @@ app.get("/getAllImages/:eventName", async(req,res) =>{
 //   }
 // });
 
+// app.post("/updatePortfolioDetails", async (req, res) => {
+//   const { user_phone_number, org_name, social_media,role } = req.body;
+
+//   logger.info("Updating portfolio details for the user_phone_number: ", user_phone_number);
+
+//   if (!user_phone_number) {
+//     return res.status(400).json({ error: "User phone number is required" });
+//   }
+
+//   // Initialize the update fields object
+//   let updateFields = {};
+
+//   // Convert org_name to lowercase, remove spaces, and handle the username generation
+//   if (org_name) {
+//     let username = org_name.toLowerCase().replace(/\s+/g, '');
+//     logger.info(username)
+
+//     // Check if the generated username already exists and create a unique one if necessary
+//     let isUsernameTaken = true;
+//     let counter = 1;
+//     let baseUsername = username;
+
+//     while (isUsernameTaken) {
+//       const existingUser = await getUserObjectByUserName(username);
+//       logger.info(existingUser)
+//       if (existingUser.length!==0) {
+//         username = `${baseUsername}${counter}`;
+//         counter++;
+//       } else {
+//         isUsernameTaken = false;
+//       }
+//     }
+
+//     updateFields.user_name = username; // Add the generated username to update fields
+//   }
+
+//   // Add other fields to the updateFields object
+//   if (social_media) {
+//     updateFields.social_media = social_media;
+//   }
+//   if (org_name) {
+//     updateFields.org_name = org_name;
+//   }
+//   if(role){
+//     updateFields.role = role;
+//   }
+
+//   const updateExpressions = [];
+//   const expressionAttributeNames = {};
+//   const expressionAttributeValues = {};
+
+//   Object.keys(updateFields).forEach(key => {
+//     updateExpressions.push(`#${key} = :${key}`);
+//     expressionAttributeNames[`#${key}`] = key;
+//     expressionAttributeValues[`:${key}`] = updateFields[key];
+//   });
+
+//   const params = {
+//     TableName: userrecordstable,
+//     Key: {
+//       user_phone_number: user_phone_number
+//     },
+//     UpdateExpression: `SET ${updateExpressions.join(', ')}`,
+//     ExpressionAttributeNames: expressionAttributeNames,
+//     ExpressionAttributeValues: expressionAttributeValues,
+//     ReturnValues: 'ALL_NEW'
+//   };
+
+//   try {
+//     const result = await docClient.update(params).promise();
+//     res.status(200).json({ message: "Portfolio details updated successfully", data: result.Attributes });
+//   } catch (error) {
+//     console.error("Error updating portfolio details:", error);
+//     res.status(500).json({ error: "Could not update portfolio details" });
+//   }
+// });
+
+
 app.post("/updatePortfolioDetails", async (req, res) => {
-  const { user_phone_number, org_name, social_media,role } = req.body;
+  const { user_phone_number } = req.body;
 
   logger.info("Updating portfolio details for the user_phone_number: ", user_phone_number);
 
@@ -6340,10 +6633,11 @@ app.post("/updatePortfolioDetails", async (req, res) => {
   // Initialize the update fields object
   let updateFields = {};
 
-  // Convert org_name to lowercase, remove spaces, and handle the username generation
-  if (org_name) {
+  // Check if org_name is provided and handle username generation
+  if (req.body.user_name) {
+    const org_name = req.body.user_name;
     let username = org_name.toLowerCase().replace(/\s+/g, '');
-    logger.info(username)
+    logger.info(`Generated username: ${username}`);
 
     // Check if the generated username already exists and create a unique one if necessary
     let isUsernameTaken = true;
@@ -6352,8 +6646,8 @@ app.post("/updatePortfolioDetails", async (req, res) => {
 
     while (isUsernameTaken) {
       const existingUser = await getUserObjectByUserName(username);
-      logger.info(existingUser)
-      if (existingUser.length!==0) {
+      logger.info(`Existing user object: ${existingUser}`);
+      if (existingUser.length !== 0) {
         username = `${baseUsername}${counter}`;
         counter++;
       } else {
@@ -6361,44 +6655,33 @@ app.post("/updatePortfolioDetails", async (req, res) => {
       }
     }
 
-    updateFields.user_name = username; // Add the generated username to update fields
-  }
-
-  // Add other fields to the updateFields object
-  if (social_media) {
-    updateFields.social_media = social_media;
-  }
-  if (org_name) {
+    // Add the generated username and org_name to update fields
+    updateFields.user_name = username;
     updateFields.org_name = org_name;
   }
-  if(role){
-    updateFields.role = role;
+
+  // Conditionally add other fields to the updateFields object if they exist in the request
+  if (req.body.social_media) {
+    updateFields.social_media = req.body.social_media;
+  }
+  if (req.body.role) {
+    updateFields.role = req.body.role;
+  }
+  if (req.body.org_name) {
+    updateFields.org_name = req.body.org_name;
   }
 
-  const updateExpressions = [];
-  const expressionAttributeNames = {};
-  const expressionAttributeValues = {};
 
-  Object.keys(updateFields).forEach(key => {
-    updateExpressions.push(`#${key} = :${key}`);
-    expressionAttributeNames[`#${key}`] = key;
-    expressionAttributeValues[`:${key}`] = updateFields[key];
-  });
-
-  const params = {
-    TableName: userrecordstable,
-    Key: {
-      user_phone_number: user_phone_number
-    },
-    UpdateExpression: `SET ${updateExpressions.join(', ')}`,
-    ExpressionAttributeNames: expressionAttributeNames,
-    ExpressionAttributeValues: expressionAttributeValues,
-    ReturnValues: 'ALL_NEW'
-  };
+  // If no fields are present to update, return a 400 error
+  if (Object.keys(updateFields).length === 0) {
+    return res.status(400).json({ error: "No valid fields provided for update" });
+  }
 
   try {
-    const result = await docClient.update(params).promise();
-    res.status(200).json({ message: "Portfolio details updated successfully", data: result.Attributes });
+    // Use the generic update function to update the user details
+    const updatedUser = await updateUserDetails(user_phone_number, updateFields);
+
+    res.status(200).json({ message: "Portfolio details updated successfully", data: updatedUser });
   } catch (error) {
     console.error("Error updating portfolio details:", error);
     res.status(500).json({ error: "Could not update portfolio details" });
@@ -6407,16 +6690,17 @@ app.post("/updatePortfolioDetails", async (req, res) => {
 
 app.post('/uploadPortfolioImages', upload.any(), async (req, res) => {
   try {
-    const { org_name, user_name } = req.body;
+    const {user_name } = req.body;
     const files = req.files;
 
-    logger.info(`Uploading Portfolio Images of orgName: ${org_name}, userName: ${user_name}`);
+    logger.info(`Uploading Portfolio Images of userName: ${user_name}`);
 
     if (!files || files.length === 0) {
       return res.status(400).json({ message: 'No files uploaded' });
     }
 
     const uploadPromises = [];
+    const dynamoDBPromises = [];
 
     // Group files by folder names based on the field names in the request
     const folders = files.reduce((acc, file) => {
@@ -6430,8 +6714,8 @@ app.post('/uploadPortfolioImages', upload.any(), async (req, res) => {
     for (const [folderName, folderFiles] of Object.entries(folders)) {
       for (const file of folderFiles) {
         // Define unique file names for original and thumbnail versions
-        const uniqueFileName = `${org_name}-${user_name}/${folderName}/${Date.now()}-${path.basename(file.originalname)}`;
-        const thumbnailFileName = `${org_name}-${user_name}/thumbnails/${folderName}/${Date.now()}-${path.basename(file.originalname)}`;
+        const uniqueFileName = `${user_name}/${folderName}/${path.basename(file.originalname)}`;
+        const thumbnailFileName = `${user_name}/thumbnails/${folderName}/${path.basename(file.originalname)}`;
 
         // Upload original image
         const originalParams = {
@@ -6441,7 +6725,21 @@ app.post('/uploadPortfolioImages', upload.any(), async (req, res) => {
           ContentType: file.mimetype,
         };
 
-        uploadPromises.push(s3.upload(originalParams).promise());
+        // Push S3 upload promise to uploadPromises array
+        uploadPromises.push(s3.upload(originalParams).promise().then(uploadResult => {
+          // Prepare DynamoDB entry for the thumbnail image
+          const dynamoDBParams = {
+            TableName: portfolioImagesTable,
+            Item: {
+              username: user_name,
+              folder_name: folderName,
+              s3_url: uploadResult.Location,
+              uploadDate: Date.now(), // Timestamp
+              is_favourite:false
+            }
+          };
+          dynamoDBPromises.push(docClient.put(dynamoDBParams).promise());
+        }));
 
         // Compress and upload the thumbnail image
         const compressedBuffer = await sharp(file.buffer)
@@ -6455,22 +6753,41 @@ app.post('/uploadPortfolioImages', upload.any(), async (req, res) => {
           ContentType: file.mimetype,
         };
 
+        // Push S3 upload promise for thumbnail to uploadPromises array
         uploadPromises.push(s3.upload(thumbnailParams).promise());
+        //.then(uploadResult => {
+        //   // Prepare DynamoDB entry for the thumbnail image
+        //   const dynamoDBParams = {
+        //     TableName: portfolioImagesTable,
+        //     Item: {
+        //       username: user_name,
+        //       folder_name: folderName,
+        //       s3_url: uploadResult.Location,
+        //       uploadDate: Date.now(), // Timestamp
+        //       is_favourite:false
+        //     }
+        //   };
+        //   dynamoDBPromises.push(docClient.put(dynamoDBParams).promise());
+        //}));
       }
     }
-
+    // Wait for all S3 uploads and DynamoDB inserts to complete
     const uploadResults = await Promise.all(uploadPromises);
+    await Promise.all(dynamoDBPromises);
+
+    // Filter out only the valid S3 upload results
+    const validUploadResults = uploadResults.filter(result => result && result.Key && result.Location);
 
     res.status(200).json({
-      message: 'Files uploaded successfully',
-      files: uploadResults.map(result => ({
+      message: 'Files uploaded successfully and entries added to DynamoDB',
+      files: validUploadResults.map(result => ({
         fileName: result.Key,
         location: result.Location,
       }))
     });
   } catch (error) {
-    console.error('Error uploading files to S3:', error);
-    res.status(500).json({ message: 'Error uploading files to S3', error: error.message });
+    console.error('Error uploading files to S3 or inserting into DynamoDB:', error);
+    res.status(500).json({ message: 'Error processing request', error: error.message });
   }
 });
 
@@ -6514,55 +6831,151 @@ app.post('/uploadPortfolioImages', upload.any(), async (req, res) => {
 
 
 // This is the code for the protocol backend 
-
-app.get('/getPortfolioImages/:org_name/:user_name', async (req, res) => {
+app.get('/getPortfolioImages/:username', async (req, res) => {
   try {
-    const { org_name, user_name } = req.params;
+    const { username } = req.params;
 
-    if (!org_name || !user_name) {
-      return res.status(400).json({ message: 'org_name and user_name are required' });
+    if (!username) {
+      return res.status(400).json({ message: 'Username is required' });
     }
 
-    const folderName = `${org_name}-${user_name}`;
+    const sanitizedUserName = String(username);
+
     const params = {
-      Bucket: portfolioBucketName,
-      // Prefix: folderName+'/thumbnails',
-      Prefix: folderName
+      TableName: portfolioImagesTable,
+      KeyConditionExpression: "username = :username",
+      ExpressionAttributeValues: {
+        ":username": sanitizedUserName,
+      }
     };
 
-    const s3Data = await s3.listObjectsV2(params).promise();
+    // Query DynamoDB for images of the specified user
+    const data = await docClient.query(params).promise();
 
-    if (!s3Data.Contents || s3Data.Contents.length === 0) {
-      // return res.status(404).json({ message: 'No images found' });
-      return res.status(200).json({ message: 'No images found' });
+    if (!data.Items || data.Items.length === 0) {
+      return res.status(200).json([]);
     }
 
-    const folderWiseImages = {};
+    // Format the response data
+    const folderMap = data.Items.reduce((acc, item) => {
+      const folderName = item.folder_name || 'default_folder';
 
-    s3Data.Contents.forEach(item => {
-      const fullPath = item.Key;
-      const parts = fullPath.split('/');
-      const folder = parts.length > 2 ? parts[1] : 'Uncategorized'; // Assuming folder is the second part in the key structure
-      const fileName = parts[parts.length - 1];
-      const url = `https://${portfolioBucketName}.s3.amazonaws.com/${item.Key}`;
-
-      if (!folderWiseImages[folder]) {
-        folderWiseImages[folder] = [];
+      if (!acc[folderName]) {
+        acc[folderName] = [];
       }
 
-      folderWiseImages[folder].push({ fileName, url });
-    });
+      acc[folderName].push({
+        s3_url: item.s3_url,
+        uploadDate: item.uploadDate,
+        file_name: item.file_name,
+        is_favourite: item.is_favourite || false
+      });
 
-    res.status(200).json({
-      message: 'Images retrieved successfully',
-      images: folderWiseImages,
-    });
+      return acc;
+    }, {});
+
+    // Transform the folderMap into the desired array format
+    const images = Object.entries(folderMap).map(([folderName, images]) => ({
+      folderName,
+      images: images.sort((a, b) => b.is_favourite - a.is_favourite)  // Sort by is_favourite
+    }));
+    
+
+    // Return the formatted response
+    res.status(200).json(images);
+
   } catch (error) {
-    console.error('Error retrieving images from S3:', error);
-    res.status(500).json({ message: 'Error retrieving images from S3', error: error.message });
+    console.error('Error retrieving images from DynamoDB:', error);
+    res.status(500).json({ message: 'Error retrieving images from DynamoDB', error: error.message });
   }
 });
 
+
+
+app.post('/updateBannerImage', upload.single('bannerImage'), async (req, res) => {
+
+  const { userName } = req.body;
+  const file = req.file;
+
+  if (!file) {
+    return res.status(400).send('No file uploaded.');
+  }
+
+  const folderPath = `${userName}/Banner/`;
+
+  logger.info(`Updating banner for: ${userName}`);
+
+  try {
+    // Step 1: List and delete all existing objects in the banner folder
+    const s3Objects = await s3.listObjectsV2({
+      Bucket: portfolioBucketName,
+      Prefix: folderPath
+    }).promise();
+
+    if (s3Objects.Contents.length > 0) {
+      const deleteParams = {
+        Bucket: portfolioBucketName,
+        Delete: {
+          Objects: s3Objects.Contents.map((obj) => ({ Key: obj.Key }))
+        }
+      };
+      await s3.deleteObjects(deleteParams).promise();
+      logger.info(`Deleted existing banner images for: ${userName}`);
+    }
+
+    // Step 2: Prepare the file name and compress the image
+    const fileName = path.basename(file.originalname);
+    const compressedBuffer = await sharp(file.buffer)
+      .resize(600, 600) // Adjust the size as needed for your thumbnails
+      .toBuffer();
+
+    // Step 3: Upload the new banner image
+    const uploadParams = {
+      Bucket: portfolioBucketName,
+      Key: `${folderPath}${fileName}`,
+      Body: compressedBuffer,
+      ContentType: file.mimetype
+    };
+
+    await s3.upload(uploadParams).promise();
+
+    const imageUrl = `https://${portfolioBucketName}.s3.amazonaws.com/${folderPath}${fileName}`;
+    logger.info(`Uploaded and updated banner: ${imageUrl}`);
+
+    // Step 4: Send response back with the new image URL
+    res.json({ imageUrl });
+
+  } catch (error) {
+    console.error('Error processing banner update:', error);
+    res.status(500).send('Error updating banner image');
+  }
+});
+
+// In your backend API
+app.get('/getBannerImage/:userName', async (req, res) => {
+  const {userName } = req.params;
+
+  const folderPath = `${userName}/Banner/`;
+
+  try {
+    const s3Objects = await s3.listObjectsV2({
+      Bucket: portfolioBucketName,
+      Prefix: folderPath
+    }).promise();
+
+    if (s3Objects.Contents.length > 0) {
+      const bannerObject = s3Objects.Contents[0];
+      const imageUrl = `https://${portfolioBucketName}.s3.amazonaws.com/${bannerObject.Key}`;
+      logger.info(`fetched banner: ${imageUrl}`);
+      res.json({ imageUrl });
+    } else {
+      res.json({ });
+    }
+  } catch (error) {
+    console.error('Error fetching banner image:', error);
+    res.status(500).json({ message: 'Error fetching banner image' });
+  }
+});
 
 app.get("/getDatasets/:orgName", async (req, res) => {
   
@@ -6635,7 +7048,7 @@ app.get("/getDatasetDetails/:orgName/:datasetName", async (req, res) => {
       res.status(200).send(result.Items);
     } else {
       logger.info(`No dataset details found for ${orgName} and ${datasetName}`);
-      res.status(404).send({ message: "Dataset details not found" });
+      res.status(200).send({ message: "Dataset details not found" });
     }
 
   } catch (err) {
@@ -6824,14 +7237,12 @@ app.get("/getDatasetRequests/:dataset", async (req, res) => {
   logger.info("Fetching dataset requests for dataset:",dataset)
   const params = {
     TableName: modelToDatsetReqTable,
-    FilterExpression: "#datasetKey = :datasetValue and #status = :status",
+    FilterExpression: "#datasetKey = :datasetValue",
     ExpressionAttributeNames: {
-      "#datasetKey": "dataset",
-      "#status": "status"
+      "#datasetKey": "dataset"
     },
     ExpressionAttributeValues: {
-      ":datasetValue": dataset,
-      ":status":"pending"
+      ":datasetValue": dataset
     }
   };
 
@@ -7636,8 +8047,979 @@ app.post('/backfillFolderNames', async (req, res) => {
     res.status(500).send('Error occurred during backfilling folder_name');
   }
 });
+
+// app.post('/transfer-chewy-coins-by-wallet-address', async (req, res) => {
+//   try {
+//       const { amount, senderMobileNumber,recipientAddress} = req.body;
+
+//       // Log incoming request
+//       logger.info(`Transfer request received: amount = ${amount}`);
+
+//       // Read sender's private key and recipient address from config
+        
+//       //const recipientAddress = aptosConfig.RECIPIENT_ADDRESS;
+//       const transferAmount = amount ;  // Use provided amount or default
+//       //const recipientWalletDetails = await fetchWalletDetails(recipientMobileNumber)
+
+//       // const status = await transferAptosCoins(recipientAddress, transferAmount);
+//       const status = await transferChewyCoins(recipientAddress, transferAmount,senderMobileNumber, '');
+
+//       res.status(200).json({
+//           message: 'Chewy Coin transfer successful',
+//           status: status
+//       });
+//   } catch (error) {
+//       logger.error(`Transfer failed: ${error}`);
+//       res.status(500).json({ error: 'Chewy Coin transfer failed', details: error.message });
+//   }
+// });
+
+// app.post('/transfer-chewy-coins', async (req, res) => {
+//   try {
+//       const { amount, senderMobileNumber,recipientMobileNumber} = req.body;
+
+//       // Log incoming request
+//       logger.info(`Transfer request received: amount = ${amount}`);
+
+//       // Read sender's private key and recipient address from config
+        
+//       //const recipientAddress = aptosConfig.RECIPIENT_ADDRESS;
+//       const transferAmount = amount ;  // Use provided amount or default
+//       const recipientWalletDetails = await fetchWalletDetails(recipientMobileNumber)
+
+//       // const status = await transferAptosCoins(recipientAddress, transferAmount);
+//       const status = await transferChewyCoins(recipientWalletDetails.wallet_address, transferAmount,senderMobileNumber, recipientMobileNumber);
+
+//       res.status(200).json({
+//           message: 'Chewy Coin transfer successful',
+//           status: status
+//       });
+//   } catch (error) {
+//       logger.error(`Transfer failed: ${error}`);
+//       res.status(500).json({ error: 'Chewy Coin transfer failed', details: error.message });
+//   }
+// });
+
+
+
+
+// app.post('/transfer-aptos-coins', async (req, res) => {
+//   try {
+//      // const { amount, recipientAddress, mobileNumber } = req.body;
+//      const { amount, senderMobileNumber,recipientMobileNumber} = req.body;
+//       // Log incoming request
+//       logger.info(`Transfer request received: amount = ${amount}`);
+//       const recipientWalletDetails = await fetchWalletDetails(recipientMobileNumber)
+//       // Read sender's private key and recipient address from config
+        
+//       //const recipientAddress = aptosConfig.RECIPIENT_ADDRESS;
+//       const transferAmount = amount ;  // Use provided amount or default
+
+//       // const status = await transferAptosCoins(recipientAddress, transferAmount);
+//       const status = await transferAptosCoins(recipientWalletDetails.wallet_address, transferAmount,senderMobileNumber,recipientMobileNumber);
+
+//       res.status(200).json({
+//           message: 'Chewy Coin transfer successful',
+//           status: status
+//       });
+//   } catch (error) {
+//       logger.error(`Transfer failed: ${error}`);
+//       res.status(500).json({ error: 'Chewy Coin transfer failed', details: error.message });
+//   }
+// });
+
+// // Global error handling for unhandled promise rejections
+// process.on('unhandledRejection', (reason, promise) => {
+//   logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+// });
+
+// // Encryption function for private keys (for secure storage)
+// const encrypt = (text, secret) => {
+//   const iv = crypto.randomBytes(16);  // Generate a random initialization vector
+  
+//   // Hash the secret to ensure it's 32 bytes (256 bits)
+//   const key = crypto.createHash('sha256').update(secret).digest('base64').substr(0, 32);
+
+//   const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(key), iv);
+
+//   let encrypted = cipher.update(text, 'utf8', 'hex');
+//   encrypted += cipher.final('hex');
+
+//   return iv.toString('hex') + ':' + encrypted;
+// };
+
+// // Function to check if wallet exists in DynamoDB
+// const checkWalletExists = async (mobileNumber) => {
+//   const params = {
+//     TableName: 'wallet_details',
+//     Key: {
+//       user_phone_number: mobileNumber
+//     }
+//   };
+
+//   try {
+//     const result = await docClient.get(params).promise();  // Use docClient
+//     return result.Item ? result.Item : null;
+//   } catch (error) {
+//     logger.error(`Error checking wallet for mobile number: ${mobileNumber}: ${error.message}`);
+//     throw error;
+//   }
+// };
+
+// // Function to store wallet info in DynamoDB
+// const storeWalletInDynamoDB = async (mobileNumber, walletDetails) => {
+//   const params = {
+//     TableName: walletDetailsTable,
+//     Item: {
+//       user_phone_number: mobileNumber,
+//       wallet_address: walletDetails.walletAddress,
+//       public_key: walletDetails.publicKey,
+//       encrypted_private_key: walletDetails.encryptedPrivateKey,
+//       balance: walletDetails.balance,  // Set balance as '0'
+//     }
+//   };
+
+//   try {
+//     await docClient.put(params).promise();  // Use docClient
+//     logger.info(`Wallet info stored in DynamoDB for mobile number: ${mobileNumber}`);
+//   } catch (error) {
+//     logger.error(`Error storing wallet info in DynamoDB for mobile number: ${mobileNumber}: ${error.message}`);
+//     throw error;
+//   }
+// };
+
+// // Function to update wallet transaction in DynamoDB
+// async function updateWalletTransaction(transactionId, senderMobileNumber,recipientMobileNumber, fromAddress, toAddress, amount, transactionStatus, coinType) {
+//   const params = {
+//     TableName: walletTransactions,  // DynamoDB table name
+//     Item: {
+//       transaction_id: transactionId,  // Primary key: transaction ID provided by the SDK
+//       from_mobile_number: senderMobileNumber,
+//       to_mobile_number:recipientMobileNumber,
+//       from_address: fromAddress,      // From address (sender's wallet address)
+//       to_address: toAddress,          // To address (receiver's wallet address)
+//       amount: amount,                 // Amount of coins transferred
+//       coin_type: coinType,            // Type of coin being transferred (e.g., Aptos, ChewyCoin)
+//       status: transactionStatus,      // Status of the transaction (e.g., COMPLETED, FAILED)
+//       transaction_date: new Date().toISOString()  // Storing the transaction date
+//     }
+//   };
+
+//   try {
+//     // Insert the transaction details into the DynamoDB table
+//     await docClient.put(params).promise();
+//     logger.info(`Transaction with ID ${transactionId} successfully logged in wallet_transactions table`);
+//     return true;
+//   } catch (error) {
+//     logger.error(`Error updating transaction with ID ${transactionId}: ${error.message}`);
+//     throw new Error(`Failed to update transaction: ${error.message}`);
+//   }
+// }
+// async function fetchTransactionForUserPhoneNumber(userPhoneNumber) {
+//   try {
+//     const params = {
+//       TableName: walletTransactions,
+//       FilterExpression: '(from_mobile_number = :phone OR to_mobile_number = :phone) AND coin_type = :coinType',
+//       ExpressionAttributeValues: {
+//         ':phone': userPhoneNumber,
+//         ':coinType': 'Chewy', // Assuming 'Chewy' is a fixed coin type
+//       },
+//     };
+
+//     let items = [];
+//     let lastEvaluatedKey = null;
+
+//     // Fetching paginated data
+//     do {
+//       if (lastEvaluatedKey) {
+//         params.ExclusiveStartKey = lastEvaluatedKey;
+//       }
+
+//       const data = await docClient.scan(params).promise();
+//       items = items.concat(data.Items);
+//       lastEvaluatedKey = data.LastEvaluatedKey;
+//     } while (lastEvaluatedKey);
+
+//     logger.info("Total number of transactions fetched: " + items.length); // Correcting size to length for array
+//     return items;
+    
+//   } catch (error) {
+//     logger.error('Error fetching transactions: ', error);
+//     throw error; // Rethrow error to be caught in the route handler
+//   }
+// }
+
+// // Route handler to fetch transactions by user phone number
+// app.get('/transactionsByUserPhoneNumber/:userPhoneNumber', async (req, res) => {
+//   const { userPhoneNumber } = req.params;
+
+//   if (!userPhoneNumber) {
+//     return res.status(400).json({ message: 'Phone number is required' });
+//   }
+
+//   try {
+//     const allTransactions = await fetchTransactionForUserPhoneNumber(userPhoneNumber);
+//     res.status(200).json(allTransactions);
+//   } catch (error) {
+//     console.error('Error:', error);
+//     res.status(500).json({ message: 'Something went wrong' });
+//   }
+// });
+
+
+// app.get('/transactionsByUserPhoneNumber/:userPhoneNumber', async (req, res) => {
+//   const { userPhoneNumber } = req.params;
+
+//   if (!userPhoneNumber) {
+//     return res.status(400).json({ message: 'Phone number is required' });
+//   }
+
+//   try {
+//     // Fetch all transactions by phone number with pagination
+//     const allTransactions = await fetchTransactionForUserPhoneNumber(userPhoneNumber);
+//     res.status(200).send(allTransactions);
+
+//   } catch (error) {
+//     console.error('Error:', error);
+//     res.status(500).json({ message: 'Something went wrong' });
+//   }
+// });
+
+
+// /** Register the receiver account to receive transfers for Chewy Coin, paid by feePayer. */
+// async function registerChewyCoinStore(account) {
+//   try {
+//     // const privateKeyHex = feePayer.encrypted_private_key.startsWith('0X')
+//     // ? feePayer.encrypted_private_key.slice(2) // Remove the '0x' prefix
+//     // : feePayer.encrypted_private_key;
+  
+//     // // Derive an account with a private key and account address
+//     // const privateKey = new Ed25519PrivateKey(privateKeyHex);
+//     // const address = AccountAddress.from(feePayer.wallet_address);
+//     // const feePayerAccount = Account.fromPrivateKey({ privateKey, address });
+//     const feePayerAccount =  await getAccountInfo(config.aptosConfig.senderMobileNumber)
+//     // Build the transaction for registering the CoinStore
+//     const transaction = await aptosClient.transaction.build.simple({
+//       sender: account.accountAddress,  // Primary account (Receiver in your case)
+//       withFeePayer: true,
+//       data: {
+//         function: "0x1::managed_coin::register",  // Managed coin register function
+//         typeArguments: ["0xc26a8eda1c3ab69a157815183ddda88c89d6758ee491dd1647a70af2907ce074::coin::Chewy"],  // Chewy coin type
+//         functionArguments: [],  // No arguments needed for registration
+//       },
+//     });
+
+//     // Simulate the transaction with both signer (receiver) and fee payer
+//     const [simulationResult] = await aptosClient.transaction.simulate.simple({
+//       signerPublicKey: account.publicKey,
+//       feePayerPublicKey: feePayerAccount.publicKey, // Fee payer as secondary signer
+//       transaction,
+//     });
+//     logger.info("Transaction simulation result: ", simulationResult);
+
+//     // Sign the transaction with both the receiver and fee payer accounts
+//     const senderAuthenticator = aptosClient.transaction.sign({ signer: account, transaction });
+//     const feePayerAuthenticator = aptosClient.transaction.signAsFeePayer({
+//       signer: feePayerAccount,
+//       transaction
+//   })
+
+//     // Submit the multi-agent transaction to the blockchain
+//     const pendingTxn = await aptosClient.transaction.submit.simple({
+//       transaction,
+//       senderAuthenticator:senderAuthenticator,
+//       feePayerAuthenticator: feePayerAuthenticator, // Include fee payer's authenticator
+//     });
+
+//     logger.info(`Transaction submitted. Hash: ${pendingTxn.hash}`);
+
+//     // Wait for the transaction to be confirmed
+//     const transRes = await aptosClient.waitForTransaction({ transactionHash: pendingTxn.hash });
+//     logger.info(`Transaction confirmed. Hash: ${pendingTxn.hash}`);
+//     logger.info('User Registration Status : '+transRes);
+
+//     return pendingTxn.hash;
+//   } catch (error) {
+//     console.error(`Error registering Chewy Coin with fee payer: ${error.message}`);
+//     return new Error(error.message);
+//   }
+// }
+
+// // Function to fund the account
+// const transferAptosCoins = async ( recipientAddress, amount, senderMobileNumber,recipientMobileNumber) => {
+//   try {
+//     // to derive an account with a private key and account address
+//     const senderWalletDetails = await fetchWalletDetails(senderMobileNumber);
+//     const privateKeyHex = senderWalletDetails.encrypted_private_key.startsWith('0X')
+//     ? senderWalletDetails.encrypted_private_key.slice(2) // Remove the '0x' prefix
+//     : senderWalletDetails.encrypted_private_key;
+  
+//     // Derive an account with a private key and account address
+//     const privateKey = new Ed25519PrivateKey(privateKeyHex);
+//     const address = AccountAddress.from(senderWalletDetails.wallet_address);
+//     const senderAccount = Account.fromPrivateKey({ privateKey, address });
+
+//     // Generate and sign the transaction
+//     //Generate
+//     const transaction = await aptosClient.transaction.build.simple({
+//       sender: senderAccount.accountAddress,
+//       data: {
+//         // All transactions on Aptos are implemented via smart contracts.
+//         type: 'entry_function_payload',
+//         function: "0x1::aptos_account::transfer",
+//        functionArguments: [recipientAddress, amount],
+//       },
+//     });
+
+//     //Sign
+//     const senderAuthenticator = aptosClient.transaction.sign({
+//       signer: senderAccount,
+//       transaction,
+//     });
+
+//     logger.info("Transaction generated and Signed Successfully");
+//     // If the fee looks ok, continue to signing!
+
+//     // Submit the transaction    
+//     const committedTransaction = await aptosClient.transaction.submit.simple({
+//       transaction,
+//       senderAuthenticator,
+//     });
+//     logger.info(`Transaction submitted: ${committedTransaction.hash}`);
+
+//     // Wait for confirmation
+//     const executedTransaction = await aptosClient.waitForTransaction({ transactionHash: committedTransaction.hash });
+//     logger.info(`Transaction confirmed: ${executedTransaction.success}`);
+    
+//     await updateWalletTransaction(
+//       executedTransaction.hash, 
+//       senderMobileNumber,
+//       recipientMobileNumber, 
+//       senderWalletDetails.wallet_address,         // Sender's wallet address (from_address)
+//       recipientAddress,      // Receiver's wallet address (to_address)
+//       amount, 
+//       executedTransaction.success, 
+//       "Aptos"                           // Type of coin being transferred
+//     );
+//     return executedTransaction.success;
+    
+//   } catch (error) {
+//     logger.error(`Error funding account: ${error.message}`);
+//     throw new Error(error.message);
+//   }
+// };
+
+// const transferChewyCoins = async (recipientAddress, amount, senderMobileNumber, recipientMobileNumber) => {
+//   try {
+    
+//     const senderAccount = await getAccountInfo(senderMobileNumber);
+//     const parentAccount = await getAccountInfo(config.aptosConfig.senderMobileNumber);
+
+//     // Generate and sign the transaction
+//     const transaction = await aptosClient.transaction.build.simple({
+//       sender: senderAccount.accountAddress,
+//       withFeePayer:true,
+//       data: {
+//         type: 'entry_function_payload',
+//         function: '0x1::coin::transfer',
+//         typeArguments: ['0xc26a8eda1c3ab69a157815183ddda88c89d6758ee491dd1647a70af2907ce074::coin::Chewy'],  // Chewy Coin type
+//         functionArguments: [recipientAddress, amount],
+//       },
+//     });
+
+//     // Sign the transaction
+//     const senderAuthenticator = aptosClient.transaction.sign({
+//       signer: senderAccount,
+//       transaction,
+//     });
+//     const parentAccountAuthenticator = aptosClient.transaction.signAsFeePayer({
+//       signer: parentAccount,
+//       transaction
+//     })
+
+//     logger.info("Transaction generated and Signed Successfully");
+//     const [userTransactionResponse] = await aptosClient.transaction.simulate.simple({
+//       signerPublicKey: senderAccount.publicKey,
+//       feePayerPublicKey: parentAccount.publicKey,
+//       transaction,
+//   });
+//   logger.info(userTransactionResponse.max_gas_amount)
+
+//     // Submit the transaction    
+//     const committedTransaction = await aptosClient.transaction.submit.simple({
+//       transaction,
+//       senderAuthenticator : senderAuthenticator,
+//       feePayerAuthenticator : parentAccountAuthenticator,
+//     });
+//     logger.info(`Transaction submitted: ${committedTransaction.hash}`);
+
+//     // Wait for confirmation
+//     const executedTransaction = await aptosClient.waitForTransaction({ transactionHash: committedTransaction.hash });
+//     logger.info(`Transaction confirmed: ${executedTransaction.success}`);
+
+//     // Update the wallet transaction details
+//     await updateWalletTransaction(
+//       executedTransaction.hash,
+//       senderMobileNumber,
+//       recipientMobileNumber,
+//       senderAccount.accountAddress.toString('hex'), // Sender's wallet address (from_address)
+//       recipientAddress, // Receiver's wallet address (to_address)
+//       amount,
+//       executedTransaction.success,
+//       "Chewy" // Type of coin being transferred
+//     );
+
+//     // If the transaction is successful, update reward points for sender and receiver
+//     // if (executedTransaction.success) {
+//     //   await updateRewards(senderMobileNumber, recipientMobileNumber, amount);
+//     // }
+
+//     return executedTransaction.success;
+
+//   } catch (error) {
+//     console.error(`Error transferring Chewy coins: ${error.message}`);
+//     throw new Error(error.message);
+//   }
+// };
+
+
+// const getAccountInfo = async(mobileNumber)=>{
+//   try{
+
+//     // Fetch wallet details for the sender
+//     const walletDetails = await fetchWalletDetails(mobileNumber);
+//     const privateKeyHex = walletDetails.encrypted_private_key.startsWith('0X')
+//   ? walletDetails.encrypted_private_key.slice(2) // Remove the '0x' prefix
+//   : walletDetails.encrypted_private_key;
+
+//     // Derive an account with a private key and account address
+//     const privateKey = new Ed25519PrivateKey(privateKeyHex);
+//     const address = AccountAddress.from(walletDetails.wallet_address);
+//     const account = Account.fromPrivateKey({ privateKey, address });
+//     return account;
+//   }
+//   catch(err){
+//     return new Error(err.message);
+//   }
+// }
+
+// const updateRewards = async (senderMobileNumber, recipientMobileNumber, amount) => {
+//   try {
+//     // Fetch sender and recipient user details
+//     const senderUserDetails = await getUserObjectByUserPhoneNumber(senderMobileNumber);
+//     const recipientUserDetails = await getUserObjectByUserPhoneNumber(recipientMobileNumber);
+
+//     // Calculate new reward points
+//     const updatedSenderRewardPoints = senderUserDetails.reward_points ? senderUserDetails.reward_points - amount : 0;
+//     const updatedRecipientRewardPoints = recipientUserDetails.reward_points ? recipientUserDetails.reward_points + amount : amount;
+
+//     // Prepare the update payload for the sender
+//     const updateSenderData = {
+//       reward_points: Math.max(updatedSenderRewardPoints, 0), // Ensure reward points do not go below 0
+//     };
+
+//     // Prepare the update payload for the recipient
+//     const updateRecipientData = {
+//       reward_points: updatedRecipientRewardPoints,
+//     };
+//     await updateUserDetails(senderMobileNumber,updateSenderData);
+
+//     // Update the sender and recipient reward points
+//     //await API_UTIL.post('/updateUserDetails', updateSenderData);
+//     logger.info("Sender reward points updated successfully");
+
+//     await updateUserDetails(recipientMobileNumber,updateRecipientData)
+//     //await API_UTIL.post('/updateUserDetails', updateRecipientData);
+//     logger.info("Recipient reward points updated successfully");
+
+//   } catch (error) {
+//     console.error(`Error updating rewards: ${error.message}`);
+//     throw new Error("Failed to update reward points");
+//   }
+// };
+
+// // Define the function to handle wallet creation and transaction
+// async function handleWalletCreation(mobileNumber) {
+//   logger.info(`Received request to create wallet for mobile number: ${mobileNumber}`);
+  
+//   try {
+//     // Check if the wallet already exists for the given mobile number
+//     const existingWallet = await checkWalletExists(mobileNumber);
+
+//     if (existingWallet) {
+//       // If the wallet exists, return the existing wallet details
+//       logger.info(`Wallet already exists for mobile number: ${mobileNumber}`);
+//       return {
+//         message: 'Wallet already exists',
+//         walletAddress: existingWallet.wallet_address,
+//         balance: existingWallet.balance,
+//         status: 200
+//       };
+//     }
+
+//     // If no wallet exists, create a new Aptos wallet
+//     const aptosAccount = Account.generate();
+//     logger.info("Account created Successfully");
+
+//     // Encrypt the private key and prepare wallet details
+//     const encryptedPrivateKey = aptosAccount.privateKey.signingKey.toString('hex');  // Encryption can be added as per your logic
+
+//     const walletDetails = {
+//       walletAddress: aptosAccount.accountAddress.toString('hex'),  // Hex representation of the wallet address
+//       publicKey: aptosAccount.publicKey.key.toString('hex'),  // Hex representation of the public key
+//       balance: CHEWY_AMOUNT,
+//       encryptedPrivateKey,  // The encrypted private key
+//     };
+
+//     // Store the wallet info in DynamoDB
+//     await storeWalletInDynamoDB(mobileNumber, walletDetails);
+
+//     // Log successful wallet creation
+//     logger.info(`Aptos Wallet created for mobile number: ${mobileNumber} with wallet address: ${walletDetails.walletAddress}`);
+
+//     // Transfer Aptos coins to the newly created wallet
+//    // const transactionStatus = await transferAptosCoins(walletDetails.walletAddress, APTOS_AMOUNT || aptosConfig.DEFAULT_TRANSFER_AMOUNT,aptosConfig.SENDER_MOBILE_NUMBER, mobileNumber);
+
+//     // if (transactionStatus !== true) {
+//     //   throw new Error("Transaction failed");
+//     // }
+
+//     //const parentWallet = await fetchWalletDetails(aptosConfig.SENDER_MOBILE_NUMBER);
+//     // Register the wallet with ChewyCoin store and transfer coins
+//     await registerChewyCoinStore(aptosAccount);
+//     await transferChewyCoins(walletDetails.walletAddress, CHEWY_AMOUNT, config.aptosConfig.senderMobileNumber, mobileNumber);
+
+//     // Return wallet details and transaction status
+//     return {
+//       message: 'Aptos Wallet created and coins transferred successfully',
+//       walletAddress: walletDetails.walletAddress,
+//       balance: CHEWY_AMOUNT || aptosConfig.DEFAULT_TRANSFER_AMOUNT,
+//       status: 201
+//     };
+//   } catch (error) {
+//     // Log any error that occurs during the process
+//     logger.error(`Error creating Aptos wallet for mobile number: ${mobileNumber}: ${error.message}`);
+//     throw new Error(`Failed to create Aptos wallet: ${error.message}`);
+//   }
+// }
+
+// // Express route
+// app.post('/createWallet', async (req, res) => {
+//   const { mobileNumber } = req.body;  // Accept the mobileNumber from the request
+
+//   try {
+//     const response = await handleWalletCreation(mobileNumber);
+//     res.status(response.status).json(response);
+//   } catch (error) {
+//     res.status(500).json({ message: 'Failed to create Aptos wallet', error: error.message });
+//   }
+// });
+
+
+// app.get('/fetchWallet/:mobileNumber', async (req, res) => {
+//   const { mobileNumber } = req.params; // Accept the mobileNumber from the route parameters
+
+//   try {
+//     logger.info(`Received request to fetch wallet for mobile number: ${mobileNumber}`);
+    
+//     // Call the function to fetch wallet details
+//     const walletDetails = await fetchWalletDetails(mobileNumber);
+    
+//     // Return the wallet details if found
+//     res.status(200).json({
+//       message: 'Wallet found',
+//       walletDetails,
+//       status: 200
+//     });
+
+//   } catch (error) {
+//     // Handle known errors
+//     if (error.message === "Mobile number is required" || error.message === "Wallet not found") {
+//       return res.status(400).json({
+//         message: error.message,
+//         status: 400
+//       });
+//     }
+
+//     // Log and handle other errors
+//     logger.error(`Error in fetching wallet for mobile number ${mobileNumber}: ${error.message}`);
+//     res.status(500).json({
+//       message: 'Failed to fetch wallet',
+//       error: error.message,
+//       status: 500
+//     });
+//   }
+// });
+
+
+// const fetchWalletDetails = async (mobileNumber) => {
+//   if (!mobileNumber) {
+//     throw new Error("Mobile number is required");
+//   }
+
+//   // Define the DynamoDB query parameters
+//   const params = {
+//     TableName: walletDetailsTable,
+//     Key: {
+//       user_phone_number: mobileNumber
+//     }
+//   };
+
+//   try {
+//     logger.info(`Fetching wallet for mobile number: ${mobileNumber}`);
+
+//     // Fetch wallet from DynamoDB
+//     const result = await docClient.get(params).promise();
+
+//     logger.info("Fetched wallet for mobile number:", mobileNumber);
+
+//     // If no wallet found, throw an error
+//     if (!result || !result.Item) {
+//       throw new Error("Wallet not found");
+//     }
+
+//     // Return the wallet details
+//     return result.Item;
+
+//   } catch (error) {
+//     // Log the error and rethrow it
+//     logger.error(`Error fetching wallet for mobile number ${mobileNumber}: ${error.message}`);
+//     throw error;
+//   }
+// };
+
+
+
+// Function to get balance using Aptos SDK
+// const getWalletBalance = async (walletAddress) => {
+//   try {
+//     const resources = await aptosClient.getAccountResource({ accountAddress: walletAddress,
+//       resourceType: "0x1::coin::CoinStore<0xc26a8eda1c3ab69a157815183ddda88c89d6758ee491dd1647a70af2907ce074::coin::Chewy>"})
+      
+
+//     // Find the specific CoinStore resource for AptosCoin
+//     // const aptosCoinResource = resources.find(
+//     //   (resource) => resource.type === '0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>'
+//     // );
+
+//     if (resources) {
+//       // Get the coin balance from the resource data
+//       return resources.coin.value;
+//     } else {
+//       return 0; // No balance found
+//     }
+//   } catch (error) {
+//     throw new Error(`Error fetching wallet balance: ${error.message}`);
+//   }
+// };
+
+// API endpoint to get wallet details and balance
+// app.get('/wallet-balance/:phoneNumber', async (req, res) => {
+//   const { phoneNumber } = req.params;
+
+//   try {
+//     // Get wallet details from DynamoDB
+//     const walletDetails = await fetchWalletDetails(phoneNumber);
+//     const userDetails = await getUserObjectByUserPhoneNumber(phoneNumber);
+
+//     if (!walletDetails) {
+//       return res.status(404).json({ message: 'Wallet not found' });
+//     }
+
+//     // Get the balance of the wallet
+//     const balance = await getWalletBalance(walletDetails.wallet_address);
+
+//     if(balance!=userDetails.reward_points){
+//       updateUserDetails(phoneNumber,{reward_points:balance})
+//     }
+//     // Return the wallet details and balance
+//     res.status(200).json({
+//       walletAddress: walletDetails.wallet_address,
+//       balance: balance,
+//     });
+//   } catch (error) {
+//     console.error('Error fetching wallet balance:', error);
+//     res.status(500).json({ message: 'Error fetching wallet balance', error: error.message });
+//   }
+// });
+
+// app.get("/getAccountInfo/:walletAddress", async (req, res) => {
+//   const walletAddress = req.params.walletAddress;
+
+//   try {
+//     const fund = await aptosClient.getAccountInfo({ accountAddress: walletAddress });
+    
+//     // If account info is found, return success response with status 200
+//     if (fund) {
+//       return res.status(200).json({
+//         message: "Account Details found",
+//         accountInfo: fund // Optional: you can include the account information in the response
+//       });
+//     }
+    
+//   } catch (err) {
+//     // If account is not found or any error occurs, return a 404 response
+//     return res.status(404).json({
+//       message: "No account found with wallet address"
+//     });
+//   }
+// });
+
+app.post("/saveInvitationDetails", async (req, res) => {
+  const { user_phone_number, event_id, ...otherDetails } = req.body;
+
+  // Build the update expression and attribute values
+  let updateExpression = "SET";
+  const ExpressionAttributeNames = {};
+  const ExpressionAttributeValues = {};
+
+  Object.keys(otherDetails).forEach((key, index) => {
+    const attributeKey = `#attr${index}`;
+    const attributeValue = `:val${index}`;
+    updateExpression += ` ${attributeKey} = ${attributeValue},`;
+    ExpressionAttributeNames[attributeKey] = key;
+    ExpressionAttributeValues[attributeValue] = otherDetails[key];
+  });
+
+  // Remove the last comma
+  updateExpression = updateExpression.slice(0, -1);
+
+  try {
+    const params = {
+      TableName: "invitation_details",
+      Key: {
+        user_phone_number: user_phone_number,
+        event_id: event_id,
+      },
+      UpdateExpression: updateExpression,
+      ExpressionAttributeNames: ExpressionAttributeNames,
+      ExpressionAttributeValues: ExpressionAttributeValues,
+      ReturnValues: "ALL_NEW",
+    };
+
+    const result = await docClient.update(params).promise();
+    logger.info(
+      `Invitation has been upserted for: ${user_phone_number} for event: ${event_id}`
+    );
+    res.send({
+      message: "Successfully upserted record",
+      data: result.Attributes,
+    });
+  } catch (err) {
+    logger.error("Error upserting invitation details: " + err.message);
+    res.status(500).send(err.message);
+  }
+});
+
+app.get("/getInvitationDetails/:eventId/:userPhoneNumber", async (req, res) => {
+  const { eventId, userPhoneNumber} = req.params;
+  logger.info(
+    `Fetching Invitation details for: ${userPhoneNumber} for event: ${eventId}`
+  );
+  try {
+    const params = {
+      TableName: "invitation_details",
+      Key: {
+        user_phone_number: userPhoneNumber,
+        event_id: eventId,
+      },
+    };
+
+    const result = await docClient.get(params).promise();
+    logger.info(
+      `Invitation has been fetched for: ${userPhoneNumber} for event: ${eventId}`
+    );
+    res.send(result.Item);
+  } catch (err) {
+    logger.error("Error upserting invitation details: " + err.message);
+    res.status(500).send(err.message);
+  }
+});
+
+(async function() {
+  try {
+       await rescheduleJobs();
+      logger.info('Missed jobs recovered successfully');
+  } catch (error) {
+      console.error('Error recovering missed jobs:', error);
+  }
+})();
+
+// API to schedule job with multiple notifications
+app.post('/schedule', async (req, res) => {
+  const { userPhoneNumber, eventId, orgName } = req.body;
+
+  if (!userPhoneNumber || !eventId ||  !orgName) {
+      return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  try {
+    const event = await getEventDetailsById(eventId);
+      const jobs = await scheduleEventReminder(userPhoneNumber, event, orgName);
+      res.status(200).json({ jobs, message: 'Jobs scheduled successfully' });
+  } catch (error) {
+      console.error('Error scheduling job:', error);
+      res.status(500).json({ error: 'Failed to schedule jobs' });
+  }
+});
+
+function formatDateForScheduling(date) {
+  const pad = (n) => (n < 10 ? '0' + n : n);
+
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+async function scheduleEventReminder(userPhoneNumber, event, portfolioLink) {
+  const jobs = [];
+  try {
+    const now = new Date();
+    const eventDateObj = new Date(event.event_date);
+
+    // Check if the event date has already passed
+    if (now > eventDateObj) {
+      logger.info(`Event ${event.event_id} has already passed, no reminders will be sent.`);
+      return jobs; // Skip reminder scheduling if the event has passed
+    }
+
+    const notifications = [];
+
+    // Notification 1: One day before at 08:00 AM
+    const notification1 = new Date(eventDateObj);
+    notification1.setDate(eventDateObj.getDate() - 1); // Set to one day before
+    notification1.setHours(2, 30, 0, 0); // Set time to 08:00 AM
+
+    // Notification 2: On the day of the event at 08:00 AM
+    const notification2 = new Date(eventDateObj);
+    //notification2.setDate(eventDateObj.getDate() - 1);
+    notification2.setHours(2, 30, 0, 0); // Set time to 08:00 AM
+
+    // Add both notifications to the array if they are in the future
+    if (notification1 > now) {
+      notifications.push({'time':notification1,'day':'Tomorrow'}); // One day before reminder
+    }
+    if (notification2 > now) {
+      notifications.push({'time':notification2,'day':'Today'}); // Event day reminder
+    }
+
+    for (let notification of notifications) {
+      const jobId = uuidv4();
+    const formattedDate = formatDateForScheduling(notification.time);
+      const jobData = {
+        job_id: jobId,
+        user_phone_number: userPhoneNumber,
+        event_id: event.event_id,
+        event_date: event.event_date,
+        event_location: event.event_location,
+        job_day:notification.day,
+        notification_time: formattedDate,
+        portfolio_link: portfolioLink,
+        status: 'pending',
+      };
+
+      // Save job in DynamoDB
+      const params = {
+        TableName: 'scheduled_jobs',
+        Item: jobData,
+      };
+      await docClient.put(params).promise();
+
+      // Schedule the job
+      const job = schedule.scheduleJob(notification.time, function () {
+        logger.info(`Reminder: Your event ${event.event_id} is scheduled for ${event.event_time}`);
+        completeJob(jobId, notification.day, userPhoneNumber, event,portfolioLink); // Mark job as completed in DynamoDB
+      }); 
+      jobs.push(jobId);
+      logger.info(job);
+    }
+  } catch (err) {
+    logger.info(err.message);
+    throw new Error(err.message);
+  }
+  return jobs;
+}
+
+
+// Mark job as completed
+async function completeJob(jobId, day, userPhoneNumber, event, portfolioLink) {
+  try{
+  const params = {
+      TableName: 'scheduled_jobs',
+      Key: { job_id: jobId },
+      UpdateExpression: 'set #status = :status',
+      ExpressionAttributeNames: { '#status': 'status' },
+      ExpressionAttributeValues: { ':status': 'completed' }
+  };
+  const eventName  = event.event_name.split('_').join(' ');
+  const eventTime = event.event_date.split('T')[1];
+  
+  await docClient.update(params).promise();
+  await whatsappSender.sendEventReminder(
+    userPhoneNumber || "Not Defined",
+    day || "Not Defined",
+    eventName || "Not Defined",
+    eventTime || "Not Defined",
+    event.event_location || "Not Defined",
+    portfolioLink || "Not Defined"
+  );
+  
+  logger.info("Scheduled Job executed successfully");
+  }catch(err){
+    logger.error(err.message);
+    throw new Error("Error in running scheduled job");
+  }
+}
+
+// Fetch jobs from DynamoDB
+async function fetchPendingJobs() {
+  const params = {
+      TableName: 'scheduled_jobs',
+      FilterExpression: "#status = :status",
+      ExpressionAttributeNames: {
+          "#status": "status"
+      },
+      ExpressionAttributeValues: {
+          ":status": "pending"
+      }
+  };
+  const result = await docClient.scan(params).promise();
+  return result.Items;
+}
+
+// New function to handle job execution or scheduling
+async function handleJobExecution(jobId, time,jobDay, userPhoneNumber,event, portfolioLink) {
+  const executionTime = new Date(time);
+  const now = new Date();
+  logger.info(executionTime);
+  // Check if the execution time is in the past
+  if (executionTime < now) {
+      logger.info(`The notification time for event ${event.event_id} has passed.`);
+      
+      // Trigger the job immediately if the time has passed
+      completeJob(jobId, jobDay, userPhoneNumber, event, portfolioLink);
+      logger.info("Succesfully rescheduled job with JobId: ",jobId," executionTime: ",executionTime);
+  } else {
+      // Schedule the job at the correct time if it's in the future
+      const scheduledJob = schedule.scheduleJob(executionTime, function () {
+          logger.info(`Reminder: Your event ${event.event_id} is scheduled for ${event.event_time}`);
+          completeJob(jobId, jobDay, userPhoneNumber, event, portfolioLink); // Mark job as completed in DynamoDB
+      });
+      
+      logger.info(`Scheduled job for event ${event.event_id} at ${executionTime}`);
+  }
+}
+
+// Main function to reschedule jobs
+async function rescheduleJobs() {
+  const jobs = await fetchPendingJobs();
+
+  for (const job of jobs) {
+      const event = await getEventDetailsById(job.event_id); // Fetch event details by ID
+      await handleJobExecution(job.job_id,job.notification_time,job.job_day,job.user_phone_number, event,job.portfolio_link); // Call the new function for handling each job
+  }
+}
+
 })
 .catch((error) => {
-  console.error('Failed to initialize app due to config error:', error);
+  logger.error('Failed to initialize app due to config error:', error);
   process.exit(1);  // Stop the server if config loading fails
 });

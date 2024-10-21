@@ -10,7 +10,7 @@ import AppBar from "../../../components/AppBar/AppBar";
 import Modal from "react-modal";
 import { toast } from "react-toastify";
 import { div } from "prelude-ls";
-
+import ClaimRewardsPopup from "../../../components/ClaimRewardsPopup/ClaimRewardsPopup";
 function ProNew() {
   const { eventId } = useParams();
   const [eventDetails, setEventDetails] = useState(null); // New state for event details
@@ -35,6 +35,7 @@ function ProNew() {
   const [isSending, setIsSending] = useState(false);
   const [isImageProcessingDone, setIsImageProcessingDone]  = useState(true);
   const [isWarningModalOpen, setIsWarningModalOpen] = useState(false); 
+  const [isClaimPopupOpen, setIsClaimPopupOpen] = useState(true);
 
   // const event = location.state?.event;
 
@@ -75,6 +76,7 @@ function ProNew() {
     setSelectedUsers([]);
   };
 
+
   const handleCancelManageUsers = () => {
     setMergeMode(false);
     setShowMergePopup(false);
@@ -91,6 +93,33 @@ function ProNew() {
       setSelectedUsers((prev) => prev.slice(0, 1));
     }
   };
+
+  // const transferChewyCoins = async (recipientMobileNumber, amount) => {
+  //   try {
+  //     const senderMobileNumber = "+919090401234"; // The fixed sender phone number
+  
+  //     // Prepare the request payload
+  //     const payload = {
+  //       amount: amount,
+  //       senderMobileNumber: senderMobileNumber,
+  //       recipientMobileNumber: recipientMobileNumber,
+  //     };
+  
+  //     // Call the API to transfer Chewy coins
+  //     const response = await API_UTIL.post('/transfer-chewy-coins', payload);
+  
+  //     if (response.status === 200) {
+  //       toast.success('Rewards added  successfully!');
+  //     } else {
+  //       throw new Error('Failed to transfer Chewy Coins.');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error transferring Chewy Coins:', error);
+  //     toast.error('Failed to transfer Unity Coins. Please try again.');
+  //   }
+  // };
+  
+  
 
   const handleMergeClick = () => {
     if (!isImageProcessingDone) {
@@ -115,7 +144,7 @@ function ProNew() {
       });
 
       if (response.data.success) {
-        updateRewardPoints(50);
+        //await transferChewyCoins(user_phone_number, 50);
         await fetchThumbnails();
       }
       return response.data;
@@ -262,6 +291,10 @@ function ProNew() {
   const closeWarningModal = () => {
     setIsWarningModalOpen(false);
   };
+  const closeClaimPopup = () => {
+    setIsClaimPopupOpen(false);
+  };
+
 
   const closeSendPhotos = () => {
     setIsSendModalOpen(false);
@@ -314,7 +347,8 @@ function ProNew() {
         <LoadingSpinner />
       ) : (
         <>
-          <AppBar />
+          <AppBar showCoins = {true}/>
+          {/* <ClaimRewardsPopup isOpen={isClaimPopupOpen} onClose={closeClaimPopup}/> */}
           <div className="content-wrap">
             <div className="statsSections">
               <div className="toolbar">
