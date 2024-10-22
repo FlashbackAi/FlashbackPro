@@ -32,6 +32,7 @@ const oldEvents = ["Aarthi_Vinay_19122021","Convocation_PrathimaCollege","KSL_25
 //const CHEWY_AMOUNT =1000;
 
 const logger = require('./logger');
+const e = require('express');
 
 initializeConfig()
   .then(() => {
@@ -1690,6 +1691,31 @@ app.get('/getEventImages/:eventName', async (req, res) => {
   } catch (error) {
     console.error('Error fetching S3 URLs or client details:', error);
     res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+app.get ('/getOwnerFavImages/:folder/:username', async (req, res) => {
+  try {
+     const folder = req.
+     params.folder;
+     const username = req.params.username;
+     logger.info("fetching images for username ", username)
+
+    const userDetails = await getUserObjectByUserName(username);
+    if(!userDetails[0]?.user_id){
+      return res.send([]);
+    }
+    
+    const result = await userEventImagesNew(folder,userDetails[0].user_id,'',true);
+    logger.info("total images for username ", username," : ",result.Items.length)
+    const updatedItems = result.Items.map(item => ({
+      ...item,
+      thumbnailUrl: `https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/${item.s3_url.split("amazonaws.com/")[1]}`
+    }));
+    res.json(updatedItems);
+  } catch (err) {
+     logger.info("Error in S3 get", err);
+     res.status(500).json({ error: 'Error getting images from S3' });
   }
 });
 
@@ -5454,6 +5480,44 @@ const imageUpload = multer({
 //     res.status(500).json({ error: 'Error in upload process' });
 //   }
 // });
+
+
+app.get("/getEventOwners/:eventId", async (req, res) => {
+  const eventId = req.params.eventId;
+  const collabStatus = "Accept"; // You should specify or pass this somehow
+  logger.info(`Fetching event details for ${eventId}`);
+  
+  try {
+    const eventDetails = await getEventDetailsById(eventId);
+
+    if (eventDetails) {
+      logger.info(`Fetched event details for ${eventId}`);
+      const params = {
+        TableName: EventCollabs, // Assuming your DynamoDB table name is EventCollabs
+        KeyConditionExpression: 'event_id = :eventId',
+        FilterExpression: 'collab_status = :collabStatus',
+        ExpressionAttributeValues: {
+          ':eventId': eventId,
+          ':collabStatus': collabStatus
+        },
+      };
+
+      const result = await docClient.query(params).promise();
+      if(result){
+        const owners = [eventDetails.client_name, ...result.Items.map(item => item.user_name)];
+        logger.info('Fetched Collab details for event', eventId);
+        res.status(200).send({'folder_name': eventDetails.folder_name, 'owners': owners});
+      }
+      else
+        throw new Error('Error in fetching event owners');
+    } else {
+      res.status(404).send({ message: "Event not found" });
+    }
+  } catch (err) {
+    logger.error(err.message); // Using logger.error for error logging
+    res.status(500).send({ message: err.message });
+  }
+});
 
 // Function to fetch images by user phone number and return the count
 async function fetchImageCountByUserPhoneNumber(userPhoneNumber) {

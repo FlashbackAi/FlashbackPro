@@ -10,6 +10,7 @@ import "./ImagePage-new.css";
 import AppBar from "../../components/AppBar/AppBar";
 import MiniHeroComponent from "../../components/MiniHeroComponent/MiniHeroComponent";
 import Masonry from "react-masonry-css";
+import defaultBanner from '../../media/images/defaultbanner.jpg';
 
 function FlashbacksImages() {
   const [isLoading, setIsLoading] = useState(false);
@@ -25,6 +26,8 @@ function FlashbacksImages() {
   const { flashbackName, eventId } = useParams();
   const navigate = useNavigate();
   const loader = useRef(null);
+  const [bannerImage, setBannerImage] = useState('');
+  const [eventOwners, setEventOwners] = useState([]);
 
   const [breakpointColumnsObj, setBreakpointColumnsObj] = useState({
     default: 6,
@@ -51,8 +54,62 @@ function FlashbacksImages() {
 
   useEffect(() => {
     // Initial image fetch
+    if(flashbackName === 'favourites'){
+      fetchEventFavouriteImages();
+    }else
     fetchImages();
-  }, []);
+  },[eventId]);
+
+  const fetchEventOwners = async () => {
+    try {
+      const response = await API_UTIL.get(`/getEventOwners/${eventId}`);
+      if (response.status ===200){
+        return response.data;
+      } else{
+        throw new Error('Failed to fetch');
+      }
+    } catch (err) {
+      console.log(err.message);
+      throw new Error('Failed to fetch');
+    }
+  };
+  const fetchEventFavouriteImages = async()=>{
+    setIsLoading(true);
+    try {
+      const eventOwners = await fetchEventOwners();
+      for(const owner of eventOwners.owners){
+      const response = await API_UTIL.get(`/getOwnerFavImages/${eventOwners.folder_name}/${owner}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+        // If you need to send body data or authentication, include it here
+      });
+      if(response.status === 200){
+
+        const formattedImages = response.data.map((obj) => ({
+          original: obj.s3_url,
+          thumbnail: obj.s3_url,
+        }));
+
+        setImages((prevImages) => {
+          // Create a set of existing image URLs to quickly check for duplicates
+          const existingImageUrls = new Set(prevImages.map((image) => image.original));
+        
+          // Filter out any images that already exist in the current state
+          const newImages = formattedImages.filter(
+            (image) => !existingImageUrls.has(image.original)
+          );
+        
+          // Return a new array with the existing images and the filtered new images
+          return [...prevImages, ...newImages];
+        });
+      }
+    }
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
 
   const fetchImages = useCallback(async () => {
     if (isLoading || !hasMore) return;
@@ -121,6 +178,46 @@ function FlashbacksImages() {
     }
   }, [eventId]);
 
+  const encodeURIWithPlus = (uri) => {
+    return uri.replace(/ /g, '+');
+  };
+
+  useEffect(()=>{
+  const fetchBannerImage = async () => {
+    console.log('Entering FetchBannerImage Method and started loading');
+      setIsLoading(true);
+    if (clientObj.org_name && clientObj.user_name) {
+      try {
+        const response = await API_UTIL.get(`/getBannerImage/${clientObj.user_name}`);
+        console.log(`ImageURl:`, response.data.imageUrl);
+          
+        if (response.data && response.data.imageUrl) {
+          const formattedUrl = encodeURIWithPlus(response.data.imageUrl);
+          console.log(`formattedUrl:`, formattedUrl);
+          setBannerImage(`${formattedUrl}?t=${Date.now()}`);
+        } else {
+          console.log('[catch1]Falling back to default banner');
+          setBannerImage(defaultBanner);
+        }
+      } catch (error) {
+        console.error('Error fetching banner image:', error);
+        console.log(`[catch2]Falling back to default banner`);
+        setBannerImage(defaultBanner);
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      console.log(`[catch3]Falling back to default banner`);
+      setBannerImage(defaultBanner);
+      setIsLoading(false);
+    }
+  }
+  if(clientObj){
+    fetchBannerImage();
+  }
+
+},[clientObj]);
+
   const handleClick = (item, index) => {
     setClickedImg(item.thumbnail);
     setClickedImgIndex(index);
@@ -177,7 +274,7 @@ function FlashbacksImages() {
             userName={clientObj.user_name}
               orgName={clientObj.org_name}
               socialMediaLinks={clientObj.social_media}
-              backdropImage={bannerImg}
+              backdropImage={bannerImage}
             />
           )}
           <div className="content-wrap">
