@@ -124,6 +124,7 @@ const userBucketName='flashbackuserthumbnails';
 const indexBucketName = 'flashbackusercollection';
 const thumbnailBucketName = 'flashbackimagesthumbnail';
 const imagesBucketName = 'flashbackusercollection';
+const flashbacksBucketname = 'flashbackuserflashbacks'
 // const indexBucketName = 'devtestdnd';
 // const imagesBucketName = 'devtestdnd';
 const portfolioBucketName = 'flashbackportfoliouploads';
@@ -158,6 +159,8 @@ const proShareDataTable = 'pro_share_data';
 const modelToDatsetReqTable ='model_dataset_requests';
 const userImageActivityTableName = 'user_image_activity';
 const ImageUploadData  = 'image_upload_data';   
+const FlashbackImageUploadData  = 'flashbacks_image_upload_data';  
+const FlashbackDetailsTable  = 'flashback_details';  
 const walletTransactions = 'wallet_transactions';
 const walletDetailsTable = 'wallet_details'
 
@@ -1691,6 +1694,45 @@ app.get('/getEventImages/:eventName', async (req, res) => {
 });
 
 
+
+app.get('/getFlashbackImages/:flashbackName/:eventId', async (req, res) => {
+  const { flashbackName, eventId } = req.params;
+  const { continuationToken } = req.query; // Optional token for paginated results
+
+  // Validate eventId and flashbackName
+    if (!flashbackName || !eventId) {
+    return res.status(400).json({ error: 'flashbackName and eventId parameters are required' });
+  }
+  logger.info("Fetching Flashback Images for : ", flashbackName);
+  // DynamoDB query parameters
+  const dynamoDbParams = {
+    TableName: FlashbackImageUploadData, // Replace with your actual table name
+    FilterExpression: 'flashback_name = :flashbackName AND event_id = :eventId',
+    ExpressionAttributeValues: {
+      ':flashbackName': flashbackName,
+      ':eventId': eventId
+    },
+    Limit: 100, // Fetch 100 items per call
+    ExclusiveStartKey: continuationToken ? JSON.parse(continuationToken) : undefined // Continue from the last token if provided
+  };
+
+  try {
+    // Query DynamoDB to get s3_url entries
+    const result = await docClient.scan(dynamoDbParams).promise();
+
+    // Prepare response
+    const response = {
+      images: result.Items.map(item => item.s3_url), // Extract s3_url from each item
+      continuationToken: result.LastEvaluatedKey ? JSON.stringify(result.LastEvaluatedKey) : null // Include a continuation token if more results are available
+    };
+    logger.info("Successfully Fetched Flashback Images for : ", flashbackName)
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.error('Error fetching S3 URLs or client details:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 
 
@@ -5601,6 +5643,154 @@ app.post('/uploadFiles/:eventName/:userPhoneNumber/:folder_name', upload.array('
     res.status(500).json({ error: 'Error in upload process' });
   }
 });
+
+// Function to update DynamoDB
+async function updateFlashbackImageUploadData(s3Result, userPhoneNumber, originalName, flashbackName, eventId, folderName) {
+  const now = new Date();
+  const dynamoDbParams = {
+    TableName: FlashbackImageUploadData,
+    Item: {
+      s3_url: s3Result.Location,
+      user_phone_number: userPhoneNumber,
+      file_name: originalName,
+      flashback_name:flashbackName,
+      event_id: eventId,
+      folder_name: folderName,
+      flashback_type:'uploaded',
+      uploaded_date: now.toISOString(),
+      enable_sharing:false,
+
+    }
+  };
+
+  try {
+    await docClient.put(dynamoDbParams).promise();
+    logger.info("Updated Image data in ImageUploadData table");
+  } catch (error) {
+    logger.error(`Error updating DynamoDB for file ${originalName}:`, error);
+    throw error;
+  }
+}
+
+app.post('/uploadFlashbackFiles/:flashbackName/:eventId/:userPhoneNumber/:folder_name', upload.array('files', 50), async (req, res) => {
+  const { eventId,flashbackName, userPhoneNumber, folder_name } = req.params;
+
+  logger.info("Started uploading files for the event : "+folder_name);
+  const uploadPromises = req.files.map(async (file) => {
+    const fileId = `${folder_name}/${flashbackName}/${file.originalname}`;
+    const s3Params = {
+      Bucket: flashbacksBucketname,
+      Key: fileId,
+      Body: file.buffer,
+      ContentType: file.mimetype
+    };
+
+    try {
+      const s3Result = await s3.upload(s3Params).promise();
+      // Update DynamoDB with the new entry
+      await updateFlashbackImageUploadData(s3Result, userPhoneNumber, file.originalname, flashbackName, eventId, folder_name);
+    
+      return s3Result;
+    } catch (error) {
+      console.error(`Error uploading file ${file.originalname}:`, error);
+      throw error;
+    }
+  });
+
+  try {
+    const results = await Promise.allSettled(uploadPromises);
+    const successfulUploads = results.filter(r => r.status === 'fulfilled').map(r => r.value);
+    const failedUploads = results.filter(r => r.status === 'rejected').map(r => r.reason);
+
+    logger.info("Upload process completed for the event : "+folder_name)
+    res.status(200).json({
+      message: 'Upload process completed',
+      successfulUploads,
+      failedUploads,
+      totalFiles: req.files.length
+    });
+  } catch (error) {
+    console.error('Error in upload process:', error);
+    res.status(500).json({ error: 'Error in upload process' });
+  }
+});
+
+// Function to update DynamoDB
+async function saveOrUpdateFlashback(flashbackName, eventId, eventName, userPhoneNumber) {
+  const now = new Date();
+  const dynamoDbParams = {
+    TableName: FlashbackDetailsTable, // Ensure this is properly defined elsewhere in your code
+    Key: {
+      "flashback_name": flashbackName,
+      "event_id": eventId // Assuming `user_phone_number` and `event_id` together form a unique key
+    },
+    UpdateExpression: "SET user_phone_number = :user_phone_number, event_name = :eventName, flashback_type = :flashbackType, created_date = :createdDate",
+    ExpressionAttributeValues: {
+      ":user_phone_number": userPhoneNumber,
+      ":eventName": eventName,
+      ":flashbackType": 'uploaded',
+      ":createdDate": now.toISOString()
+    },
+    ReturnValues: "ALL_NEW" // This returns the updated item
+  };
+
+  try {
+    const res = await docClient.update(dynamoDbParams).promise();
+    logger.info(`Successfully added or updated Flashback in ${FlashbackDetailsTable} table: ${flashbackName}`);
+    return res;
+  } catch (error) {
+    logger.error(`Error Adding or Updating Flashback in ${FlashbackDetailsTable} table ${flashbackName}:`, error);
+    throw error;
+  }
+}
+
+app.post('/saveFlashbackDetails', async (req, res) => {
+  const { flashbackName, eventId, eventName, userPhoneNumber } = req.body; // Changed req.data to req.body
+  try {
+    logger.info("Saving or Updating Flashback details: ", flashbackName);
+    const result = await saveOrUpdateFlashback(flashbackName, eventId, eventName, userPhoneNumber);
+    logger.info("Successfully Saved or Updated Flashback details: ", flashbackName);
+    res.status(200).send({ message: 'Flashback saved or updated successfully', data: result.Attributes });
+  } catch (err) {
+    logger.error("Error in saving or updating Flashbacks:", err);
+    res.status(500).send({ message: "Error in saving or updating Flashbacks", error: err.message });
+  }
+});
+
+// Function to fetch flashbacks based on event_id
+async function getFlashbacksByEventId(eventId) {
+  const dynamoDbParams = {
+    TableName: FlashbackDetailsTable, // Make sure the table name is correctly defined
+    FilterExpression: "event_id = :eventId",
+    ExpressionAttributeValues: {
+      ":eventId": eventId,
+    },
+  };
+
+  try {
+    const result = await docClient.scan(dynamoDbParams).promise();
+    logger.info(`Fetched flashbacks for event_id: ${eventId}`);
+    return result.Items;
+  } catch (error) {
+    logger.error(`Error fetching flashbacks for event_id ${eventId}:`, error);
+    throw error;
+  }
+}
+
+// Define the GET endpoint in Express
+app.get("/getFlashbacks/:eventId", async (req, res) => {
+  const { eventId } = req.params;
+  try {
+    logger.info("Fetching flashbacks for event_id: ", eventId);
+    const flashbacks = await getFlashbacksByEventId(eventId);
+    logger.info("Successfully fetched flashbacks for event_id: ", eventId);
+    res.status(200).send(flashbacks);
+  } catch (err) {
+    logger.error(`Error fetching flashbacks for event_id ${eventId}:`, err);
+    res.status(500).send({ message: "Error fetching flashbacks", error: err.message });
+  }
+});
+
 
 
 // app.post('/uploadFiles/:eventName/:eventDate/:folder_name', upload.array('files', 50), async (req, res) => {

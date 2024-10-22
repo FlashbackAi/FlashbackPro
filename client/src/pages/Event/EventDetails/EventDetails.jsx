@@ -626,6 +626,7 @@ const EventDetails = () => {
   const navigate = useNavigate();
   const qrRef = useRef();
   const loader = useRef(null);
+  const [eventFlashbacks, setEventFlashbacks]= useState([]);
 
 
   const onLoad = () => {
@@ -847,6 +848,39 @@ const handleCollabClick = async () => {
   }
 };
 
+const saveFlashback = async () => {
+  const isDuplicate = eventFlashbacks.some((flashback) => flashback.flashback_name === flashbackName);
+
+  if (isDuplicate) {
+    // If it's a duplicate, show an error message and exit the function
+    return;
+  }
+  try {
+    const response = await API_UTIL.post("/saveFlashbackDetails", {
+      "flashbackName":flashbackName,
+      "eventId":event.event_id,
+      "eventName":event.event_name,
+      "userPhoneNumber":userPhoneNumber,
+    });
+
+    if (response.status === 200) {
+      console.log("Flashback saved successfully", response.data);
+      // Show success notification or update the UI accordingly
+      setEventFlashbacks((prevFlashbacks) => [
+        response.data.data,
+        ...prevFlashbacks,
+        // Assuming `response.data` is the saved flashback item
+      ]);
+    } else {
+      console.error("Error saving flashback:", response.data);
+    }
+  } catch (error) {
+    console.error("Error saving flashback:", error);
+    // Handle error (e.g., show error notification)
+  }
+};
+
+
 const onDrop = useCallback((acceptedFiles) => {
   const totalFiles = acceptedFiles.length;
   if (totalFiles > 500) {
@@ -873,7 +907,6 @@ const uploadFiles = async () => {
     setUploadStatus('Please select files to upload');
     return;
   }
-
   setUploading(true);
   setUploadFilesModalStatus('Uploading files...');
   setIsUploadFilesFailed(false);
@@ -975,6 +1008,118 @@ const uploadFiles = async () => {
     setUploading(false);
     setOverallProgress(100); // Ensure progress bar is set to 100% on completion
     setFileCount(0);
+  }
+};
+
+
+const uploadFlashbackFiles = async () => {
+  if (files.length === 0) {
+    setUploadStatus('Please select files to upload');
+    return;
+  }
+
+  await saveFlashback();
+  setUploading(true);
+  setUploadFilesModalStatus('Uploading files...');
+  setIsUploadFilesFailed(false);
+  setOverallProgress(0); // Start at 0% progress
+
+  const MAX_CONCURRENT_UPLOADS = 3; // Reduced to avoid 429 error
+  const MAX_RETRIES = 3;
+  let index = 0;
+  const totalFiles = files.length;
+  const totalBytes = files.reduce((acc, file) => acc + file.size, 0); // Total size of all files
+
+  // Use React state to safely track the total uploaded bytes
+
+  const uploadFile = async (file) => {
+    const formData = new FormData();
+    formData.append('files', file);
+    formData.append('eventName', event.event_name);
+    formData.append('eventDate', event.event_date);
+    formData.append('folderName', event.folder_name);
+
+    let attempts = 0;
+    let delayTime = 1000; // Start with 1 second delay
+
+    while (attempts < MAX_RETRIES) {
+      try {
+        const response = await API_UTIL.post(`/uploadFlashbackFiles/${flashbackName}/${event.event_id}/${userPhoneNumber}/${event.folder_name}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+          onUploadProgress: (progressEvent) => {
+            // Dynamically update the total uploaded bytes using state update function
+            setTotalUploadedBytes((prevUploadedBytes) => {
+              const updatedUploadedBytes = prevUploadedBytes + progressEvent.loaded;
+              
+              // Calculate and update overall progress based on total uploaded bytes
+              const overallProgress = (updatedUploadedBytes / totalBytes) * 100;
+              setOverallProgress(Math.ceil(overallProgress)); // Round to nearest integer
+              
+              return updatedUploadedBytes;
+            });
+          },
+        });
+
+        return response.data;
+      } catch (error) {
+        if (error.response && error.response.status === 429) {
+          console.error(`Error uploading file ${file.name}, attempt ${attempts}: Too many requests, retrying after ${delayTime / 1000} seconds`);
+          await delay(delayTime);
+          delayTime *= 2; // Double the delay time for exponential backoff
+        } else {
+          console.error(`Error uploading file ${file.name}, attempt ${attempts}:`, error);
+        }
+        attempts++;
+        if (attempts === MAX_RETRIES) throw error;
+      }
+    }
+  };
+
+  const handleUploads = async () => {
+    while (index < files.length) {
+      const promises = [];
+      for (let i = 0; i < MAX_CONCURRENT_UPLOADS && index < files.length; i++) {
+        promises.push(uploadFile(files[index]));
+        index++;
+      }
+      await Promise.allSettled(promises);
+    }
+  };
+
+  try {
+    await handleUploads();
+
+    // After all files are uploaded successfully, update the uploaded files count
+    const newUploadedFilesCount = uploadedFilesCount + files.length;
+    setUploadedFilesCount(newUploadedFilesCount);
+
+    try {
+      const response = await API_UTIL.put(`/updateEvent/${event.event_id}`, {
+        eventName: editData.eventName,
+        eventDate: `${editData.eventDate}T${editData.eventTime}:00`,
+        invitationNote: editData.invitationNote,
+        eventLocation: editData.eventLocation,
+        uploadedFiles: newUploadedFilesCount,
+      });
+
+      if (response.status === 200) {
+        toast.success('Event updated successfully with new file count');
+      }
+    } catch (error) {
+      console.error('Error updating event with new file count:', error);
+      toast.error('Failed to update the event with new file count. Please try again.');
+    }
+    //await deductCoins(files.length);
+
+    setUploadStatus('Upload completed successfully');
+    setFiles([]);
+  } catch (error) {
+    console.error('Upload failed:', error);
+    setUploadStatus('Upload failed. Please try again.');
+  } finally {
+    setOverallProgress(100); // Ensure progress bar is set to 100% on completion
+    setFileCount(0);
+    closeFlashbackUploadFilesModal();
   }
 };
 
@@ -1105,6 +1250,12 @@ const uploadFiles = async () => {
     isDataFetched.current = true;
   }, []);
 
+  useEffect(() =>{
+    if(event?.event_id){      
+     fetchFlashbacks(event.event_id);
+    }
+  },[event]);
+
   const fetchThumbnails = async () => {
     if(!event) return;
     if (userThumbnails.length === 0) setIsLoading(true);
@@ -1171,6 +1322,7 @@ const uploadFiles = async () => {
     setUploadStatus('');
     setUploading(false);
     setFileCount(0);
+    setFlashbackName('');
   };
 
 
@@ -1228,6 +1380,20 @@ const uploadFiles = async () => {
     return `${hours}:${minutes} ${ampm}`;
   }
 
+  const fetchFlashbacks = async (eventId) => {
+    try {
+      const response = await API_UTIL.get(`/getFlashbacks/${eventId}`);
+      if (response.status === 200) {
+        setEventFlashbacks(response.data); // Assuming setEventFlashbacks is used to store the fetched flashbacks
+      } else {
+        console.error("Error fetching flashbacks:", response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching flashbacks:", error);
+    }
+  };
+  
+
 
   const fetchEventDetails = async () => {
     try {
@@ -1237,6 +1403,7 @@ const uploadFiles = async () => {
         if( response.data.uploaded_files === response.data.files_indexed){
           if(isImageProcessingDone === false)
             fetchThumbnails()
+          //fetchFlashbacks(response.data.event_id);
           setIsImageProcessingDone(true);
         }
         else{
@@ -1636,10 +1803,17 @@ const createFlashback =({
                       <Plus size={24} />
                       <span style={{ marginTop: '8px', display: 'block', textAlign: 'center'}}>Create Falshback</span>
                     </FlashbackTile>
-                    <FlashbackTile onClick={() => navigate(`/relationsV1/${event.event_id}`)}>
+                    <FlashbackTile onClick={() => navigate(`/photos/${event.event_id}/${event.event_id}/`)}>
                     <Heart size={24} />
                     <span style={{ marginTop: '8px', display: 'block', textAlign: 'center'}}>Favourites</span>
                     </FlashbackTile>
+                    {eventFlashbacks.map((flashback, index) => (
+                      <FlashbackTile key={index} onClick={() => navigate(`/flashs/${flashback.flashback_name}/${flashback.event_id}`)}>
+                        <span style={{ marginTop: "8px", display: "block", textAlign: "center" }}>
+                          {flashback.flashback_name}
+                        </span>
+                      </FlashbackTile>
+                    ))}
                   </FlashbackGrid>
                 </TabContent>
               )}
@@ -1843,7 +2017,7 @@ const createFlashback =({
               alignItems: 'center', 
               gap: '2rem', 
               paddingTop: '1rem' }}>
-            <ActionButton onClick={uploadFiles} disabled={!canUpload || files.length === 0 || fileCount > 500}>
+            <ActionButton onClick={uploadFlashbackFiles} disabled={!canUpload || files.length === 0 || fileCount > 500}>
               Upload
             </ActionButton>
             </div>
