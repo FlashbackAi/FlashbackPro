@@ -782,10 +782,14 @@ const toggleFolder = (index) => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
-    if(name === 'org_name'){
-      if(!formData.user_name)
-      setFormData({...formData,'user_name':value});
-    }
+    console.log(formData);
+    // if(name === 'org_name'){
+    //   if(!userName){
+    //     console.log(value);
+    //     setFormData({...formData,'user_name':value});
+    //   }
+      
+    // }
   };
   const handleFolderName = (e) => {
     setUploadingFolderName(e.target.value);
@@ -998,10 +1002,13 @@ const toggleFolder = (index) => {
       let requestData = {
         user_phone_number: formData.user_phone_number,
         ...formData,
+
       };
   
-      // Check if user_name exists and remove it from requestData
-      if (userName) { // Assuming you have a function to check if userName exists
+      // Check if userName does NOT exist and add user_name with org_name value
+      if (!userName) { // Assuming userName is the variable or function checking the existence of the name
+        requestData.user_name = formData.org_name; // Add user_name from org_name
+      } else { // Assuming you have a function to check if userName exists
         const { user_name, ...rest } = requestData; // Destructure and exclude user_name
         requestData = { ...rest }; // Create a new object without user_name
       }
