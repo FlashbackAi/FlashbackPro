@@ -4534,55 +4534,28 @@ app.post('/saveEventDetails', upload.single('eventImage'), async (req, res) => {
     clientName,
     eventLocation,
     invitationNote,
-    invitation_url
+    invitation_url,
   } = req.body;
-
-  logger.info('Event Location:', eventLocation);
 
   // Generate a unique eventId
   const eventId = uuidv4();
-  logger.info('Generated Event ID:', eventId);
-
   const eventNameWithoutSpaces = eventName.replace(/\s+/g, '_');
   const clientNameWithoutSpaces = clientName.replace(/\s+/g, '_');
   const CreateUploadFolderName = `${eventNameWithoutSpaces}_${clientNameWithoutSpaces}_${eventId}`;
-  const fileKey = `${CreateUploadFolderName}.jpg`;
-
-  const createfolderparams = {
-    Bucket: indexBucketName,
-    Key: `${CreateUploadFolderName}/`,
-    Body: ''
-  };
-
-  const compressedBuffer = await sharp(file.buffer)
-  .resize(600, 600) // Adjust the size as needed for your thumbnails
-  .toBuffer();
-
-  const params = {
-    Bucket: "flashbackeventthumbnail",
-    Key: fileKey,
-    Body: compressedBuffer,
-    ContentType: file.mimetype,
-  };
+  const fileKey = `${eventId}.jpg`;
 
   try {
-    await s3.putObject(createfolderparams).promise();
-    logger.info('Folder created successfully:', CreateUploadFolderName);
-  } catch (s3Error) {
-    logger.info('S3 error details:', JSON.stringify(s3Error, null, 2));
-    return res.status(500).json({ error: `Failed to create S3 folder: ${s3Error.message}` });
-  }
+    // Create the folder in S3
+    await createS3Folder(indexBucketName, CreateUploadFolderName);
 
-  try {
-    // Upload image to S3
-    const data = await s3.upload(params).promise();
-    const imageUrl = data.Location;
+    // Upload the image to S3
+    const imageUrl = await uploadImageToS3('flashbackeventthumbnail', fileKey, file.buffer, file.mimetype);
 
     // Save event details to DynamoDB
     const eventParams = {
       TableName: eventsDetailsTable,
       Item: {
-        event_id: eventId, // Save the generated eventId
+        event_id: eventId,
         event_name: eventNameWithoutSpaces,
         project_name: projectName,
         client_name: clientName,
@@ -4591,16 +4564,82 @@ app.post('/saveEventDetails', upload.single('eventImage'), async (req, res) => {
         invitation_note: invitationNote,
         invitation_url: invitation_url,
         event_image: imageUrl,
-        folder_name: CreateUploadFolderName
+        folder_name: CreateUploadFolderName,
       },
     };
 
-    const putResult = await docClient.put(eventParams).promise();
+    await docClient.put(eventParams).promise();
     logger.info('Event Created Successfully: ' + eventName);
     res.status(200).send({ message: 'Event Created Successfully', data: eventParams.Item });
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Error creating event' });
+  }
+});
+
+const createS3Folder = async (bucketName, folderName) => {
+  const createFolderParams = {
+    Bucket: bucketName,
+    Key: `${folderName}/`,
+    Body: '',
+  };
+
+  try {
+    await s3.putObject(createFolderParams).promise();
+    console.info('Folder created successfully:', folderName);
+  } catch (error) {
+    console.error('S3 Error Creating Folder:', error);
+    throw new Error(`Failed to create S3 folder: ${error.message}`);
+  }
+};
+
+const uploadImageToS3 = async (bucketName, fileKey, fileBuffer, contentType) => {
+  try {
+    const compressedBuffer = await sharp(fileBuffer).resize(600, 600).toBuffer();
+
+    const uploadParams = {
+      Bucket: bucketName,
+      Key: fileKey,
+      Body: compressedBuffer,
+      ContentType: contentType,
+    };
+
+    const data = await s3.upload(uploadParams).promise();
+    return data.Location;
+  } catch (error) {
+    console.error('S3 Error Uploading Image:', error);
+    throw new Error(`Failed to upload image to S3: ${error.message}`);
+  }
+};
+
+
+app.post('/updateEventImage', upload.single('eventImage'), async (req, res) => {
+  const { eventId, eventName, clientName } = req.body;
+  const file = req.file;
+
+  if (!eventId || !eventName || !clientName) {
+    return res.status(400).json({ error: 'Missing required fields: eventId, eventName, or clientName' });
+  }
+
+  // // Remove spaces to match the existing naming convention
+  // const eventNameWithoutSpaces = eventName.replace(/\s+/g, '_');
+  // const clientNameWithoutSpaces = clientName.replace(/\s+/g, '_');
+  // const CreateUploadFolderName = `${eventNameWithoutSpaces}_${clientNameWithoutSpaces}_${eventId}`;
+  
+  const fileKey = `${eventId}-${file.originalname }.jpg`;
+
+  try {
+    // Upload the new image to S3
+    const imageUrl = await uploadImageToS3('flashbackeventthumbnail', fileKey, file.buffer, file.mimetype);
+
+    // Update event details in DynamoDB with the new image URL
+    const updateFields = { event_image: imageUrl };
+    await updateEventDetails(eventId, updateFields);
+
+    res.status(200).send({ message: 'Event image updated successfully', imageUrl });
+  } catch (error) {
+    console.error('Error updating event image:', error);
+    res.status(500).json({ error: 'Error updating event image' });
   }
 });
 
@@ -4927,38 +4966,58 @@ app.get('/getCollabEvents/:userName', async (req, res) => {
 //   }
 // });
 
-app.put('/updateEvent/:eventId', async (req, res) => {
-  const { eventId } = req.params;
-  const { invitationNote, eventLocation, eventDate, uploadedFiles } = req.body;
+const updateEventDetails = async (eventId, updateFields) => {
+  // Build Update Parameters
+  let updateExpression = "set";
+  let expressionAttributeValues = {};
 
-  // Ensure all required fields are present and valid
-  // if (!invitationNote || !eventLocation || !eventDate || ) {
-  //   return res.status(400).send({ error: 'All fields must be provided and valid' });
-  // }
+  Object.keys(updateFields).forEach((key, index) => {
+    const attributeKey = `:${key}`;
+
+    if (index > 0) {
+      updateExpression += ",";
+    }
+
+    updateExpression += ` ${key} = ${attributeKey}`;
+    expressionAttributeValues[attributeKey] = updateFields[key];
+  });
+
+  // Return null if no fields are provided
+  if (Object.keys(expressionAttributeValues).length === 0) {
+    throw new Error('No fields provided to update');
+  }
 
   const updateParams = {
     TableName: eventsDetailsTable,
-    Key: {
-      event_id: eventId
-    },
-    UpdateExpression: "set event_location = :eventLocation,event_date = :eventDate, invitation_note = :invitationNote",
-    ExpressionAttributeValues: {
-      ":eventLocation": eventLocation,
-      ":invitationNote": invitationNote,
-      ":eventDate":eventDate
-    },
+    Key: { event_id: eventId },
+    UpdateExpression: updateExpression,
+    ExpressionAttributeValues: expressionAttributeValues,
     ReturnValues: "ALL_NEW",
   };
 
+  // Perform the update operation
   try {
     const result = await docClient.update(updateParams).promise();
+    return result.Attributes;
+  } catch (error) {
+    throw new Error(`Failed to update event: ${error.message}`);
+  }
+};
+
+app.put('/updateEvent/:eventId', async (req, res) => {
+  const { eventId } = req.params;
+  const updateFields = req.body;
+
+  try {
+    const updatedEvent = await updateEventDetails(eventId, updateFields);
     logger.info(`Updated event: ${eventId}`);
-    res.status(200).send(result.Attributes);
-  } catch (err) {
-    logger.error(`Failed to update event ${eventId}: ${err.message}`);
-    res.status(500).send({ error: 'Failed to update the event' });
+    res.status(200).send(updatedEvent);
+  } catch (error) {
+    logger.error(`Failed to update event ${eventId}: ${error.message}`);
+    res.status(500).send({ error: error.message });
   }
 });
+
 
 
 app.get("/getEventDetails/:eventId", async (req, res) => {
@@ -7146,8 +7205,33 @@ app.get('/getPortfolioImages/:username', async (req, res) => {
 
 
 
-app.post('/updateBannerImage', upload.single('bannerImage'), async (req, res) => {
+// Utility function to clear S3 folder
+const clearS3Folder = async (bucketName, folderPath) => {
+  try {
+    // List all objects in the folder
+    const s3Objects = await s3.listObjectsV2({
+      Bucket: bucketName,
+      Prefix: folderPath,
+    }).promise();
 
+    // Check if there are objects to delete
+    if (s3Objects.Contents.length > 0) {
+      const deleteParams = {
+        Bucket: bucketName,
+        Delete: {
+          Objects: s3Objects.Contents.map((obj) => ({ Key: obj.Key })),
+        },
+      };
+      await s3.deleteObjects(deleteParams).promise();
+      logger.info(`Deleted all existing objects in folder: ${folderPath}`);
+    }
+  } catch (error) {
+    logger.error(`Error clearing S3 folder ${folderPath}:`, error);
+    throw error;
+  }
+};
+
+app.post('/updateBannerImage', upload.single('bannerImage'), async (req, res) => {
   const { userName } = req.body;
   const file = req.file;
 
@@ -7156,26 +7240,11 @@ app.post('/updateBannerImage', upload.single('bannerImage'), async (req, res) =>
   }
 
   const folderPath = `${userName}/Banner/`;
-
   logger.info(`Updating banner for: ${userName}`);
 
   try {
-    // Step 1: List and delete all existing objects in the banner folder
-    const s3Objects = await s3.listObjectsV2({
-      Bucket: portfolioBucketName,
-      Prefix: folderPath
-    }).promise();
-
-    if (s3Objects.Contents.length > 0) {
-      const deleteParams = {
-        Bucket: portfolioBucketName,
-        Delete: {
-          Objects: s3Objects.Contents.map((obj) => ({ Key: obj.Key }))
-        }
-      };
-      await s3.deleteObjects(deleteParams).promise();
-      logger.info(`Deleted existing banner images for: ${userName}`);
-    }
+    // Step 1: Clear existing objects in the S3 folder
+    await clearS3Folder(portfolioBucketName, folderPath);
 
     // Step 2: Prepare the file name and compress the image
     const fileName = path.basename(file.originalname);
@@ -7188,7 +7257,7 @@ app.post('/updateBannerImage', upload.single('bannerImage'), async (req, res) =>
       Bucket: portfolioBucketName,
       Key: `${folderPath}${fileName}`,
       Body: compressedBuffer,
-      ContentType: file.mimetype
+      ContentType: file.mimetype,
     };
 
     await s3.upload(uploadParams).promise();
@@ -7198,12 +7267,12 @@ app.post('/updateBannerImage', upload.single('bannerImage'), async (req, res) =>
 
     // Step 4: Send response back with the new image URL
     res.json({ imageUrl });
-
   } catch (error) {
     console.error('Error processing banner update:', error);
     res.status(500).send('Error updating banner image');
   }
 });
+
 
 // In your backend API
 app.get('/getBannerImage/:userName', async (req, res) => {

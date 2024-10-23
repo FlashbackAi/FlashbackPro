@@ -16,6 +16,7 @@ import API_UTIL from '../../../services/AuthIntereptor';
 import AppBar from '../../../components/AppBar/AppBar';
 import MergeDuplicateUsers from '../../../pages/Pro/ProShare/MergeHandler/MergeDuplicateUsers'
 import LoadingSpinner from '../../../components/Loader/LoadingSpinner';
+import LabelAndInput from '../../../components/molecules/LabelAndInput/LabelAndInput';
 
 const PageWrapper = styled.div`
   background-color: #121212;
@@ -570,7 +571,7 @@ const EventDetails = () => {
   const { eventName } = useParams();
   const [event, setEvent] = useState(null);
   const [editMode, setEditMode] = useState(false);
-  const [editData, setEditData] = useState(null);
+  const [eventData, setEventData] = useState(null);
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [isPeopleLoading, setIsPeopleLoading] = useState(false);
   const [eventDetails, setEventDetails] = useState(null);
@@ -630,6 +631,7 @@ const EventDetails = () => {
   const qrRef = useRef();
   const loader = useRef(null);
   const [eventFlashbacks, setEventFlashbacks]= useState([]);
+  const [ eventImage, setEventImage] = useState('');
 
 
   const onLoad = () => {
@@ -648,7 +650,8 @@ const EventDetails = () => {
     try {
       const response = await API_UTIL.get(`/getEventDetails/${eventName}`);
       setEvent(response.data);
-      setEditData({
+      setEventImage(response.data.event_image);
+      setEventData({
         eventName: response.data.event_name,
         eventDate: response.data.event_date.split('T')[0],
         eventTime: response.data.event_date.split('T')[1].slice(0, 5),
@@ -768,12 +771,10 @@ const EventDetails = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    console.log('Before Update:', editData);
-    setEditData((prevData) => {
-      const updatedData = { ...prevData, [name]: value };
-      console.log('After Update:', updatedData);
-      return updatedData;
-    });
+    setEventData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
   };
 
   const handleFlashbackNameChange = (event) => {
@@ -787,10 +788,10 @@ const EventDetails = () => {
     e.preventDefault();
     try {
       const response = await API_UTIL.put(`/updateEvent/${event.event_id}`, {
-        eventName: editData.eventName,
-        eventDate: `${editData.eventDate}T${editData.eventTime}:00`,
-        invitationNote: editData.invitationNote,
-        eventLocation: editData.eventLocation,
+        event_name: eventData.eventName,
+        event_date: `${eventData.eventDate}T${eventData.eventTime}:00`,
+        invitation_note: eventData.invitationNote,
+        event_location: eventData.eventLocation,
       });
 
       if (response.status === 200) {
@@ -828,8 +829,8 @@ const EventDetails = () => {
   };
 
   const shareOnWhatsApp = async () => {
-    const message = editData
-    ? `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(editData?.eventDate)} at ${getFormattedTime(editData?.eventDate)}. Location: ${editData?.eventLocation} , Url: https://flashback.inc/invite/${event?.event_id}`
+    const message = eventData
+    ? `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(eventData?.eventDate)} at ${getFormattedTime(eventData?.eventDate)}. Location: ${eventData?.eventLocation} , Url: https://flashback.inc/invite/${event?.event_id}`
     : `Check out this event: ${formatEventName(event?.event_name)} on ${getFormattedDate(event.event_date)} at ${getFormattedTime(event.event_date)}. Location: ${event.event_location} , Url: https://flashback.inc/invite/${event?.folder_name}`;
   const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
   
@@ -990,11 +991,11 @@ const uploadFiles = async () => {
 
     try {
       const response = await API_UTIL.put(`/updateEvent/${event.event_id}`, {
-        eventName: editData.eventName,
-        eventDate: `${editData.eventDate}T${editData.eventTime}:00`,
-        invitationNote: editData.invitationNote,
-        eventLocation: editData.eventLocation,
-        uploadedFiles: newUploadedFilesCount,
+        event_name: eventData.eventName,
+        event_date: `${eventData.eventDate}T${eventData.eventTime}:00`,
+        invitation_note: eventData.invitationNote,
+        event_location: eventData.eventLocation,
+        uploaded_files: newUploadedFilesCount,
       });
 
       if (response.status === 200) {
@@ -1102,11 +1103,11 @@ const uploadFlashbackFiles = async () => {
 
     try {
       const response = await API_UTIL.put(`/updateEvent/${event.event_id}`, {
-        eventName: editData.eventName,
-        eventDate: `${editData.eventDate}T${editData.eventTime}:00`,
-        invitationNote: editData.invitationNote,
-        eventLocation: editData.eventLocation,
-        uploadedFiles: newUploadedFilesCount,
+        event_name: eventData.eventName,
+        event_date: `${eventData.eventDate}T${eventData.eventTime}:00`,
+        invitation_note: eventData.invitationNote,
+        event_location: eventData.eventLocation,
+        uploaded_files: newUploadedFilesCount,
       });
 
       if (response.status === 200) {
@@ -1575,18 +1576,61 @@ const StyledInput = styled.input`
   }
 `;
 
-const LabelAndInput = ({ label, name, value, type, handleChange, isEditable, ...props }) => (
-  <div>
-    <StyledLabel>{label}</StyledLabel>
-    <StyledInput
-      name={name}
-      value={value}
-      type={type}
-      onChange={handleChange}
-      disabled={!isEditable}
-    />
-  </div>
-);
+// const LabelAndInput = React.memo(({ label, name, value, type, handleChange, isEditable, ...props }) => {
+//   const onChangeHandler = (e) => {
+//     if (handleChange) {
+//       handleChange(e);
+//     }
+//   };
+
+//   return (
+//     <div>
+//       <StyledLabel htmlFor={name}>{label}</StyledLabel>
+//       <StyledInput
+//         id={name}
+//         name={name}
+//         value={value}
+//         type={type}
+//         onChange={onChangeHandler}
+//         disabled={!isEditable}
+//         {...props}
+//       />
+//     </div>
+//   );
+// });
+
+
+const handleEventImageUpdate = async (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    const formData = new FormData();
+    formData.append('eventImage', file);
+    formData.append('eventId', event.event_id); // Assuming you have eventId in your state
+    formData.append('eventName', formData.org_name); // Use the correct form data field if it's named differently
+    formData.append('clientName', event.client_name); // Assuming clientName is in your state or form data
+
+    try {
+      const response = await API_UTIL.post('/updateEventImage', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      if (response.data && response.data.imageUrl) {
+        const formattedUrl = encodeURIWithPlus(response.data.imageUrl);
+        console.log(`formattedUrl:`, formattedUrl);
+        setEvent((prevData) => ({
+          ...prevData,
+          'event_image': formattedUrl // Replace 'new value' with the actual value you want to set
+        }));
+        setEventImage(formattedUrl);
+        
+      }
+    } catch (error) {
+      console.error('Error updating event image:', error);
+    } 
+  }
+};
+const encodeURIWithPlus = (uri) => {
+  return uri.replace(/ /g, '+');
+};
 
 const createFlashback =({
 
@@ -1919,7 +1963,6 @@ const createFlashback =({
       </StyledModal>
 
       <AnimatePresence>
-        {editMode && (
           <StyledModal
             isOpen={editMode}
             onRequestClose={handleCancelEdit}
@@ -1938,15 +1981,15 @@ const createFlashback =({
                   <LabelAndInput
                     label="Event Name"
                     name="eventName"
-                    value={editData.eventName}
+                    value={eventData.eventName}
                     handleChange={handleInputChange}
-                    isEditable={true}
+                    isEditable={false}
                   />
                   <LabelAndInput
                     label="Event Date"
                     name="eventDate"
                     type="date"
-                    value={editData.eventDate}
+                    value={eventData.eventDate}
                     handleChange={handleInputChange}
                     isEditable={true}
                   />
@@ -1954,30 +1997,39 @@ const createFlashback =({
                     label="Event Time"
                     name="eventTime"
                     type="time"
-                    value={editData.eventTime}
+                    value={eventData.eventTime}
                     handleChange={handleInputChange}
                     isEditable={true}
                   />
                   <LabelAndInput
                     label="Invitation Note"
                     name="invitationNote"
-                    value={editData.invitationNote}
+                    value={eventData.invitationNote}
                     handleChange={handleInputChange}
                     isEditable={true}
                   />
                   <LabelAndInput
                     label="Event Location"
                     name="eventLocation"
-                    value={editData.eventLocation}
+                    value={eventData.eventLocation}
                     handleChange={handleInputChange}
                     isEditable={true}
                   />
+                  <FormGroup>
+                    <Label htmlFor="eventImage">Upload Banner Image</Label>
+                    <Input
+                      type="file"
+                      id="eventImage"
+                      name="eventImage"
+                      accept="image/*"
+                      onChange={handleEventImageUpdate}
+                    />
+                  </FormGroup>
                   <ActionButton type="submit" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>Save</ActionButton>
                 </form>
               </ModalContent>
             </ModalOverlay>
           </StyledModal>
-        )}
       </AnimatePresence>
 
       <StyledModal
