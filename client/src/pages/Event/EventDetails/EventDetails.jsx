@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import styled, { createGlobalStyle } from 'styled-components';
+import CustomQRCode from '../../../components/CustomQRCode/CustomQRCode';
 import QRCode from 'qrcode.react';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'react-toastify';
@@ -1632,11 +1633,8 @@ const createFlashback =({
             </InfoItem>
           </EventInfo>
           <QRCodeWrapper>
-          <div ref={qrRef}>
-            <QRCode
-              value={`https://flashback.inc/login/${event.folder_name}`}
-              size={200}
-            />
+          <div ref={qrRef}> 
+             <CustomQRCode value={`https://flashback.inc/login/${event.folder_name}`} size={150} logoUrl={'logo.png'} logoSize={40} />
             </div>
             <QRActions>
               <ActionButton onClick={downloadQRCode} title="Download QR Code">
