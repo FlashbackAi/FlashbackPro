@@ -9,7 +9,8 @@ import Masonry from 'react-masonry-css';
 import Modal from 'react-modal'
 import ImageModal from "../../../components/ImageModal/ImageModal";
 import { LazyLoadImage } from 'react-lazy-load-image-component';
-import { Edit2, Calendar, Clock, MapPin, Download, Share2, Users, Images, Album, Network, Handshake, Plus, X, Upload, ScrollText, Heart } from 'lucide-react';
+import { Edit2, Calendar, Clock, MapPin, Download, Share2, Users, Images, Album, Network, Handshake, Plus, X, Upload, ScrollText, Heart , Gem} from 'lucide-react';
+import { IoDiamond } from "react-icons/io5";
 import API_UTIL from '../../../services/AuthIntereptor';
 import AppBar from '../../../components/AppBar/AppBar';
 import MergeDuplicateUsers from '../../../pages/Pro/ProShare/MergeHandler/MergeDuplicateUsers'
@@ -579,6 +580,7 @@ const EventDetails = () => {
   const [uploadStatus, setUploadStatus] = useState('');
   const [uploading, setUploading] = useState(false);
   const [fileCount, setFileCount] = useState(0);
+  const [requiredCoins, setRequiredCoins] = useState(0);
   const [totalUploadedBytes, setTotalUploadedBytes] = useState(0);
   const [uploadedFilesCount, setUploadedFilesCount] = useState(0);
   const [isUploadFilesModelOpen, setUploadFilesModeOpen] = useState(false);
@@ -831,7 +833,7 @@ const EventDetails = () => {
   const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
   
   window.open(url, '_blank');
- // await transferChewyCoins(userDetails.user_phone_number,10);
+  await updateRewards(10);
 };
 
 const handleCollabClick = async () => {
@@ -841,6 +843,7 @@ const handleCollabClick = async () => {
     const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
 
     window.open(url, '_blank');
+    await updateRewards(10);
     //await transferChewyCoins(userDetails.user_phone_number, 10);
   } catch (error) {
     console.error('Error generating collaboration link:', error);
@@ -894,8 +897,8 @@ const onDrop = useCallback((acceptedFiles) => {
     setUploadStatus('');
     setUploading(false);
   }
-  //setRequiredCoins(totalFiles);
-  //setCanUpload(userDetails && userDetails.reward_points >= totalFiles);
+  setRequiredCoins(totalFiles);
+  setCanUpload(userDetails && userDetails.reward_points >= totalFiles);
 }, [userDetails]);
 
 const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
@@ -960,6 +963,9 @@ const uploadFiles = async () => {
         attempts++;
         if (attempts === MAX_RETRIES) throw error;
       }
+      finally{
+        closeUploadFilesModal();
+      }
     }
   };
 
@@ -991,13 +997,13 @@ const uploadFiles = async () => {
       });
 
       if (response.status === 200) {
-        toast.success('Event updated successfully with new file count');
+        toast.success('File uploaded successfully');
       }
     } catch (error) {
       console.error('Error updating event with new file count:', error);
       toast.error('Failed to update the event with new file count. Please try again.');
     }
-    //await deductCoins(files.length);
+    await updateRewards(-files.length);
 
     setUploadStatus('Upload completed successfully');
     setFiles([]);
@@ -1123,28 +1129,27 @@ const uploadFlashbackFiles = async () => {
   }
 };
 
-  // const deductCoins = async (numberOfImages) => {
-  //   try {
-  //     // Prepare the request payload
-  //     const payload = {
-  //       amount: numberOfImages.toString(), // The number of images is the amount to deduct
-  //       senderMobileNumber: userPhoneNumber, // The current user's phone number
-  //       recipientMobileNumber: "+919090401234" // The fixed recipient phone number
-  //     };
+  const updateRewards = async (points) => {
+    try {
+      // Prepare the request payload
+      const payload = {
+        amount: points.toString(), // The number of images is the amount to deduct
+        senderMobileNumber: userPhoneNumber, // The current user's phone number
+      };
   
-  //     // Call the API to transfer Chewy coins
-  //     const response = await API_UTIL.post('/transfer-chewy-coins', payload);
+      // Call the API to transfer Chewy coins
+      const response = await API_UTIL.post('/updateRewards', payload);
   
-  //     if (response.status === 200) {
-  //       setIsCoinsDeducted(true);
-  //     } else {
-  //       throw new Error('Failed to deduct coins.');
-  //     }
-  //   } catch (error) {
-  //     console.error('Error deducting coins:', error);
-  //     toast.error('Failed to deduct coins. Please try again.');
-  //   }
-  // };
+      if (response.status === 200) {
+        setIsCoinsDeducted(true);
+      } else {
+        throw new Error('Failed to deduct coins.');
+      }
+    } catch (error) {
+      console.error('Error deducting coins:', error);
+      toast.error('Failed to deduct coins. Please try again.');
+    }
+  };
 
   const handleClick = (item) => {
     if (mergeMode) {
@@ -1201,7 +1206,7 @@ const uploadFlashbackFiles = async () => {
         event_id: event.event_id,
       });
       if (response.status === 200) {
-        updateRewardPoints(10);
+        updateRewards(10);
       } else {
         throw new Error("Failed to save share info");
       }
@@ -1210,25 +1215,25 @@ const uploadFlashbackFiles = async () => {
     }
   };
 
-  const updateRewardPoints = async (points) => {
-    const updateData = {
-      user_phone_number: userPhoneNumber,
-      reward_points: userDetails?.reward_points ? userDetails.reward_points + points : 50 + points,
-    };
+  // const updateRewardPoints = async (points) => {
+  //   const updateData = {
+  //     user_phone_number: userPhoneNumber,
+  //     reward_points: userDetails?.reward_points ? userDetails.reward_points + points : 50 + points,
+  //   };
 
-    try {
-      const response = await API_UTIL.post("/updateUserDetails", updateData);
-      if (response.status === 200) {
-        setRewardPoints(points);
-        setShowRewardPointsPopUp(true);
-        setUserDetails(response.data.data);
-      } else {
-        console.log("Failed to update user details. Please try again.");
-      }
-    } catch (error) {
-      console.error("Error updating user details:", error);
-    }
-  };
+  //   try {
+  //     const response = await API_UTIL.post("/updateUserDetails", updateData);
+  //     if (response.status === 200) {
+  //       setRewardPoints(points);
+  //       setShowRewardPointsPopUp(true);
+  //       setUserDetails(response.data.data);
+  //     } else {
+  //       console.log("Failed to update user details. Please try again.");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error updating user details:", error);
+  //   }
+  // };
 
   useEffect(() => {
     const fetchEventDetailsInterval = () => {
@@ -1431,6 +1436,7 @@ const uploadFlashbackFiles = async () => {
       });
 
       if (response.data.success) {
+        await updateRewards(50);
         //await transferChewyCoins(user_phone_number, 50);
         await fetchThumbnails();
       }
@@ -1803,7 +1809,7 @@ const createFlashback =({
                       <Plus size={24} />
                       <span style={{ marginTop: '8px', display: 'block', textAlign: 'center'}}>Create Falshback</span>
                     </FlashbackTile>
-                    <FlashbackTile onClick={() => navigate(`/photos/${event.event_id}/${event.event_id}/`)}>
+                    <FlashbackTile onClick={() => navigate(`/flashs/favourites/${event.event_id}/`)}>
                     <Heart size={24} />
                     <span style={{ marginTop: '8px', display: 'block', textAlign: 'center'}}>Favourites</span>
                     </FlashbackTile>
@@ -1856,13 +1862,14 @@ const createFlashback =({
             {files.length > 0 && (
               <p>
               {fileCount} file(s) selected.{" "}
-                {/* {canUpload ? (
+                {canUpload ? (
                   <>
-                    {requiredCoins} <UnityLogo src='/unityLogo.png' alt='Coin' /> coins will be deducted from your wallet.
+                    {requiredCoins } 
+                    <IoDiamond color="Yellow" size=".8em"/> will be deducted from your wallet.
                   </>
                 ) : (
                   "Insufficient balance."
-                )} */}
+                )}
               </p>
             )}
             {uploadStatus && <p>{uploadStatus}</p>}
@@ -2008,6 +2015,13 @@ const createFlashback =({
             {files.length > 0 && (
               <p>
               {fileCount} file(s) selected.{" "}
+                {canUpload ? (
+                  <>
+                    {requiredCoins} <UnityLogo src='/unityLogo.png' alt='Coin' /> coins will be deducted from your wallet.
+                  </>
+                ) : (
+                  "Insufficient balance."
+                )}
               </p>
             )}
             {uploadStatus && <p>{uploadStatus}</p>}

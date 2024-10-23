@@ -7,7 +7,9 @@ import { useNavigate } from 'react-router-dom';
 import API_UTIL from '../../services/AuthIntereptor';
 import Modal from 'react-modal'; // Assuming you are using react-modal
 // import { FaCopy , FaBars} from 'react-icons/fa'; // Font Awesome Copy icon (install using: npm install react-icons)
-import {  Menu, User, LogOut} from 'lucide-react';
+import {  Menu, User, LogOut, Gem} from 'lucide-react';
+import { IoDiamond } from "react-icons/io5";
+
 import Wallet from '../WalletModal/WalletModal';
 
 
@@ -78,6 +80,9 @@ const CoinDisplay = styled.div`
     object-fit: contain;
     vertical-align: middle;
     margin-left: 0.5em;
+  }
+  span{
+  margin-right:.2em;
   }
 `;
 
@@ -155,20 +160,20 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
   //     console.error('Error fetching wallet details:', error);
   //   }
   // };
-  // useEffect(() => {
-  //   if (showCoins) {
-  //     const userPhoneNumber = localStorage.getItem('userPhoneNumber');
-  //   // Poll to fetch balance every 10 seconds
-  //   const interval = setInterval(() => {
-  //     if (userPhoneNumber) {
-  //       fetchBalance(userPhoneNumber );
-  //     }
-  //   }, 5000);
+  useEffect(() => {
+    if (showCoins) {
+      const userPhoneNumber = localStorage.getItem('userPhoneNumber');
+    // Poll to fetch balance every 10 seconds
+    const interval = setInterval(() => {
+      if (userPhoneNumber) {
+        fetchUserDetails(userPhoneNumber );
+      }
+    }, 5000);
 
-  //   // Clear interval on component unmount
-  //   return () => clearInterval(interval);
-  // }
-  // }, [showCoins]);
+    // Clear interval on component unmount
+    return () => clearInterval(interval);
+  }
+  }, [showCoins]);
 
   // const fetchBalance = async (walletAddress) => {
   //   try {
@@ -222,10 +227,11 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
       <UserSection>
         { userDetails && (
           <>
-            {/* <CoinDisplay onClick={openQrModal}>
-              <span>{balance}</span>
-              <img className='unityLogo' src='/unityLogo.png' alt=''/>
-            </CoinDisplay> */}
+            <CoinDisplay >
+              <span >{balance}</span>
+              <IoDiamond color="Yellow" size="1.4em"/>
+              {/* <img className='unityLogo' src='/unityLogo.png' alt=''/> */}
+            </CoinDisplay> 
           
             <MenuIcon onClick={toggleMenu} />
 

@@ -8757,40 +8757,50 @@ app.post('/backfillFolderNames', async (req, res) => {
 //   }
 // }
 
-// const updateRewards = async (senderMobileNumber, recipientMobileNumber, amount) => {
-//   try {
-//     // Fetch sender and recipient user details
-//     const senderUserDetails = await getUserObjectByUserPhoneNumber(senderMobileNumber);
-//     const recipientUserDetails = await getUserObjectByUserPhoneNumber(recipientMobileNumber);
+app.post("/updateRewards", async (req, res) => {
+  const { senderMobileNumber, amount } = req.body;
+  try {
+    logger.info("Updating balance for user: ", senderMobileNumber);
+    const result = await updateRewards(senderMobileNumber, amount);
+    if (result) {
+      res.send("Successfully updated balance");
+    } else {
+      throw new Error("Error in updating rewards");
+    }
+  } catch (err) {
+    res.status(500).send('Error in updating rewards');
+  }
+});
 
-//     // Calculate new reward points
-//     const updatedSenderRewardPoints = senderUserDetails.reward_points ? senderUserDetails.reward_points - amount : 0;
-//     const updatedRecipientRewardPoints = recipientUserDetails.reward_points ? recipientUserDetails.reward_points + amount : amount;
+const updateRewards = async (senderMobileNumber, amount) => {
+  try {
+    // Fetch sender user details
+    const senderUserDetails = await getUserObjectByUserPhoneNumber(senderMobileNumber);
 
-//     // Prepare the update payload for the sender
-//     const updateSenderData = {
-//       reward_points: Math.max(updatedSenderRewardPoints, 0), // Ensure reward points do not go below 0
-//     };
+    // Calculate new reward points by adding the amount (which can be positive or negative)
+    const updatedSenderRewardPoints = senderUserDetails.reward_points
+      ? Number(senderUserDetails.reward_points) + Number(amount)
+      : Math.max(0, Number(amount));
 
-//     // Prepare the update payload for the recipient
-//     const updateRecipientData = {
-//       reward_points: updatedRecipientRewardPoints,
-//     };
-//     await updateUserDetails(senderMobileNumber,updateSenderData);
 
-//     // Update the sender and recipient reward points
-//     //await API_UTIL.post('/updateUserDetails', updateSenderData);
-//     logger.info("Sender reward points updated successfully");
+    // Ensure reward points do not go below 0
+    const finalRewardPoints = Math.max(updatedSenderRewardPoints, 0);
 
-//     await updateUserDetails(recipientMobileNumber,updateRecipientData)
-//     //await API_UTIL.post('/updateUserDetails', updateRecipientData);
-//     logger.info("Recipient reward points updated successfully");
+    // Prepare the update payload for the sender
+    const updateSenderData = {
+      reward_points: finalRewardPoints,
+    };
 
-//   } catch (error) {
-//     console.error(`Error updating rewards: ${error.message}`);
-//     throw new Error("Failed to update reward points");
-//   }
-// };
+    // Update the sender reward points
+    await updateUserDetails(senderMobileNumber, updateSenderData);
+
+    logger.info("Sender reward points updated successfully");
+    return true;
+  } catch (error) {
+    console.error(`Error updating rewards: ${error.message}`);
+    throw new Error("Failed to update reward points");
+  }
+};
 
 // // Define the function to handle wallet creation and transaction
 // async function handleWalletCreation(mobileNumber) {

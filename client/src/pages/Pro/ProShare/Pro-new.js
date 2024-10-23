@@ -144,7 +144,7 @@ function ProNew() {
       });
 
       if (response.data.success) {
-        //await transferChewyCoins(user_phone_number, 50);
+        await updateRewardPoints(user_phone_number, 50);
         await fetchThumbnails();
       }
       return response.data;
@@ -303,7 +303,7 @@ function ProNew() {
   const updateRewardPoints = async (points) => {
     const updateData = {
       user_phone_number: localStorage.userPhoneNumber,
-      reward_points: userDetails?.reward_points ? userDetails.reward_points + points : 50 + points,
+      reward_points: 50,
     };
 
     try {
