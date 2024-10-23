@@ -163,7 +163,7 @@ function Login({ name, onLoginSuccess, showAppBar = true }) {
   const createOrLoginUser = async (fullPhoneNumber) => {
     let userSource = "flashback";
     let role = "user";
-    let reward_points = 0;
+    let reward_points = 50;
     if (typeof fromUrl === 'string' && fromUrl.includes("photos")) {
       userSource = "flashback-pro";
     }
