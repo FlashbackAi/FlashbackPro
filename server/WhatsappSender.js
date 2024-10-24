@@ -1,5 +1,6 @@
 const axios = require('axios');
 const { initializeConfig, getConfig } = require('./config');
+const { logger } = require('./logger');
 
 
 class WhatsAppSender {
@@ -46,10 +47,10 @@ class WhatsAppSender {
         }
       );
 
-      console.log('Message sent successfully:', response.data);
+      logger.info(`Successfully delivered flashbacks to: ${recipientPhoneNumber} from the event: ${event.trim()}`);
       return response.data;
     } catch (error) {
-      console.error('Error sending WhatsApp message:', error.response ? error.response.data : error.message);
+      logger.error('Failed to deliver flashbacks via WhatsApp: ', error.response ? error.response.data : error.message);
       throw error;
     }
   }
@@ -96,10 +97,10 @@ class WhatsAppSender {
         }
       );
 
-      console.log('OTP sent successfully:', response.data);
+      logger.info(`Successfully sent OTP to: ${recipientPhoneNumber}`);
       return response.data;
     } catch (error) {
-      console.error('Error sending OTP via WhatsApp:', error.response ? error.response.data : error.message);
+      logger.error('Failed to send OTP via WhatsApp:', error.response ? error.response.data : error.message);
       throw error;
     }
   }
@@ -146,10 +147,10 @@ class WhatsAppSender {
         }
       );
 
-      console.log('Message sent successfully:', response.data);
+      logger.info(`Successfully sent event registration acknowledgement to: ${recipientPhoneNumber} for the event: ${eventName}`);
       return response.data;
     } catch (error) {
-      console.error('Error sending Message via WhatsApp:', error.response ? error.response.data : error.message);
+      logger.error('Failed to send event registration acknowledgement via WhatsApp:', error.response ? error.response.data : error.message);
       throw error;
     }
   }
@@ -199,10 +200,10 @@ class WhatsAppSender {
         }
       );
 
-      console.log('Message sent successfully:', response.data);
+      logger.info(`Successfully sent event reminder to: ${recipientPhoneNumber} for the event: ${eventName}`);
       return response.data;
     } catch (error) {
-      console.error('Error sending Message via WhatsApp:', error.response ? error.response.data : error.message);
+      logger.error('Failed to send event reminder via WhatsApp: ', error.response ? error.response.data : error.message);
       throw error;
     }
   }
