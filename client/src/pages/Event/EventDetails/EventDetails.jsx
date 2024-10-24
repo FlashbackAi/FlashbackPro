@@ -235,10 +235,56 @@ const TabContent = styled(motion.div)`
   padding: 0.25rem;
   min-height: 300px; // Add this to ensure a minimum height
   position: relative; // Add this for absolute positioning of spinner
+  
 
   @media (max-width: 768px) {
   padding: 0.75rem;
 }
+`;
+
+
+const InvitationList = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  margin-right:10em;
+`;
+
+const InvitationItem = styled.li`
+  padding: .8em;
+  display: flex;
+  flex-direction: column;
+  border-radius:1em;
+  background-color:#4b4a4a;
+`;
+
+const InvitationInfo = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+`;
+
+const UserName = styled.span`
+  font-weight: bold;
+  font-size: 1.5em;
+  margin-right:.5em
+`;
+
+const GuestCount = styled.span`
+  font-size: 1em;
+  margin-left:.5em
+`;
+
+const InvitationStatus = styled.span`
+  font-size: 1em;  
+`;
+
+const StyledSeparator = styled.span`
+  font-size: 1.5em;
+`;
+
+const InvitationDate = styled.div`
+  font-size: 14px;
 `;
 
 const CenteredSpinner = styled.div`
@@ -590,6 +636,7 @@ const EventDetails = () => {
   const [files, setFiles] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [userThumbnails, setUserThumbnails] = useState([]);
+  const [eventInvitations,setEventInvitations ] = useState([]);
   const [mergeMode, setMergeMode] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [activeTab, setActiveTab] = useState('gallery');
@@ -760,9 +807,29 @@ const EventDetails = () => {
     }
   };
 
+  const fetchEventInvitations = async () => {
+    setIsPeopleLoading(true);
+    try {
+      const response = await API_UTIL.get(`/getEventInvitationDetails/${event.event_id}`);
+      if (response.status === 200) {
+        setEventInvitations(response.data.data);
+        setUserCategoryTab('invited');
+      } else {
+        throw new Error("Failed to fetch user thumbnails");
+      }
+    } catch (error) {
+      console.error("Error fetching user thumbnails:", error);
+    } finally {
+      setIsPeopleLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (event && activeTab === 'people') {
-      fetchUserThumbnails();
+      if(event.uploaded_files>=0)
+        fetchUserThumbnails();
+      else  
+        fetchEventInvitations();
     }
   }, [event, activeTab]);
 
@@ -1739,14 +1806,30 @@ const createFlashback =({
                     <CenteredSpinner>
                       <LoadingSpinner color="#40E0D0" />
                     </CenteredSpinner>
-                  ) : userThumbnails.length === 0 ? (
+                  ) :event.uploaded_files>0 && userThumbnails.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '2rem', color: '#ffffff' }}>
                       No people detected in the photos you've uploaded. Try uploading more photos that contain human faces.
                     </div>
-                  ) : (
+                  )  :!event.uploaded_files>0 && eventInvitations.length === 0 ?(
+                    <>
+                    <div style={{ textAlign: 'center', padding: '2rem', color: '#ffffff' }}>
+                     No Event Invitations found !! Send Event Invitations
+                     
+                    </div>
+                    <ActionButton onClick={shareOnWhatsApp} title="Share on WhatsApp">
+                    Invite <Share2 size={18} />
+                  </ActionButton>
+                  </>
+                    
+                  ):(
                     <>
                   <AttendeesSummary>
-                    <TotalAttendees>Total Attendees: {userThumbnails.length}</TotalAttendees>
+                    {event.uploaded_files>0 ? (
+                      <TotalAttendees>Total Attendees: {userThumbnails.length}</TotalAttendees>
+                    ):(
+                      <TotalAttendees>Total Attendees: {eventInvitations.length}</TotalAttendees>
+                    )}
+
                       <div>
                         {!mergeMode ? (
                           <ActionButton onClick={handleMergeClick}>Manage Faces</ActionButton>
@@ -1759,10 +1842,20 @@ const createFlashback =({
                   </div>
                   </AttendeesSummary>
                   <UserCategoryTabs>
-                    <div className="tab-list">
+                    { !event.uploaded_files>0 ?(
+                      <div className="tab-list">
+                      <button className={`tab ${userCategoryTab === 'invited' ? 'active' : ''}`} onClick={() => setUserCategoryTab('invited')} >Invited Users</button>
+                      <button className={`tab ${userCategoryTab === 'registered' ? 'active' : ''}`} onClick={() => setUserCategoryTab('registered')} disabled={true}>Registered Users</button>
+                      <button className={`tab ${userCategoryTab === 'unregistered' ? 'active' : ''}`} onClick={() => setUserCategoryTab('unregistered')}disabled={true}>Unregistered Users</button>
+                    </div>
+                    ):(
+                      <div className="tab-list">
                       <button className={`tab ${userCategoryTab === 'registered' ? 'active' : ''}`} onClick={() => setUserCategoryTab('registered')}>Registered Users</button>
                       <button className={`tab ${userCategoryTab === 'unregistered' ? 'active' : ''}`} onClick={() => setUserCategoryTab('unregistered')}>Unregistered Users</button>
+                      <button className={`tab ${userCategoryTab === 'invited' ? 'active' : ''}`} onClick={() => setUserCategoryTab('invited')}>Invited Users</button>
                     </div>
+                    )}
+                   
                   </UserCategoryTabs>
                   <UserCategoryContent active={userCategoryTab === 'registered'}>
                   {mergeMessage && <div className="merge-message">{mergeMessage}</div>}
@@ -1816,6 +1909,29 @@ const createFlashback =({
                       </motion.div>
                     ))}
                   </div>
+                  </UserCategoryContent>
+                  <UserCategoryContent active={userCategoryTab === 'invited'}>
+                  <InvitationList>
+                  {eventInvitations.map((inv) => (
+                    <InvitationItem key={inv.user_name}>
+                      <InvitationInfo>
+                        <UserName>{inv.user_name}</UserName>
+                        <StyledSeparator>|</StyledSeparator>
+                        <GuestCount className="guest-count">{inv.attendees_count} {inv.attendees_count > 1 ? 'Guests' : 'Guest'}</GuestCount>
+                       
+                      </InvitationInfo>
+                      <InvitationDate>
+                        {new Date(inv.invitation_date).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}
+                      </InvitationDate>
+                      <InvitationStatus>{inv.invitation_status}</InvitationStatus>
+                    </InvitationItem>
+                  ))}
+                </InvitationList>
+
                   </UserCategoryContent>
                   </>
                     )}

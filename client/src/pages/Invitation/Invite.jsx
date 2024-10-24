@@ -393,6 +393,9 @@ const Invite = ({ eventId: propEventId }) => {
             if(response.data.data.user_name === userPhoneNumber){
               setShowUserName(true);
             }
+            else{
+              setUserName(response.data.data.user_name);
+            }
           }
         } catch (error) {
           console.error('Error fetching user details:', error);
@@ -419,6 +422,7 @@ const Invite = ({ eventId: propEventId }) => {
           event_id: event.event_id,
           user_phone_number: userPhoneNumber,
           invitation_status: userResponse,
+          user_name: userName
         });
   
         if (apiResponse.status === 200) {
@@ -453,10 +457,12 @@ const Invite = ({ eventId: propEventId }) => {
           event_id: event.event_id,
           user_phone_number: userPhoneNumber,
           attendees_count: attendees,
-          invitation_status:response
+          invitation_status:response,
+          user_name:userName,
+          responded_date:Date.now()
 
         });
-        if(userName){
+        if(showUserName){
           await API_UTIL.post('/updatePortfolioDetails', {
             user_phone_number: userPhoneNumber,
             user_name: userName,
