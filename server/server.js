@@ -2030,7 +2030,7 @@ async function getUserObjectByUserPhoneNumber(userPhoneNumber){
     if (result.Items.length === 0) {
       throw new Error("userPhoneNumber not found");
     }
-    logger.info("user details fetched successfully");
+    logger.info("Successfully fetched user info for userPhoneNumber : "+userPhoneNumber);
     return result.Items[0];
   } catch (error) {
     console.error("Error getting user object:", error);
@@ -6957,7 +6957,7 @@ app.post("/updatePortfolioDetails", async (req, res) => {
 
     while (isUsernameTaken) {
       const existingUser = await getUserObjectByUserName(username);
-      logger.info(`Existing user object: ${existingUser}`);
+      logger.info(`Existing user : ${user_phone_number}`);
       if (existingUser.length !== 0) {
         username = `${baseUsername}${counter}`;
         counter++;
@@ -9163,6 +9163,32 @@ app.get("/getInvitationDetails/:eventId/:userPhoneNumber", async (req, res) => {
     res.send(result.Item);
   } catch (err) {
     logger.error("Error upserting invitation details: " + err.message);
+    res.status(500).send(err.message);
+  }
+});
+
+app.get("/getEventInvitationDetails/:event_id", async (req, res) => {
+  const { event_id } = req.params;
+
+  try {
+    const params = {
+      TableName: "invitation_details",
+      KeyConditionExpression: "event_id = :event_id",
+      ExpressionAttributeValues: {
+        ":event_id": event_id,
+      },
+    };
+
+    const result = await docClient.query(params).promise();
+
+    if (result.Items.length >= 0) {
+      res.send({
+        message: "Successfully fetched invitation details",
+        data: result.Items,
+      });
+    } 
+  } catch (err) {
+    logger.error("Error fetching invitation details: " + err.message);
     res.status(500).send(err.message);
   }
 });
