@@ -130,20 +130,23 @@ function Login({ name, onLoginSuccess, showAppBar = true }) {
     const login_platform = 'FlashbackWeb';
     try {
       const response = await API_UTIL.post('/verifyOTP', { phoneNumber: fullPhoneNumber, otp: otpString, login_platform });
-      if (response.status === 200) {
-        // OTP verified successfully, proceed with user creation or login
-        await createOrLoginUser(fullPhoneNumber);
-        return { success: true };
-      } else {
-        return { success: false };
+      if (response.data.success === false) {
+        return { 
+          success: false, 
+          message: response.data.message,
+          remainingAttempts: response.data.remainingAttempts 
+        };
       }
-    } catch (error) {
-      console.error("Error verifying OTP:", error);
-      return { success: false };
-    }
-    finally{
-      setShowOTP(false);
-    }
+        await createOrLoginUser(fullPhoneNumber);
+        setShowOTP(false);
+        return { success: true };
+      } catch (error) {
+        console.error("Error verifying OTP: ", error);
+        return { 
+          success: false,
+          message: error.response?.data?.message || 'Error verifying OTP'
+        };
+      } 
   };
 
   const handleOTPResend = async () => {
