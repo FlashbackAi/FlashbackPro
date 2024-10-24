@@ -965,9 +965,7 @@ const uploadFiles = async () => {
         attempts++;
         if (attempts === MAX_RETRIES) throw error;
       }
-      finally{
-        closeUploadFilesModal();
-      }
+      
     }
   };
 
@@ -1016,6 +1014,8 @@ const uploadFiles = async () => {
     setUploading(false);
     setOverallProgress(100); // Ensure progress bar is set to 100% on completion
     setFileCount(0);
+    closeUploadFilesModal();
+    
   }
 };
 
