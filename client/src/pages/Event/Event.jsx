@@ -739,12 +739,12 @@ const Event = () => {
               name="userName"
               value={userFormData.org_name}
               handleChange={(e) => setUserFormData({ ...userFormData, org_name: e.target.value, user_name: e.target.value })}
-              placeholder="Enter your photography name"
+              placeholder="Enter your User name"
               isRequired={true}
               isEditable={true}
             />
           </FormGroup>
-          <FormGroup>
+          {/* <FormGroup>
             <LabelAndInput
               label="Instagram URL:"
               type="text"
@@ -777,7 +777,7 @@ const Event = () => {
               })}
               isEditable={true}
             />
-          </FormGroup>
+          </FormGroup> */}
           <SubmitButton type="submit">Save</SubmitButton>
         </Form>
         </UserDetailsModalContent>

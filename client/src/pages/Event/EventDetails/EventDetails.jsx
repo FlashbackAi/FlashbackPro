@@ -835,7 +835,7 @@ const EventDetails = () => {
   const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
   
   window.open(url, '_blank');
-  await updateRewards(10);
+  //await updateRewards(10);
 };
 
 const handleCollabClick = async () => {
@@ -845,7 +845,7 @@ const handleCollabClick = async () => {
     const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
 
     window.open(url, '_blank');
-    await updateRewards(10);
+    //await updateRewards(10);
     //await transferChewyCoins(userDetails.user_phone_number, 10);
   } catch (error) {
     console.error('Error generating collaboration link:', error);
@@ -1098,25 +1098,9 @@ const uploadFlashbackFiles = async () => {
     await handleUploads();
 
     // After all files are uploaded successfully, update the uploaded files count
-    const newUploadedFilesCount = uploadedFilesCount + files.length;
-    setUploadedFilesCount(newUploadedFilesCount);
-
-    try {
-      const response = await API_UTIL.put(`/updateEvent/${event.event_id}`, {
-        event_name: eventData.eventName,
-        event_date: `${eventData.eventDate}T${eventData.eventTime}:00`,
-        invitation_note: eventData.invitationNote,
-        event_location: eventData.eventLocation,
-        uploaded_files: newUploadedFilesCount,
-      });
-
-      if (response.status === 200) {
-        toast.success('Event updated successfully with new file count');
-      }
-    } catch (error) {
-      console.error('Error updating event with new file count:', error);
-      toast.error('Failed to update the event with new file count. Please try again.');
-    }
+    // const newUploadedFilesCount = uploadedFilesCount + files.length;
+    // setUploadedFilesCount(newUploadedFilesCount);
+    await updateRewards(-files.length);
     //await deductCoins(files.length);
 
     setUploadStatus('Upload completed successfully');
@@ -1208,7 +1192,7 @@ const uploadFlashbackFiles = async () => {
         event_id: event.event_id,
       });
       if (response.status === 200) {
-        updateRewards(10);
+        //updateRewards(10);
       } else {
         throw new Error("Failed to save share info");
       }
@@ -1438,7 +1422,7 @@ const uploadFlashbackFiles = async () => {
       });
 
       if (response.data.success) {
-        await updateRewards(50);
+       // await updateRewards(50);
         //await transferChewyCoins(user_phone_number, 50);
         await fetchThumbnails();
       }
@@ -1855,6 +1839,9 @@ const createFlashback =({
                     <Heart size={24} />
                     <span style={{ marginTop: '8px', display: 'block', textAlign: 'center'}}>Favourites</span>
                     </FlashbackTile>
+                    <FlashbackTile onClick={()=>setIsCreateFlashbackModalOpen(true)}>
+                    <span style={{ marginTop: '8px', display: 'block', textAlign: 'center'}}>Deliverables</span>
+                    </FlashbackTile>
                     {eventFlashbacks.map((flashback, index) => (
                       <FlashbackTile key={index} onClick={() => navigate(`/flashs/${flashback.flashback_name}/${flashback.event_id}`)}>
                         <span style={{ marginTop: "8px", display: "block", textAlign: "center" }}>
@@ -2067,7 +2054,7 @@ const createFlashback =({
               {fileCount} file(s) selected.{" "}
                 {canUpload ? (
                   <>
-                    {requiredCoins} <UnityLogo src='/unityLogo.png' alt='Coin' /> coins will be deducted from your wallet.
+                    {requiredCoins} <IoDiamond color="Yellow" size=".8em"/> will be deducted from your wallet.
                   </>
                 ) : (
                   "Insufficient balance."
