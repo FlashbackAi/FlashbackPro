@@ -67,7 +67,6 @@ async function initializeConfig() {
     const whatsappConfig = await fetchWhatsappSecrets();
     const awsCredentials = await fetchAWSSecrets();
 
-    console.log(whatsappConfig);
     // Set AWS SDK credentials using the retrieved secrets
     AWS.config.update({
       region: 'ap-south-1',

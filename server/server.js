@@ -56,7 +56,6 @@ if (ENV === 'production') {
   
     server = https.createServer(credentials, app);
   } else {
-    console.log('Running server on development')
     server = http.createServer(app);
   }
   
@@ -70,7 +69,6 @@ const whatsappSender = new WhatsAppSender(
   config.whatsapp.WHATSAPP_ACCESS_TOKEN,
   config.whatsapp.WHATSAPP_PHONE_NUMBER_ID
 );
-logger.info(whatsappSender);
 const AWS = require('aws-sdk');
 AWS.config.update({
   region: 'ap-south-1',

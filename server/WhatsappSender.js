@@ -1,6 +1,6 @@
 const axios = require('axios');
 const { initializeConfig, getConfig } = require('./config');
-const { logger } = require('./logger');
+const logger = require('./logger');
 
 
 class WhatsAppSender {

@@ -28,6 +28,14 @@ const Header = styled.header`
   color: white;
   padding: 100px 0;
   text-align: center;
+
+  @media only screen and (max-width: 480px) {
+    padding: 60px 0;
+  }
+
+  @media only screen and (max-width: 768px) {
+    padding: 80px 0;
+  }
 `;
 
 const BackgroundImage = styled.img`
@@ -38,7 +46,10 @@ const BackgroundImage = styled.img`
   height: 100%;
   object-fit: cover;
   opacity: 0.6;
-  // filter: grayscale(100%);
+
+  @media only screen and (max-width: 480px) {
+    height: 120%;
+  }
 `;
 
 const HeaderContent = styled.div`
@@ -67,12 +78,28 @@ const HeaderTitle = styled.h1`
   margin-bottom: 10px;
   color: white;
   text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+
+  @media only screen and (max-width: 480px) {
+    font-size: 32px;
+  }
+
+  @media only screen and (max-width: 768px) {
+    font-size: 40px;
+  }
 `;
 
 const HeaderSubtitle = styled.p`
   font-size: 18px;
   margin: 0;
   color: white;
+
+  @media only screen and (max-width: 480px) {
+    font-size: 14px;
+  }
+
+  @media only screen and (max-width: 768px) {
+    font-size: 16px;
+  }
 `;
 
 const blinkingShadow = keyframes`
@@ -109,21 +136,22 @@ const CTAButton = styled(motion.button)`
     box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
     transform: scale(1.03);
   }
-
-  @media (max-width: 768px) {
+  @media only screen and (max-width: 480px) {
     font-size: 16px;
-    padding: 8px 16px;
+    padding: 10px 20px;
+    margin-top: 15px;
   }
-`;
 
-const RocketIcon = styled(Rocket)`
-  color: #ffffff;
-  transition: all 0.3s ease;
-
-  ${CTAButton}:hover & {
-    transform: translateY(-2px) rotate(-45deg);
-    color: #00ffff;
+  @media only screen and (max-width: 768px) {
+    font-size: 18px;
+    padding: 12px 24px;
   }
+
+
+  // @media (max-width: 768px) {
+  //   font-size: 16px;
+  //   padding: 8px 16px;
+  // }
 `;
 
 const LandingBody = styled.div`
@@ -190,8 +218,18 @@ const FeatureImage = styled.img`
   border-radius: 1rem;
   box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
 
-  @media (max-width: 768px) {
+  // @media (max-width: 768px) {
+  //   max-width: 100%;
+  // }
+
+  @media only screen and (max-width: 480px) {
     max-width: 100%;
+    border-radius: 0.5rem;
+  }
+
+  @media only screen and (max-width: 768px) {
+    max-width: 100%;
+    border-radius: 0.75rem;
   }
 `;
 
