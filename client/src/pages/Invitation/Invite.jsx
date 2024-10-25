@@ -165,6 +165,10 @@ const InviteText = styled.span`
   color: white;
   margin-bottom: 1em; 
   text-align: center;
+  @media (max-width: 768px) {
+    font-size: 1em;
+  }
+
 `;
 
 const ButtonContainer = styled.div`
@@ -173,7 +177,7 @@ const ButtonContainer = styled.div`
 `;
 
 const InviteButton = styled.button`
-  width: 35%;
+  width: 25%;
   padding: 0.625em; /* 10px */
   font-size: 1em; /* 14px */
   font-weight: bold;
@@ -198,8 +202,38 @@ const InviteButton = styled.button`
     background-color: #d3d3d3;
     cursor: not-allowed;
   }
+    
 `;
+const ConfirmButton = styled.button`
+  width: 25%;
+  padding: 0.625em; /* 10px */
+  font-size: 1em; /* 14px */
+  font-weight: bold;
+  color: #fff;
+  margin-top:1em;
+  background-color: #b57156;
+  border: none;
+  border-radius: 0.25em; /* 4px */
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  text-align: center;
 
+  &:hover {
+    background-color: #9f5b47;
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  &:disabled {
+    background-color: #d3d3d3;
+    cursor: not-allowed;
+  }
+    @media (max-width: 768px) {
+    width:8em;
+  }
+`;
 
 const AttendeesInputContainer = styled.div`
   display: flex;
@@ -252,6 +286,7 @@ const Label = styled.label`
   color: #ffffff;
   margin-bottom: 0.5rem;
   font-weight: 500;
+  
 `;
 
 
@@ -311,6 +346,10 @@ const CloseButton = styled.button`
 
   &:hover {
     color: #00ffff;
+  }
+
+  @media (max-width: 768px) {
+    width:2em;
   }
 `;
 
@@ -593,9 +632,9 @@ const Invite = ({ eventId: propEventId }) => {
                     +
                   </AttendeesButton>
                 </AttendeesInputContainer>
-                <InviteButton onClick={confirmAttendance} disabled={isConfirming}>
+                <ConfirmButton onClick={confirmAttendance} disabled={isConfirming}>
                   {isConfirming ? 'Confirming...' : 'Confirm Attendance'}
-                </InviteButton>
+                </ConfirmButton>
           </ModalContent>
         </ModalOverlay>
       </StyledModal>

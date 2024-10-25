@@ -70,7 +70,10 @@ const Collab = () => {
       await API_UTIL.put(`/acceptCollab/${eventId}`, { userName:user_name, status });
 
       toast.success(`Collaboration ${status.toLowerCase()}ed successfully`);
-      navigate('/dashboard');
+      if(status === 'Accept')
+      navigate(`/eventDetails/${event.event_id}`);
+      else
+      navigate('/dashboard')
       }
     } catch (error) {
       console.error(`Error ${status.toLowerCase()}ing collaboration:`, error);

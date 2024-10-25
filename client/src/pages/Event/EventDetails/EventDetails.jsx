@@ -176,6 +176,7 @@ const ActionButton = styled.button`
   @media (max-width: 768px) {
   padding: 0.3rem;
   font-size: 0.8rem;
+  max-width:3em;
 }
 `;
 
@@ -247,7 +248,6 @@ const InvitationList = styled.ul`
   list-style: none;
   padding: 0;
   margin: 0;
-  margin-right:10em;
 `;
 
 const InvitationItem = styled.li`
@@ -277,6 +277,9 @@ const GuestCount = styled.span`
 `;
 
 const InvitationStatus = styled.span`
+  font-size: 1em;  
+`;
+const InvitationNumber = styled.span`
   font-size: 1em;  
 `;
 
@@ -815,7 +818,7 @@ const EventDetails = () => {
       const response = await API_UTIL.get(`/getEventInvitationDetails/${event.event_id}`);
       if (response.status === 200) {
         setEventInvitations(response.data.data);
-        setUserCategoryTab('invited');
+        
       } else {
         throw new Error("Failed to fetch user thumbnails");
       }
@@ -828,10 +831,15 @@ const EventDetails = () => {
 
   useEffect(() => {
     if (event && activeTab === 'people') {
-      if(event.uploaded_files>=0)
+      fetchEventInvitations();
+      if(event.uploaded_files>=0){
         fetchUserThumbnails();
-      else  
-        fetchEventInvitations();
+      }else{
+        setUserCategoryTab('invited');
+      }
+       
+     
+       
     }
   }, [event, activeTab]);
 
@@ -1837,7 +1845,7 @@ const createFlashback =({
                   ):(
                     <>
                   <AttendeesSummary>
-                    {!event.uploaded_files>0 ? (
+                    {!event.uploaded_files>0  || userCategoryTab==='invited' ? (
                       <>
                       <TotalAttendees>Total Attendees: {eventInvitations.length}</TotalAttendees>
                       <div>
@@ -1952,6 +1960,7 @@ const createFlashback =({
                         <GuestCount className="guest-count">{inv.attendees_count} {inv.attendees_count > 1 ? 'Guests' : 'Guest'}</GuestCount>
                        
                       </InvitationInfo>
+                      <InvitationNumber>{inv.user_phone_number}</InvitationNumber>
                       <InvitationDate>
                         {new Date(inv.responded_date).toLocaleDateString("en-US", {
                           year: "numeric",

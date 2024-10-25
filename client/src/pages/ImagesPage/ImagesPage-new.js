@@ -131,6 +131,9 @@ const ImageWrapper = styled.div`
       height: 100%;
       object-fit: cover;
     }
+       @media (max-width: 768px) {
+    display: none;
+  }
   `;
 
   const EventTitle = styled.h1`
