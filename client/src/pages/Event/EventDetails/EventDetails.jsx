@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import styled, { createGlobalStyle } from 'styled-components';
@@ -256,6 +256,7 @@ const InvitationItem = styled.li`
   flex-direction: column;
   border-radius:1em;
   background-color:#4b4a4a;
+  margin-bottom:.5em;
 `;
 
 const InvitationInfo = styled.div`
@@ -679,6 +680,7 @@ const EventDetails = () => {
   const loader = useRef(null);
   const [eventFlashbacks, setEventFlashbacks]= useState([]);
   const [ eventImage, setEventImage] = useState('');
+  const [selectedInvitationStatus, setSelectedInvitationStatus] = useState(null);
 
 
   const onLoad = () => {
@@ -832,6 +834,17 @@ const EventDetails = () => {
         fetchEventInvitations();
     }
   }, [event, activeTab]);
+
+  const statusCounts = useMemo(() => {
+    return eventInvitations.reduce((acc, inv) => {
+      acc[inv.invitation_status] = (acc[inv.invitation_status] || 0) + 1;
+      return acc;
+    }, {});
+  }, [eventInvitations]);
+
+  const filteredInvitations = selectedInvitationStatus
+  ? eventInvitations.filter((inv) => inv.invitation_status === selectedInvitationStatus)
+  : eventInvitations;
 
   const handleEditClick = () => setEditMode(true);
   const handleCancelEdit = () => setEditMode(false);
@@ -1824,11 +1837,28 @@ const createFlashback =({
                   ):(
                     <>
                   <AttendeesSummary>
-                    {event.uploaded_files>0 ? (
-                      <TotalAttendees>Total Attendees: {userThumbnails.length}</TotalAttendees>
-                    ):(
+                    {!event.uploaded_files>0 ? (
+                      <>
                       <TotalAttendees>Total Attendees: {eventInvitations.length}</TotalAttendees>
-                    )}
+                      <div>
+                      {Object.entries(statusCounts).map(([status, count]) => (
+                        <ActionButton
+                          key={status}
+                          onClick={() => setSelectedInvitationStatus(status)}
+                          className={selectedInvitationStatus === status ? "active" : ""}
+                        >
+                          {status} ({count})
+                        </ActionButton>
+                      ))}
+                      <ActionButton onClick={() => setSelectedInvitationStatus(null)} className={!selectedInvitationStatus ? "active" : ""}>
+                        All
+                      </ActionButton>
+                    </div>
+                    </>
+                    ):(
+                      <>
+                      <TotalAttendees>Total Attendees: {userThumbnails.length}</TotalAttendees>
+                    
 
                       <div>
                         {!mergeMode ? (
@@ -1840,6 +1870,8 @@ const createFlashback =({
                           {isSending ? "Sending..." : "Send Photos"}
                         </ActionButton>
                   </div>
+                  </>
+                  )}
                   </AttendeesSummary>
                   <UserCategoryTabs>
                     { !event.uploaded_files>0 ?(
@@ -1912,7 +1944,7 @@ const createFlashback =({
                   </UserCategoryContent>
                   <UserCategoryContent active={userCategoryTab === 'invited'}>
                   <InvitationList>
-                  {eventInvitations.map((inv) => (
+                  {filteredInvitations.map((inv) => (
                     <InvitationItem key={inv.user_name}>
                       <InvitationInfo>
                         <UserName>{inv.user_name}</UserName>
@@ -1921,7 +1953,7 @@ const createFlashback =({
                        
                       </InvitationInfo>
                       <InvitationDate>
-                        {new Date(inv.invitation_date).toLocaleDateString("en-US", {
+                        {new Date(inv.responded_date).toLocaleDateString("en-US", {
                           year: "numeric",
                           month: "long",
                           day: "numeric",

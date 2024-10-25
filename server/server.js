@@ -9099,11 +9099,20 @@ const updateRewards = async (senderMobileNumber, amount) => {
 app.post("/saveInvitationDetails", async (req, res) => {
   const { user_phone_number, event_id, ...otherDetails } = req.body;
 
+  // Automatically set responded_date using the server's current timestamp
+  const responded_date = new Date().toISOString();
+
   // Build the update expression and attribute values
   let updateExpression = "SET";
   const ExpressionAttributeNames = {};
   const ExpressionAttributeValues = {};
 
+  // Add responded_date explicitly
+  updateExpression += " #responded_date = :responded_date,";
+  ExpressionAttributeNames["#responded_date"] = "responded_date";
+  ExpressionAttributeValues[":responded_date"] = responded_date;
+
+  // Add other details dynamically
   Object.keys(otherDetails).forEach((key, index) => {
     const attributeKey = `#attr${index}`;
     const attributeValue = `:val${index}`;
@@ -9141,6 +9150,7 @@ app.post("/saveInvitationDetails", async (req, res) => {
     res.status(500).send(err.message);
   }
 });
+
 
 app.get("/getInvitationDetails/:eventId/:userPhoneNumber", async (req, res) => {
   const { eventId, userPhoneNumber} = req.params;

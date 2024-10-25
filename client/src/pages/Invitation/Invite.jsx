@@ -458,8 +458,7 @@ const Invite = ({ eventId: propEventId }) => {
           user_phone_number: userPhoneNumber,
           attendees_count: attendees,
           invitation_status:response,
-          user_name:userName,
-          responded_date:Date.now()
+          user_name:userName
 
         });
         if(showUserName){
