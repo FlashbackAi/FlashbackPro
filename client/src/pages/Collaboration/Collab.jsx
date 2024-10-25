@@ -94,7 +94,7 @@ const CollabPageHeader = styled.h1`
 `
 
 const CollabPageContainer = styled.div`
-  height:5em;
+
   width: 100%;
   position: fixed;
   bottom: 0;
@@ -107,6 +107,8 @@ const CollabPageContainer = styled.div`
   // margin-left: 1em;
   margin-bottom: 0.5em;
   text-align: center;
+  display:flex;
+  flex-direction:column;
 
   @media (max-width: 768px) {
     padding: 1rem;
@@ -117,7 +119,7 @@ const CollabPageContainer = styled.div`
 const CollabText = styled.span`
   font-size: 2em; /* 16px */
   color: white;
-  margin-bottom: 1em; 
+  margin-bottom: .3em; 
   text-align: center;
   @media (max-width: 768px) {
     font-size: 1em;
@@ -127,7 +129,7 @@ const CollabText = styled.span`
 const Label = styled.label`
   color: #ffffff;
   margin-bottom: 0.5rem;
-  font-weight: 500;
+  font-size:1em;
   
 `;
 
@@ -334,14 +336,14 @@ const Collab = () => {
       <CollabPageContainer>
             <CollabText>{formatEventName(event?.event_name)}</CollabText>
             {!isUserNameExists &&(
-              <>
+              <div>
             <Label>Enter your user name : </Label>
                 <Input
                   type="text"
                   value={userName}
                   onChange={(e) => setUserName(e.target.value)}
                 />
-              </> 
+              </div> 
               )}
             <ButtonContainer>
               <InviteButton onClick={() => updateCollabStatus('Accept')}>Accept</InviteButton>
