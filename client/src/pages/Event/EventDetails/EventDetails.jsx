@@ -1876,9 +1876,9 @@ const createFlashback =({
                   <UserCategoryTabs>
                     { !event.uploaded_files>0 ?(
                       <div className="tab-list">
-                      <button className={`tab ${userCategoryTab === 'invited' ? 'active' : ''}`} onClick={() => setUserCategoryTab('invited')} >Invited Users</button>
-                      <button className={`tab ${userCategoryTab === 'registered' ? 'active' : ''}`} onClick={() => setUserCategoryTab('registered')} disabled={true}>Registered Users</button>
-                      <button className={`tab ${userCategoryTab === 'unregistered' ? 'active' : ''}`} onClick={() => setUserCategoryTab('unregistered')}disabled={true}>Unregistered Users</button>
+                      <button className={`tab ${userCategoryTab === 'invited' ? 'active' : ''}`} onClick={() => setUserCategoryTab('invited')} title="View all invited users">Invited Users</button>
+                      <button className={`tab ${userCategoryTab === 'registered' ? 'active' : ''}`} onClick={() => setUserCategoryTab('registered')} disabled={true} title="Upload Photos to view">Registered Users</button>
+                      <button className={`tab ${userCategoryTab === 'unregistered' ? 'active' : ''}`} onClick={() => setUserCategoryTab('unregistered')}disabled={true}title="Upload Photos to view">Unregistered Users</button>
                     </div>
                     ):(
                       <div className="tab-list">
