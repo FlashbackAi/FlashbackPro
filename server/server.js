@@ -1304,7 +1304,7 @@ app.post('/verifyOTP', async (req, res) => {
       await recordLoginHistory(phoneNumber, login_platform);
       res.status(200).json({ message: 'OTP verified successfully' });
     } else {
-      res.status(400).json({ error: 'Invalid OTP' });
+      res.status(200).json({ success: false, error: 'Invalid OTP' });
     }
   } catch (error) {
     logger.error(`Error verifying OTP for ${phoneNumber}: ${error}`);

@@ -100,6 +100,7 @@ const OTPAuth = ({ phoneNumber, onVerify, onResend, otpSentTime }) => {
   const [isDisabled, setIsDisabled] = useState(false);
   const inputRefs = useRef([]);
   const timerRef = useRef(null);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   useEffect(() => {
     if (otpSentTime) {
@@ -154,19 +155,47 @@ const OTPAuth = ({ phoneNumber, onVerify, onResend, otpSentTime }) => {
 
   const handleChange = (index, value) => {
     if (isNaN(value)) return;
+
+    // Handle pasted content from mobile keyboard
+    if (value.length > 1) {
+      const pastedData = value.slice(0, 6).replace(/\D/g, '');
+      if (pastedData) {
+        const newOtp = Array(6).fill('');
+        for (let i = 0; i < 6; i++) {
+          newOtp[i] = pastedData[i] || '';
+        }
+        setOtp(newOtp);
+
+        // Focus on the last filled input or the next empty one
+        const nextEmptyIndex = newOtp.findIndex((val) => val === '');
+        const focusIndex = nextEmptyIndex === -1 ? 5 : nextEmptyIndex;
+        inputRefs.current[focusIndex]?.focus();
+
+        // Add highlight effect
+        inputRefs.current.forEach((input) => input?.classList.add('highlight'));
+        setTimeout(() => {
+          inputRefs.current.forEach((input) => input?.classList.remove('highlight'));
+        }, 500);
+        
+        return;
+      }
+    }
+    // Handle single character input
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
 
     if (value !== '' && index < 5) {
-      inputRefs.current[index + 1].focus();
+      inputRefs.current[index + 1]?.focus();
     }
   };
-
 
   const handleKeyDown = (index, e) => {
     if (e.key === 'Backspace' && index > 0 && otp[index] === '') {
       inputRefs.current[index - 1].focus();
+    }
+    if (e.key === 'Enter' && otp.join('').length === 6) {
+      handleVerify();
     }
   };
 
@@ -183,15 +212,15 @@ const OTPAuth = ({ phoneNumber, onVerify, onResend, otpSentTime }) => {
 
       const nextEmptyIndex = newOtp.findIndex(val => val === '');
       const focusIndex = nextEmptyIndex === -1 ? 5 : nextEmptyIndex;
-      inputRefs.current[focusIndex].focus();
+      inputRefs.current[focusIndex]?.focus();
 
       
       // Add highlight class to all inputs
-      inputRefs.current.forEach(input => input.classList.add('highlight'));
+      inputRefs.current.forEach((input) => input?.classList.add('highlight'));
 
       // Remove highlight class after animation completes
       setTimeout(() => {
-        inputRefs.current.forEach(input => input.classList.remove('highlight'));
+        inputRefs.current.forEach((input) => input?.classList.remove('highlight'));
       }, 500);
     }
   };
@@ -205,6 +234,7 @@ const OTPAuth = ({ phoneNumber, onVerify, onResend, otpSentTime }) => {
         return;
       }
       if (attempts < 3) {
+        setIsVerifying(true);
         try {
           const result = await onVerify(otpString);
           if (result.success) {
@@ -212,13 +242,18 @@ const OTPAuth = ({ phoneNumber, onVerify, onResend, otpSentTime }) => {
             setIsDisabled(true);
             clearInterval(timerRef.current);
           } else {
-            setMessage('Incorrect OTP. Please try again.');
-            setAttempts(prev => prev + 1);
-            setOtp(['', '', '', '', '', '',]);
+            setMessage(result.message || 'Incorrect OTP. Please try again.');
+            setAttempts((prev) => prev + 1);
+            setOtp(['', '', '', '', '', '']);
+            inputRefs.current[0]?.focus();
           }
         } catch (error) {
           setMessage('Error verifying OTP. Please try again.');
           setAttempts(prev => prev + 1);
+          setOtp(['', '', '', '', '', '']);
+          inputRefs.current[0]?.focus();
+        } finally {
+          setIsVerifying(false);
         }
       } else {
         setCooldownTime(180); // 3 minutes cooldown
@@ -253,15 +288,15 @@ const OTPAuth = ({ phoneNumber, onVerify, onResend, otpSentTime }) => {
           <OTPInput
             key={index}
             ref={el => inputRefs.current[index] = el}
-            type="tel"
+            type="text"
             inputMode="numeric"
-            pattern="[0-9]"
-            maxLength={1}
+            autoComplete="one-time-code"
+            pattern="[0-9]*"
+            maxLength={index === 0 ? 6 : 1}
             value={digit}
             onChange={(e) => handleChange(index, e.target.value)}
             onKeyDown={(e) => handleKeyDown(index, e)}
             onPaste={handlePaste}
-            disabled={isDisabled}
             whileFocus={{ scale: 1.05 }}
             transition={{ type: 'spring', stiffness: 300, damping: 10 }}
           />
@@ -282,11 +317,11 @@ const OTPAuth = ({ phoneNumber, onVerify, onResend, otpSentTime }) => {
       </AnimatePresence>
       <Button
         onClick={handleVerify}
-        disabled={otp.join('').length !== 6 || isDisabled}
+        disabled={isDisabled || otp.join('').length < 6 || isVerifying}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
-        Verify OTP
+        {isVerifying ? 'Verifying...' : 'Verify'}
       </Button>
       {remainingTime > 0 && (
         <Timer>OTP expires in {Math.floor(remainingTime / 60)}:{(remainingTime % 60).toString().padStart(2, '0')}</Timer>
@@ -301,7 +336,7 @@ const OTPAuth = ({ phoneNumber, onVerify, onResend, otpSentTime }) => {
           whileTap={{ scale: 0.95 }}
           style={{ backgroundColor: '#555555' }}
         >
-          Resend OTP
+          Resend
         </Button>
       )}
       <Timer>Attempts: {attempts}/3</Timer>
