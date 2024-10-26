@@ -564,9 +564,9 @@ const PortfolioForm = () => {
 
   const onDrop = useCallback((acceptedFiles) => {
     const totalFiles = acceptedFiles.length;
-    if (totalFiles > 500) {
+    if (totalFiles > 50) {
       setFileCount(totalFiles);
-      setUploadStatus(`You have selected ${totalFiles} files. You can upload a maximum of 30 files`);
+      setUploadStatus(`You have selected ${totalFiles} files. You can upload a maximum of 50 files`);
       setUploading(false);
     } else {
       setFiles(acceptedFiles);
@@ -1206,7 +1206,7 @@ const toggleFolder = (index) => {
             <Dropzone {...getRootProps()} isDragActive={isDragActive}>
               <input {...getInputProps()} />
               {files.length > 0 ? (
-  <p>{fileCount} file(s) selected.</p>
+                 <p>{fileCount} file(s) selected.</p>
                 ) : (
                   <p>Drag 'n' drop files here, or click to select files</p>
                 )}
@@ -1219,7 +1219,7 @@ const toggleFolder = (index) => {
               alignItems: 'center', 
               gap: '2rem', 
               paddingTop: '1rem' }}>
-            <ActionButton onClick={uploadFiles} disabled={ files.length === 0 || fileCount > 30}>
+            <ActionButton onClick={uploadFiles} disabled={ files.length === 0 || fileCount > 50}>
               Upload
             </ActionButton>
             </div>

@@ -6987,7 +6987,37 @@ app.post('/uploadPortfolioImages', upload.any(), async (req, res) => {
         };
 
         // Push S3 upload promise to uploadPromises array
-        uploadPromises.push(s3.upload(originalParams).promise().then(uploadResult => {
+        uploadPromises.push(s3.upload(originalParams).promise());
+        // .then(uploadResult => {
+        //   // Prepare DynamoDB entry for the thumbnail image
+        //   const dynamoDBParams = {
+        //     TableName: portfolioImagesTable,
+        //     Item: {
+        //       username: user_name,
+        //       folder_name: folderName,
+        //       s3_url: uploadResult.Location,
+        //       uploadDate: Date.now(), // Timestamp
+        //       is_favourite:false
+        //     }
+        //   };
+        //   dynamoDBPromises.push(docClient.put(dynamoDBParams).promise());
+        // }));
+
+        // Compress and upload the thumbnail image
+        const compressedBuffer = await sharp(file.buffer)
+          .resize(1024, 1024) // Adjust the size as needed for your thumbnails
+          .toBuffer();
+
+        const thumbnailParams = {
+          Bucket: portfolioBucketName,
+          Key: thumbnailFileName,
+          Body: compressedBuffer,
+          ContentType: file.mimetype,
+        };
+
+        // Push S3 upload promise for thumbnail to uploadPromises array
+        uploadPromises.push(s3.upload(thumbnailParams).promise()
+        .then(uploadResult => {
           // Prepare DynamoDB entry for the thumbnail image
           const dynamoDBParams = {
             TableName: portfolioImagesTable,
@@ -7001,35 +7031,6 @@ app.post('/uploadPortfolioImages', upload.any(), async (req, res) => {
           };
           dynamoDBPromises.push(docClient.put(dynamoDBParams).promise());
         }));
-
-        // Compress and upload the thumbnail image
-        const compressedBuffer = await sharp(file.buffer)
-          .resize(600, 600) // Adjust the size as needed for your thumbnails
-          .toBuffer();
-
-        const thumbnailParams = {
-          Bucket: portfolioBucketName,
-          Key: thumbnailFileName,
-          Body: compressedBuffer,
-          ContentType: file.mimetype,
-        };
-
-        // Push S3 upload promise for thumbnail to uploadPromises array
-        uploadPromises.push(s3.upload(thumbnailParams).promise());
-        //.then(uploadResult => {
-        //   // Prepare DynamoDB entry for the thumbnail image
-        //   const dynamoDBParams = {
-        //     TableName: portfolioImagesTable,
-        //     Item: {
-        //       username: user_name,
-        //       folder_name: folderName,
-        //       s3_url: uploadResult.Location,
-        //       uploadDate: Date.now(), // Timestamp
-        //       is_favourite:false
-        //     }
-        //   };
-        //   dynamoDBPromises.push(docClient.put(dynamoDBParams).promise());
-        //}));
       }
     }
     // Wait for all S3 uploads and DynamoDB inserts to complete
