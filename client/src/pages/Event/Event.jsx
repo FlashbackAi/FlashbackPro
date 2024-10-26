@@ -94,12 +94,22 @@ const TabButton = styled.button`
     transform: scaleX(${props => props.active ? 1 : 0});
     transition: transform 0.3s ease;
   }
+
+  @media (max-width: 768px) {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+  }
 `;
 
 const EventGrid = styled(motion.div)`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 2rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+  }
 `;
 
 const EventCard = styled(motion.div)`
@@ -114,22 +124,45 @@ const EventCard = styled(motion.div)`
     transform: translateY(-5px);
     box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
   }
+
+  @media (max-width: 768px) {
+    max-width: 150px;
+    max-height: 150px;
+    min-width: 150px;
+    min-height: 150px;
+    margin: 0 auto 0.5rem auto;
+  }
 `;
 
 const EventImage = styled.img`
   width: 100%;
   height: 200px;
   object-fit: cover;
+
+  @media (max-width: 768px) {
+    height: 100px;
+    object-fit: cover;
+  }
 `;
 
 const EventInfo = styled.div`
   padding: 1rem;
+
+  @media (max-width: 768px) {
+  padding: 0.5rem;
+  height: 30%;
+  }
 `;
 
 const EventName = styled.h3`
   margin: 0 0 0.5rem;
   font-size: 1.2rem;
   color: #ffffff;
+
+  @media (max-width: 768px) {
+    font-size: 0.9rem;
+    margin: 0 0 0.25rem;
+  }
 `;
 
 const EventDetail = styled.p`
@@ -142,6 +175,16 @@ const EventDetail = styled.p`
   svg {
     margin-right: 0.5rem;
     color: #00ffff;
+  }
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+    margin: 0.15rem 0;
+    
+    svg {
+      width: 14px;
+      height: 14px;
+      margin-right: 0.25rem;
+    }
   }
 `;
 
@@ -163,6 +206,13 @@ const CreateEventCard = styled(motion.div)`
     transform: translateY(-5px);
     box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
   }
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+    max-width: 150px;
+    max-height: 150px;
+  }
+
 `;
 
 const PlusIcon = styled(Plus)`
@@ -170,6 +220,12 @@ const PlusIcon = styled(Plus)`
   height: 3rem;
   color: #00ffff;
   margin-bottom: 1rem;
+
+  @media (max-width: 768px) {
+    width: 2rem;
+    height: 2rem;
+    margin-bottom: 0.5rem;
+  }
 `;
 
 const CreateEventText = styled.p`
@@ -213,11 +269,22 @@ const BaseModalContent = styled.div`
   outline: none;
   color: #ffffff;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin: 0.5rem;
+  }
 `;
 
 const UserDetailsModalContent = styled(BaseModalContent)`
   max-width: 400px;
   width: 90%;
+
+  @media (max-width: 768px) {
+    max-width: 320px;
+    width: 95%;
+  }
 `;
 
 const DeleteModalContent = styled(BaseModalContent)`
@@ -228,6 +295,11 @@ const DeleteModalContent = styled(BaseModalContent)`
 const CreateEventModalContent = styled(BaseModalContent)`
   max-width: 800px;
   width: 90%;
+
+  @media (max-width: 768px) {
+    width: 95%;
+    max-width: 320px;
+  }
 `;
 
 const ModalHeader = styled.div`
@@ -235,12 +307,20 @@ const ModalHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+
+  @media (max-width: 768px) {
+    margin-bottom: 0.75rem;
+  }
 `;
 
 const ModalTitle = styled.h2`
   font-size: 1.5rem;
   color: #00ffff;
   margin: 0;
+
+  @media (max-width: 768px) {
+    font-size: 1.2rem;
+  }
 `;
 
 
@@ -250,6 +330,12 @@ const CloseButton = styled.button`
   font-size: 1.2rem;
   cursor: pointer;
   color: #ffffff;
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+    padding: 0.2rem 0.5rem;
+    max-width: 10%;
+  }
 
     &:hover {
     box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
@@ -261,17 +347,31 @@ const Form = styled.form`
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 0.1rem;
+  }
 `;
 
 const FormGroup = styled.div`
   display: flex;
   flex-direction: column;
+
+  @media (max-width: 768px) {
+    margin-bottom: 0.2rem;
+  }
 `;
 
 const Label = styled.label`
   color: #ffffff;
   margin-bottom: 0.5rem;
   font-weight: 500;
+
+  @media (max-width: 768px) {
+    font-size: 0.7rem;
+    margin-bottom: 0.3rem;
+  }
 `;
 
 const Input = styled.input`
@@ -280,6 +380,12 @@ const Input = styled.input`
   color: #000000;
   padding: 0.5rem;
   border-radius: 4px;
+
+  @media (max-width: 768px) {
+    padding: 0.4rem;
+    font-size: 0.7rem;
+    border-radius: 3px;
+  }
 `;
 
 const Select = styled.select`
@@ -288,6 +394,12 @@ const Select = styled.select`
   color: #000000;
   padding: 0.5rem;
   border-radius: 4px;
+
+  @media (max-width: 768px) {
+    padding: 0.4rem;
+    font-size: 0.7rem;
+    border-radius: 3px;
+  }
 `;
 
 const TextArea = styled.textarea`
@@ -298,6 +410,13 @@ const TextArea = styled.textarea`
   border-radius: 4px;
   resize: vertical;
   min-height: 100px;
+
+  @media (max-width: 768px) {
+    padding: 0.4rem;
+    font-size: 0.7rem;
+    min-height: 80px;
+    border-radius: 3px;
+  }
 `;
 
 const SubmitButton = styled.button`
@@ -311,6 +430,12 @@ const SubmitButton = styled.button`
   cursor: pointer;
   transition: all 0.3s ease;
   grid-column: 1 / -1;
+
+  @media (max-width: 768px) {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.7rem;
+    border-radius: 1px;
+  }
 
   &:hover {
     box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
@@ -331,6 +456,12 @@ const ProjectButton = styled.button`
   color: #ffffff;
   font-weight: bold;
   margin-top: 12px; // Add margin-top to create space from the text box
+
+  @media (max-width: 768px) {
+    font-size: 0.7rem;
+    margin-top: 8px;
+    padding: 0.4rem 0.8rem;
+  }
 
   &:hover {
     box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
@@ -380,24 +511,6 @@ const PanelContainer = styled.div`
     transform: translateX(${({ isOpen }) => (isOpen ? '0' : '-100%')});
   }
 `;
-
-// const ToggleButton = styled.button`
-//   position: fixed;
-//   top: 115px; // Adjust to align with the top of the content area
-//   left: ${({ isOpen }) => (isOpen ? '320px' : '0')};
-//   background-color: #2a2a2a;
-//   border: none;
-//   border-radius: 0 5px 5px 0;
-//   padding: 10px;
-//   cursor: pointer;
-//   color: #00ffff;
-//   transition: left 0.3s ease;
-//   z-index: 1001;
-
-//   &:hover {
-//     background-color: #3a3a3a;
-//   }
-// `;
 
 const ToggleButton = styled.button`
   position: fixed;
@@ -923,7 +1036,7 @@ const Event = () => {
               active={selectedTab === 'attendedFlashbacks'}
               onClick={() => setSelectedTab('attendedFlashbacks')}
             >
-              Tagged Flashbacks
+              Attended Flashbacks
             </TabButton>
           </TabSwitcher>
 

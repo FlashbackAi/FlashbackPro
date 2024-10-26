@@ -214,16 +214,6 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
         <img src='assets/Images/logo.svg' alt='Logo' />
         <span>{COMPANY_NAME}</span>
       </Logo>
-      
-      <Socials>
-        <a href='https://x.com/Flashback_Inc_' target='_blank' rel='noopener noreferrer'>
-          <img src='assets/Images/icon-footer-x.svg' alt='Twitter' />
-        </a>
-        <a href='https://www.instagram.com/flashback_inc/' target='_blank' rel='noopener noreferrer'>
-          <img src='assets/Images/icon-footer-instagram.svg' alt='Instagram' />
-        </a>
-      </Socials>
-
       <UserSection>
         { userDetails && (
           <>
