@@ -104,15 +104,6 @@ app.get("/share/:eventName/:userId", async(req, res) => {
 
 // SSR ends
 
-// // Configuring winston application logger
-
-// const logger = winston.createLogger({
-//   transports: [
-//     new winston.transports.Console(),
-//     new winston.transports.File({ filename: 'logs/application.log' })
-//    ]
-//  });
-
 // Set up AWS S3
 const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.js
     region: 'ap-south-1' // Update with your AWS region 
@@ -3102,6 +3093,7 @@ app.post('/downloadImage', async (req, res) => {
           if(!existingUser){
           await createUser(username,userSource,role,reward_points);
           console.log("created sucessfulyy ->"+username)
+          logger.info('Successfully created new user: ', username);
           }
           const updateParamsUserEvent = {
             TableName: userEventTableName,
@@ -3120,48 +3112,6 @@ app.post('/downloadImage', async (req, res) => {
           res.status(500).json({ error: 'Error creating user' });
         }
       });
-
-      // app.post('/createUser', async (req, res) => {
-      //   const username = req.body.username;
-      //   let eventName = req.body.eventName;
-      //   const userSource = req.body.userSource;
-      //   const role = req.body.role;
-      //   const reward_points = req.body.reward_points;
-      //   logger.info("creating user " + username);
-      
-      //   try {
-      //     // Check if the user already exists
-      //     if (!eventName) {
-      //       eventName = 'Nivedhitha_Mallikarjun_Reddy_Engagement';
-      //     }
-          
-      //     const existingUser = await getUser(username);
-      //     logger.info("existingUser" + existingUser);
-      //     if (existingUser && existingUser.potrait_s3_url) {
-      //       const mappingResult = await mapUserToEvent(eventName, username);
-      //       if (!mappingResult.success) {
-      //         return res.status(500).json({ error: mappingResult.message });
-      //       }
-      //       return res.json({ error: 'User already exists', status: 'exists' });
-      //     }
-      
-      //     // Create a new user entry in DynamoDB
-      //     if (!existingUser) {
-      //       await createUser(username, userSource, role, reward_points);
-      //       console.log("created successfully ->" + username);
-      //     }
-      
-      //     const mappingResult = await mapUserToEvent(eventName, username);
-      //     if (!mappingResult.success) {
-      //       return res.status(500).json({ error: mappingResult.message });
-      //     }
-      
-      //     res.status(201).json({ message: 'User created successfully', status: 'created' });
-      //   } catch (error) {
-      //     console.error('Error:', error);
-      //     res.status(500).json({ error: 'Error creating user' });
-      //   }
-      // });
       
       app.post('/mapUserToEvent', async (req, res) => {
         const eventName = req.body.event_id;
