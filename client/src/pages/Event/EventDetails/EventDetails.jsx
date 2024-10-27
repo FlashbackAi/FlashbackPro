@@ -10,7 +10,7 @@ import Masonry from 'react-masonry-css';
 import Modal from 'react-modal'
 import ImageModal from "../../../components/ImageModal/ImageModal";
 import { LazyLoadImage } from 'react-lazy-load-image-component';
-import { Edit2, Calendar, Clock, MapPin, Download, Share2, Users, Images, Album, Network, Handshake, Plus, X, Upload, ScrollText, Heart , Gem} from 'lucide-react';
+import { Edit2, ChevronUp, ChevronDown, Calendar, Clock, MapPin, Download, Share2, Users, Images, Album, Network, Handshake, Plus, X, Upload, ScrollText, Heart , Gem} from 'lucide-react';
 import { IoDiamond } from "react-icons/io5";
 import API_UTIL from '../../../services/AuthIntereptor';
 import AppBar from '../../../components/AppBar/AppBar';
@@ -33,7 +33,7 @@ const ContentWrapper = styled.div`
 
   @media (max-width: 768px) {
     flex-direction: column;
-    padding: 0.5rem;
+    padding: 0rem;
   }
 `;
 
@@ -58,6 +58,7 @@ const UploadTile = styled(motion.div)`
   transition: background-color 0.3s, transform 0.2s;
   box-shadow: 0 0px 5px rgba(0, 255, 255, 0.5);
   margin-bottom:1em;
+  margin-left: 1rem;
 
   &:hover {
     background-color: #3a3a3a;
@@ -83,7 +84,37 @@ const SidePanel = styled.div`
   height: fit-content;
 
   @media (max-width: 768px) {
-    flex: 1;
+    flex: none;
+    border-radius: 0;
+    padding: 0;
+    background: transparent;
+
+    // Collapsible panel for mobile
+    // .panel-content {
+    //   height: ${props => props.isExpanded ? 'auto' : '0'};
+    //   overflow: hidden;
+    //   transition: height 0.3s ease;
+    // }
+    .mobile-only {
+      display: block;
+    }
+
+    .panel-content {
+      height: ${props => props.isExpanded ? 'auto' : '0'};
+      overflow: hidden;
+      transition: height 0.3s ease;
+      padding: ${props => props.isExpanded ? '1rem' : '0'};
+      background: #1e1e1e;
+    }
+  }
+  @media (min-width: 769px) {
+    .mobile-only {
+      display: none;
+    }
+
+    .mobile-header {
+      display: none;
+    }
   }
 `;
 
@@ -105,6 +136,22 @@ const EventImage = styled.div`
     height: 100%;
     object-fit: cover;
   }
+
+  @media (max-width: 768px) {
+    height: 150px;
+    border-radius: 0;
+    margin-bottom: 0;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 50%;
+      background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+    }
+  }
 `;
 
 const EventTitle = styled.h1`
@@ -114,6 +161,11 @@ const EventTitle = styled.h1`
   background: linear-gradient(90deg, #66d3ff, #9a6aff 38%, #ee75cb 71%, #fd4d77);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+
+  @media (max-width: 768px) {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
 `;
 
 const EventInfo = styled.div`
@@ -121,6 +173,13 @@ const EventInfo = styled.div`
   flex-direction: column;
   gap: 0.5rem;
   margin-bottom: 1.5rem;
+
+  @media (max-width: 768px) {
+    gap: 0.2  5rem;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
 `;
 
 const InfoItem = styled.div`
@@ -133,6 +192,35 @@ const InfoItem = styled.div`
     margin-right: 0.5rem;
     color: #00ffff;
   }
+
+  @media (max-width: 768px) {
+    width: 48%;
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+  }
+
+  svg {
+    margin-right: 0.5rem;
+    color: #00ffff;
+    min-width: 18px;
+  }
+`;
+
+const ActionBar = styled.div`
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background-color: #1e1e1e;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+
+  @media (min-width: 769px) {
+    display: none;
+  }
 `;
 
 const QRCodeWrapper = styled.div`
@@ -140,6 +228,23 @@ const QRCodeWrapper = styled.div`
   flex-direction: column;
   align-items: center;
   margin-top: 1.5rem;
+
+  @media (max-width: 768px) {
+    margin: 0.5rem;
+    
+    canvas {
+      width: 100px !important;
+      height: 100px !important;
+    }
+
+    .panel-expanded & {
+      display: flex;
+    }
+
+    .panel-collapsed & {
+      display: none;
+    }
+  }
 `;
 
 const QRActions = styled.div`
@@ -176,7 +281,7 @@ const ActionButton = styled.button`
   @media (max-width: 768px) {
   padding: 0.3rem;
   font-size: 0.8rem;
-  max-width:3em;
+  max-width:5em;
 }
 `;
 
@@ -224,6 +329,26 @@ const StyledTabs = styled.div`
 
 const UserCategoryTabs = styled(StyledTabs)`
   margin-bottom: 1rem;
+  @media (max-width: 768px) {
+    .tab-list {
+      display: flex;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.25rem;
+      padding: 0.5rem;
+    }
+
+    .tab {
+      padding: 0.5rem;
+      text-align: center;
+      font-size: 0.875rem;
+      white-space: nowrap;
+      
+      &.active {
+        background-color: #3a3a3a;
+        border-radius: 0.25rem;
+      }
+    }
+  }
 `;
 
 const UserCategoryContent = styled.div`
@@ -341,7 +466,64 @@ const ImageWrapper = styled.div`
       transform: scale(1.05);
     }
   }
+
+  @media (max-width: 768px) {
+    margin-bottom: 0;
+    
+    img {
+      aspect-ratio: 1;
+      width: 100%;
+      object-fit: cover;
+    }
+  }
 `;
+
+
+const MobileExpandButton = styled.button`
+  display: none;
+  background: none;
+  border: none;
+  color: white;
+  padding: 0.5rem;
+  
+  @media (max-width: 768px) {
+    display: block;
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+  }
+`;
+
+const MobileEventInfo = styled.div`
+  display: none;
+  
+  @media (max-width: 768px) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: rgba(30, 30, 30, 0.9);
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
+`;
+
+const breakpointColumnsObj = {
+  default: 5,
+  1200: 4,
+  992: 3,
+  768: 3,
+  576: 3
+};
+
+const masonryBreakpointColumns = {
+  default: 4,
+  1100: 3,
+  700: 2,
+  500: 1
+};
 
 const ImageModalWrapper = styled.div`
   position: fixed;
@@ -396,6 +578,28 @@ const UserThumbnail = styled(motion.div)`
   width: 5rem;
   height: 5rem;
 }
+
+  @media (max-width: 768px) {
+    width: 100%;
+    
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .count {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 0.25rem;
+      text-align: center;
+      font-size: 0.875rem;
+    }
+  }
 `;
 
 
@@ -413,9 +617,24 @@ const StyledMasonry = styled(Masonry)`
     break-inside: avoid;
   }
 
-    @media (max-width: 768px) {
+  //   @media (max-width: 768px) {
+  //     margin-left: 0.25rem;
+
+  //     .my-masonry-grid_column {
+  //       padding-left: 0.25rem;
+  //     }
+  // }
+
+  @media (max-width: 768px) {
+    margin-left: 0;
+    padding: 0.5rem;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    
     .my-masonry-grid_column {
-      //padding-left: 0.5rem;
+      padding-left: 0 !important;
+      width: 100% !important;
     }
   }
 `;
@@ -511,6 +730,19 @@ const AttendeesSummary = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+
+  @media (max-width: 768px) {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    align-items: center;
+    
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+  }
 `;
 
 const TotalAttendees = styled.div`
@@ -585,12 +817,25 @@ const GlobalStyle = createGlobalStyle`
 
   .my-masonry-grid {
     display: flex;
-    //margin-left: -30px;
+    display: -webkit-box;
+    display: -ms-flexbox;
     width: auto;
+
+    @media (max-width: 768px) {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      padding: 0.5rem;
+    }
+
   }
   .my-masonry-grid_column {
    // padding-left: 30px;
     background-clip: padding-box;
+
+    @media (max-width: 768px) {
+      padding-left: 0 !important;
+    }
   }
   .my-masonry-grid_column > div {
     background: grey;
@@ -684,6 +929,7 @@ const EventDetails = () => {
   const [eventFlashbacks, setEventFlashbacks]= useState([]);
   const [ eventImage, setEventImage] = useState('');
   const [selectedInvitationStatus, setSelectedInvitationStatus] = useState(null);
+  const [isPanelExpanded, setIsPanelExpanded] = useState(false);
 
 
   const onLoad = () => {
@@ -1546,28 +1792,28 @@ const uploadFlashbackFiles = async () => {
     }
   };
 
-  const [breakpointColumnsObj, setBreakpointColumnsObj] = useState({
-    default: 5,
-    1200: 4,
-    992: 3,
-    768: 2,
-    576: 1,
-  });
+  // const [breakpointColumnsObj, setBreakpointColumnsObj] = useState({
+  //   default: 5,
+  //   1200: 4,
+  //   992: 3,
+  //   768: 3,
+  //   576: 3,
+  // });
 
-  useEffect(() => {
-    const handleResize = () => {
-      setBreakpointColumnsObj({
-        default: 5,
-        1200: 4,
-        992: 3,
-        768: 2,
-        576: 1,
-      });
-    };
+  // useEffect(() => {
+  //   const handleResize = () => {
+  //     setBreakpointColumnsObj({
+  //       default: 5,
+  //       1200: 4,
+  //       992: 3,
+  //       768: 2,
+  //       576: 1,
+  //     });
+  //   };
 
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  //   window.addEventListener("resize", handleResize);
+  //   return () => window.removeEventListener("resize", handleResize);
+  // }, []);
 
   const handleSendPhotos = async () => {
     if (!isImageProcessingDone) {
@@ -1671,6 +1917,40 @@ const StyledInput = styled.input`
 //   );
 // });
 
+const formatDate = (datetime) => {
+  if (!datetime) return 'Date not set';
+  try {
+    const date = new Date(datetime);
+    if (isNaN(date.getTime())) return 'Invalid date';
+    
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return 'Date error';
+  }
+};
+
+const formatTime = (datetime) => {
+  if (!datetime) return 'Time not set';
+  try {
+    const date = new Date(datetime);
+    if (isNaN(date.getTime())) return 'Invalid time';
+    
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  } catch (error) {
+    console.error('Error formatting time:', error);
+    return 'Time error';
+  }
+};
+
 
 const handleEventImageUpdate = async (e) => {
   const file = e.target.files[0];
@@ -1717,14 +1997,24 @@ const createFlashback =({
       <GlobalStyle />
       <AppBar showCoins={true} />
       <ContentWrapper>
-        <SidePanel>
-          <EventImage>
-            <img src={event.event_image} alt="Event" />
-            <ActionButton onClick={handleEditClick} style={{ position: 'absolute', top: '0.5rem', right: '0.5rem' }}>
-              <Edit2 size={18} />
-            </ActionButton>
-          </EventImage>
-          <EventTitle>{formatEventName(event?.event_name)}</EventTitle>
+      <SidePanel isExpanded={isPanelExpanded}>
+        <div className="mobile-header">
+          {/* <EventTitle>{formatEventName(event?.event_name)}</EventTitle> */}
+          <MobileExpandButton onClick={() => setIsPanelExpanded(!isPanelExpanded)}>
+            {isPanelExpanded ? <ChevronUp /> : <ChevronDown />}
+          </MobileExpandButton>
+        </div>
+        <EventImage>
+          <img src={event.event_image} alt="Event" />
+          <ActionButton 
+            onClick={handleEditClick} 
+            style={{ position: 'absolute', top: '0.5rem', right: '0.5rem' }}
+            >
+            <Edit2 size={18} />
+          </ActionButton>
+        </EventImage>
+        <EventTitle>{formatEventName(event?.event_name)}</EventTitle>
+        <div className={`panel-content ${isPanelExpanded ? 'panel-expanded' : 'panel-collapsed'}`}>
           <EventInfo>
             <InfoItem>
               <Calendar size={18} />
@@ -1735,9 +2025,8 @@ const createFlashback =({
             <InfoItem>
               <Clock size={18} />
               {event.event_date && !isNaN(new Date(event.event_date).getTime()) 
-              ? new Date(event.event_date).toLocaleTimeString() 
-              : 'Time not set'}
-
+                ? new Date(event.event_date).toLocaleTimeString() 
+                : 'Time not set'}
             </InfoItem>
             <InfoItem>
               <MapPin size={18} />
@@ -1764,6 +2053,7 @@ const createFlashback =({
               </ActionButton>
             </QRActions>
           </QRCodeWrapper>
+          </div>
         </SidePanel>
         <MainContent>
           <StyledTabs>
