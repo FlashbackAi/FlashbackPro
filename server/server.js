@@ -10,6 +10,7 @@ const { AWS, AmazonCognitoIdentity, userPool, whatsapp } = require('./config', '
 const { CognitoUserPool, CognitoUserAttribute } = require('amazon-cognito-identity-js');
 const archiver = require('archiver');
 const https = require('https');
+const http = require('http');
 const { fold, last } = require('prelude-ls');
 const { func } = require('prop-types');
 const app = express();
@@ -22,7 +23,7 @@ const WhatsAppSender = require('./WhatsappSender');
 const { v4: uuidv4 } = require('uuid');
 const { log } = require('console');
 const { Account,AptosConfig, Aptos, AptosClient,Network, TxnBuilderTypes, BCS,Ed25519PrivateKey,AccountAddress } = require( '@aptos-labs/ts-sdk');
-const { initializeConfig, getConfig } = require('./config');
+const { initializeConfig, getConfig, ENV } = require('./config');
 const crypto = require('crypto');
 const config = new AptosConfig({ network: Network.MAINNET});
 const aptosClient = new Aptos(config);
@@ -58,11 +59,31 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "SSR"));
 app.use(express.static(path.join(__dirname, "SSR/public")));
 
+if (ENV === 'production') {
+
+  const privateKey = fs.readFileSync('/etc/letsencrypt/live/flashback.wtf/privkey.pem', 'utf8');
+  const certificate = fs.readFileSync('/etc/letsencrypt/live/flashback.wtf/fullchain.pem', 'utf8');
+  
+  const credentials = {
+    key: privateKey,
+    cert: certificate
+  }
+  
+    server = https.createServer(credentials, app);
+  } else {
+    server = http.createServer(app);
+  }
+  
+  server.listen(PORT, () => {
+    logger.info(`Server is running in ${ENV} mode on ${ENV === 'production' ? 'https' : 'http'}://localhost:${PORT}`);
+    server.keepAliveTimeout = 60000;
+    server.headersTimeout = 65000;
+  });
+
 const whatsappSender = new WhatsAppSender(
   config.whatsapp.WHATSAPP_ACCESS_TOKEN,
   config.whatsapp.WHATSAPP_PHONE_NUMBER_ID
 );
-logger.info(whatsappSender);
 const AWS = require('aws-sdk');
 AWS.config.update({
   region: 'ap-south-1',
@@ -97,26 +118,6 @@ app.get("/share/:eventName/:userId", async(req, res) => {
 });
 
 // SSR ends
-
-// // Configuring winston application logger
-
-// const logger = winston.createLogger({
-//   transports: [
-//     new winston.transports.Console(),
-//     new winston.transports.File({ filename: 'logs/application.log' })
-//    ]
-//  });
-
-
-
-
-//  // *** Comment these certificates while testing changes in local developer machine. And, uncomment while pushing to mainline***
-    const privateKey = fs.readFileSync('/etc/letsencrypt/live/flashback.wtf/privkey.pem', 'utf8');
-    const certificate = fs.readFileSync('/etc/letsencrypt/live/flashback.wtf/fullchain.pem', 'utf8');
-    const credentials = {
-      key: privateKey,
-      cert: certificate
-    }
 
 // Set up AWS S3
 const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.js
@@ -7106,14 +7107,10 @@ app.get("/getModels/:orgName", async (req, res) => {
       ExpressionAttributeValues: {
         ":orgName": orgName
       }
-
     };
-
-
     const result = await docClient.scan(eventParams).promise();
-
     if (result.Items && result.Items.length > 0) {
-      logger.info(`Fetched event details for ${orgName}`)
+      logger.info(`Fetched tasks details for: ${orgName}`)
       res.status(200).send(result.Items);
     } 
   } catch (err) {
@@ -8715,7 +8712,7 @@ const fetchWalletDetails = async (mobileNumber) => {
     // Fetch wallet from DynamoDB
     const result = await docClient.get(params).promise();
 
-    logger.info("Fetched wallet for mobile number:", mobileNumber);
+    logger.info(`Fetched wallet for mobile number: ${mobileNumber}`);
 
     // If no wallet found, throw an error
     if (!result || !result.Item) {
@@ -9061,23 +9058,6 @@ async function rescheduleJobs() {
       await handleJobExecution(job.job_id,job.notification_time,job.job_day,job.user_phone_number, event,job.portfolio_link); // Call the new function for handling each job
   }
 }
-
-
-
-  const httpsServer = https.createServer(credentials, app);
-
-  httpsServer.listen(PORT, () => {
-    logger.info(`Server is running on https://localhost:${PORT}`);
-    httpsServer.keepAliveTimeout = 60000; // Increase keep-alive timeout
-    httpsServer.headersTimeout = 65000; // Increase headers timeout
-  });
-
-// **Uncomment for dev testing and comment when pushing the code to mainline**/ &&&& uncomment the above "https.createServer" code when pushing the code to prod.
-// const server = app.listen(PORT ,() => {
-//  logger.info(`Server started on http://localhost:${PORT}`);
-//  server.keepAliveTimeout = 60000; // Increase keep-alive timeout
-//  server.headersTimeout = 65000; // Increase headers timeout
-//  });
 })
 .catch((error) => {
   console.error('Failed to initialize app due to config error:', error);

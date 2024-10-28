@@ -2,6 +2,9 @@ const { SecretsManagerClient, GetSecretValueCommand } = require('@aws-sdk/client
 const AWS = require('aws-sdk');
 const AmazonCognitoIdentity = require('amazon-cognito-identity-js');
 
+
+const ENV = process.env.NODE_ENV || 'production';
+
 // AWS Secrets Manager Client
 const secretsClient = new SecretsManagerClient({
   region: 'ap-south-1',
@@ -92,7 +95,6 @@ async function initializeConfig() {
     const whatsappConfig = await fetchWhatsappSecrets();
     const awsCredentials = await fetchAWSSecrets();
 
-    console.log(whatsappConfig);
     // Set AWS SDK credentials using the retrieved secrets
     AWS.config.update({
       region: 'ap-south-1',
@@ -123,4 +125,5 @@ function getConfig() {
 module.exports = {
   initializeConfig,
   getConfig,
+  ENV
 };

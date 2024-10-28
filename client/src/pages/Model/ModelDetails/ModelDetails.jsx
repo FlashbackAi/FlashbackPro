@@ -437,6 +437,7 @@ const ModelDetails = () => {
                       >
                         <DatasetName>{dataset.dataset_name}</DatasetName>
                         <DatasetInfo>Owner: {dataset.org_name}</DatasetInfo>
+                        <DatasetInfo>Quality Index: {dataset.quality_index}%</DatasetInfo>
                         <DatasetInfo>Size: {dataset.dataset_size}</DatasetInfo>
                         <RequestButton
                           onClick={(e) => {
