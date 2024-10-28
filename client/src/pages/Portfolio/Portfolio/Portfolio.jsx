@@ -1,254 +1,284 @@
 import React, { useState, useEffect } from "react";
-import "./Portfolio.css";
-import Modal from "react-modal";
-import Footer from "../../../components/Footer/Footer";
-import AppBar from "../../../components/AppBar/AppBar";
-import MiniHeroComponent from "../../../components/MiniHeroComponent/MiniHeroComponent";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown, Grid } from "lucide-react";
+import styled from "styled-components";
 import API_UTIL from '../../../services/AuthIntereptor';
 import { useParams } from "react-router";
-import Gallery from "react-photo-gallery";
 import LoadingSpinner from "../../../components/Loader/LoadingSpinner";
-import defaultBanner from '../../../media/images/defaultbanner.jpg';
-import Masonry from "react-masonry-css";
+import AppBar from "../../../components/AppBar/AppBar";
+import Footer from "../../../components/Footer/Footer";
+import MiniHeroComponent from "../../../components/MiniHeroComponent/MiniHeroComponent";
 import ImageModal from "../../../components/ImageModal/ImageModal";
-import { LazyLoadImage } from "react-lazy-load-image-component";
+import defaultBanner from '../../../media/images/defaultbanner.jpg';
 
-import styled, { createGlobalStyle } from 'styled-components';
-
-import { motion, AnimatePresence } from 'framer-motion';
-
-
-
-const ImageWrapper = styled.div`
-  margin-bottom: 16px;
-  break-inside: avoid;
-  position: relative;
-  overflow: hidden;
-  border-radius: 8px;
-  cursor: pointer;
-  margin-left:1em;
-
-  img {
-    width: 100%;
-    height: auto;
-    object-fit: cover;
-    transition: transform 0.3s ease;
-
-    &:hover {
-      transform: scale(1.05);
-    }
-  }
+const PortfolioContainer = styled.div`
+  background: linear-gradient(to bottom, #121212, #1a1a1a);
+  min-height: 100vh;
+  color: #ffffff;
 `;
 
-
-const ImageModalWrapper = styled.div`
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 50%;
-  background-color: rgba(0, 0, 0, 1);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+const ContentWrapper = styled.div`
+  position: relative;
+  padding: 0 2rem;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 200px;
+    background: linear-gradient(180deg, rgba(0,255,255,0.03) 0%, rgba(0,0,0,0) 100%);
+    pointer-events: none;
+  }
 
   @media (max-width: 768px) {
-    width: 100%;
+    padding: 0 1rem;
   }
 `;
 
-const StyledMasonry = styled(Masonry)`
+const EventSelector = styled.div`
+  position: relative;
+  margin: 2rem auto 3rem;
+  max-width: 400px;
+  z-index: 10;
+`;
+
+const EventButton = styled.button`
+  background: linear-gradient(145deg, #1e1e1e, #2a2a2a);
+  border: 1px solid rgba(0, 255, 255, 0.1);
+  border-radius: 1rem;
+  color: #ffffff;
+  padding: 1.2rem 1.5rem;
+  font-size: 1.2rem;
   display: flex;
-  margin-left:1rem;
-  width: auto;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 
-  .my-masonry-grid_column {
-    background-clip: padding-box;
+  &:hover {
+    background: linear-gradient(145deg, #2a2a2a, #333333);
+    border-color: #00ffff;
+    box-shadow: 0 4px 20px rgba(0, 255, 255, 0.15);
+    transform: translateY(-2px);
   }
 
-  .image-item {
-    margin-bottom: 0.5rem;
-    break-inside: avoid;
+  .icon-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #00ffff;
+  }
+`;
+
+const EventList = styled(motion.div)`
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  right: 0;
+  background: rgba(30, 30, 30, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 255, 255, 0.1);
+  border: 1px solid rgba(0, 255, 255, 0.1);
+`;
+
+const EventItem = styled(motion.button)`
+  width: 100%;
+  padding: 1rem 1.5rem;
+  background: none;
+  border: none;
+  color: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  &:hover {
+    background: rgba(0, 255, 255, 0.1);
+    color: #00ffff;
   }
 
-    @media (max-width: 768px) {
-    .my-masonry-grid_column {
+  &:not(:last-child) {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+`;
+
+const ImageGrid = styled(motion.div)`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+  padding: 1rem;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 3fr));
+    gap: 1rem;
+  }
+`;
+
+const ImageWrapper = styled(motion.div)`
+  position: relative;
+  border-radius: 1rem;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  
+  &::before {
+    content: '';
+    display: block;
+    padding-top: 75%;
+  }
+
+  img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: all 0.5s ease;
+  }
+
+  .overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.7) 0%,
+      rgba(0, 0, 0, 0) 50%
+    );
+    opacity: 0;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: flex-end;
+    padding: 1.5rem;
+  }
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 48px rgba(0, 255, 255, 0.2);
+
+    img {
+      transform: scale(1.05);
+    }
+
+    .overlay {
+      opacity: 1;
     }
   }
 `;
 
-
-
-const ModalOverlay = styled.div`
+const ModalWrapper = styled(motion.div)`
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.75);
+  background-color: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
   display: flex;
+  align-items: center;
   justify-content: center;
-  align-items: center;
 `;
 
-const ModalContent = styled(motion.div)`
-  background-color: #1e1e1e;
-  padding: 2rem;
-  border-radius: 1.25rem;
-  max-width: 31.25rem;
-  width: 90%;
-  color: #ffffff;
-  position: relative;
-  max-height: 80vh;
-  overflow-y: auto;
-`;
-
-const CloseButton = styled.button`
-  background: none;
-  border: none;
-  color: #ffffff;
-  font-size: 1.5rem;
-  cursor: pointer;
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  transition: color 0.3s ease;
-
-  &:hover {
-    color: #00ffff;
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      duration: 0.5
+    }
   }
-`;
+};
 
-const DropdownContainer = styled.div`
-  display: flex;
-  align-items: center;
-  margin: 10px 0;
-`;
-
-const Label = styled.label`
-  margin-right: 10px;
-  margin-left: 2em;
-  font-weight: bold;
-  font-size:2em;
-  color: #333;
-`;
-
-const Select = styled.select`
-  padding: 8px 16px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-  background-color: white;
-  font-size: 1.2em;
-
-  &:hover {
-    border-color: #888;
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+      damping: 15
+    }
   }
-`;
+};
 
 const Portfolio = () => {
-  const [selectedImageIndex, setSelectedImageIndex] = useState(null);
+  const [isEventListOpen, setIsEventListOpen] = useState(false);
   const [userDetails, setUserDetails] = useState({});
   const [portfolioImages, setPortfolioImages] = useState({});
   const [folderNames, setFolderNames] = useState([]);
   const [selectedFolder, setSelectedFolder] = useState('');
-  const [selectedFolderImages, setSelectedFolderImages] = useState('');
-  const { userName } = useParams();
-  const [isLoading, setLoading] = useState(true);
-  const [bannerImg, setBannerImg] = useState('');
-  const [images, setImages] = useState([]);
+  const [selectedFolderImages, setSelectedFolderImages] = useState([]);
   const [clickedImg, setClickedImg] = useState(null);
   const [clickedImgIndex, setClickedImgIndex] = useState(null);
-  const [clickedImgFavourite, setClickedImgFavourite] = useState(null);
   const [clickedUrl, setClickedUrl] = useState(null);
-  const [breakpointColumnsObj, setBreakpointColumnsObj] = useState({
-    default: 5,
-    1200: 4,
-    992: 3,
-    768: 2,
-    576: 1,
-  });
+  const [images, setImages] = useState([]);
+  const [isLoading, setLoading] = useState(true);
+  const [bannerImg, setBannerImg] = useState('');
+  const { userName } = useParams();
 
-  useEffect(() => {
-    // const convertImagesForGridGallery = async (imagesByFolder) => {
-    //   const gridImagesByFolder = {};
-      
-    //   for (const [folderName, images] of Object.entries(imagesByFolder)) {
-    //     const imgs = await Promise.all(
-    //       images.map(async (photo) => {
-    //         const { width, height } = await loadImageDimensions(photo.url);
-    //         return {
-    //           src: photo.s3_url,
-    //           thumbnail: photo.s3_url,
-    //           width: Math.floor(width) || 320,
-    //           height: Math.floor(height) || 250,
-    //         };
-    //       })
-    //     );
-    //     gridImagesByFolder[folderName] = imgs;
-    //   }
-  
-    //   return gridImagesByFolder;
-    // };
-    const fetchPortfolioImages = async (user_name) => {
+  const fetchBannerImage = async (userDetails) => {
+    if (userDetails.org_name && userDetails.user_name) {
       try {
-        const response = await API_UTIL.get(`/getPortfolioImages/${user_name}`);
-        if (response.status === 200) {
-          const images = response.data;
-    
-          if (!images || images.length === 0) {
-            // Handle case where no images are returned
-            setPortfolioImages([]);
-            setBannerImg(null);
-            setFolderNames([]);
-            setSelectedFolder('');
-            return;
-          }
-
-          // Filter out the banner folder and extract folder names
-          const folderNames = images.map(folder => folder.folderName);
-          setFolderNames(folderNames);
-          setSelectedFolder(folderNames[0] || '');
-          const selectedImages = images.find(folder => folder.folderName === folderNames[0])?.images || [];
-          console.log(selectedImages);
-          setSelectedFolderImages(selectedImages);;
-    
-          // Set the portfolio images for other uses
-          setPortfolioImages(images);
+        const response = await API_UTIL.get(`/getBannerImage/${userDetails.user_name}`);
+        if (response.data && response.data.imageUrl) {
+          const formattedUrl = encodeURIWithPlus(response.data.imageUrl);
+          setBannerImg(`${formattedUrl}?t=${Date.now()}`);
+        } else {
+          setBannerImg(defaultBanner);
         }
       } catch (error) {
-        console.error('Error fetching portfolio images:', error);
-      }
-    };
-    
-    const fetchBannerImage =async (userDetails) => {
-
-      if (userDetails.org_name && userDetails.user_name) {
-        try {
-          const response = await API_UTIL.get(`/getBannerImage/${userDetails.user_name}`);
-          console.log(`ImageURl:`, response.data.imageUrl);
-            
-          if (response.data && response.data.imageUrl) {
-            const formattedUrl = encodeURIWithPlus(response.data.imageUrl);
-            console.log(`formattedUrl:`, formattedUrl);
-            setBannerImg(`${formattedUrl}?t=${Date.now()}`);
-          } else {
-            console.log('[catch1]Falling back to default banner');
-            setBannerImg(defaultBanner);
-          }
-        } catch (error) {
-          setBannerImg(defaultBanner);
-        } 
-      } else {
         setBannerImg(defaultBanner);
       }
-    };
+    } else {
+      setBannerImg(defaultBanner);
+    }
+  };
+
+  const fetchPortfolioImages = async (user_name) => {
+    try {
+      const response = await API_UTIL.get(`/getPortfolioImages/${user_name}`);
+      if (response.status === 200) {
+        const images = response.data;
+        if (!images || images.length === 0) {
+          setPortfolioImages([]);
+          setFolderNames([]);
+          setSelectedFolder('');
+          return;
+        }
+        const folderNames = images.map(folder => folder.folderName);
+        setFolderNames(folderNames);
+        setSelectedFolder(folderNames[0] || '');
+        const selectedImages = images.find(folder => folder.folderName === folderNames[0])?.images || [];
+        setSelectedFolderImages(selectedImages);
+        setPortfolioImages(images);
+      }
+    } catch (error) {
+      console.error('Error fetching portfolio images:', error);
+    }
+  };
+
+  useEffect(() => {
     const fetchUserDetails = async () => {
       try {
         const response = await API_UTIL.get(`/fetchUserDetailsByUserName/${userName}`);
-        setUserDetails(response.data.data);
-        fetchBannerImage(response.data.data);
-        await fetchPortfolioImages(response.data.data.user_name, response.data.data.org_name);
+        const userData = response.data.data;
+        setUserDetails(userData);
+        await fetchBannerImage(userData);
+        await fetchPortfolioImages(userData.user_name);
       } catch (error) {
         console.error('Error fetching user details:', error);
       } finally {
@@ -263,125 +293,121 @@ const Portfolio = () => {
     return uri.replace(/ /g, '+');
   };
 
-  const openModal = (index) => {
-    setSelectedImageIndex(index);
-  };
-
-  const handleClick = (event, { photo, index }) => {
-    openModal(index);
-  };
-
-  const closeModal = () => {
-    setSelectedImageIndex(null);
-  };
-
-  const showPrevImage = () => {
-    setSelectedImageIndex(
-      (prevIndex) => (prevIndex - 1 + portfolioImages[selectedFolder].length) % portfolioImages[selectedFolder].length
-    );
-  };
-
-  const showNextImage = () => {
-    setSelectedImageIndex((prevIndex) => (prevIndex + 1) % portfolioImages[selectedFolder].length);
-  };
-
-  const handleFolderChange = (e) => {
-    const newFolderName = e.target.value;
-    setSelectedFolder(newFolderName);
-    console.log(newFolderName);  // Log the selected folder name
-
-    // Filter images based on selected folder
-    const selectedImages = portfolioImages.find(folder => folder.folderName === newFolderName)?.images || [];
+  const handleFolderSelect = (folderName) => {
+    setSelectedFolder(folderName);
+    const selectedImages = portfolioImages.find(folder => folder.folderName === folderName)?.images || [];
     setSelectedFolderImages(selectedImages);
-    console.log(selectedImages);  // Log the filtered images
+    setIsEventListOpen(false);
   };
 
-  const handleImageClick = (imageData, index, images) => {
-    const updatedImages = images.map(image => ({
-      original: image.s3_url,  // Rename s3_url to original
-      thumbnail: image.s3_url, // Add thumbnail with the same value as s3_url
+  const handleImageClick = (imageData, index) => {
+    const updatedImages = selectedFolderImages.map(image => ({
+      original: image.s3_url,
+      thumbnail: image.s3_url,
     }));
     
     setImages(updatedImages);
     setClickedImg(imageData.s3_url);
     setClickedImgIndex(index);
-    setClickedImgFavourite(imageData.isFavourites);
-    setClickedUrl(imageData.original);
+    setClickedUrl(imageData.s3_url);
     window.history.pushState({ id: 1 }, null, "?image=" + `${imageData.s3_url.split('/').pop()}`);
   };
-  const handleBackButton = () => {
-    setClickedImg(null);
-  };
-  
 
- 
+  if (isLoading) return <LoadingSpinner />;
 
   return (
-    <>
-      {isLoading === false ? (
-        <div className="portfolio-container">
-          <AppBar />
-          {userDetails.org_name && (
-            <MiniHeroComponent
-              orgName={userDetails.org_name}
-              socialMediaLinks={userDetails.social_media}
-              backdropImage={bannerImg}
-            />
-          )}
-          <div id="portfolio-body">
-          <DropdownContainer className="dropdown">
-            <Label className="dropdown-label">Event:</Label>
-            <Select className="dropdown-select" value={selectedFolder} onChange={handleFolderChange}>
-              {folderNames.map((folder, index) => (
-                <option key={index} value={folder}>
-                  {folder}
-                </option>
-              ))}
-            </Select>
-          </DropdownContainer>
-            <div>
-              {selectedFolder && selectedFolderImages && (
-                <AnimatePresence>
-                <StyledMasonry
-                breakpointCols={breakpointColumnsObj}
-                className="my-masonry-grid"
-                columnClassName="my-masonry-grid_column"
-              >
-                  {selectedFolderImages.map((image, imgIndex) => (
-                    <ImageWrapper key={imgIndex}>
-                      <img
-                        src={image.s3_url}  // Use the s3_url directly from the API response
-                        alt={`img ${imgIndex}`}
-                        effect="blur"
-                        onClick={() => handleImageClick(image, imgIndex,selectedFolderImages)}
-                      />
-                    </ImageWrapper>
-                  ))}
-                </StyledMasonry>
-                </AnimatePresence>
-              )}
-            </div>
-          </div>
-
-          <Footer />
-          {clickedImg && (
-            <ImageModalWrapper>
-            <ImageModal
-            clickedImg={clickedImg}
-            clickedImgIndex={clickedImgIndex}
-            favourite = {false}
-            setClickedImg={setClickedImg}
-            clickedUrl={clickedUrl}
-            handleBackButton={handleBackButton}
-            images={images}
-            />
-            </ImageModalWrapper>
-          )}
-        </div>
-      ) : (
-        <LoadingSpinner />
+    <PortfolioContainer>
+      <AppBar />
+      {userDetails.org_name && (
+        <MiniHeroComponent
+          orgName={userDetails.org_name}
+          socialMediaLinks={userDetails.social_media}
+          backdropImage={bannerImg}
+        />
       )}
-    </>
+
+      <ContentWrapper>
+        <EventSelector>
+          <EventButton onClick={() => setIsEventListOpen(!isEventListOpen)}>
+            <span>{selectedFolder || "Select Event"}</span>
+            <span className="icon-wrapper">
+              <ChevronDown 
+                size={18}
+                style={{
+                  transform: isEventListOpen ? 'rotate(180deg)' : 'rotate(0)',
+                  transition: 'transform 0.3s ease'
+                }}
+              />
+            </span>
+          </EventButton>
+
+          <AnimatePresence>
+            {isEventListOpen && (
+              <EventList
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+              >
+                {folderNames.map((folder) => (
+                  <EventItem
+                    key={folder}
+                    onClick={() => handleFolderSelect(folder)}
+                    whileHover={{ x: 10 }}
+                  >
+                    {folder}
+                  </EventItem>
+                ))}
+              </EventList>
+            )}
+          </AnimatePresence>
+        </EventSelector>
+
+        <ImageGrid
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          {selectedFolderImages.map((image, index) => (
+            <ImageWrapper
+              key={index}
+              variants={itemVariants}
+              onClick={() => handleImageClick(image, index)}
+            >
+              <img src={image.s3_url} alt={`Event ${index + 1}`} />
+              <motion.div 
+                className="overlay"
+                initial={{ opacity: 0 }}
+                whileHover={{ opacity: 1 }}
+              >
+                <Grid size={24} color="#00ffff" />
+              </motion.div>
+            </ImageWrapper>
+          ))}
+        </ImageGrid>
+      </ContentWrapper>
+
+      <AnimatePresence>
+        {clickedImg && (
+          <ModalWrapper
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <ImageModal
+              clickedImg={clickedImg}
+              clickedImgIndex={clickedImgIndex}
+              favourite={false}
+              setClickedImg={setClickedImg}
+              clickedUrl={clickedUrl}
+              handleBackButton={() => setClickedImg(null)}
+              images={images}
+            />
+          </ModalWrapper>
+        )}
+      </AnimatePresence>
+
+      <Footer />
+    </PortfolioContainer>
   );
 };
 
