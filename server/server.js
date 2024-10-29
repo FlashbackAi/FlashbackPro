@@ -1712,42 +1712,46 @@ app.get ('/getOwnerFavImages/:folder/:username', async (req, res) => {
 
 app.get('/getFlashbackImages/:flashbackName/:eventId', async (req, res) => {
   const { flashbackName, eventId } = req.params;
-  const { continuationToken } = req.query; // Optional token for paginated results
+  const continuationToken = req.query.continuationToken ? JSON.parse(req.query.continuationToken) : undefined;
 
   // Validate eventId and flashbackName
-    if (!flashbackName || !eventId) {
+  if (!flashbackName || !eventId) {
     return res.status(400).json({ error: 'flashbackName and eventId parameters are required' });
   }
+  
   logger.info("Fetching Flashback Images for : ", flashbackName);
+  
   // DynamoDB query parameters
   const dynamoDbParams = {
     TableName: FlashbackImageUploadData, // Replace with your actual table name
-    FilterExpression: 'flashback_name = :flashbackName AND event_id = :eventId',
+    IndexName:'event_id-flashback_name-index',
+    KeyConditionExpression: 'flashback_name = :flashbackName AND event_id = :eventId',
     ExpressionAttributeValues: {
       ':flashbackName': flashbackName,
       ':eventId': eventId
     },
     Limit: 100, // Fetch 100 items per call
-    ExclusiveStartKey: continuationToken ? JSON.parse(continuationToken) : undefined // Continue from the last token if provided
+    ExclusiveStartKey: continuationToken // Continue from the last token if provided
   };
 
   try {
     // Query DynamoDB to get s3_url entries
-    const result = await docClient.scan(dynamoDbParams).promise();
+    const result = await docClient.query(dynamoDbParams).promise();
 
     // Prepare response
     const response = {
       images: result.Items.map(item => item.s3_url), // Extract s3_url from each item
       continuationToken: result.LastEvaluatedKey ? JSON.stringify(result.LastEvaluatedKey) : null // Include a continuation token if more results are available
     };
-    logger.info("Successfully Fetched Flashback Images for : ", flashbackName)
+    logger.info("Successfully Fetched Flashback Images for : ", flashbackName);
 
     res.status(200).json(response);
   } catch (error) {
-    console.error('Error fetching S3 URLs or client details:', error);
+    logger.error('Error fetching S3 URLs or client details:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 
 
 

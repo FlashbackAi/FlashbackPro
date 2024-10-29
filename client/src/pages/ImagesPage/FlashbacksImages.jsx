@@ -119,7 +119,8 @@ function FlashbacksImages() {
       const response = await API_UTIL.get(`/getFlashbackImages/${flashbackName}/${eventId}?continuationToken=${encodeURIComponent(continuationToken || '')}`);
       
       if (response.status === 200) {
-        const { images: s3Urls, lastEvaluatedKey } = response.data;
+        const { images: s3Urls, continuationToken:lastEvaluatedKey } = response.data;
+        console.log(lastEvaluatedKey);
 
         const formattedImages = s3Urls.map((url) => ({
           original: url,
@@ -184,16 +185,14 @@ function FlashbacksImages() {
 
   useEffect(()=>{
   const fetchBannerImage = async () => {
-    console.log('Entering FetchBannerImage Method and started loading');
       setIsLoading(true);
     if (clientObj.org_name && clientObj.user_name) {
       try {
         const response = await API_UTIL.get(`/getBannerImage/${clientObj.user_name}`);
-        console.log(`ImageURl:`, response.data.imageUrl);
           
         if (response.data && response.data.imageUrl) {
           const formattedUrl = encodeURIWithPlus(response.data.imageUrl);
-          console.log(`formattedUrl:`, formattedUrl);
+          
           setBannerImage(`${formattedUrl}?t=${Date.now()}`);
         } else {
           console.log('[catch1]Falling back to default banner');
