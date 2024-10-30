@@ -42,6 +42,7 @@ import PhotoSelectionV1 from "../pages/Pro/PhotoSelection/PhotoSelectionV1";
 import DataSharingPage from "../pages/DataSharing/DataSharing";
 import Withdraw from "../pages/Withdraw/Withdraw";
 import OrgDetails from "../pages/orgDetails/orgDetails";
+import OrganizationForm from "../pages/Model/ModelForm/OrgForm";
 
 
 const ROUTES=[
@@ -360,7 +361,12 @@ const ROUTES=[
         protected:true,
         component:OrgDetails, 
     },
-    
+    {
+        path:"/orgForm",
+        exact:false,
+        protected:true,
+        component:OrganizationForm, 
+    },
     
 ]
 

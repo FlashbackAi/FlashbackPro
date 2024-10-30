@@ -8286,47 +8286,6 @@ app.get('/transactionsByUserPhoneNumber/:userPhoneNumber', async (req, res) => {
 });
 
 
-// /** Register the receiver account to receive transfers for Chewy Coin. */
-// async function registerChewyCoinStore(account){
-//   try {
-//     // Build the transaction for registering the CoinStore
-//     const transaction = await aptosClient.transaction.build.simple({
-//       sender: account.accountAddress,
-//       data: {
-//         function: "0x1::managed_coin::register",  // Use the managed_coin::register function
-//         typeArguments: [`0xc26a8eda1c3ab69a157815183ddda88c89d6758ee491dd1647a70af2907ce074::coin::Chewy`],
-//        // typeArguments: [`0xc26a8eda1c3ab69a157815183ddda88c89d6758ee491dd1647a70af2907ce074::coin::Chewy`],
-//         functionArguments: [],  // No arguments needed
-//       },
-//     });
-
-//     const [userTransactionResponse] = await aptosClient.transaction.simulate.simple({
-//       signerPublicKey: account.publicKey,
-//       transaction,
-//   });
-//   logger.info(userTransactionResponse)
-
-//     // Sign the transaction with the receiver's account
-//     const senderAuthenticator = aptosClient.transaction.sign({ signer: account, transaction });
-
-//     // Submit the transaction to the blockchain
-//     const pendingTxn = await aptosClient.transaction.submit.simple({
-//       transaction,
-//       senderAuthenticator,
-//     });
-
-//     console.log(`Transaction submitted. Hash: ${pendingTxn.hash}`);
-
-//     // Wait for the transaction to be confirmed
-//     await aptosClient.waitForTransaction({ transactionHash: pendingTxn.hash });
-//     console.log(`Transaction confirmed. Hash: ${pendingTxn.hash}`);
-
-//     return pendingTxn.hash;
-//   } catch (error) {
-//     console.error(`Error registering Chewy Coin: ${error.message}`);
-//     throw new Error(error.message);
-//   }
-// }
 /** Register the receiver account to receive transfers for Chewy Coin, paid by feePayer. */
 async function registerChewyCoinStore(account) {
   try {
