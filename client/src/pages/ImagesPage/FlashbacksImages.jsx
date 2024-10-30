@@ -87,10 +87,15 @@ function FlashbacksImages() {
       });
       if(response.status === 200){
 
-        const formattedImages = response.data.map((obj) => ({
-          original: obj.s3_url,
-          thumbnail: obj.s3_url,
-        }));
+        const formattedImages = response.data.map((obj) => {
+  // Replace 'Deliverables/' with 'Deliverables/thumbnails/' to get the thumbnail URL
+  const thumbnailUrl = obj.s3_url.replace('/Deliverables/', '/Deliverables/thumbnails/');
+
+  return {
+    original: obj.s3_url,
+    thumbnail: thumbnailUrl,
+  };
+});
 
         setImages((prevImages) => {
           // Create a set of existing image URLs to quickly check for duplicates
@@ -122,12 +127,15 @@ function FlashbacksImages() {
         const { images: s3Urls, continuationToken:lastEvaluatedKey } = response.data;
         console.log(lastEvaluatedKey);
 
-        const formattedImages = s3Urls.map((url) => ({
-          original: url,
-          thumbnail: url,
-          isFavourites: false,
-        }));
-
+        const formattedImages = s3Urls.map((obj) => {
+          // Replace 'Deliverables/' with 'Deliverables/thumbnails/' to get the thumbnail URL
+          const thumbnailUrl = obj.replace('/Deliverables/', '/Deliverables/thumbnails/');
+        
+          return {
+            original: obj,
+            thumbnail: thumbnailUrl,
+          };
+        });
         setImages((prevImages) => {
           // Create a set of existing image URLs to quickly check for duplicates
           const existingImageUrls = new Set(prevImages.map((image) => image.original));

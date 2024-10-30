@@ -2969,75 +2969,91 @@ app.post('/addFolder', async(req, res) => {
 
 });
 
-
+const decodeURIComponentSafely = (uri) => {
+  try {
+    return decodeURIComponent(uri);
+  } catch (err) {
+    logger.error("Error decoding URI component: ", err);
+    return uri; // Return the original URI if decoding fails
+  }
+};
 
 app.post('/downloadImage', async (req, res) => {
-   
   const imageUrl = req.body.imageUrl;
- 
-        try {
-          
-          
-          const eventName = imageUrl.split('/')[0];
-          logger.info("Image downloading started from cloud: " +imagesBucketName+ "-> "+ imageUrl +"for event - >"+eventName);
-          let bucket = imagesBucketName
-          if(eventName === 'Convocation_PrathimaCollege'){
-               bucket = 'flashbackprathimacollection'
-               logger.info(bucket);
-          }
-          
-          const imageData = await s3.getObject({
-              Bucket: bucket,
-              Key: imageUrl
-          }).promise();
 
-          logger.info("Image downloaded from cloud: " + imageUrl);
-         // res.json(imageData.Body.toString('base64'));
-          res.json(`data:image/jpeg;base64,${imageData.Body.toString('base64')}`);
-      }  catch (err) {
-          logger.error("Error downloading image: "+imageUrl, err);
-          res.status(500).send('Error getting images from S3');
-      }
-    });
+  try {
+    // Extract bucket name and key from the image URL
+    const urlParts = imageUrl.split('/');
+    const bucketName = urlParts[2].split('.')[0]; // Extracts the bucket name from the URL
+    let key = urlParts.slice(3).join('/'); // Constructs the key from the remaining parts of the URL
 
-      app.post('/uploadUserPotrait', upload.single('image'), async (req, res) => {
-        const file = req.body.image;
-        const username = req.body.username;
-        const params = {
-          Bucket: userBucketName,
-          Key: username+".jpg",
-          Body: Buffer.from(file, 'base64'),
-          //ACL: 'public-read', // Optional: Set ACL to public-read for public access
-        };
-      
-        try {
-          // Upload image to S3
-          const data = await s3.upload(params).promise();
-          console.log('Upload successful:', data.Location);
-      
-          // Update DynamoDB with the S3 URL
-          const updateParams = {
-            TableName: userrecordstable,
-            Key: { user_phone_number: username }, // Assuming you have a primary key 'id'
-            UpdateExpression: 'set potrait_s3_url = :url',
-            ExpressionAttributeValues: {
-              ':url': data.Location,
-            },
-            ReturnValues: 'UPDATED_NEW',
-          };
-      
-          const updateResult = await docClient.update(updateParams).promise();
+    // Decode the key to handle any encoded characters (like %20)
+    key = decodeURIComponentSafely(key.replace(/\+/g, '%20'));
 
-          console.log('updating s3 image  url for user is successful:', updateResult);
-          //const walletStatus = await handleWalletCreation(username);
-          
-          //res.json({ potrait_s3_url: data.Location , walletInfo:walletStatus});
-          res.json({ potrait_s3_url: data.Location});
-        } catch (error) {
-          console.error('Error:', error);
-          res.status(500).json({ error: 'Error uploading image' });
-        }
-      });
+    logger.info("Image downloading started from cloud: " + bucketName + " -> " + imageUrl);
+
+    // Check for specific bucket logic if needed
+    let bucket = bucketName;
+    const eventName = key.split('/')[0]; // Gets the event name from the key
+
+    if (eventName === 'Convocation_PrathimaCollege') {
+      bucket = 'flashbackprathimacollection';
+      logger.info(bucket);
+    }
+
+    const imageData = await s3.getObject({
+      Bucket: bucket,
+      Key: key
+    }).promise();
+
+    logger.info("Image downloaded from cloud: " + imageUrl);
+    res.json(`data:image/jpeg;base64,${imageData.Body.toString('base64')}`);
+  } catch (err) {
+    logger.error("Error downloading image: " + imageUrl, err);
+    res.status(500).send('Error getting images from S3');
+  }
+});
+
+
+
+app.post('/uploadUserPotrait', upload.single('image'), async (req, res) => {
+  const file = req.body.image;
+  const username = req.body.username;
+  const params = {
+    Bucket: userBucketName,
+    Key: username+".jpg",
+    Body: Buffer.from(file, 'base64'),
+    //ACL: 'public-read', // Optional: Set ACL to public-read for public access
+  };
+
+  try {
+    // Upload image to S3
+    const data = await s3.upload(params).promise();
+    console.log('Upload successful:', data.Location);
+
+    // Update DynamoDB with the S3 URL
+    const updateParams = {
+      TableName: userrecordstable,
+      Key: { user_phone_number: username }, // Assuming you have a primary key 'id'
+      UpdateExpression: 'set potrait_s3_url = :url',
+      ExpressionAttributeValues: {
+        ':url': data.Location,
+      },
+      ReturnValues: 'UPDATED_NEW',
+    };
+
+    const updateResult = await docClient.update(updateParams).promise();
+
+    console.log('updating s3 image  url for user is successful:', updateResult);
+    //const walletStatus = await handleWalletCreation(username);
+    
+    //res.json({ potrait_s3_url: data.Location , walletInfo:walletStatus});
+    res.json({ potrait_s3_url: data.Location});
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Error uploading image' });
+  }
+});
 
       // app.post('/uploadEventImage', upload.single('image'), async (req, res) => {
       //   const file = req.file;
@@ -5747,10 +5763,13 @@ async function updateFlashbackImageUploadData(s3Result, userPhoneNumber, origina
   }
 }
 
-app.post('/uploadFlashbackFiles/:flashbackName/:eventId/:userPhoneNumber/:folder_name', upload.array('files', 50), async (req, res) => {
-  const { eventId,flashbackName, userPhoneNumber, folder_name } = req.params;
+const sharp = require('sharp'); // Import sharp for image resizing
 
-  logger.info("Started uploading files for the event : "+folder_name);
+app.post('/uploadFlashbackFiles/:flashbackName/:eventId/:userPhoneNumber/:folder_name', upload.array('files', 50), async (req, res) => {
+  const { eventId, flashbackName, userPhoneNumber, folder_name } = req.params;
+
+  logger.info("Started uploading files for the event: " + folder_name);
+  
   const uploadPromises = req.files.map(async (file) => {
     const fileId = `${folder_name}/${flashbackName}/${file.originalname}`;
     const s3Params = {
@@ -5761,10 +5780,31 @@ app.post('/uploadFlashbackFiles/:flashbackName/:eventId/:userPhoneNumber/:folder
     };
 
     try {
+      // Upload original image to S3
       const s3Result = await s3.upload(s3Params).promise();
-      // Update DynamoDB with the new entry
+
+      // Resize the image to 1024x1024 using sharp
+      const resizedImageBuffer = await sharp(file.buffer)
+        .resize(1024, 1024, { fit: sharp.fit.inside, withoutEnlargement: true })
+        .toBuffer();
+
+      // Create a key for the thumbnail (you can modify this path as needed)
+      const thumbnailKey = `${folder_name}/${flashbackName}/thumbnails/${file.originalname}`;
+
+      const thumbnailParams = {
+        Bucket: flashbacksBucketname,
+        Key: thumbnailKey,
+        Body: resizedImageBuffer,
+        ContentType: file.mimetype
+      };
+
+      // Upload the thumbnail to S3
+      await s3.upload(thumbnailParams).promise();
+
+      // Update DynamoDB with the new entry for the original file
       await updateFlashbackImageUploadData(s3Result, userPhoneNumber, file.originalname, flashbackName, eventId, folder_name);
-    
+      
+      // Return the result for the original image upload
       return s3Result;
     } catch (error) {
       console.error(`Error uploading file ${file.originalname}:`, error);
@@ -5777,7 +5817,7 @@ app.post('/uploadFlashbackFiles/:flashbackName/:eventId/:userPhoneNumber/:folder
     const successfulUploads = results.filter(r => r.status === 'fulfilled').map(r => r.value);
     const failedUploads = results.filter(r => r.status === 'rejected').map(r => r.reason);
 
-    logger.info("Upload process completed for the event : "+folder_name)
+    logger.info("Upload process completed for the event: " + folder_name);
     res.status(200).json({
       message: 'Upload process completed',
       successfulUploads,
@@ -5789,6 +5829,7 @@ app.post('/uploadFlashbackFiles/:flashbackName/:eventId/:userPhoneNumber/:folder
     res.status(500).json({ error: 'Error in upload process' });
   }
 });
+
 
 // Function to update DynamoDB
 async function saveOrUpdateFlashback(flashbackName, eventId, eventName, userPhoneNumber) {
