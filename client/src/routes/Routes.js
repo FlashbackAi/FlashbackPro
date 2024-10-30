@@ -43,6 +43,7 @@ import DataSharingPage from "../pages/DataSharing/DataSharing";
 import Withdraw from "../pages/Withdraw/Withdraw";
 import OrgDetails from "../pages/orgDetails/orgDetails";
 import OrganizationForm from "../pages/Model/ModelForm/OrgForm";
+import OrganizationProfile from "../pages/orgDetails/OrganisationDetails";
 
 
 const ROUTES=[
@@ -367,6 +368,12 @@ const ROUTES=[
         protected:true,
         component:OrganizationForm, 
     },
+    {
+        path:"/orgProfile",
+        exact:false,
+        protected:false,
+        component:OrganizationProfile, 
+    }
     
 ]
 

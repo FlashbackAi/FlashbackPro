@@ -6,7 +6,6 @@ import AppBar from "../../../components/AppBar/AppBar";
 import MiniHeroComponent from "../../../components/MiniHeroComponent/MiniHeroComponent";
 import API_UTIL from '../../../services/AuthIntereptor';
 import { useParams } from "react-router";
-import Gallery from "react-photo-gallery";
 import LoadingSpinner from "../../../components/Loader/LoadingSpinner";
 import defaultBanner from '../../../media/images/defaultbanner.jpg';
 import Masonry from "react-masonry-css";
