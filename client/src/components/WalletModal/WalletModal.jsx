@@ -338,6 +338,22 @@ const SlideActionWrapper = styled.div`
   align-items: center;
   margin-bottom: 1em;
 `;
+const CheckboxWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  margin-top: 0.5rem;
+
+  input[type='checkbox'] {
+    width: 24px; /* Double the default size */
+    height: 24px; /* Double the default size */
+  }
+
+  label {
+    margin-left: 0.75rem; /* Adjust the spacing */
+    font-size: 1.5rem; /* Double the font size */
+    color: #666;
+  }
+`;
 
 const StatusBadge = styled.span`
   padding: 5px 10px;
@@ -749,6 +765,15 @@ const fetchModelData = async (request) => {
               <DisclaimerText>
                 * Enabling sharing will allow Flashback partners to gain permission to train on your data.
                 </DisclaimerText>
+                <CheckboxWrapper>
+                  <input 
+                    type="checkbox" 
+                    id="autoBid" 
+                    name="autoBid" 
+                    defaultChecked 
+                  />
+                  <label htmlFor="autoBid">Auto Bid</label>
+                </CheckboxWrapper>
               </SlideActionWrapper>
               )}
               <DatasetInfo>
@@ -1012,7 +1037,7 @@ const RequestDetailsModal = ({ isOpen, onClose, request, model, onAccept, onReje
               </RequestDetailItem>
               <RequestDetailItem>
                 <Label>Organization:</Label>
-                <OrganizationButton onClick={() => window.open(`/orgDetails/${model.org_name}`, '_blank')}>
+                <OrganizationButton onClick={() => window.open(`/orgProfile`, '_blank')}>
                   {model.org_name}
                 </OrganizationButton>
               </RequestDetailItem>

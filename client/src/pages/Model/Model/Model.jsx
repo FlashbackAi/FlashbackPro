@@ -524,7 +524,7 @@ const Model = () => {
       <AppBar showCoins={true} />
       <ContentWrapper>
         <SidePanel>
-          <OrgTitle>{userDetails.org_name}</OrgTitle>
+          <OrgTitle onClick={()=>navigate('/orgProfile')}> {userDetails.org_name}</OrgTitle>
           <InfoItem>
             Technology, Information and Internet
           </InfoItem>
