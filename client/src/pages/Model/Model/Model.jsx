@@ -259,8 +259,9 @@ const StyledModal = styled(Modal)`
   max-width: 500px;
   width: 90%;
   margin: 2rem auto;
-  outline: none;
   color: #ffffff;
+   position: relative;
+  overflow-y: auto;
 `;
 
 const ModalHeader = styled.div`
@@ -284,6 +285,7 @@ const Form = styled.form`
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  overflow-y: auto;
   
 `;
 
@@ -359,7 +361,8 @@ const Model = () => {
     model_name: '',
     model_category: '',
     model_url: '',
-    model_desc: ''
+    model_desc: '',
+    documentation_url:'',
   });
 
   const categories = [
@@ -648,7 +651,16 @@ const Model = () => {
           style={labelStyle}
         />
         <LabelAndInput
-          label="Task Description"
+          label="Documentation URL"
+          name="model_url"
+          value={formData.documentation_url}
+          handleChange={handleInputChange}
+          isRequired={true}
+          isEditable={true}
+          style={labelStyle}
+        />
+        <LabelAndInput
+          label="Describe your Task"
           name="model_desc"
           value={formData.model_desc}
           handleChange={handleInputChange}

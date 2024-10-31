@@ -344,8 +344,8 @@ const CheckboxWrapper = styled.div`
   margin-top: 0.5rem;
 
   input[type='checkbox'] {
-    width: 24px; /* Double the default size */
-    height: 24px; /* Double the default size */
+    width: 18px; /* Double the default size */
+    height: 18px; /* Double the default size */
   }
 
   label {

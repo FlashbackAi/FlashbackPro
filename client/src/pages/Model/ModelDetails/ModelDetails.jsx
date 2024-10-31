@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import API_UTIL from '../../../services/AuthIntereptor';
@@ -342,6 +342,7 @@ const ModelDetails = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isAutoBidModalOpen, setIsAutoBidModalOpen] = useState(false)
   const [bidAmount, setBidAmount] = useState([50000]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchModelData();
@@ -536,14 +537,17 @@ const ModelDetails = () => {
               <>
               <Organization>
                 <HeadingContainer onClick={() => setIsCollapsed(!isCollapsed)}>
-                  <Heading>FlashbackInc</Heading>
+                  <Heading>Flashback.Inc</Heading>
                   <ToggleIcon>{isCollapsed ? <ChevronDown/> : <ChevronUp/>}</ToggleIcon>
                 </HeadingContainer>
                 <OrgBidSection>
-                  <Button>Org Details</Button>
+                  <Button onClick={()=>navigate('/dataOrgProfile')}>Org Details</Button>
                   <Button onClick={openAutoBidModal}>Auto Bid <UnityLogo src='/unityLogo.png' alt='Coin' /></Button>
+                  <Button>QI : 98%</Button>
                 </OrgBidSection>
               </Organization>
+
+             
             {!isCollapsed && (
               <TabContent
                 key="datasets"
@@ -587,6 +591,20 @@ const ModelDetails = () => {
                 )}
               </TabContent>
             )}
+
+                <Organization>
+                <HeadingContainer onClick={() => setIsCollapsed(!isCollapsed)}>
+                  <Heading>Shutterstock</Heading>
+                  <ToggleIcon>{isCollapsed ? <ChevronDown/> : <ChevronUp/>}</ToggleIcon>
+                </HeadingContainer>
+                </Organization>
+
+                <Organization>
+                <HeadingContainer onClick={() => setIsCollapsed(!isCollapsed)}>
+                  <Heading>Canva</Heading>
+                  <ToggleIcon>{isCollapsed ? <ChevronDown/> : <ChevronUp/>}</ToggleIcon>
+                </HeadingContainer>
+                </Organization>
               </>
             )}
 

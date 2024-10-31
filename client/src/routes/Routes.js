@@ -44,6 +44,7 @@ import Withdraw from "../pages/Withdraw/Withdraw";
 import OrgDetails from "../pages/orgDetails/orgDetails";
 import OrganizationForm from "../pages/Model/ModelForm/OrgForm";
 import OrganizationProfile from "../pages/orgDetails/OrganisationDetails";
+import DataSetOrganizationProfile from "../pages/orgDetails/datasetOrgProfile";
 
 
 const ROUTES=[
@@ -373,6 +374,12 @@ const ROUTES=[
         exact:false,
         protected:false,
         component:OrganizationProfile, 
+    },
+    {
+        path:"/dataOrgProfile",
+        exact:false,
+        protected:false,
+        component:DataSetOrganizationProfile, 
     }
     
 ]

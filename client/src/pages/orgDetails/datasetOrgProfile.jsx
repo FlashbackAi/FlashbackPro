@@ -76,6 +76,17 @@ const SectionListItem = styled.li`
   }
 `;
 
+const OrganisationAbout = styled.span`
+  margin-bottom: 1rem;
+  font-weight: normal;
+  font-size:1.2em;
+
+  & > strong {
+    font-weight: bold;
+  }
+`;
+
+
 const SectionTitle = styled.h3`
   font-size: 1.8rem;
   color: white;
@@ -160,10 +171,10 @@ text-decoration: none;
 `;
 
 
-const OrganizationProfile = () => {
+const DataSetOrganizationProfile = () => {
   // Hard-coded organization details
   const organization = {
-    org_name: 'KAI Labs',
+    org_name: 'Flashback.Inc',
     org_type: 'AI Development Firm',
     org_desc: `
     Computer Vision Solutions: We create models that excel at recognizing and interpreting visual data. Our computer vision algorithms are designed for tasks such as image classification, object recognition, facial analysis, emotion detection, and anomaly detection.
@@ -175,12 +186,12 @@ const OrganizationProfile = () => {
     Autonomous Systems & Smart Infrastructure: We work on developing vision-based solutions for autonomous vehicles, drones, and robotics. Our AI models analyze real-time image data to enhance safety, navigation, and efficiency in these systems. Moreover, our smart infrastructure solutions enable cities to adopt AI-powered surveillance and monitoring capabilities.
 
     Data Annotation & Model Enhancement: We focus on curating high-quality image datasets and meticulously annotating them to train precise AI models. Additionally, our lab specializes in transfer learning and fine-tuning of existing models, enabling faster deployment with optimized performance.
-  `,org_location: 'Hyderabad, India',
-    org_mail: 'team@KaiLabs.com',
+  `,org_location: 'Karimnagar, India',
+    org_mail: 'team@Flashback.com',
     contact_person: 'Vinay Thadem',
     contact_role: 'Chief Executive Officer',
-    contact_phone: '+1-1234567890',
-    org_social_links: 'https://www.linkedin.com/company/KAI-labs',
+    contact_phone: '+91-9876543210',
+    org_social_links: 'https://www.linkedin.com/company/FlashbackInc',
     previous_works: 'AI-driven chatbot solutions, Predictive maintenance for manufacturing, Automated video analysis tool',
     patents: 'US-123456789, US-987654321',
     owner_verification: 'https://example.com/documents/verification.pdf', // Replace with your actual PDF link
@@ -201,21 +212,14 @@ const OrganizationProfile = () => {
     <SectionContainer>
       <SectionTitle>About Us</SectionTitle>
       <SectionContent>
+        <OrganisationAbout>Flashback.Inc is a super app for images, offering users a platform where they can:</OrganisationAbout>
         <SectionListItem>
-          <strong>Computer Vision Solutions:</strong> Creating AI models for image classification, object recognition, and facial analysis.
-        </SectionListItem>
+          <strong>Create and organize events</strong> (e.g., weddings, birthdays, vacations) to capture memories in curated albums.   </SectionListItem>
         <SectionListItem>
-          <strong>Advanced Research in Image Analysis:</strong> Advancing AI models with innovative techniques like CNN, GAN, and unsupervised learning.
-        </SectionListItem>
+          <strong>Upload and share personal photos</strong> with friends, family, and specific groups</SectionListItem>
         <SectionListItem>
-          <strong>Healthcare Imaging:</strong> Developing AI solutions for diagnostics and personalized treatment in radiology and other fields.
-        </SectionListItem>
-        <SectionListItem>
-          <strong>Autonomous Systems & Smart Infrastructure:</strong> Building vision-based AI for autonomous vehicles, drones, and smart city infrastructure.
-        </SectionListItem>
-        <SectionListItem>
-          <strong>Data Annotation & Model Enhancement:</strong> Curating high-quality datasets and enhancing AI models through transfer learning and fine-tuning.
-        </SectionListItem>
+          <strong>Curating Memories</strong>Creating Memories from the Images by Relationship and Sentiment Analysis</SectionListItem>
+
       </SectionContent>
     </SectionContainer>
   </AlternatingSection>
@@ -238,25 +242,25 @@ const OrganizationProfile = () => {
             </Item>
             <Item>
                 <ItemHeader>Website Link:</ItemHeader>
-                <SocialLink href={"https://kaiLabs.com/"} target="_blank" rel="noopener noreferrer">
-                https://kaiLabs.com/
+                <SocialLink href={"https://flashback.inc/"} target="_blank" rel="noopener noreferrer">
+                https://flashback.inc/
             </SocialLink>
             </Item>   
             
             <Item>
                 <ItemHeader>Founder Name:</ItemHeader>
-                <ItemValue> Vinay Thadem
+                <ItemValue> Srikanth Alla
                 </ItemValue>
             </Item>   
             <Item>
                 <ItemHeader>Founder LinkedIn:</ItemHeader>
-                <SocialLink href={"https://www.linkedin.com/company/vinaythadem"} target="_blank" rel="noopener noreferrer">
-                https://www.linkedin.com/company/vinaythadem
+                <SocialLink href={"https://www.linkedin.com/company/srikanthalla"} target="_blank" rel="noopener noreferrer">
+                https://www.linkedin.com/company/srikanthalla
             </SocialLink>
             </Item>   
             <Item>
                 <ItemHeader>Contact Person:</ItemHeader>
-                <ItemValue> Anirudh Thadem
+                <ItemValue>Pranay Vollala
                 </ItemValue>
             </Item>  
             <Item>
@@ -278,62 +282,35 @@ const OrganizationProfile = () => {
         <ContactDetails>
             <Item>
                 <ItemHeader>Organisation Registration Number: </ItemHeader>
-                <ItemValue> L21091KA2019OPC141331</ItemValue>
+                <ItemValue>U74140KA2020PTC136426</ItemValue>
             </Item>
             <Item>
                 <ItemHeader>Organisation Incorporation Date: </ItemHeader>
-                <ItemValue> 22-02-2000</ItemValue>
+                <ItemValue> 26-01-2024</ItemValue>
             </Item>
         </ContactDetails>
       </SectionContainer>
       </AlternatingSection>
       <AlternatingSection alignRight={true}>
       <SectionContainer>
-        <SectionTitle>Research Papers and Patents</SectionTitle>
-        <PapersContainer>
-            <PapersList>
-            <PaperItem>
-                <PaperLink href="https://example.com/paper1" target="_blank" rel="noopener noreferrer">
-                Paper Title 1 - Journal Name, Year
-                </PaperLink>
-            </PaperItem>
-            <PaperItem>
-                <PaperLink href="https://example.com/patent1" target="_blank" rel="noopener noreferrer">
-                Patent Title 1 - US-123456789
-                </PaperLink>
-            </PaperItem>
-            <PaperItem>
-                <PaperLink href="https://example.com/paper2" target="_blank" rel="noopener noreferrer">
-                Paper Title 2 - Conference Name, Year
-                </PaperLink>
-            </PaperItem>
-            </PapersList>
-        </PapersContainer>
-        </SectionContainer>
+    <SectionTitle>Data On the Network</SectionTitle>
+    <ContactDetails>
+      <Item>
+        <ItemHeader>No. Of Images:</ItemHeader>
+        <ItemValue>1,000,000</ItemValue>
+      </Item>
+      <Item>
+        <ItemHeader>No. of  Individual contributors</ItemHeader>
+        <ItemValue>15000</ItemValue>
+      </Item>
+      <Item>
+        <ItemHeader>No. of Models Trained on the dataset:</ItemHeader>
+        <ItemValue>150</ItemValue>
+      </Item>
+      
 
-      </AlternatingSection>
-      <AlternatingSection alignRight={false}>
-      <SectionContainer>
-    <SectionTitle>Trained Models on the Network</SectionTitle>
-    <PapersContainer>
-      <PapersList>
-        <PaperItem>
-          <PaperLink href="https://example.com/model1" target="_blank" rel="noopener noreferrer">
-            Object Detection Model - Trained on Dataset X
-          </PaperLink>
-        </PaperItem>
-        <PaperItem>
-          <PaperLink href="https://example.com/model2" target="_blank" rel="noopener noreferrer">
-            Facial Recognition Model - Trained on Dataset Y
-          </PaperLink>
-        </PaperItem>
-        <PaperItem>
-          <PaperLink href="https://example.com/model3" target="_blank" rel="noopener noreferrer">
-            Medical Imaging Model - Trained on Dataset Z
-          </PaperLink>
-        </PaperItem>
-      </PapersList>
-    </PapersContainer>
+    </ContactDetails>
+
   </SectionContainer>
       </AlternatingSection>
     </ProfileContainer>
@@ -341,4 +318,4 @@ const OrganizationProfile = () => {
   );
 };
 
-export default OrganizationProfile;
+export default DataSetOrganizationProfile;
