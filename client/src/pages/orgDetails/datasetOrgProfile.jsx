@@ -329,6 +329,7 @@ const DataSetOrganizationProfile = () => {
       <Tag>Faces</Tag>
       <Tag>People</Tag>
       <Tag>Facial Landmarks</Tag>
+      <Tag>Clothing</Tag>
       <Tag>Activities</Tag>
       <Tag>Scenes</Tag>
       <Tag>Environments</Tag>
