@@ -325,6 +325,22 @@ const SliderTrack = styled.div`
   position: relative;
 `;
 
+const TagsContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem;
+`;
+
+const Tag = styled.span`
+  background-color: #646566;
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+  border-radius: 15px;
+  font-size: 0.9rem;
+  font-weight: bold;
+`;
+
 const ModelDetails = () => {
   const { orgName, modelName } = useParams();
   const [modelDetails, setModelDetails] = useState({});
@@ -403,6 +419,46 @@ const ModelDetails = () => {
     setIsAutoBidModalOpen(false);
   };
 
+
+
+ const deductAuditCoins = async (coins) => {
+  try {
+    setIsRequesting(true);
+    const payload = {
+      amount: coins,
+      senderMobileNumber: userPhoneNumber,
+      recipientMobileNumber: "+919090401234"
+    };
+    const response = await API_UTIL.post('/transfer-chewy-coins', payload);
+    if(response.status === 200){
+      await API_UTIL.post('/transfer-chewy-coins', {
+       amount: coins/5,
+       senderMobileNumber: "+919090401234",
+       recipientMobileNumber: userPhoneNumber
+     });
+      await API_UTIL.post('/transfer-chewy-coins',  {
+       amount: coins/10,
+       senderMobileNumber: "+919090401234",
+       recipientMobileNumber: "+918978073062"
+     });
+     await API_UTIL.post('/transfer-chewy-coins',  {
+       amount: coins/10,
+       senderMobileNumber: "+919090401234",
+       recipientMobileNumber: "+918871713331"
+     });
+   }
+    
+    return response;
+  } catch (error) {
+    console.error('Error deducting coins:', error);
+    toast.error('Failed to deduct coins. Please try again.');
+  }
+  finally{
+    closeAutoBidModal(true);
+    setIsRequesting(false);
+  }
+};
+
   const deductCoins = async (coins) => {
     try {
       const payload = {
@@ -411,6 +467,7 @@ const ModelDetails = () => {
         recipientMobileNumber: "+919090401234"
       };
       const response = await API_UTIL.post('/transfer-chewy-coins', payload);
+      
       return response;
     } catch (error) {
       console.error('Error deducting coins:', error);
@@ -543,7 +600,7 @@ const ModelDetails = () => {
                 <OrgBidSection>
                   <Button onClick={()=>navigate('/dataOrgProfile')}>Org Details</Button>
                   <Button onClick={openAutoBidModal}>Auto Bid <UnityLogo src='/unityLogo.png' alt='Coin' /></Button>
-                  <Button>QI : 98%</Button>
+                  <Button>QI : 96%</Button>
                 </OrgBidSection>
               </Organization>
 
@@ -662,6 +719,20 @@ const ModelDetails = () => {
               <CheckCircle size={18} />
               Size: {clickedDataset.dataset_size}
             </InfoItem>
+            <TagsContainer>
+              <Tag>Faces</Tag>
+              <Tag>People</Tag>
+              <Tag>Facial Landmarks</Tag>
+              <Tag>Activities</Tag>
+              <Tag>Scenes</Tag>
+              <Tag>Emotions</Tag>
+              <Tag>Gender</Tag>
+              <Tag>Age</Tag>
+              <Tag>Objects</Tag>
+              <Tag>Wedding Data</Tag>
+              <Tag>Colors</Tag>
+              <Tag>Places</Tag>
+            </TagsContainer>
           </ModalContent>
         )}
       </StyledModal>
@@ -703,8 +774,14 @@ const ModelDetails = () => {
         />
       </SliderContainer>
       <ConfirmButtonContainer>
-        <ConfirmButton onClick={() => deductCoins(bidAmount * 15)}  disabled={(bidAmount * 15)>balance}>
-          Request: {bidAmount * 15} <UnityLogo src='/unityLogo.png' alt='Coin' />
+        <ConfirmButton onClick={() => deductAuditCoins(bidAmount * 15)}  disabled={(bidAmount * 15)>balance}>
+        {isRequesting ? (
+          'Requesting...'
+        ) : (
+          <>
+            {`Request: ${bidAmount * 15}`} <UnityLogo src='/unityLogo.png' alt='Coin' />
+          </>
+        )}
         </ConfirmButton>
       </ConfirmButtonContainer>
       </StyledModal>

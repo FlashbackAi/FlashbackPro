@@ -126,6 +126,21 @@ const ItemValue = styled.p`
 const Item = styled.div`
 display:flex;
 `
+const TagsContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem;
+`;
+
+const Tag = styled.span`
+  background-color: #646566;
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+  border-radius: 15px;
+  font-size: 0.9rem;
+  font-weight: bold;
+`;
 
 const SocialLink = styled.a`
   color: #007BFF;
@@ -310,6 +325,23 @@ const DataSetOrganizationProfile = () => {
       
 
     </ContactDetails>
+    <TagsContainer>
+      <Tag>Faces</Tag>
+      <Tag>People</Tag>
+      <Tag>Facial Landmarks</Tag>
+      <Tag>Activities</Tag>
+      <Tag>Scenes</Tag>
+      <Tag>Environments</Tag>
+      <Tag>Text in Images</Tag>
+      <Tag>Emotions</Tag>
+      <Tag>Gender</Tag>
+      <Tag>Age</Tag>
+      <Tag>Objects</Tag>
+      <Tag>Wedding Data</Tag>
+      <Tag>Colors</Tag>
+      <Tag>Landmarks</Tag>
+      <Tag>Places</Tag>
+    </TagsContainer>
 
   </SectionContainer>
       </AlternatingSection>
