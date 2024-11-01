@@ -319,17 +319,17 @@ const OrganizationProfile = () => {
       <PapersList>
         <PaperItem>
           <PaperLink href="https://example.com/model1" target="_blank" rel="noopener noreferrer">
-            Object Detection Model - Trained on Dataset X
+            Object Detection Model 
           </PaperLink>
         </PaperItem>
         <PaperItem>
           <PaperLink href="https://example.com/model2" target="_blank" rel="noopener noreferrer">
-            Facial Recognition Model - Trained on Dataset Y
+            Facial Recognition Model 
           </PaperLink>
         </PaperItem>
         <PaperItem>
           <PaperLink href="https://example.com/model3" target="_blank" rel="noopener noreferrer">
-            Medical Imaging Model - Trained on Dataset Z
+            Medical Imaging Model
           </PaperLink>
         </PaperItem>
       </PapersList>

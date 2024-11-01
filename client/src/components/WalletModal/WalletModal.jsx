@@ -324,6 +324,7 @@ const ActionButton = styled(motion.button)`
   color: white;
   cursor: pointer;
   font-weight: bold;
+  margin-right:0.5em;
 `;
 
 const RequestStatus = styled.div`
@@ -1051,7 +1052,7 @@ const RequestDetailsModal = ({ isOpen, onClose, request, model, onAccept, onReje
               </RequestDetailItem>
               <RequestDetailItem>
                 <Label>Model Audit Status:</Label>
-                <Value>{model.is_audited}</Value>
+                <Value>Audited</Value>
               </RequestDetailItem>
               {request.status === 'pending' && (
                 <RequestActionButtons>

@@ -623,7 +623,7 @@ const ModelDetails = () => {
                         onClick={() => openDatasetDetailsModal(dataset)}
                       >
                         <DatasetName>{dataset.dataset_name}</DatasetName>
-                        <DatasetInfo>Owner: {dataset.org_name}</DatasetInfo>
+                        <DatasetInfo>Owner: {dataset.dataset_name.split('-')[1]}</DatasetInfo>
                         <DatasetInfo>Quality Index: {dataset.quality_index}%</DatasetInfo>
                         <DatasetInfo>Size: {dataset.dataset_size}</DatasetInfo>
                         <RequestButton
@@ -709,7 +709,7 @@ const ModelDetails = () => {
             </InfoItem>
             <InfoItem>
               <User size={18} />
-              Owner: {clickedDataset.org_name}
+              Owner: {clickedDataset.dataset_name.split('-')[1]}
             </InfoItem>
             <InfoItem>
               <ScrollText size={18} />
