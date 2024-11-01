@@ -395,6 +395,21 @@ const Balance = styled(motion.div)`
   }
 `;
 
+const TagsContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem;
+`;
+
+const Tag = styled.span`
+  background-color: #646566;
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+  border-radius: 15px;
+  font-size: 0.9rem;
+  font-weight: bold;
+`;
 
 const Wallet = ({ isOpen, onClose, userPhoneNumber, datasetName, showCoins }) => {
   const [walletDetails, setWalletDetails] = useState(null);
@@ -760,6 +775,7 @@ const fetchModelData = async (request) => {
               <QRCodeWrapper>
                 <CustomQRCode value={hashCode} size={150} logoUrl={'unityLogo.png'} logoSize={40} />
               </QRCodeWrapper>
+             
               {photoCount &&(
               <SlideActionWrapper>
               <SlideToAction onSlideComplete={handleSlideComplete} label={label} />
@@ -788,6 +804,14 @@ const fetchModelData = async (request) => {
             <strong>Dataset Size:</strong> <span>{datasetDetails?.dataset_size}</span>
           </DatasetInfoItem>
         </DatasetInfo>
+        <TagsContainer>
+              <Tag>People</Tag>
+              <Tag>Objects</Tag>
+              <Tag>Accesories</Tag>
+              <Tag>Clothing</Tag>
+              <Tag>Wedding</Tag>
+              <Tag>Events</Tag>
+            </TagsContainer>
             </WalletDetails>
           </TabContent>
         );

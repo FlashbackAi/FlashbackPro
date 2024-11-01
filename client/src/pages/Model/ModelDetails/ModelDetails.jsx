@@ -600,7 +600,7 @@ const ModelDetails = () => {
                 <OrgBidSection>
                   <Button onClick={()=>navigate('/dataOrgProfile')}>Org Details</Button>
                   <Button onClick={openAutoBidModal}>Auto Bid <UnityLogo src='/unityLogo.png' alt='Coin' /></Button>
-                  <Button>QI : 96%</Button>
+                  <Button>Match : 96.3%</Button>
                 </OrgBidSection>
               </Organization>
 
@@ -624,7 +624,7 @@ const ModelDetails = () => {
                       >
                         <DatasetName>{dataset.dataset_name}</DatasetName>
                         <DatasetInfo>Owner: {dataset.dataset_name.split('-')[1]}</DatasetInfo>
-                        <DatasetInfo>Quality Index: {dataset.quality_index}%</DatasetInfo>
+                        <DatasetInfo>Match: {dataset.quality_index}%</DatasetInfo>
                         <DatasetInfo>Size: {dataset.dataset_size}</DatasetInfo>
                         <RequestButton
                           onClick={(e) => {
@@ -651,14 +651,14 @@ const ModelDetails = () => {
 
                 <Organization>
                 <HeadingContainer onClick={() => setIsCollapsed(!isCollapsed)}>
-                  <Heading>Shutterstock</Heading>
+                  <Heading>Image Shield</Heading>
                   <ToggleIcon>{isCollapsed ? <ChevronDown/> : <ChevronUp/>}</ToggleIcon>
                 </HeadingContainer>
                 </Organization>
 
                 <Organization>
                 <HeadingContainer onClick={() => setIsCollapsed(!isCollapsed)}>
-                  <Heading>Canva</Heading>
+                  <Heading>Humane</Heading>
                   <ToggleIcon>{isCollapsed ? <ChevronDown/> : <ChevronUp/>}</ToggleIcon>
                 </HeadingContainer>
                 </Organization>
@@ -720,18 +720,12 @@ const ModelDetails = () => {
               Size: {clickedDataset.dataset_size}
             </InfoItem>
             <TagsContainer>
-              <Tag>Faces</Tag>
               <Tag>People</Tag>
-              <Tag>Facial Landmarks</Tag>
-              <Tag>Activities</Tag>
-              <Tag>Scenes</Tag>
-              <Tag>Emotions</Tag>
-              <Tag>Gender</Tag>
-              <Tag>Age</Tag>
               <Tag>Objects</Tag>
-              <Tag>Wedding Data</Tag>
-              <Tag>Colors</Tag>
-              <Tag>Places</Tag>
+              <Tag>Accesories</Tag>
+              <Tag>Clothing</Tag>
+              <Tag>Wedding</Tag>
+              <Tag>Events</Tag>
             </TagsContainer>
           </ModalContent>
         )}
