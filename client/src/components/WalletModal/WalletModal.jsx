@@ -351,7 +351,7 @@ const CheckboxWrapper = styled.div`
 
   label {
     margin-left: 0.75rem; /* Adjust the spacing */
-    font-size: 1.5rem; /* Double the font size */
+    font-size: 1rem; /* Double the font size */
     color: #666;
   }
 `;
@@ -789,7 +789,7 @@ const fetchModelData = async (request) => {
                     name="autoBid" 
                     defaultChecked 
                   />
-                  <label htmlFor="autoBid">Auto Bid</label>
+                  <label htmlFor="autoBid">Enable Auto Train for Audited Models</label>
                 </CheckboxWrapper>
               </SlideActionWrapper>
               )}
