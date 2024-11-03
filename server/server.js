@@ -7065,36 +7065,45 @@ app.get("/getDatasetDetails/:orgName/:datasetName", async (req, res) => {
 app.post("/saveDatasetDetails", async (req, res) => {
   const item = req.body;
   try {
-    // Initialize item with necessary attributes
-    const newItem = {
-      'dataset_name': item.dataset_name,
-      'org_name': item.org_name,
-      // Add any other necessary fields here
-    };
-    
-    logger.info(`Saving item with dataset_name: ${item.dataset_name} and org_name: ${item.org_name}`);
+    // Initialize update expression components
+    let updateExpression = 'SET';
+    const ExpressionAttributeNames = {};
+    const ExpressionAttributeValues = {};
 
-    // Iterate over the keys of the item to add them to the newItem object
+    // Prepare fields for update, excluding primary keys
     for (const key in item) {
       if (key !== 'dataset_name' && key !== 'org_name') {
-        newItem[key] = item[key];
+        updateExpression += ` #${key} = :${key},`;
+        ExpressionAttributeNames[`#${key}`] = key;
+        ExpressionAttributeValues[`:${key}`] = item[key];
       }
     }
 
+    // Remove the trailing comma from the update expression
+    updateExpression = updateExpression.slice(0, -1);
+
     const params = {
       TableName: datasetTable,
-      Item: newItem
+      Key: {
+        'dataset_name': item.dataset_name,
+        'org_name': item.org_name
+      },
+      UpdateExpression: updateExpression,
+      ExpressionAttributeNames,
+      ExpressionAttributeValues,
+      ReturnValues: "ALL_NEW"  // Return the updated item
     };
 
-    // Save the new item
-    const data = await docClient.put(params).promise();
-    logger.info(`Successfully saved item with dataset_name: ${item.dataset_name} and org_name: ${item.org_name}`);
-    res.send(data);
+    // Perform the update operation
+    const data = await docClient.update(params).promise();
+    logger.info(`Successfully saved or updated item with dataset_name: ${item.dataset_name} and org_name: ${item.org_name}`);
+    res.send(data.Attributes);  // Send the updated attributes as a response
   } catch (error) {
     logger.error(error.message);
     res.status(500).send(error.message);
   }
 });
+
 
 app.get("/getModels/:orgName", async (req, res) => {
   
