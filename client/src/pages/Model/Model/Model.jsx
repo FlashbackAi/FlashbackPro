@@ -22,7 +22,7 @@ const ModelPage = styled.div`
 const ContentWrapper = styled.div`
   display: flex;
   padding: 1rem;
-  gap: 1rem;
+  gap: 0.31rem;
   max-width: 100%;
   margin: 0 auto;
 
@@ -47,6 +47,7 @@ const SidePanel = styled.div`
 const SelectWrapper = styled.div`
   position: relative;
   margin-bottom: 1rem;
+  margin-top:0.5em;
 `;
 
 const CustomSelect = styled.div`
@@ -271,6 +272,30 @@ const ModalHeader = styled.div`
   margin-bottom: 1.5rem;
 `;
 
+const ModelTypeCard = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem; /* Adds gap between the two halves */
+    margin-bottom: 1.5rem;
+`;
+
+const ModelType = styled.div`
+    flex-basis: 50%; /* Divides into two equal halves */
+    text-align: center;
+    padding: 3rem;
+    font-size: 1em;
+    border-radius: 1em;
+    border:2px solid;
+    border-color:grey;
+    background: linear-gradient(45deg, black, transparent);
+
+    transition: background-color 0.3s ease, transform 0.3s ease;
+
+    &:hover {
+        transform: scale(1.05); /* Adds a slight zoom effect on hover */
+    }
+`;
 const ModalTitle = styled.h2`
   font-size: 1.5rem;
   color: #00ffff;
@@ -355,6 +380,9 @@ const Model = () => {
   const [categorySearch, setCategorySearch] = useState('');
   const [customCategory, setCustomCategory] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [modelType, SetModelType] = useState('');
+  const [isBaselineDropdownOpen, setIsBaselineDropdownOpen] = useState(false);
+  const [selectedBaselineModel, setSelectedBaselineModel] = useState('');
 
   const [formData, setFormData] = useState({
     org_name: orgName,
@@ -363,6 +391,7 @@ const Model = () => {
     model_url: '',
     model_desc: '',
     documentation_url:'',
+    data_type:'images'
   });
 
   const categories = [
@@ -459,7 +488,8 @@ const Model = () => {
       ...formData,
       org_name: orgName,  
       is_audited: false,  
-      model_category: selectedCategory === 'Other' ? customCategory : selectedCategory
+      model_category: selectedCategory === 'Other' ? customCategory : selectedCategory,
+      model_type: modelType
     };
   
     try {
@@ -581,12 +611,29 @@ const Model = () => {
 
       <StyledModal
         isOpen={isDetailModalOpen}
-        onRequestClose={() => setIsDetailModalOpen(false)}
+        onRequestClose={() => {setIsDetailModalOpen(false); SetModelType('');}}
         contentLabel="Create Model"
       >
+      { !modelType ?(
+        <>
+        <ModalHeader>
+        <ModalTitle>What kind of model would you like to create?</ModalTitle>
+            <CloseButton onClick={() => { setIsDetailModalOpen(false); SetModelType(''); }} />
+        </ModalHeader>
+      <ModelTypeCard>
+        <ModelType onClick={()=>SetModelType('own')}>
+            Own model
+        </ModelType>
+        <ModelType onClick={()=>SetModelType('personalise')}>
+            Personalise Base Model
+        </ModelType>
+      </ModelTypeCard>
+      </>):
+      modelType === 'own' ?(
+      <>   
         <ModalHeader>
           <ModalTitle>Create New Task</ModalTitle>
-          <CloseButton onClick={() => setIsDetailModalOpen(false)} />
+          <CloseButton onClick={() => {setIsDetailModalOpen(false); SetModelType('');}} />
         </ModalHeader>
         <Form onSubmit={handleDetailFormSubmit}>
           <LabelAndInput
@@ -669,7 +716,109 @@ const Model = () => {
           style={labelStyle}
         />
         <SubmitButton type="submit">Create Task</SubmitButton>
-      </Form>
+        </Form>
+      </>
+      ) :(
+        <>
+        <ModalHeader>
+            <ModalTitle>Create New Task</ModalTitle>
+            <CloseButton onClick={() => { setIsDetailModalOpen(false); SetModelType(''); }} />
+        </ModalHeader>
+        <Form onSubmit={handleDetailFormSubmit}>
+            <LabelAndInput
+                label="Task Name"
+                name="model_name"
+                value={formData.model_name}
+                handleChange={handleInputChange}
+                isRequired={true}
+                isEditable={true}
+                style={labelStyle}
+            />
+    
+            {/* Data Options Radio Buttons */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <label>Data type to Train the model:</label>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <div>
+                        <input
+                            type="radio"
+                            id="images"
+                            name="data_type"
+                            value="images"
+                            checked={formData.data_type === 'images'}
+                            onChange={handleInputChange}
+                        />
+                        <label htmlFor="images">Images</label>
+                    </div>
+
+                    <div>
+                        <input
+                            type="radio"
+                            id="videos"
+                            name="data_type"
+                            value="videos"
+                            checked={formData.data_type === 'videos'}
+                            onChange={handleInputChange}
+                            disabled={true}
+                        />
+                        <label htmlFor="videos">Videos</label>
+                    </div>
+                </div>
+            </div>
+
+    
+            {/* Baseline Model Dropdown */}
+            <div>
+                <label htmlFor="baseline_model">Select Baseline Model</label>
+                <SelectWrapper>
+                    <CustomSelect>
+                        <SelectButton
+                            type="button"
+                            onClick={() => setIsBaselineDropdownOpen(!isBaselineDropdownOpen)}
+                        >
+                            {selectedBaselineModel || 'Select a baseline model'}
+                        </SelectButton>
+                        {isBaselineDropdownOpen && (
+                            <DropdownMenu>
+                                <OptionsList>
+                                    {['Object Detection', 'Image Recognition', 'Emotion recognition', 'face recognition'].map((model) => (
+                                        <Option
+                                            key={model}
+                                            onClick={() => {setSelectedBaselineModel(model);setIsBaselineDropdownOpen(false)}}
+                                        >
+                                            {model}
+                                        </Option>
+                                    ))}
+                                </OptionsList>
+                            </DropdownMenu>
+                        )}
+                    </CustomSelect>
+                </SelectWrapper>
+            </div>
+    
+            <LabelAndInput
+                label="Documentation URL"
+                name="documentation_url"
+                value={formData.documentation_url}
+                handleChange={handleInputChange}
+                isRequired={true}
+                isEditable={true}
+                style={labelStyle}
+            />
+            <LabelAndInput
+                label="Describe your Task"
+                name="model_desc"
+                value={formData.model_desc}
+                handleChange={handleInputChange}
+                isRequired={true}
+                isEditable={true}
+                style={labelStyle}
+            />
+            <SubmitButton type="submit">Create Task</SubmitButton>
+        </Form>
+    </>
+    
+      )}
     </StyledModal>
 
     <StyledModal
