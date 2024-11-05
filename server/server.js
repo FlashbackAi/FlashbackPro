@@ -61,8 +61,8 @@ app.use(express.static(path.join(__dirname, "SSR/public")));
 
 if (ENV === 'production') {
 
-  const privateKey = fs.readFileSync('/etc/letsencrypt/live/flashback.wtf/privkey.pem', 'utf8');
-  const certificate = fs.readFileSync('/etc/letsencrypt/live/flashback.wtf/fullchain.pem', 'utf8');
+  const privateKey = fs.readFileSync('/etc/letsencrypt/live/trainly.xyz/privkey.pem', 'utf8');
+  const certificate = fs.readFileSync('/etc/letsencrypt/live/trainly.xyz/fullchain.pem ', 'utf8');
   
   const credentials = {
     key: privateKey,
