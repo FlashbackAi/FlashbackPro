@@ -382,6 +382,7 @@ const Model = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [modelType, SetModelType] = useState('');
   const [isBaselineDropdownOpen, setIsBaselineDropdownOpen] = useState(false);
+  const [isFramewrokDropdownOpen, seIsFramewrokDropdownOpen] = useState(false);
   const [selectedBaselineModel, setSelectedBaselineModel] = useState('');
 
   const [formData, setFormData] = useState({
@@ -645,49 +646,78 @@ const Model = () => {
             isEditable={true}
             style={labelStyle}
           />
-      <div>
-        <label htmlFor="model_category">Model Category</label>
-        <SelectWrapper>
-          <CustomSelect>
-            <SelectButton
-              type="button"
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            >
-              {selectedCategory || 'Select a category'}
-            </SelectButton>
-            {isDropdownOpen && (
-              <DropdownMenu>
-                <SearchInput
+          <div>
+                <label htmlFor="baseline_model">Select Framework</label>
+                <SelectWrapper>
+                    <CustomSelect>
+                        <SelectButton
+                            type="button"
+                            onClick={() => seIsFramewrokDropdownOpen(!isFramewrokDropdownOpen)}
+                        >
+                            {selectedBaselineModel || 'Select a Framework'}
+                        </SelectButton>
+                        {isFramewrokDropdownOpen && (
+                            <DropdownMenu>
+                                <OptionsList>
+                                    {['Object Detection', 'Image Recognition', 'Emotion recognition', 'face recognition'].map((model) => (
+                                        <Option
+                                            key={model}
+                                            onClick={() => {setSelectedBaselineModel(model);seIsFramewrokDropdownOpen(false)}}
+                                        >
+                                            {model}
+                                        </Option>
+                                    ))}
+                                </OptionsList>
+                            </DropdownMenu>
+                        )}
+                    </CustomSelect>
+                </SelectWrapper>
+            </div>
+          <div>
+            <label htmlFor="model_category">Model Category</label>
+            <SelectWrapper>
+              <CustomSelect>
+                <SelectButton
+                  type="button"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                >
+                  {selectedCategory || 'Select a category'}
+                </SelectButton>
+                {isDropdownOpen && (
+                  <DropdownMenu>
+                    <SearchInput
+                      type="text"
+                      placeholder="Search categories..."
+                      value={categorySearch}
+                      onChange={(e) => setCategorySearch(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <OptionsList>
+                      {filteredCategories.map((category) => (
+                        <Option
+                          key={category}
+                          onClick={() => handleCategorySelect(category)}
+                        >
+                          {category}
+                        </Option>
+                      ))}
+                    </OptionsList>
+                  </DropdownMenu>
+                )}
+              </CustomSelect>
+              {selectedCategory === 'Other' && (
+                <CustomCategoryInput
                   type="text"
-                  placeholder="Search categories..."
-                  value={categorySearch}
-                  onChange={(e) => setCategorySearch(e.target.value)}
-                  onClick={(e) => e.stopPropagation()}
+                  placeholder="Enter custom category"
+                  value={customCategory}
+                  onChange={handleCustomCategoryChange}
+                  required
                 />
-                <OptionsList>
-                  {filteredCategories.map((category) => (
-                    <Option
-                      key={category}
-                      onClick={() => handleCategorySelect(category)}
-                    >
-                      {category}
-                    </Option>
-                  ))}
-                </OptionsList>
-              </DropdownMenu>
-            )}
-          </CustomSelect>
-          {selectedCategory === 'Other' && (
-            <CustomCategoryInput
-              type="text"
-              placeholder="Enter custom category"
-              value={customCategory}
-              onChange={handleCustomCategoryChange}
-              required
-            />
-          )}
-        </SelectWrapper>
-      </div>
+              )}
+            </SelectWrapper>
+          </div>
+
+          
           <LabelAndInput
           label="Repository URL"
           name="model_url"
@@ -764,6 +794,34 @@ const Model = () => {
                         <label htmlFor="videos">Videos</label>
                     </div>
                 </div>
+            </div>
+
+            <div>
+                <label htmlFor="baseline_model">Select Framework</label>
+                <SelectWrapper>
+                    <CustomSelect>
+                        <SelectButton
+                            type="button"
+                            onClick={() => seIsFramewrokDropdownOpen(!isFramewrokDropdownOpen)}
+                        >
+                            {selectedBaselineModel || 'Select a Framework'}
+                        </SelectButton>
+                        {isFramewrokDropdownOpen && (
+                            <DropdownMenu>
+                                <OptionsList>
+                                    {['Object Detection', 'Image Recognition', 'Emotion recognition', 'face recognition'].map((model) => (
+                                        <Option
+                                            key={model}
+                                            onClick={() => {setSelectedBaselineModel(model);seIsFramewrokDropdownOpen(false)}}
+                                        >
+                                            {model}
+                                        </Option>
+                                    ))}
+                                </OptionsList>
+                            </DropdownMenu>
+                        )}
+                    </CustomSelect>
+                </SelectWrapper>
             </div>
 
     
