@@ -384,6 +384,7 @@ const Model = () => {
   const [isBaselineDropdownOpen, setIsBaselineDropdownOpen] = useState(false);
   const [isFramewrokDropdownOpen, seIsFramewrokDropdownOpen] = useState(false);
   const [selectedBaselineModel, setSelectedBaselineModel] = useState('');
+  const [selectedFramework, setSelectedFramework] = useState('');
 
   const [formData, setFormData] = useState({
     org_name: orgName,
@@ -654,7 +655,7 @@ const Model = () => {
                             type="button"
                             onClick={() => seIsFramewrokDropdownOpen(!isFramewrokDropdownOpen)}
                         >
-                            {selectedBaselineModel || 'Select a Framework'}
+                            {selectedFramework || 'Select a Framework'}
                         </SelectButton>
                         {isFramewrokDropdownOpen && (
                             <DropdownMenu>
@@ -662,7 +663,7 @@ const Model = () => {
                                     {['TensorFlow2', 'Keras', 'PyTorch', 'Transformers','TensorFlow.js','LiteRT'].map((model) => (
                                         <Option
                                             key={model}
-                                            onClick={() => {setSelectedBaselineModel(model);seIsFramewrokDropdownOpen(false)}}
+                                            onClick={() => {setSelectedFramework(model);seIsFramewrokDropdownOpen(false)}}
                                         >
                                             {model}
                                         </Option>
@@ -804,7 +805,7 @@ const Model = () => {
                             type="button"
                             onClick={() => seIsFramewrokDropdownOpen(!isFramewrokDropdownOpen)}
                         >
-                            {selectedBaselineModel || 'Select a Framework'}
+                            {selectedFramework || 'Select a Framework'}
                         </SelectButton>
                         {isFramewrokDropdownOpen && (
                             <DropdownMenu>
@@ -812,7 +813,7 @@ const Model = () => {
                                     {['TensorFlow2', 'Keras', 'PyTorch', 'Transformers','TensorFlow.js','LiteRT'].map((model) => (
                                         <Option
                                             key={model}
-                                            onClick={() => {setSelectedBaselineModel(model);seIsFramewrokDropdownOpen(false)}}
+                                            onClick={() => {setSelectedFramework(model);seIsFramewrokDropdownOpen(false)}}
                                         >
                                             {model}
                                         </Option>
