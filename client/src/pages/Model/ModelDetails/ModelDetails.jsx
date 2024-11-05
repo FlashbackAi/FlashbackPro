@@ -599,7 +599,7 @@ const ModelDetails = () => {
                 </HeadingContainer>
                 <OrgBidSection>
                   <Button onClick={()=>navigate('/dataOrgProfile')}>Org Details</Button>
-                  <Button onClick={openAutoBidModal}>Auto Train </Button>
+                  <Button onClick={openAutoBidModal}>Auto Train <UnityLogo src='/unityLogo.png' alt='Coin' /></Button>
                   <Button>Match : 96.3%</Button>
                 </OrgBidSection>
               </Organization>
