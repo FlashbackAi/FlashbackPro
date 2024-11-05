@@ -1695,15 +1695,10 @@ const uploadFlashbackFiles = async () => {
     return `${day}-${month}-${year}`;
   }
   
-  function getFormattedTime(datetime) {
-    const date = new Date(datetime);
-    let hours = date.getHours();
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    hours = hours ? String(hours).padStart(2, '0') : '12';
-    return `${hours}:${minutes} ${ampm}`;
-  }
+  function getFormattedTime() {
+    return new Date(event.event_date).toLocaleTimeString();
+
+ }
 
   const fetchFlashbacks = async (eventId) => {
     try {
