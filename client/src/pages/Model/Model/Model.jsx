@@ -659,7 +659,7 @@ const Model = () => {
                         {isFramewrokDropdownOpen && (
                             <DropdownMenu>
                                 <OptionsList>
-                                    {['Object Detection', 'Image Recognition', 'Emotion recognition', 'face recognition'].map((model) => (
+                                    {['TensorFlow2', 'Keras', 'PyTorch', 'Transformers','TensorFlow.js','LiteRT'].map((model) => (
                                         <Option
                                             key={model}
                                             onClick={() => {setSelectedBaselineModel(model);seIsFramewrokDropdownOpen(false)}}
@@ -809,7 +809,7 @@ const Model = () => {
                         {isFramewrokDropdownOpen && (
                             <DropdownMenu>
                                 <OptionsList>
-                                    {['Object Detection', 'Image Recognition', 'Emotion recognition', 'face recognition'].map((model) => (
+                                    {['TensorFlow2', 'Keras', 'PyTorch', 'Transformers','TensorFlow.js','LiteRT'].map((model) => (
                                         <Option
                                             key={model}
                                             onClick={() => {setSelectedBaselineModel(model);seIsFramewrokDropdownOpen(false)}}
