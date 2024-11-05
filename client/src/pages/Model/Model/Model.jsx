@@ -587,7 +587,7 @@ const Model = () => {
               whileTap={{ scale: 0.95 }}
             >
               <AddModelIcon />
-              <span>Add Model</span>
+              <span>Create Model</span>
             </CreateModelCard>
             {modelsList.map((model) => (
               <ModelCard key={model.model_name} onClick={() => handleModelClick(model)}>
@@ -622,10 +622,10 @@ const Model = () => {
         </ModalHeader>
       <ModelTypeCard>
         <ModelType onClick={()=>SetModelType('own')}>
-            Own model
+           Import Your Own model
         </ModelType>
         <ModelType onClick={()=>SetModelType('personalise')}>
-            Personalise Base Model
+            Personalise Open Source Model
         </ModelType>
       </ModelTypeCard>
       </>):

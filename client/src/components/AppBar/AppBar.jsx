@@ -11,19 +11,26 @@ import {  Menu, User, LogOut} from 'lucide-react';
 import Wallet from '../WalletModal/WalletModal';
 
 
-Modal.setAppElement('#root'); // For accessibility, set the app root for the modal
+
 
 const StyledAppBar = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding-top: env(safe-area-inset-top);
   height: 4.375rem;
   width: 100%;
   background-color: black;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   border-bottom: 2px solid;
   border-image: linear-gradient(90deg, #66D3FF 0%, #9A6AFF 38%, #EE75CB 71%, #FD4D77 100%);
   border-image-slice: 1;
+  font-family: Advent Pro
+`;
+
+const LogoContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  flex: 1;
 `;
 
 const Logo = styled.div`
@@ -32,60 +39,44 @@ const Logo = styled.div`
   height: 1.875rem;
   align-items: center;
   cursor: pointer;
-  
+
   img {
     height: 1.25rem;
   }
-  
-  span {
-    font-size: 1.25rem;
-    font-weight: bold;
-  }
-`;
 
-const Socials = styled.div`
-  display: flex;
-  gap: 1.75rem;
-  
-  a {
-    margin-left: 0px;
-    width: 1.75rem;
-    height: 1.75rem;
-    display: grid;
-    justify-content: center;
-    align-items: center;
+  span {
+    font-size: 1.75rem;
+    font-weight: bold;
+    color: white;
   }
 `;
 
 const UserSection = styled.div`
   display: flex;
   align-items: center;
-  justify-content: space-around;
+  margin-right: 1em;
 `;
 
 const CoinDisplay = styled.div`
   color: white;
   font-size: 1rem;
   cursor: pointer;
-  margin-left: 1em;
-  margin-right: 2em;
   display: flex;
   align-items: center;
-  
+  margin-right: 1em;
+
   img {
     height: 1.5rem;
     width: 1.5rem;
     object-fit: contain;
-    vertical-align: middle;
     margin-left: 0.5em;
   }
 `;
 
 const MenuIcon = styled(Menu)`
   cursor: pointer;
-  margin-right: 1em;
-  font-size: 1.5em;
   color: white;
+  margin-right: 1em;
 `;
 
 const MenuPanel = styled(motion.div)`
@@ -94,7 +85,7 @@ const MenuPanel = styled(motion.div)`
   top: 4.375rem;
   background-color: #fff;
   width: 15em;
-  box-shadow: 0 0.5em 1em rgba(0,0,0,0.15);
+  box-shadow: 0 0.5em 1em rgba(0, 0, 0, 0.15);
   z-index: 100;
   color: black;
   border-radius: 0.5em;
@@ -205,95 +196,53 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
 
   return (
     <StyledAppBar>
-      <Logo onClick={() => navigate('/dashboard')}>
-        <img src='assets/Images/logo.svg' alt='Logo' />
-        <span>{COMPANY_NAME}</span>
-      </Logo>
-      
-      <Socials>
-        <a href='https://x.com/Flashback_Inc_' target='_blank' rel='noopener noreferrer'>
-          <img src='assets/Images/icon-footer-x.svg' alt='Twitter' />
-        </a>
-        <a href='https://www.instagram.com/flashback_inc/' target='_blank' rel='noopener noreferrer'>
-          <img src='assets/Images/icon-footer-instagram.svg' alt='Instagram' />
-        </a>
-      </Socials>
+      <LogoContainer>
+        <Logo onClick={() => navigate('/dashboard')}>
+          <img src='/unityLogo.png' alt='Logo' />
+          <span>{COMPANY_NAME}</span>
+        </Logo>
+      </LogoContainer>
 
       <UserSection>
         {showCoins && userDetails && (
           <>
             <CoinDisplay onClick={openQrModal}>
               <span>{balance}</span>
-              <img className='unityLogo' src='/unityLogo.png' alt=''/>
+              <img className='unityLogo' src='/unityLogo.png' alt='' />
             </CoinDisplay>
-          
+
             <MenuIcon onClick={toggleMenu} />
 
             <AnimatePresence>
               {isMenuOpen && (
                 <MenuPanel
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.2 }}
-              >
-                <MenuItem><User size={18} /> {userDetails.user_phone_number}</MenuItem>
-                {/* <MenuItem><User size={18} /> Profile</MenuItem> */}
-                {/* <MenuItem><UserPlus size={18} /> Refer</MenuItem> */}
-                {/* <MenuItem onClick={() => {navigate(`/dataSharing`)}}><Coins size={18} /> Earn Rewards</MenuItem> */}
-                {/* <MenuItem><Settings size={18} /> Settings</MenuItem> */}
-                <MenuItem onClick={() => { localStorage.clear(); navigate('/'); }}><LogOut size={18} /> Logout</MenuItem>
-              </MenuPanel>
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <MenuItem>
+                    <User size={18} /> {userDetails.user_phone_number}
+                  </MenuItem>
+                  <MenuItem onClick={() => { localStorage.clear(); navigate('/'); }}>
+                    <LogOut size={18} /> Logout
+                  </MenuItem>
+                </MenuPanel>
               )}
             </AnimatePresence>
           </>
         )}
       </UserSection>
 
-      {/* <StyledModal
-        isOpen={isQrModalOpen}
-        onRequestClose={closeQrModal}
-        contentLabel="Wallet Details"
-        className="wallet-modal-content"
-        overlayClassName="modal-overlay"
-      >
-        <ModalHeader>
-          <ModalTitle>Wallet Details</ModalTitle>
-          <CloseButton onClick={closeQrModal}><X size={25} /></CloseButton>
-        </ModalHeader>
-        
-        <WalletDetails>
-          <Balance>
-            {balance} <img className='unityLogo' src='/unityLogo.png' alt=''/>
-          </Balance>
-          
-          <HashCode>
-            {formatHashCode(hashCode)}
-            <CopyButton onClick={copyHashCode} title={copyStatus}>
-              <Copy size={18} /> {copyStatus}
-            </CopyButton>
-          </HashCode>
-          
-          <QRCodeWrapper ref={qrRef}>
-            <QRCode value={hashCode} size={200} />
-          </QRCodeWrapper>
-          
-          <WithdrawButton onClick={() => navigate('/withdraw')}>
-            Withdraw
-          </WithdrawButton>
-        </WalletDetails>
-      </StyledModal> */}
-    {isWalletModalOpen &&(
-
-   
-    <Wallet
-        isOpen={isWalletModalOpen}
-        onClose={closeQrModal}
-        userPhoneNumber={localStorage.getItem('userPhoneNumber')}
-        datasetName={`Memories-${userDetails?.user_name}`}
-        showCoins={showCoins}
-      />
-    )}
+      {isWalletModalOpen && (
+        <Wallet
+          isOpen={isWalletModalOpen}
+          onClose={closeQrModal}
+          userPhoneNumber={localStorage.getItem('userPhoneNumber')}
+          datasetName={`Memories-${userDetails?.user_name}`}
+          showCoins={showCoins}
+        />
+      )}
     </StyledAppBar>
   );
 };
