@@ -197,7 +197,7 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
   return (
     <StyledAppBar>
       <LogoContainer>
-        <Logo onClick={() => navigate('/dashboard')}>
+        <Logo onClick={() => navigate('/model')}>
           <img src='/unityLogo.png' alt='Logo' />
           <span>{COMPANY_NAME}</span>
         </Logo>
