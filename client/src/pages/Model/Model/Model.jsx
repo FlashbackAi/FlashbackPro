@@ -721,7 +721,7 @@ const Model = () => {
       ) :(
         <>
         <ModalHeader>
-            <ModalTitle>Create New Model</ModalTitle>
+            <ModalTitle>Create Model</ModalTitle>
             <CloseButton onClick={() => { setIsDetailModalOpen(false); SetModelType(''); }} />
         </ModalHeader>
         <Form onSubmit={handleDetailFormSubmit}>
@@ -795,16 +795,7 @@ const Model = () => {
                     </CustomSelect>
                 </SelectWrapper>
             </div>
-    
-            <LabelAndInput
-                label="Documentation URL"
-                name="documentation_url"
-                value={formData.documentation_url}
-                handleChange={handleInputChange}
-                isRequired={true}
-                isEditable={true}
-                style={labelStyle}
-            />
+
             <LabelAndInput
                 label="Describe your Model"
                 name="model_desc"
