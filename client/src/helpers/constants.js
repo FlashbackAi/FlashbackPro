@@ -1,7 +1,7 @@
 export const SUGGESTED_PEOPLE = "Suggested People";
 export const OTHER_PEOPLE = "All Other People";
 export const FALLBACK_PAGE_ERROR_MESSAGE = "Ooops! Nothing here...";
-export const COMPANY_NAME = "Flashback Inc.";
+export const COMPANY_NAME = "Trainly";
 export const YEAR = "2024";
 export const ALL_RIGHTS_RESERVED = "All right reserved";
 export const CONTACT = "Contact:";
