@@ -622,10 +622,10 @@ const Model = () => {
         </ModalHeader>
       <ModelTypeCard>
         <ModelType onClick={()=>SetModelType('own')}>
-           Import Your Own model
+           Import Your Own Model
         </ModelType>
         <ModelType onClick={()=>SetModelType('personalise')}>
-            Personalise Open Source Model
+            Personalize an Open Source Model
         </ModelType>
       </ModelTypeCard>
       </>):
