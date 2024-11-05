@@ -496,7 +496,7 @@ const Model = () => {
       const response = await API_UTIL.post('/saveModelDetails', modelData);
   
       if (response.status === 200) {
-        toast.success("Task created successfully");
+        toast.success("Model created successfully");
         setIsDetailModalOpen(false);
         fetchModels(userDetails.org_name);
         setFormData({
@@ -508,11 +508,11 @@ const Model = () => {
         setSelectedCategory('');
         setCustomCategory('');
       } else {
-        throw new Error('Failed to save the Task');
+        throw new Error('Failed to save the Model');
       }
     } catch (error) {
       console.error('Error saving form data to backend:', error);
-      toast.error('Failed to save the Task. Please try again.');
+      toast.error('Failed to save the Model. Please try again.');
     }
   };
 
@@ -529,10 +529,10 @@ const Model = () => {
 
   const deleteModel = async () => {
     try {
-      setDeleteMessage("Deleting Task...");
+      setDeleteMessage("Deleting Model...");
       await API_UTIL.delete(`/deleteModel/${modelToDelete.model_name}/${modelToDelete.org_name}`);
       setModelsList(modelsList.filter(model => model.model_name !== modelToDelete.model_name));
-      setDeleteMessage('Task deleted successfully');
+      setDeleteMessage('Model deleted successfully');
       setShowSuccessAnimation(true);
       setTimeout(() => {
         setIsDeleteModalOpen(false);
@@ -540,8 +540,8 @@ const Model = () => {
         setShowSuccessAnimation(false);
       }, 2000);
     } catch (error) {
-      console.error("Error deleting Task:", error);
-      toast.error('Failed to delete the Task. Please try again.');
+      console.error("Error deleting Model:", error);
+      toast.error('Failed to delete the Model. Please try again.');
     }
   };
 
@@ -579,7 +579,7 @@ const Model = () => {
           </InfoItem>
         </SidePanel>
         <MainContent>
-          <OrgTitle>Tasks</OrgTitle>
+          <OrgTitle>Models</OrgTitle>
           <ModelList>
             <CreateModelCard
               onClick={() => setIsDetailModalOpen(true)}
@@ -587,7 +587,7 @@ const Model = () => {
               whileTap={{ scale: 0.95 }}
             >
               <AddModelIcon />
-              <span>Add Task</span>
+              <span>Add Model</span>
             </CreateModelCard>
             {modelsList.map((model) => (
               <ModelCard key={model.model_name} onClick={() => handleModelClick(model)}>
@@ -632,12 +632,12 @@ const Model = () => {
       modelType === 'own' ?(
       <>   
         <ModalHeader>
-          <ModalTitle>Create New Task</ModalTitle>
+          <ModalTitle>Create New Model</ModalTitle>
           <CloseButton onClick={() => {setIsDetailModalOpen(false); SetModelType('');}} />
         </ModalHeader>
         <Form onSubmit={handleDetailFormSubmit}>
           <LabelAndInput
-            label="Task Name"
+            label="Model Name"
             name="model_name"
             value={formData.model_name}
             handleChange={handleInputChange}
@@ -646,7 +646,7 @@ const Model = () => {
             style={labelStyle}
           />
       <div>
-        <label htmlFor="model_category">Task Category</label>
+        <label htmlFor="model_category">Model Category</label>
         <SelectWrapper>
           <CustomSelect>
             <SelectButton
@@ -707,7 +707,7 @@ const Model = () => {
           style={labelStyle}
         />
         <LabelAndInput
-          label="Describe your Task"
+          label="Describe your Model"
           name="model_desc"
           value={formData.model_desc}
           handleChange={handleInputChange}
@@ -715,18 +715,18 @@ const Model = () => {
           isEditable={true}
           style={labelStyle}
         />
-        <SubmitButton type="submit">Create Task</SubmitButton>
+        <SubmitButton type="submit">Create Model</SubmitButton>
         </Form>
       </>
       ) :(
         <>
         <ModalHeader>
-            <ModalTitle>Create New Task</ModalTitle>
+            <ModalTitle>Create New Model</ModalTitle>
             <CloseButton onClick={() => { setIsDetailModalOpen(false); SetModelType(''); }} />
         </ModalHeader>
         <Form onSubmit={handleDetailFormSubmit}>
             <LabelAndInput
-                label="Task Name"
+                label="Model Name"
                 name="model_name"
                 value={formData.model_name}
                 handleChange={handleInputChange}
@@ -806,7 +806,7 @@ const Model = () => {
                 style={labelStyle}
             />
             <LabelAndInput
-                label="Describe your Task"
+                label="Describe your Model"
                 name="model_desc"
                 value={formData.model_desc}
                 handleChange={handleInputChange}
@@ -814,7 +814,7 @@ const Model = () => {
                 isEditable={true}
                 style={labelStyle}
             />
-            <SubmitButton type="submit">Create Task</SubmitButton>
+            <SubmitButton type="submit">Create Model</SubmitButton>
         </Form>
     </>
     
@@ -845,7 +845,7 @@ const Model = () => {
           </>
         ) : (
           <>
-            <p>Are you sure you want to delete this Task?</p>
+            <p>Are you sure you want to delete this Model?</p>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem' }}>
               <DeleteButton onClick={deleteModel}>Confirm</DeleteButton>
               <CancelButton onClick={closeDeleteModal}>Cancel</CancelButton>
