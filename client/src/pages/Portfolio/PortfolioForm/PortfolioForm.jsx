@@ -7,7 +7,7 @@ import LoadingSpinner from '../../../components/Loader/LoadingSpinner';
 import LabelAndInput from '../../../components/molecules/LabelAndInput/LabelAndInput';
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import Masonry from "react-masonry-css";
-import { Heart, Edit2,Upload, X,ChevronUp, ChevronDown} from "lucide-react";
+import { Heart, Edit2,Upload, X,ChevronUp, ChevronDown,ExternalLink} from "lucide-react";
 import { FaInstagram, FaYoutube, FaFacebook } from "react-icons/fa";
 import { useDropzone } from 'react-dropzone';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -1062,7 +1062,7 @@ const toggleFolder = (index) => {
           <ActionButton onClick={handleEditClick} >
               <Edit2 size={18} />
           </ActionButton>
-          <OrgName>{formData.org_name}</OrgName>
+          <OrgName>{formData.org_name} <ExternalLink size={18} onClick={()=> window.open(`/portfolio/${userName}`, "_blank")}/></OrgName>
           <SocialLinks>
             <InfoItem>
               <FaInstagram size={18} />

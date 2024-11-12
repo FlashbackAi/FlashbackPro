@@ -1455,7 +1455,7 @@ const ProfilePanel = ({ userDetails, isOpen, togglePanel }) => {
             />
           </BannerImageContainer>
           <ProfileInfo>
-            <BrandName>{userDetails.org_name || userDetails.user_phone_number}</BrandName>
+            <BrandName>{userDetails.org_name || userDetails.user_phone_number} <ExternalLink size={18} onClick={()=> window.open(`/portfolio/${userDetails.user_name}`, "_blank")}/></BrandName>
             <SocialLinks>
               {userDetails.social_media?.instagram && (
                 <SocialLink href={userDetails.social_media.instagram} target="_blank" rel="noopener noreferrer">
