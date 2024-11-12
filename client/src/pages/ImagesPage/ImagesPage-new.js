@@ -1,7 +1,7 @@
   import React, { useState, useEffect, useRef } from "react";
   import { useParams } from "react-router-dom";
   import LoadingSpinner from "../../components/Loader/LoadingSpinner";
-  import Modal from "../../components/ImageModal/ImageModal";
+  import ImageModal from "../../components/ImageModal/ImageModal";
   import { useNavigate, useLocation } from "react-router-dom";
   import { LazyLoadImage } from "react-lazy-load-image-component";
   import PlaceholderImage from "../../media/images/blurredLogo.png";
@@ -776,7 +776,7 @@ const ImageWrapper = styled.div`
 
       {clickedImg && (
         <ImageModalWrapper>
-        <Modal
+        <ImageModal
                       clickedImg={clickedImg}
                       clickedImgIndex={clickedImgIndex}
                       clickedImgFavourite={clickedImgFavourite}

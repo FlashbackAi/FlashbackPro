@@ -870,6 +870,7 @@ const EventDetails = () => {
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [isPeopleLoading, setIsPeopleLoading] = useState(false);
   const [eventDetails, setEventDetails] = useState(null);
+  const [lastFavIndex, setLastFavIndex] = useState(-1);
   const [images, setImages] = useState([]);
   const [continuationToken, setContinuationToken] = useState(null);
   const [hasMore, setHasMore] = useState(true);
@@ -941,7 +942,13 @@ const EventDetails = () => {
   useEffect(() => {
     fetchEventData(eventName);
     fetchUserDetails();
+    
   }, [eventName]);
+
+  useEffect(()=>{
+    if(event)
+    fetchEventFavouriteImages();
+  },[event]);
 
   const fetchEventData = async (eventName) => {
     setIsPageLoading(true);
@@ -1001,7 +1008,17 @@ const EventDetails = () => {
           isFavourites: false,
         }));
   
-        setImages((prevImages) => [...prevImages, ...formattedImages]);
+        setImages((prevImages) => {
+          const existingImageUrls = new Set(prevImages.map((image) => image.original));
+
+          // Filter out any images that already exist in the current state
+          const newImages = formattedImages.filter(
+            (image) => !existingImageUrls.has(image.original)
+          );
+
+          // Return a new array with the existing images and the new favorite images
+          return [...prevImages, ...newImages];
+        });
         setContinuationToken(lastEvaluatedKey);
         setHasMore(Boolean(lastEvaluatedKey));
       } else {
@@ -1671,9 +1688,110 @@ const uploadFlashbackFiles = async () => {
     };
   }, []);
 
-  const handleFavourite = (index, imageUrl, isFavourite) => {
-    // Implement your favourite logic here
-    console.log(`Image at index ${index} is now ${isFavourite ? 'favourite' : 'not favourite'}`);
+  const fetchEventOwners = async () => {
+    try {
+      const response = await API_UTIL.get(`/getEventOwners/${event.event_id}`);
+      if (response.status ===200){
+        return response.data;
+      } else{
+        throw new Error('Failed to fetch');
+      }
+    } catch (err) {
+      console.log(err.message);
+      throw new Error('Failed to fetch');
+    }
+  };
+
+  const fetchEventFavouriteImages = async () => {
+    setIsGalleryLoading(true);
+    try {
+      const eventOwners = await fetchEventOwners();
+      const uniqueFavoriteImages = new Map(); // Use a Map to track unique images by URL
+  
+      for (const owner of eventOwners.owners) {
+        const response = await API_UTIL.get(`/getOwnerFavImages/${eventOwners.folder_name}/${owner}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+  
+        if (response.status === 200) {
+          // Process each image in the response data
+          response.data.forEach((obj) => {
+            const originalUrl = obj.s3_url;
+            const thumbnailUrl = originalUrl.replace('/Deliverables/', '/Deliverables/thumbnails/');
+  
+            // Only add to the Map if the image URL is not already present
+            if (!uniqueFavoriteImages.has(originalUrl)) {
+              uniqueFavoriteImages.set(originalUrl, {
+                original: originalUrl,
+                thumbnail: thumbnailUrl,
+                isFavourites: true,
+              });
+            }
+          });
+        }
+      }
+  
+      // Convert the Map to an array for setting the state
+      const allUniqueFavoriteImages = Array.from(uniqueFavoriteImages.values());
+  
+      // Set lastFavIndex to the total number of unique favorite images - 1
+      setLastFavIndex(allUniqueFavoriteImages.length-1);
+  
+      // Set images with favorites at the beginning
+      setImages((prevImages) => {
+        const favImageUrls = new Set(allUniqueFavoriteImages.map((image) => image.original));
+        const nonFavImages = prevImages.filter((image) => !favImageUrls.has(image.original));
+        return [...allUniqueFavoriteImages, ...nonFavImages];
+      });
+    } catch (error) {
+      console.log(error.message);
+    } finally {
+      setIsGalleryLoading(false);
+    }
+  };
+  
+
+  const handleFavourite = async (index, imageUrl, isFav) => {
+    if (isFav) {
+      const favIndex = lastFavIndex + 1;
+      const tempImages = [...images];
+      tempImages[index].isFavourites = true;
+      tempImages.splice(favIndex, 0, tempImages.splice(index, 1)[0]);
+      displayFavIcon(favIndex);
+      // setClickedImgIndex(favIndex);
+      setLastFavIndex((favIndex) => favIndex + 1);
+      setImages(tempImages);
+    } else {
+      // to do: remove from favorites, adjust position in array
+      const unFavIndex = lastFavIndex;
+      const tempImages = [...images];
+      tempImages[index].isFavourites = false;
+      tempImages.splice(unFavIndex, 0, tempImages.splice(index, 1)[0]);
+      hideFavIcon(unFavIndex);
+      // setClickedImgIndex(unFavIndex);
+      setLastFavIndex((favIndex) => favIndex - 1);
+      setImages(tempImages);
+    }
+    await API_UTIL.post("/setFavouritesNew", {
+      imageUrl,
+      userId:userDetails.user_id,
+      isFav,
+    });
+  };
+
+  const displayFavIcon = (index) => {
+    console.log(index);
+    document
+      .querySelector(`svg[data-key="${index}"]`)
+      .classList.remove("hidden");
+  };
+
+  const hideFavIcon = (index) => {
+    console.log(index);
+    document.querySelector(`svg[data-key="${index}"]`).classList.add("hidden");
   };
 
   const formatEventName = (name) => {
@@ -1978,6 +2096,10 @@ const handleEventImageUpdate = async (e) => {
 const encodeURIWithPlus = (uri) => {
   return uri.replace(/ /g, '+');
 };
+const toggleFavourite = (index) => {
+  const isFav = !images[index].isFavourites;
+  handleFavourite(index, images[index].original, isFav);
+};
 
 const createFlashback =({
 
@@ -2091,7 +2213,16 @@ const createFlashback =({
                               alt={`img ${index}`}
                               onClick={() => handleImageClick(imageData, index)}
                             />
+                            <Heart
+                            data-key={index}
+                            className={`heart-icon ${imageData.isFavourites ? "bgRed" : ""}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleFavourite(index);
+                            }}
+                              />
                             </ImageWrapper>
+                            
                         ))}
                       </StyledMasonry>
                       <div ref={loader} style={{ height: '20px', marginTop: '20px' }} />
@@ -2275,7 +2406,7 @@ const createFlashback =({
                   <FlashbackGrid>
                     <FlashbackTile onClick={()=>setIsCreateFlashbackModalOpen(true)}>
                       <Plus size={24} />
-                      <span style={{ marginTop: '8px', display: 'block', textAlign: 'center'}}>Create Falshback</span>
+                      <span style={{ marginTop: '8px', display: 'block', textAlign: 'center'}}>Create Flashback</span>
                     </FlashbackTile>
                     <FlashbackTile onClick={() => navigate(`/flashs/favourites/${event.event_id}/`)}>
                     <Heart size={24} />
@@ -2308,6 +2439,7 @@ const createFlashback =({
         clickedUrl={clickedUrl}
         handleBackButton={handleBackButton}
         images={images}
+        handleFavourite={handleFavourite}
         />
         </ImageModalWrapper>
       )}
