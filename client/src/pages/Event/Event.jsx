@@ -841,7 +841,7 @@ const Event = () => {
           return acc;
         }
       }, []);
-
+      uniqueEvents.sort((a, b) => a.event_name.localeCompare(b.event_name));
       setEvents(uniqueEvents);
 
       const attendedResponse = await API_UTIL.get(`/getUserAttendedEvents/${userPhoneNumber}`);

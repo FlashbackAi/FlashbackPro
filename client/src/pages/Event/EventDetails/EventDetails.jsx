@@ -944,6 +944,10 @@ const EventDetails = () => {
     fetchUserDetails();
     
   }, [eventName]);
+  useEffect(()=>{
+
+    console.log(isPeopleLoading);
+  },[isPeopleLoading]);  
 
   useEffect(()=>{
     if(event)
@@ -1087,24 +1091,32 @@ const EventDetails = () => {
       }
     } catch (error) {
       console.error("Error fetching user thumbnails:", error);
-    } finally {
-      setIsPeopleLoading(false);
-    }
+    } 
   };
 
   useEffect(() => {
-    if (event && activeTab === 'people') {
-      fetchEventInvitations();
-      if(event.uploaded_files>=0){
-        fetchUserThumbnails();
-      }else{
-        setUserCategoryTab('invited');
+    const fetchData = async () => {
+      if (event && activeTab === 'people') {
+        setIsPeopleLoading(true); // Start loading
+  
+        try {
+          await fetchEventInvitations(); // Wait for fetchEventInvitations to complete
+          if (event.uploaded_files >= 0) {
+            await fetchUserThumbnails(); // Only fetch thumbnails if uploaded_files condition is met
+          } else {
+            setUserCategoryTab('invited'); // Set tab if condition isn't met
+          }
+        } catch (err) {
+          console.error("Error fetching data:", err);
+        } finally {
+          setIsPeopleLoading(false); // End loading
+        }
       }
-       
-     
-       
-    }
+    };
+  
+    fetchData(); // Call the async function
   }, [event, activeTab]);
+  
 
   const statusCounts = useMemo(() => {
     return eventInvitations.reduce((acc, inv) => {

@@ -549,7 +549,7 @@ app.post('/trigger-flashback', async (req, res) => {
               continue; // Skip to the next phone number
             }
 
-            const mappedUser = await mapUserIdAndPhoneNumber(phoneNumber,portraitS3Url,folderName,'');
+            const mappedUser = await mapUserIdAndPhoneNumber(phoneNumber,portraitS3Url,folderName,'',false);
             logger.info(result)
           } catch (error) {
             logger.info("Failure in marking the userId and phone number:", error);
@@ -673,11 +673,11 @@ async function searchUsersByImage(portraitS3Url, phoneNumber) {
 }
 
 //async function mapUserIdAndPhoneNumber(phoneNumber,imageUrl,eventName,userId){
-  async function mapUserIdAndPhoneNumber(phoneNumber, imageUrl, eventName, userId) {
+  async function mapUserIdAndPhoneNumber(phoneNumber, imageUrl, eventName, userId, deletePortrait = true) {
     try {
       // Call searchUsersByImage API with portraitS3Url
       const result = await searchUsersByImage(imageUrl, phoneNumber);
-      if (!result) {
+      if (!result && deletePortrait) {
         logger.info("matched user not found: " + phoneNumber);
         logger.info("deleting the S3 url for unmacthed userId->" + userId);
         const userDeleteParams = {
@@ -1162,7 +1162,7 @@ app.post('/userIdPhoneNumberMapping',async (req,res) =>{
     const eventName = req.body.eventName;
     const userId = req.body.userId;
     const imageUrl = "https://flashbackuserthumbnails.s3.ap-south-1.amazonaws.com/"+phoneNumber+".jpg";
-    const result = await mapUserIdAndPhoneNumber(phoneNumber,imageUrl,eventName,userId);
+    const result = await mapUserIdAndPhoneNumber(phoneNumber,imageUrl,eventName,userId,true);
     logger.info(result)
     logger.info("Succesfully mapped userId and phone number");
     res.send(result);
@@ -2416,7 +2416,7 @@ app.get('/userThumbnailsByEventId/:eventId', async (req, res) => {
         const imageUrl = userObj.potrait_s3_url; // Adjust according to your user data structure
         console.log("mapping user_id with phone Number : ",phoneNumber)
         try {
-          const result = await mapUserIdAndPhoneNumber(phoneNumber, imageUrl, eventName, user.user_id);
+          const result = await mapUserIdAndPhoneNumber(phoneNumber, imageUrl, eventName, user.user_id,false);
           if (result && result.Attributes && result.Attributes.user_id) {
             user.user_id = result.Attributes.user_id; // Update the user with the mapped user_id
             logger.info(`Mapped user_id ${user.user_id} for phone number ${phoneNumber}`);
@@ -2720,44 +2720,75 @@ function extractFolderNames(contents) {
 }
 
 
-app.get('/downloadFolder/:folderName', async (req, res) => {
+app.get('/downloadFlashbacks/:eventId/:flashbackName', async (req, res) => {
+  try {
+      const { eventId, flashbackName } = req.params;
+      const eventDetails = await getEventDetailsById(eventId);
+    const folderName = `${eventDetails.folder_name}/${flashbackName}`;
 
-  const folderName = req.params.folderName;
+    logger.info(`Downloading ZIP folder: ${folderName}`);
 
-  
-  logger.info("downloading ZIP folder :"+folderName)
+    // List objects with the specified prefix (folder path)
+    const data = await s3.listObjectsV2({ Bucket: flashbacksBucketname, Prefix: folderName }).promise();
 
-  s3.listObjectsV2({ Bucket: bucketName, Prefix: folderName }, async (err, data) => {
-    if (err) {
-      // Handle error
-      return res.status(500).send(err);
+    if (!data.Contents || data.Contents.length === 0) {
+      // Handle empty folder (no files to download)
+      return res.status(404).send({ error: 'No files found to download.' });
     }
 
     const zip = archiver('zip', { zlib: { level: 9 } });
+
+    // Handle archive errors
     zip.on('error', err => {
-      // Handle errors
-      res.status(500).send(err);
+      logger.error('Archive error:', err);
+      if (!res.headersSent) {
+        res.status(500).send({ error: 'Failed to create archive.' });
+      } else {
+        res.end();
+      }
     });
 
     // Set the archive name
-    res.attachment(`${folderName}.zip`);
+    res.attachment(`${flashbackName}_${eventId}.zip`);
 
     // Pipe archive data to the response
     zip.pipe(res);
 
+    // Process each item
     for (const item of data.Contents) {
       const fileKey = item.Key;
-      
+
       // Stream files directly from S3 to the ZIP file
-      const fileStream = s3.getObject({ Bucket: bucketName, Key: fileKey }).createReadStream();
-      zip.append(fileStream, { name: path.basename(fileKey) });
+      const s3Stream = s3.getObject({ Bucket: flashbacksBucketname, Key: fileKey }).createReadStream();
+
+      // Handle S3 stream errors
+      s3Stream.on('error', err => {
+        logger.error(`Error reading S3 object ${fileKey}:`, err);
+        // Optionally handle the error (e.g., skip the file or append an error message to the ZIP)
+      });
+
+      // Append the file to the archive, preserving the folder structure after the specified prefix
+      const relativePath = path.relative(folderName, fileKey);
+      logger.info("Image downloaded from cloud: " + fileKey);
+      zip.append(s3Stream, { name: relativePath });
     }
 
     // Finalize the archive
     zip.finalize();
-  });
-});
 
+    // Optional: Handle when the response is finished
+    res.on('finish', () => {
+      logger.info('Download completed successfully.');
+    });
+  } catch (err) {
+    logger.error('Error:', err);
+    if (!res.headersSent) {
+      res.status(500).send({ error: 'An error occurred while processing your request.' });
+    } else {
+      res.end();
+    }
+  }
+});
 async function uploadLowResoltionImages(folderName,files)
 {
   const uploadPromises = files.map(async (file) => {
@@ -3013,6 +3044,112 @@ app.post('/downloadImage', async (req, res) => {
     res.status(500).send('Error getting images from S3');
   }
 });
+
+app.get('/download-images', async (req, res) => {
+  const imageUrls = req.query.urls;
+
+  if (!imageUrls) {
+    return res.status(400).json({ error: 'No image URLs provided.' });
+  }
+
+  // Convert imageUrls to an array if it's a single string
+  const urls = Array.isArray(imageUrls) ? imageUrls : [imageUrls];
+
+  // Set headers for ZIP download
+  res.writeHead(200, {
+    'Content-Type': 'application/zip',
+    'Content-Disposition': 'attachment; filename=images.zip',
+  });
+
+  const archive = archiver('zip', { zlib: { level: 9 } });
+
+  // Handle archive errors
+  archive.on('error', (err) => {
+    logger.error('Archive error:', err);
+    // Abort the archive and end the response
+    res.end();
+  });
+
+  // Pipe the archive data to the response
+  archive.pipe(res);
+
+  // Function to process each URL
+  async function processUrl(url) {
+    try {
+      const { Bucket, Key } = parseS3Url(url);
+      logger.info(`Fetching from S3 - Bucket: ${Bucket}, Key: ${Key}`);
+
+      // Get the image from S3
+      const s3Stream = s3.getObject({ Bucket, Key }).createReadStream();
+
+      // Handle S3 stream errors
+      s3Stream.on('error', (err) => {
+        logger.error(`S3 Stream error for ${Key}:`, err);
+        // Optionally append an error message file
+        archive.append(`Error fetching file: ${err.message}`, { name: `error_${Key.split('/').pop()}.txt` });
+      });
+
+      // Append the image stream to the archive
+      archive.append(s3Stream, { name: Key.split('/').pop() });
+    } catch (error) {
+      logger.error(`Error processing URL ${url}:`, error);
+      // Optionally append an error message file
+      archive.append(`Error processing URL: ${error.message}`, { name: `error_${Key.split('/').pop()}.txt` });
+    }
+  }
+
+  // Process all URLs
+  const processingPromises = urls.map((url) => processUrl(url));
+
+  // Wait for all URLs to be processed
+  Promise.all(processingPromises)
+    .then(() => {
+      // Finalize the archive after all files have been appended
+      archive.finalize();
+    })
+    .catch((err) => {
+      console.error('Error during processing URLs:', err);
+      // Abort the archive and end the response
+      res.end();
+    });
+});
+
+// Helper function to parse S3 URL
+function parseS3Url(s3Url) {
+  try {
+    const url = new URL(s3Url);
+
+    let Bucket;
+    let Key;
+
+    if (url.hostname.endsWith('.amazonaws.com')) {
+      const hostnameParts = url.hostname.split('.');
+      if (hostnameParts[0] === 's3') {
+        // Path-style URL: https://s3.amazonaws.com/bucket-name/key
+        Bucket = url.pathname.split('/')[1];
+        Key = url.pathname.split('/').slice(2).join('/');
+      } else {
+        // Virtual-hosted–style URL: https://bucket-name.s3.amazonaws.com/key
+        Bucket = hostnameParts[0];
+        Key = url.pathname.substring(1);
+      }
+    } else {
+      throw new Error('Invalid S3 URL format');
+    }
+
+    // Decode the Key in case it was URL-encoded
+    Key = decodeURIComponent(Key);
+
+    return { Bucket, Key };
+  } catch (error) {
+    console.error('Error parsing S3 URL:', error);
+    throw error;
+  }
+}
+
+
+
+
 
 
 
@@ -3383,7 +3520,7 @@ app.post('/uploadUserPotrait', upload.single('image'), async (req, res) => {
             logger.info(item)
             console.log(userData);
             if(userData.Items[0].potrait_s3_url){
-            const mappedUser = await mapUserIdAndPhoneNumber(item.user_phone_number,userData.Items[0].potrait_s3_url,eventName,'');
+            const mappedUser = await mapUserIdAndPhoneNumber(item.user_phone_number,userData.Items[0].potrait_s3_url,eventName,'',false);
             logger.info("mapped for user: "+mappedUser);
             }
             else{

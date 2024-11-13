@@ -11,6 +11,43 @@ import AppBar from "../../components/AppBar/AppBar";
 import MiniHeroComponent from "../../components/MiniHeroComponent/MiniHeroComponent";
 import Masonry from "react-masonry-css";
 import defaultBanner from '../../media/images/defaultbanner.jpg';
+import JSZip from "jszip"; // Import JSZip
+import { saveAs } from "file-saver"; // Import FileSaver.js for saving files
+import styled, { createGlobalStyle } from 'styled-components';
+import {Download} from 'lucide-react';
+
+const ActionButton = styled.button`
+  background-color: #2a2a2a;
+  color: white;
+  border: none;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  margin: .8rem;
+  width:30%;
+
+  &:hover {
+    box-shadow: 0 0 10px rgba(64, 224, 208, 0.5);
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 1;
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 768px) {
+  padding: 0.3rem;
+  font-size: 0.8rem;
+  width:60%
+}
+`;
 
 function FlashbacksImages() {
   const [isLoading, setIsLoading] = useState(false);
@@ -28,6 +65,8 @@ function FlashbacksImages() {
   const loader = useRef(null);
   const [bannerImage, setBannerImage] = useState('');
   const [eventOwners, setEventOwners] = useState([]);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [showDownload, setShowDownload] = useState(true);
 
   const [breakpointColumnsObj, setBreakpointColumnsObj] = useState({
     default: 6,
@@ -55,7 +94,8 @@ function FlashbacksImages() {
   useEffect(() => {
     // Initial image fetch
     if(flashbackName === 'favourites'){
-      fetchEventFavouriteImages();
+      setShowDownload(false);
+      fetchEventFavouriteImages();     
     }else
     fetchImages();
   },[eventId]);
@@ -269,6 +309,72 @@ function FlashbacksImages() {
     };
   }, [fetchImages, hasMore, isLoading]); // Updated dependencies
 
+  // const downloadAllImages = async () => {
+  //   setIsDownloading(true);
+  //   try{
+  //   const zip = new JSZip();
+  //   const imgFolder = zip.folder("images");
+
+  //   for (const image of images) {
+  //     const response = await fetch(image.original,{ mode: 'no-cors' });
+  //     const blob = await response.blob();
+  //     const fileName = image.original.split('/').pop();
+  //     imgFolder.file(fileName, blob);
+  //   }
+
+  //   zip.generateAsync({ type: "blob" }).then((content) => {
+  //     saveAs(content, "images.zip");
+  //   });
+  // }
+  // catch(err){
+  //   console.log(err);
+  // }
+  // finally{
+  //   setIsDownloading(false);
+  // }
+  // };
+
+
+  // const downloadAllImages = async () => {
+  //   setIsDownloading(true);
+  //   try {
+  //     for (const image of images) {
+  //       await downloadImage(image.original);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error downloading images:", error);
+  //   } finally {
+  //     setIsDownloading(false);
+  //   }
+  // };
+  const downloadAllImages = () => {
+    setIsDownloading(true);
+
+    // Construct the download URL with route parameters
+    const downloadUrl = `${process.env.REACT_APP_SERVER_IP}/downloadFlashbacks/${encodeURIComponent(eventId)}/${encodeURIComponent(flashbackName)}`;
+
+    // Create a temporary anchor element
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.setAttribute('download', `${flashbackName}_${eventId}.zip`);
+
+    // Append the link to the body
+    document.body.appendChild(link);
+
+    // Simulate a click to trigger the download
+    link.click();
+
+    // Clean up by removing the temporary link
+    document.body.removeChild(link);
+
+    // Reset the button state after a delay
+    const resetDelay = 10000; // 10 seconds, adjust as needed
+    setTimeout(() => {
+      setIsDownloading(false);
+    }, resetDelay);
+  };
+
+
   return (
     <div className="page-container">
       {isLoading && images.length === 0 ? (
@@ -285,6 +391,19 @@ function FlashbacksImages() {
             />
           )}
           <div className="content-wrap">
+          {images.length > 0 && showDownload &&  (
+            
+              <ActionButton onClick={downloadAllImages} title="Download QR Code">
+              {isDownloading ? (
+              <span >Downloading...</span>
+            ) : (
+              <>
+                <Download size={18}/>
+                <span style={{marginLeft:'.5em', fontSize:'1.2em'}}>Download All </span>
+              </>
+            )}
+            </ActionButton>
+            )}
             {images.length > 0 ? (
               <div className="im-wrapper">
                 <Masonry
