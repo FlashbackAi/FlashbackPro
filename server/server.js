@@ -3166,7 +3166,7 @@ app.post('/uploadUserPotrait', upload.single('image'), async (req, res) => {
   try {
     // Upload image to S3
     const data = await s3.upload(params).promise();
-    console.log('Upload successful:', data.Location);
+    logger.info('Upload successful:', data.Location);
 
     // Update DynamoDB with the S3 URL
     const updateParams = {
@@ -3181,13 +3181,13 @@ app.post('/uploadUserPotrait', upload.single('image'), async (req, res) => {
 
     const updateResult = await docClient.update(updateParams).promise();
 
-    console.log('updating s3 image  url for user is successful:', updateResult);
+    logger.info('updating s3 image  url for user is successful:', updateResult);
     //const walletStatus = await handleWalletCreation(username);
     
     //res.json({ potrait_s3_url: data.Location , walletInfo:walletStatus});
     res.json({ potrait_s3_url: data.Location});
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Error:', error);
     res.status(500).json({ error: 'Error uploading image' });
   }
 });
