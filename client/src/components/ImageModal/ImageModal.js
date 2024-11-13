@@ -83,33 +83,39 @@ const ImageModal = ({
   };
 
   const downloadCurrentImage = async (e) => {
-    e.stopPropagation(); // Prevents the event from bubbling up
+    e.stopPropagation();
     if (!clickedImg) {
       console.error("No current image found");
       return;
     }
-
+  
     setIsDownloading(true);
     try {
-      const response = await API_UTIL.post(`/downloadImage`, {
+      const response = await API_UTIL.post('/downloadImage', {
         imageUrl: clickedUrl,
       });
+  
       if (response.status === 200) {
         const link = document.createElement("a");
         link.href = response.data;
-        link.download = clickedUrl;
+        // Extract filename from Content-Disposition header if needed
+        // Or just use the last part of the URL
+        const fileName = clickedUrl.split('/').pop() || 'image.jpg';
+        link.download = fileName;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
       } else {
-        throw new Error("Failed to fetch images");
+        throw new Error("Failed to fetch image");
       }
     } catch (error) {
-      console.error("Error fetching images:", error);
+      console.error("Error downloading image:", error);
     } finally {
       setIsDownloading(false);
     }
   };
+
+
 
   const onLoad = () => {
     const lazySpan = document.querySelector(".lazyImage");

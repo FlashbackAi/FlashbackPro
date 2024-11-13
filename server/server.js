@@ -3020,6 +3020,10 @@ app.post('/downloadImage', async (req, res) => {
 
     // Decode the key to handle any encoded characters (like %20)
     key = decodeURIComponentSafely(key.replace(/\+/g, '%20'));
+    let fileName = key.split('/').pop();
+    if (!fileName.toLowerCase().endsWith('.jpg')) {
+      fileName += '.jpg';
+    }
 
     logger.info("Image downloading started from cloud: " + bucketName + " -> " + imageUrl);
 
@@ -3038,6 +3042,7 @@ app.post('/downloadImage', async (req, res) => {
     }).promise();
 
     logger.info("Image downloaded from cloud: " + imageUrl);
+    res.set('Content-Disposition', `attachment; filename="${fileName}"`);
     res.json(`data:image/jpeg;base64,${imageData.Body.toString('base64')}`);
   } catch (err) {
     logger.error("Error downloading image: " + imageUrl, err);
