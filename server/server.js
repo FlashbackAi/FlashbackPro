@@ -20,6 +20,7 @@ const ExcelJS = require('exceljs');
 //const dotenv = require('dotenv');
 const WhatsAppSender = require('./WhatsappSender');
 const { v4: uuidv4 } = require('uuid');
+const busboy = require('busboy');
 //const { log } = require('console');
 //const { Account,AptosConfig, Aptos, AptosClient,Network, TxnBuilderTypes, BCS,Ed25519PrivateKey,AccountAddress } = require( '@aptos-labs/ts-sdk');
 const { initializeConfig, getConfig } = require('./config');
@@ -692,7 +693,7 @@ async function searchUsersByImage(portraitS3Url, phoneNumber) {
         const deltResult = docClient.update(userDeleteParams).promise();
         logger.info("deleted the s3 url for userId ->" + userId);
         return;
-      }
+      }e
       const matchedUserId = result.matchedUserId[0];
       if (userId && matchedUserId != userId) {
         logger.info("deleting the S3 url for unmacthed userId->" + matchedUserId);
@@ -5834,50 +5835,114 @@ async function updateImageUploadData(s3Result, userPhoneNumber, originalName, ev
   }
 }
 
-app.post('/uploadFiles/:eventName/:userPhoneNumber/:folder_name', upload.array('files', 50), async (req, res) => {
-  const { eventName, userPhoneNumber, folder_name } = req.params;
+// app.post('/uploadFiles/:eventName/:userPhoneNumber/:folder_name', upload.array('files', 50), async (req, res) => {
+//   const { eventName, userPhoneNumber, folder_name } = req.params;
 
-  logger.info("Started uploading files for the event : "+folder_name);
-  const uploadPromises = req.files.map(async (file) => {
-    const fileId = `${folder_name}/${file.originalname}`;
+//   logger.info("Started uploading files for the event : "+folder_name);
+//   const uploadPromises = req.files.map(async (file) => {
+//     const fileId = `${folder_name}/${file.originalname}`;
+//     const s3Params = {
+//       Bucket: imagesBucketName,
+//       Key: fileId,
+//       Body: file.buffer,
+//       ContentType: file.mimetype
+//     };
+
+//     try {
+//       const s3Result = await s3.upload(s3Params).promise();
+//       // Update DynamoDB with the new entry
+//       await updateImageUploadData(s3Result, userPhoneNumber, file.originalname, eventName, folder_name);
+    
+//       return s3Result;
+//     } catch (error) {
+//       console.error(`Error uploading file ${file.originalname}:`, error);
+//       throw error;
+//     }
+//   });
+
+//   try {
+//     const results = await Promise.allSettled(uploadPromises);
+//     const successfulUploads = results.filter(r => r.status === 'fulfilled').map(r => r.value);
+//     const failedUploads = results.filter(r => r.status === 'rejected').map(r => r.reason);
+
+//     logger.info("Upload process completed for the event : "+folder_name)
+//     res.status(200).json({
+//       message: 'Upload process completed',
+//       successfulUploads,
+//       failedUploads,
+//       totalFiles: req.files.length
+//     });
+//   } catch (error) {
+//     console.error('Error in upload process:', error);
+//     res.status(500).json({ error: 'Error in upload process' });
+//   }
+// });
+
+// Function to update DynamoDB
+
+app.post('/uploadFiles/:eventName/:userPhoneNumber/:folder_name', (req, res) => {
+  const { eventName, userPhoneNumber, folder_name } = req.params;
+  logger.info("Started uploading files for the event: " + folder_name);
+
+  const bb = busboy({ headers: req.headers });
+  const uploadPromises = [];
+
+  bb.on('file', (fieldname, fileStream, filename, encoding, mimetype) => {
+    const fileId = `${folder_name}/${filename.filename}`;
     const s3Params = {
       Bucket: imagesBucketName,
       Key: fileId,
-      Body: file.buffer,
-      ContentType: file.mimetype
+      Body: fileStream, // Stream the file directly
+      ContentType: mimetype,
     };
 
+    // Create a promise for each upload
+    const uploadPromise = s3.upload(s3Params).promise()
+      .then(async (s3Result) => {
+        // Update DynamoDB with the new entry
+        await updateImageUploadData(s3Result, userPhoneNumber, filename, eventName, folder_name);
+        return s3Result;
+      })
+      .catch((error) => {
+        console.error(`Error uploading file ${filename}:`, error);
+        throw error;
+      });
+
+    uploadPromises.push(uploadPromise);
+  });
+
+  bb.on('field', (fieldname, val) => {
+    // Handle any form fields if necessary
+  });
+
+  bb.on('finish', async () => {
     try {
-      const s3Result = await s3.upload(s3Params).promise();
-      // Update DynamoDB with the new entry
-      await updateImageUploadData(s3Result, userPhoneNumber, file.originalname, eventName, folder_name);
-    
-      return s3Result;
+      const results = await Promise.allSettled(uploadPromises);
+      const successfulUploads = results.filter(r => r.status === 'fulfilled').map(r => r.value);
+      const failedUploads = results.filter(r => r.status === 'rejected').map(r => r.reason);
+
+      logger.info("Upload process completed for the event: " + folder_name);
+      res.status(200).json({
+        message: 'Upload process completed',
+        successfulUploads,
+        failedUploads,
+        totalFiles: successfulUploads.length + failedUploads.length,
+      });
     } catch (error) {
-      console.error(`Error uploading file ${file.originalname}:`, error);
-      throw error;
+      console.error('Error in upload process:', error);
+      res.status(500).json({ error: 'Error in upload process' });
     }
   });
 
-  try {
-    const results = await Promise.allSettled(uploadPromises);
-    const successfulUploads = results.filter(r => r.status === 'fulfilled').map(r => r.value);
-    const failedUploads = results.filter(r => r.status === 'rejected').map(r => r.reason);
+  bb.on('error', (err) => {
+    console.error('Error parsing form:', err);
+    res.status(500).json({ error: 'Error parsing form' });
+  });
 
-    logger.info("Upload process completed for the event : "+folder_name)
-    res.status(200).json({
-      message: 'Upload process completed',
-      successfulUploads,
-      failedUploads,
-      totalFiles: req.files.length
-    });
-  } catch (error) {
-    console.error('Error in upload process:', error);
-    res.status(500).json({ error: 'Error in upload process' });
-  }
+  req.pipe(bb);
 });
 
-// Function to update DynamoDB
+
 async function updateFlashbackImageUploadData(s3Result, userPhoneNumber, originalName, flashbackName, eventId, folderName) {
   const now = new Date();
   const dynamoDbParams = {

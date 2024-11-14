@@ -1275,71 +1275,67 @@ const uploadFiles = async () => {
     setUploadStatus('Please select files to upload');
     return;
   }
+
   setUploading(true);
   setUploadFilesModalStatus('Uploading files...');
   setIsUploadFilesFailed(false);
-  setOverallProgress(0); // Start at 0% progress
+  setOverallProgress(10); // Start at 0% progress
 
-  const MAX_CONCURRENT_UPLOADS = 3; // Reduced to avoid 429 error
+  const MAX_CONCURRENT_UPLOADS = 3; // Limit to avoid overloading the server
   const MAX_RETRIES = 3;
-  let index = 0;
   const totalFiles = files.length;
-  const totalBytes = files.reduce((acc, file) => acc + file.size, 0); // Total size of all files
 
-  // Use React state to safely track the total uploaded bytes
+  let uploadingFilesCount = 0; // Track completed file uploads
 
   const uploadFile = async (file) => {
     const formData = new FormData();
-    formData.append('files', file);
-    formData.append('eventName', event.event_name);
-    formData.append('eventDate', event.event_date);
-    formData.append('folderName', event.folder_name);
+    formData.append('files', file); // Use 'files' since backend handles each file as 'multipart/form-data'
 
     let attempts = 0;
-    let delayTime = 1000; // Start with 1 second delay
+    let delayTime = 1000; // Start with 1-second delay for retry
 
     while (attempts < MAX_RETRIES) {
       try {
-        const response = await API_UTIL.post(`/uploadFiles/${event.event_name}/${userPhoneNumber}/${event.folder_name}`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-          onUploadProgress: (progressEvent) => {
-            // Dynamically update the total uploaded bytes using state update function
-            setTotalUploadedBytes((prevUploadedBytes) => {
-              const updatedUploadedBytes = prevUploadedBytes + progressEvent.loaded;
-              
-              // Calculate and update overall progress based on total uploaded bytes
-              const overallProgress = (updatedUploadedBytes / totalBytes) * 100;
-              setOverallProgress(Math.ceil(overallProgress)); // Round to nearest integer
-              
-              return updatedUploadedBytes;
-            });
-          },
-        });
+        const response = await API_UTIL.post(
+          `/uploadFiles/${event.event_name}/${userPhoneNumber}/${event.folder_name}`,
+          formData,
+          {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          }
+        );
+
+        // Increment the completed files count and update overall progress after each file upload completes
+        uploadingFilesCount += 1;
+        const overallProgress = (uploadingFilesCount / totalFiles) * 100;
+        setOverallProgress(Math.ceil(overallProgress)); // Update only once per file
 
         return response.data;
       } catch (error) {
+        attempts += 1;
         if (error.response && error.response.status === 429) {
-          console.error(`Error uploading file ${file.name}, attempt ${attempts}: Too many requests, retrying after ${delayTime / 1000} seconds`);
+          console.error(`Error uploading file ${file.name}, attempt ${attempts}: Too many requests. Retrying after ${delayTime / 1000} seconds.`);
           await delay(delayTime);
-          delayTime *= 2; // Double the delay time for exponential backoff
+          delayTime *= 2; // Exponential backoff
         } else {
           console.error(`Error uploading file ${file.name}, attempt ${attempts}:`, error);
         }
-        attempts++;
-        if (attempts === MAX_RETRIES) throw error;
+
+        if (attempts === MAX_RETRIES) {
+          throw error;
+        }
       }
-      
     }
   };
 
   const handleUploads = async () => {
-    while (index < files.length) {
-      const promises = [];
-      for (let i = 0; i < MAX_CONCURRENT_UPLOADS && index < files.length; i++) {
-        promises.push(uploadFile(files[index]));
-        index++;
+    while (uploadingFilesCount < files.length) {
+      const uploadPromises = []; // Initialize a new array for each batch
+
+      for (let i = 0; i < MAX_CONCURRENT_UPLOADS && uploadingFilesCount + i < files.length; i++) {
+        uploadPromises.push(uploadFile(files[uploadingFilesCount + i]));
       }
-      await Promise.allSettled(promises);
+
+      await Promise.allSettled(uploadPromises); // Await all uploads in the current batch
     }
   };
 
@@ -1347,9 +1343,10 @@ const uploadFiles = async () => {
     await handleUploads();
 
     // After all files are uploaded successfully, update the uploaded files count
-    const newUploadedFilesCount = uploadedFilesCount + files.length;
+    const newUploadedFilesCount = uploadingFilesCount+uploadedFilesCount; // Only use uploadingFilesCount as it tracks successful uploads
     setUploadedFilesCount(newUploadedFilesCount);
 
+    // Update event metadata after all files are uploaded
     try {
       const response = await API_UTIL.put(`/updateEvent/${event.event_id}`, {
         event_name: eventData.eventName,
@@ -1360,12 +1357,13 @@ const uploadFiles = async () => {
       });
 
       if (response.status === 200) {
-        toast.success('File uploaded successfully');
+        toast.success('Files uploaded successfully');
       }
     } catch (error) {
       console.error('Error updating event with new file count:', error);
       toast.error('Failed to update the event with new file count. Please try again.');
     }
+
     await updateRewards(-files.length);
 
     setUploadStatus('Upload completed successfully');
@@ -1378,10 +1376,8 @@ const uploadFiles = async () => {
     setOverallProgress(100); // Ensure progress bar is set to 100% on completion
     setFileCount(0);
     closeUploadFilesModal();
-    
   }
 };
-
 
 const uploadFlashbackFiles = async () => {
   if (files.length === 0) {
@@ -1850,6 +1846,7 @@ const uploadFlashbackFiles = async () => {
       const response = await API_UTIL.get(`/getEventDetails/${event.event_id}`);
       if (response.status === 200) {
         setEventDetails(response.data); // Set event details in state
+        setUploadedFilesCount(response.data.uploaded_files || 0);
         if( response.data.uploaded_files === response.data.files_indexed){
           if(isImageProcessingDone === false)
             fetchThumbnails()
@@ -2468,7 +2465,11 @@ const createFlashback =({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
           >
+           {!uploading &&
+           (
             <CloseButton onClick={closeUploadFilesModal}><X size={24} /></CloseButton>
+           )}
+           
             <h2>Upload Files</h2>
             <Dropzone {...getRootProps()} isDragActive={isDragActive}>
               <input {...getInputProps()} />
@@ -2495,7 +2496,8 @@ const createFlashback =({
               gap: '2rem', 
               paddingTop: '1rem' }}>
             <ActionButton onClick={uploadFiles} disabled={!canUpload || files.length === 0 || fileCount > 500}>
-              Upload
+            {uploading ? "Uploading..." : "Upload"}
+              
             </ActionButton>
             </div>
             {uploading && (
