@@ -25,7 +25,7 @@ const busboy = require('busboy');
 //const { Account,AptosConfig, Aptos, AptosClient,Network, TxnBuilderTypes, BCS,Ed25519PrivateKey,AccountAddress } = require( '@aptos-labs/ts-sdk');
 const { initializeConfig, getConfig } = require('./config');
 const { ENV } = require('./config');
-//const crypto = require('crypto');
+const crypto = require('crypto');
 //const config = new AptosConfig({ network: Network.MAINNET});
 //const aptosClient = new Aptos(config);
 const schedule = require('node-schedule');
@@ -2333,7 +2333,7 @@ app.get('/userThumbnailsByEventId/:eventId', async (req, res) => {
       Key: {
         event_id: eventId
       },
-      ProjectionExpression: 'event_name, client_name'
+      ProjectionExpression: 'event_name, client_name,folder_name'
     };
 
     const eventDetailsResult = await docClient.get(eventDetailsParams).promise();
@@ -2347,7 +2347,7 @@ app.get('/userThumbnailsByEventId/:eventId', async (req, res) => {
     const clientName = eventDetailsResult.Item.client_name;
 
     // Create folder name using event_name + client_name + event_id
-    const folderName = `${eventName}_${clientName}_${eventId}`;
+    const folderName = eventDetailsResult.Item.folder_name;
     logger.info("Constructed folder name: " + folderName);
 
     // Step 2: Query indexedDataTableName to get imageIds associated with the constructed folder name
@@ -4649,15 +4649,15 @@ app.post('/saveEventDetails', upload.single('eventImage'), async (req, res) => {
   } = req.body;
 
   // Generate a unique eventId
-  const eventId = uuidv4();
+  const eventId = crypto.randomBytes(4).toString('hex');
   const eventNameWithoutSpaces = eventName.replace(/\s+/g, '_');
   const clientNameWithoutSpaces = clientName.replace(/\s+/g, '_');
-  const CreateUploadFolderName = `${eventNameWithoutSpaces}_${clientNameWithoutSpaces}_${eventId}`;
+  //const CreateUploadFolderName = `${eventNameWithoutSpaces}_${clientNameWithoutSpaces}_${eventId}`;
   const fileKey = `${eventId}.jpg`;
 
   try {
     // Create the folder in S3
-    await createS3Folder(indexBucketName, CreateUploadFolderName);
+    await createS3Folder(indexBucketName, eventId);
 
     // Upload the image to S3
     const imageUrl = await uploadImageToS3('flashbackeventthumbnail', fileKey, file.buffer, file.mimetype);
@@ -4675,7 +4675,7 @@ app.post('/saveEventDetails', upload.single('eventImage'), async (req, res) => {
         invitation_note: invitationNote,
         invitation_url: invitation_url,
         event_image: imageUrl,
-        folder_name: CreateUploadFolderName,
+        folder_name: eventId,
       },
     };
 

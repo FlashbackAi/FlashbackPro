@@ -2558,7 +2558,7 @@ const createFlashback =({
                     name="eventName"
                     value={eventData.eventName}
                     handleChange={handleInputChange}
-                    isEditable={false}
+                    isEditable={true}
                   />
                   <LabelAndInput
                     label="Event Date"
