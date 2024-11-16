@@ -11,10 +11,8 @@ class WhatsAppSender {
     this.apiUrl = `https://graph.facebook.com/v17.0/${this.phoneNumberId}/messages`;
   }
 
-  async sendMessage(recipientPhoneNumber, eventName, userId) {
+  async sendMessage(recipientPhoneNumber, folderName,eventName, userId) {
     try {
-      const temp = eventName.split('_');
-      const event = temp.slice(0, -2).join(' ');
 
       const response = await axios.post(
         this.apiUrl,
@@ -31,8 +29,8 @@ class WhatsAppSender {
               {
                 type: 'body',
                 parameters: [
-                  { type: 'text', text: event.trim() },
-                  { type: 'text', text: eventName },
+                  { type: 'text', text: eventName.replace(/_/g, ' ') },
+                  { type: 'text', text: folderName },
                   { type: 'text', text: userId }
                 ]
               }
@@ -47,7 +45,7 @@ class WhatsAppSender {
         }
       );
 
-      logger.info(`Successfully delivered flashbacks to: ${recipientPhoneNumber} from the event: ${event.trim()}`);
+      logger.info(`Successfully delivered flashbacks to: ${recipientPhoneNumber} from the event: ${eventName.replace(/_/g, ' ').trim()}`);
       return response.data;
     } catch (error) {
       logger.error('Failed to deliver flashbacks via WhatsApp: ', error.response ? error.response.data : error.message);
@@ -147,8 +145,8 @@ class WhatsAppSender {
         }
       );
 
-      logger.info(`Successfully sent event registration acknowledgement to: ${recipientPhoneNumber} for the event: ${eventName}`);
-      return response.data;
+      logger.info('Successfully sent event registration acknowledgement to : ', recipientPhoneNumber,' for the event: ',eventName);
+      return response.  data;
     } catch (error) {
       logger.error('Failed to send event registration acknowledgement via WhatsApp:', error.response ? error.response.data : error.message);
       throw error;

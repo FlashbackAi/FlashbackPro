@@ -999,7 +999,8 @@ async function sendFlashbacksAsync(taskId, eventName) {
 
 async function sendWhatsAppMessage(phoneNumber, eventName, userId) {
   try {
-    await whatsappSender.sendMessage(phoneNumber, eventName, userId);
+    const eventDetails = await getEventDetailsByFolderName(eventName)
+    await whatsappSender.sendMessage(phoneNumber,eventDetails.folder_name, eventDetails.event_name, userId);
     logger.info(`WhatsApp message sent successfully to ${phoneNumber} for the event: ${eventName}`);
   } catch (error) {
     console.error(`Error sending WhatsApp message to ${phoneNumber}:`, error);
