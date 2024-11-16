@@ -57,6 +57,7 @@ function Login({ name, onLoginSuccess, showAppBar = true }) {
   const [isCaptureEnabled, setIsCaptureEnabled] = useState(true);
   const [showOTP, setShowOTP] = useState(false);
   const [otpSentTime, setOtpSentTime] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const videoConstraints = {
     width: 350,
@@ -234,6 +235,8 @@ function Login({ name, onLoginSuccess, showAppBar = true }) {
       const formData = new FormData();
       formData.append("image", imgSrc);
       formData.append("username", fullPhoneNumber);
+      formData.append("event",eventName);
+      setIsSubmitting(true);
 
       try {
         await API_UTIL.post(`/uploadUserPotrait`, formData, {
@@ -262,6 +265,8 @@ function Login({ name, onLoginSuccess, showAppBar = true }) {
         }
       } catch (error) {
         console.error("Error uploading image:", error);
+      }finally{
+        setIsSubmitting(false);
       }
     }
   };
@@ -341,7 +346,7 @@ function Login({ name, onLoginSuccess, showAppBar = true }) {
                   {imgSrc ? (
                     <div className="login-form-container">
                       <form className="login-form">
-                        <button type="button" onClick={uploadPhoto} className="submit submitPhoto">Submit photo</button>
+                        <button type="button" onClick={uploadPhoto} className="submit submitPhoto">  {isSubmitting ? 'Submitting...' : 'Submit Photo'}</button>
                         <button type="button" className="button takePhoto" onClick={retake}>Retake photo</button>
                         <label style={{ display: "flex", justifyContent: "center" }}>
                           <input name="checkbox" type="checkbox" defaultChecked required style={{ transform: "scale(1.1)" }} onChange={(e) => setTermsAccepted(e.target.checked)} onInvalid={(e) => e.target.setCustomValidity("Please accept the terms and conditions.")} onInput={(e) => e.target.setCustomValidity("")} />

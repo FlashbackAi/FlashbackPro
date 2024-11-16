@@ -158,6 +158,7 @@ const walletDetailsTable = 'wallet_details'
 
 const ClientId = '6goctqurrumilpurvtnh6s4fl1'
 //const cognito = new AWS.CognitoIdentityServiceProvider({region: 'ap-south-1'});
+const defaultEvent = 'defaultEvent'
 
 
 
@@ -606,6 +607,38 @@ async function queryUsersTable(phoneNumber) {
     userData.portraitS3Url=data.Item.potrait_s3_url.S;
   }
   return userData;
+}
+async function indexFile(file) {
+  try {
+    // Decode the URL-encoded characters in the S3 URL
+    if (file.startsWith('data:image')) {
+      // Strip the metadata prefix if present
+      base64Data = file.replace(/^data:image\/\w+;base64,/, '');
+  } else {
+      // Assume file is a raw base64 string without prefix
+      base64Data = file;
+  }
+  
+  const imageBuffer = Buffer.from(base64Data, 'base64');
+    
+    const indexingParams = {
+      CollectionId: COLLECTION_ID, //your-collection-id' with the ID of your Rekognition collection
+      Image: {
+        Bytes: imageBuffer
+      },
+      MaxFaces: 1,
+      DetectionAttributes:["ALL"],
+      QualityFilter:"AUTO"
+    };
+
+    // Call the searchUsersByImage operation
+    const data = await rekognition.indexFaces(indexingParams).promise();
+    return data;    
+
+  } catch (error) {
+    logger.error('Error searching faces by image:', error);
+    throw error; // Rethrow the error for the caller to handle
+  }
 }
 
 // Function to call searchUsersByImage API
@@ -3162,39 +3195,110 @@ function parseS3Url(s3Url) {
 app.post('/uploadUserPotrait', upload.single('image'), async (req, res) => {
   const file = req.body.image;
   const username = req.body.username;
+  const event = req.body.event;
   const params = {
-    Bucket: userBucketName,
-    Key: username+".jpg",
-    Body: Buffer.from(file, 'base64'),
-    //ACL: 'public-read', // Optional: Set ACL to public-read for public access
+      Bucket: userBucketName,
+      Key: `${username}.jpg`,
+      Body: Buffer.from(file, 'base64'),
   };
 
   try {
-    // Upload image to S3
-    const data = await s3.upload(params).promise();
-    logger.info('Upload successful:', data.Location);
+      // Step 1: Upload image to S3
+      logger.info(`Uploading image for username: ${username} to S3`);
+      const data = await s3.upload(params).promise();
+      logger.info(`Upload successful. S3 URL: ${data.Location}`);
 
-    // Update DynamoDB with the S3 URL
-    const updateParams = {
-      TableName: userrecordstable,
-      Key: { user_phone_number: username }, // Assuming you have a primary key 'id'
-      UpdateExpression: 'set potrait_s3_url = :url',
-      ExpressionAttributeValues: {
-        ':url': data.Location,
-      },
-      ReturnValues: 'UPDATED_NEW',
+      
+
+      // Step 3: Search for existing user in Rekognition
+      logger.info(`Searching for existing user by image in Rekognition for username: ${username}`);
+      const isUserExists = await searchUsersByImage(data.Location, username);
+      let matchedUserId;
+
+      if (!isUserExists) {
+          // Step 4: Index the image in Rekognition
+          logger.info(`No existing user found. Indexing new image for username: ${username}`);
+          const indexResult = await indexFile(file);
+          const faceId = indexResult.FaceRecords?.[0]?.Face?.FaceId;
+
+          if (!faceId) {
+              logger.error(`No face detected in the image for username: ${username}`);
+              return res.status(700).json({ message: 'No faces detected in the image.' });
+          }
+
+          // Step 5: Create new user and associate the face
+          const userId = crypto.randomBytes(4).toString('hex');
+          logger.info(`Creating new Rekognition user with userId: ${userId}`);
+          await rekognition.createUser({ CollectionId: COLLECTION_ID, UserId: userId }).promise();
+
+          logger.info(`Associating faceId: ${faceId} with userId: ${userId}`);
+          await rekognition.associateFaces({
+              CollectionId: COLLECTION_ID,
+              FaceIds: [faceId],
+              UserId: userId,
+          }).promise();
+
+          matchedUserId = userId;
+      } else {
+          matchedUserId = isUserExists.matchedUserId[0];
+          logger.info(`Existing user matched with userId: ${matchedUserId}`);
+      }
+
+      // Step 6: Update user details with the matched userId
+      logger.info(`Updating user details for username: ${username} with userId: ${matchedUserId}`);
+      await updateUserDetails(username, { user_id: matchedUserId });
+      // Step 7: Update DynamoDB with the S3 URL
+      const updateParams = {
+        TableName: userrecordstable,
+        Key: { user_phone_number: username }, // Assuming primary key 'user_phone_number'
+        UpdateExpression: 'set potrait_s3_url = :url',
+        ExpressionAttributeValues: { ':url': data.Location },
+        ReturnValues: 'UPDATED_NEW',
     };
-
     const updateResult = await docClient.update(updateParams).promise();
+    logger.info(`DynamoDB update successful for user ${username}:`, updateResult);
 
-    logger.info('updating s3 image  url for user is successful:', updateResult);
-    //const walletStatus = await handleWalletCreation(username);
-    
-    //res.json({ potrait_s3_url: data.Location , walletInfo:walletStatus});
-    res.json({ potrait_s3_url: data.Location});
+      // Step 8: Event-related actions
+      // Step 2: Event logic
+      if(event && event !== 'undefined'){
+
+      
+      logger.info(`Using event: ${event}`);
+      const eventDetails = await getEventDetailsByFolderName(event);
+      logger.info(`Event details fetched successfully for event: ${event}`);
+      if (eventDetails.status) {
+          logger.info(`Event status is active. Processing notifications for event: ${event}`);
+          try {
+            await sendWhatsAppMessage(username, event, matchedUserId);
+            await updateUserDeliveryStatus(event, username, 'Flashback_Delivered');
+            await storeSentData(user_phone_number, event, `https://flashback.inc/photosV1/${event}/${userData.user_id}`)
+
+
+            logger.info(`Successfully sent message to ${username}`); 
+          } catch (error) {
+            logger.error(`Error sending message to ${user_phone_number}: ${error.message}`); // Log error in sending message
+          }
+      }
+    }
+
+      // Final response
+      logger.info(`Successfully processed portrait upload for username: ${username}`);
+      res.json({ potrait_s3_url: data.Location });
+
   } catch (error) {
-    logger.error('Error:', error);
-    res.status(500).json({ error: 'Error uploading image' });
+      // Enhanced error handling and logging
+      logger.error(`Error during portrait upload for username: ${username}`, {
+          message: error.message,
+          stack: error.stack,
+      });
+
+      if (error.code === 'ProvisionedThroughputExceededException') {
+          res.status(429).json({ error: 'DynamoDB request limit exceeded. Please try again later.' });
+      } else if (error.code === 'NoSuchKey') {
+          res.status(404).json({ error: 'S3 bucket or key not found.' });
+      } else {
+          res.status(500).json({ error: 'An error occurred while uploading the image.' });
+      }
   }
 });
 
