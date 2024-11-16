@@ -4754,6 +4754,7 @@ app.post('/saveEventDetails', upload.single('eventImage'), async (req, res) => {
 
   // Generate a unique eventId
   const eventId = crypto.randomBytes(4).toString('hex');
+  logger.info("EventId created "+eventId);
   const eventNameWithoutSpaces = eventName.replace(/\s+/g, '_');
   const clientNameWithoutSpaces = clientName.replace(/\s+/g, '_');
   //const CreateUploadFolderName = `${eventNameWithoutSpaces}_${clientNameWithoutSpaces}_${eventId}`;
