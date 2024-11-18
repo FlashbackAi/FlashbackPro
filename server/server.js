@@ -29,6 +29,9 @@ const crypto = require('crypto');
 //const config = new AptosConfig({ network: Network.MAINNET});
 //const aptosClient = new Aptos(config);
 const schedule = require('node-schedule');
+const bodyParser = require("body-parser");
+const axios = require("axios");
+
 const oldEvents = ["Aarthi_Vinay_19122021","Convocation_PrathimaCollege","KSL_25042024","Jahnavi_Vaishnavi_SC_28042024","KSL_22052024","KSL_16052024","V20_BootCamp_2024","Neha_ShivaTeja_18042024"];
 //const CHEWY_AMOUNT =1000;
 
@@ -9693,6 +9696,142 @@ async function rescheduleJobs() {
       await handleJobExecution(job.job_id,job.notification_time,job.job_day,job.user_phone_number, event,job.portfolio_link); // Call the new function for handling each job
   }
 }
+
+
+app.post("/process-images", async (req, res) => {
+  const { folder_name } = req.body;
+
+  if (!folder_name) {
+      return res.status(400).json({ error: "folder_name is required." });
+  }
+
+  let lastEvaluatedKey = null;
+  let totalProcessed = 0;
+
+  try {
+      do {
+          // Fetch 1000 records at a time
+          const { items, lastEvaluatedKey: nextKey } = await fetchRecords(folder_name, lastEvaluatedKey);
+
+          // Process each record
+          for (const record of items) {
+              await processRecord(record);
+          }
+
+          totalProcessed += items.length;
+          logger.info(`Processed ${totalProcessed} records so far.`);
+
+          // Update the last evaluated key
+          lastEvaluatedKey = nextKey;
+
+      } while (lastEvaluatedKey);
+
+      res.status(200).json({
+          message: "All records processed successfully.",
+          totalProcessed,
+      });
+  } catch (error) {
+      console.error("Error processing images:", error);
+      res.status(500).json({ error: "Internal server error." });
+  }
+});
+
+async function processRecord(record) {
+  const { user_id, image_id, s3_url, bounding_box,face_id } = record;
+
+  try {
+      // Download the image
+      const imageBuffer = await downloadImage(s3_url);
+
+          // Crop face from the image
+          const croppedFace = await cropFaceFromImage(imageBuffer, bounding_box);
+
+          // Save the cropped face to the user folder
+          const res = await saveCroppedFace(user_id, face_id, croppedFace);
+          logger.info("Processing done for the image : "+ s3_url);
+  } catch (error) {
+      console.error(`Error processing record with image_id ${image_id}:`, error);
+  }
+}
+
+
+// Fetch Entries from DynamoDB
+async function fetchRecords(folderName, lastEvaluatedKey) {
+  const params = {
+      TableName: indexedDataTableName,
+      IndexName: "folder_name-user_id-index",
+      ProjectionExpression: "user_id, image_id, s3_url, folder_name, face_id, bounding_box",
+      KeyConditionExpression: "folder_name = :folderName",
+      ExpressionAttributeValues: {
+          ":folderName": folderName,
+      },
+      Limit: 1000, // Fetch 1000 records at a time
+  };
+
+  if (lastEvaluatedKey) {
+      params.ExclusiveStartKey = lastEvaluatedKey;
+  }
+
+  const result = await docClient.query(params).promise();
+  return {
+      items: result.Items,
+      lastEvaluatedKey: result.LastEvaluatedKey || null,
+  };
+}
+
+async function downloadImage(s3_url) {
+  // Extract bucket name and key from URL
+  const urlParts = s3_url.split('/');
+  const bucketName = urlParts[2].split('.')[0];
+  let key = urlParts.slice(3).join('/');
+  key = decodeURIComponentSafely(key.replace(/\+/g, '%20'));
+
+  logger.info(`Downloading image from bucket: ${bucketName}, key: ${key}`);
+  const imageData = await s3.getObject({
+      Bucket: bucketName,
+      Key: key
+  }).promise();
+
+  return Buffer.from(imageData.Body);
+}
+
+
+// Crop Face from Image using Bounding Box
+async function cropFaceFromImage(imageBuffer, boundingBox) {
+  const { Top, Left, Width, Height } = boundingBox;
+  const image = sharp(imageBuffer);
+
+  // Get image metadata
+  const metadata = await image.metadata();
+  const cropArea = {
+      left: Math.round(metadata.width * parseFloat(Left)),
+      top: Math.round(metadata.height * parseFloat(Top)),
+      width: Math.round(metadata.width * parseFloat(Width)),
+      height: Math.round(metadata.height * parseFloat(Height))
+  };
+
+  return image.extract(cropArea).toBuffer();
+}
+
+// Save Cropped Face to User Folder
+async function saveCroppedFace(user_id, face_id, croppedFaceBuffer) {
+  const userFolder = path.join(__dirname, "output", user_id);
+
+  // Create user folder if it doesn't exist
+  if (!fs.existsSync(userFolder)) {
+      fs.mkdirSync(userFolder, { recursive: true });
+  }
+
+  // Save the cropped image
+  const filePath = path.join(userFolder, `${face_id}.jpg`);
+  fs.writeFileSync(filePath, croppedFaceBuffer);
+  console.log(`Saved cropped face to: ${filePath}`);
+}
+
+
+
+
+
 
 })
 .catch((error) => {
