@@ -9715,6 +9715,8 @@ app.post("/process-images", async (req, res) => {
 
           // Process each record
           for (const record of items) {
+            const Quality = JSON.parse(record.Quality);
+            if(Quality.Sharpness>10)
               await processRecord(record);
           }
 
@@ -9760,7 +9762,7 @@ async function fetchRecords(folderName, lastEvaluatedKey) {
   const params = {
       TableName: indexedDataTableName,
       IndexName: "folder_name-user_id-index",
-      ProjectionExpression: "user_id, image_id, s3_url, folder_name, face_id, bounding_box",
+      ProjectionExpression: "user_id, image_id, s3_url, folder_name, face_id, bounding_box,Quality",
       KeyConditionExpression: "folder_name = :folderName",
       ExpressionAttributeValues: {
           ":folderName": folderName,
