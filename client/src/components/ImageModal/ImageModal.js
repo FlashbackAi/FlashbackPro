@@ -1,183 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import LoadingSpinner from "../Loader/LoadingSpinner";
-import { ArrowDownToLine, Heart, ChevronRight, ChevronLeft, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowDownToLine, Heart, Share2, ChevronRight, ChevronLeft } from "lucide-react";
 import API_UTIL from "../../services/AuthIntereptor";
-import styled from 'styled-components';
-
-// Styled components matching original CSS exactly
-const Overlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 1);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-`;
-
-const ModalOuter = styled.div`
-  position: relative;
-  max-width: fit-content;
-  max-height: fit-content;
-  background: #000000;
-  height: fit-content;
-  padding: 3em;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-
-  @media (max-width: 768px) {
-    width: 95%;
-    padding: 1em;
-  }
-
-  @media (max-width: 480px) {
-    padding: 0.5em;
-  }
-
-  img {
-    max-width: 100%;
-    max-height: 70vh;
-    object-fit: contain;
-
-    @media (max-width: 768px) {
-      max-height: 60vh;
-    }
-
-    @media (max-width: 480px) {
-      max-height: 50vh;
-    }
-  }
-`;
-
-const NavigationButton = styled.button`
-  position: fixed;
-  top: 50%;
-  transform: translateY(-50%);
-  background: transparent;
-  border: none;
-  height: 4rem;
-  cursor: pointer;
-  z-index: 1001;
-  padding: 0;
-
-  &.left-arrow {
-    left: 20px;
-  }
-
-  &.right-arrow {
-    right: 20px;
-  }
-
-  svg {
-    color: white;
-  }
-
-  @media (max-width: 768px) {
-    svg {
-      width: 32px;
-      height: 32px;
-    }
-  }
-`;
-
-const ImageContainer = styled.div`
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-  
-  img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-  }
-`;
-
-const DesktopControls = styled.div`
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  z-index: 1001;
-
-  @media (max-width: 768px) {
-    display: none;
-  }
-`;
-
-const MobileControls = styled.div`
-  display: none;
-  
-  @media (max-width: 768px) {
-    display: flex;
-    position: fixed;
-    gap: 16px;
-    z-index: 1001;
-
-    &.top-left {
-      top: 20px;
-      left: 20px;
-    }
-
-    &.bottom-right {
-      bottom: 80px; // Adjusted to be above the chevron
-      right: 20px;
-      flex-direction: column;
-    }
-  }
-`;
-
-const LoadingDots = styled.span`
-  position: relative;
-  &::after {
-    content: '...';
-    font-size: 20px;
-    color: white;
-    animation: loading 1.5s infinite;
-  }
-
-  @keyframes loading {
-    0% { content: '.'; }
-    33% { content: '..'; }
-    66% { content: '...'; }
-  }
-`;
-
-const ControlButton = styled.button`
-  background: transparent;
-  border: none;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: transform 0.2s;
-  padding: 0;
-
-  &:hover {
-    transform: scale(1.1);
-  }
-
-  svg {
-    color: white;
-  }
-
-  &.downloading {
-    pointer-events: none;
-    opacity: 0.7;
-  }
-`;
+import { toast } from "react-toastify";
+import "./ImageModal.css";
 
 const ImageModal = ({
   clickedImg,
@@ -197,14 +24,18 @@ const ImageModal = ({
   const [currentIndex, setCurrentIndex] = useState(clickedImgIndex);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isFavourite, setIsFavourite] = useState(clickedImgFavourite);
-  const touchStartRef = useRef(0);
-  const isNavigatingRef = useRef(false);
+  const touchStartRef = useRef(0);  // To store the starting touch position
+  const isNavigatingRef = useRef(false);  // Track if we're navigating images
+
+  // Define base font size for em calculation
+  const baseFontSize = 16; // Adjust if your app uses a different base font size
+  console.log(clickedImg)
 
   useEffect(() => {
     if (isNavigatingRef.current) {
       setClickedImg(images[currentIndex].thumbnail);
       setIsFavourite(images[currentIndex].isFavourites);
-      isNavigatingRef.current = false;
+      isNavigatingRef.current = false;  // Reset after updating
     }
   }, [currentIndex, images, setClickedImg]);
 
@@ -216,63 +47,38 @@ const ImageModal = ({
   };
 
   const handleNext = () => {
+    console.log(currentIndex);
     if (currentIndex < images.length - 1) {
-      isNavigatingRef.current = true;
+      isNavigatingRef.current = true;  // Set flag to true for navigation
       setCurrentIndex(currentIndex + 1);
     }
   };
 
   const handlePrev = () => {
+    console.log(currentIndex);
     if (currentIndex > 0) {
-      isNavigatingRef.current = true;
+      isNavigatingRef.current = true;  // Set flag to true for navigation
       setCurrentIndex(currentIndex - 1);
     }
   };
 
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      switch(e.key) {
-        case 'ArrowLeft':
-          handlePrev();
-          break;
-        case 'ArrowRight':
-          handleNext();
-          break;
-        case 'Escape':
-          handleClose(e);
-          break;
-        default:
-          break;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentIndex]); 
-
   const handleSwipeStart = (e) => {
-    touchStartRef.current = e.touches[0].clientX;
+    touchStartRef.current = e.touches[0].clientX;  // Capture the start touch position
   };
 
-  const onLoad = () => {
-    const lazySpan = document.querySelector(".lazyImage");
-    const loader = document.querySelector(
-      ".overlay.dismiss .loading-spinner-container"
-    );
-    loader && loader.remove();
-    lazySpan && lazySpan.classList.add("visible");
-  };
   const handleSwipeMove = (e) => {
     const touch = e.touches[0];
     const touchEnd = touch.clientX;
-    const swipeThresholdInPixels = 32;
 
-    if (touchStartRef.current - touchEnd > swipeThresholdInPixels) {
+    // Calculate swipe threshold in ems (1.25em * baseFontSize = 20px if baseFontSize is 16px)
+    const swipeThresholdInPixels = 2 * baseFontSize;
+
+    if (touchStartRef.current - touchEnd > swipeThresholdInPixels) {  // Swipe left
       handleNext();
-      touchStartRef.current = touchEnd;
-    } else if (touchEnd - touchStartRef.current > swipeThresholdInPixels) {
+      touchStartRef.current = touchEnd;  // Reset start position
+    } else if (touchEnd - touchStartRef.current > swipeThresholdInPixels) {  // Swipe right
       handlePrev();
-      touchStartRef.current = touchEnd;
+      touchStartRef.current = touchEnd;  // Reset start position
     }
   };
 
@@ -292,6 +98,8 @@ const ImageModal = ({
       if (response.status === 200) {
         const link = document.createElement("a");
         link.href = response.data;
+        // Extract filename from Content-Disposition header if needed
+        // Or just use the last part of the URL
         const fileName = clickedUrl.split('/').pop() || 'image.jpg';
         link.download = fileName;
         document.body.appendChild(link);
@@ -307,127 +115,87 @@ const ImageModal = ({
     }
   };
 
-  // const addToFavourite = (e) => {
-  //   e.stopPropagation();
-  //   const fav = document.querySelector(".favourite");
-  //   if (isFavourite) fav.classList.remove("bgRed");
-  //   else fav.classList.add("bgRed");
 
-  //   handleFavourite(currentIndex, images[currentIndex].original, !isFavourite);
-  //   setIsFavourite((isFav) => !isFav);
-  // };
+
+  const onLoad = () => {
+    const lazySpan = document.querySelector(".lazyImage");
+    const loader = document.querySelector(
+      ".overlay.dismiss .loading-spinner-container"
+    );
+    loader && loader.remove();
+    lazySpan && lazySpan.classList.add("visible");
+  };
 
   const addToFavourite = (e) => {
-    e.stopPropagation();
+    e.stopPropagation(); // Prevents the event from bubbling up
+    const fav = document.querySelector(".favourite");
+    if (isFavourite) fav.classList.remove("bgRed");
+    else fav.classList.add("bgRed");
+
     handleFavourite(currentIndex, images[currentIndex].original, !isFavourite);
     setIsFavourite((isFav) => !isFav);
   };
-  
-  const handleClose = (e) => {
-    e.stopPropagation();
-    setClickedImg(null);
-    history(-1);
+
+  const share = () => {
+    const shareAbleUrl = `${process.env.REACT_APP_SERVER_IP}/share/${clickedUrl.split(".jpg")[0]}?redirectTo=singleImage`;
+    const text = `${shareAbleUrl}\n Click and follow url to *View* and *Download Image*`;
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(whatsappUrl, "_blank");
   };
 
   return (
-    <Overlay 
-      className="overlay dismiss" 
-      onClick={handleClick}
-      onTouchStart={handleSwipeStart}
-      onTouchMove={handleSwipeMove}
-    >
+    <div className="overlay dismiss" onClick={handleClick} onTouchStart={handleSwipeStart} onTouchMove={handleSwipeMove}>
       <LoadingSpinner />
-      <ModalOuter className="modalOuter lazyImage hidden" onClick={e => e.stopPropagation()}>
-        {/* Desktop Controls */}
-        <DesktopControls>
-          <ControlButton onClick={handleClose}>
-            <X size={24} />
-          </ControlButton>
-          <ControlButton 
-            onClick={downloadCurrentImage}
-            disabled={isDownloading}
-          >
-            {isDownloading ? (
-              <LoadingDots />
-            ) : (
-              <ArrowDownToLine size={24} />
-            )}
-          </ControlButton>
+      <div className="modalOuter lazyImage hidden">
+        <img onLoad={onLoad} src={clickedImg} alt="bigger pic" />
+        <div className="imageToolBox">
+          {close && (
+            <ArrowLeft className="back-left-arrow dismiss" onClick={handleBackButton} />
+          )}
           {favourite && (
-            <ControlButton onClick={addToFavourite}>
-              <Heart 
-                size={24}
-                fill={isFavourite ? "red" : "none"}
-                stroke={isFavourite ? "red" : "white"}
-              />
-            </ControlButton>
+            <div
+              className="dFlex alignCenter cursor-pointer"
+              onClick={addToFavourite}
+            >
+              <Heart className={"favourite " + (isFavourite ? "bgRed" : "")} />
+              Favourite
+            </div>
           )}
           {select && (
             <div
-              // className="dFlex alignCenter cursor-pointer"
+              className="dFlex alignCenter cursor-pointer"
               onClick={addToFavourite}
             >
               <Heart className={"favourite " + (isFavourite ? "bgRed" : "")} />
               Select
             </div>
           )}
-        </DesktopControls>
-
-        {/* Mobile Controls */}
-        <MobileControls className="top-left">
-          <ControlButton onClick={handleClose}>
-            <X size={24} />
-          </ControlButton>
-        </MobileControls>
-
-        <MobileControls className="bottom-right">
-          {favourite && (
-            <ControlButton onClick={addToFavourite}>
-              <Heart 
-                size={24}
-                fill={isFavourite ? "red" : "none"}
-                stroke={isFavourite ? "red" : "white"}
-              />
-            </ControlButton>
-          )}
-                    {select && (
-            <div
-              // className="dFlex alignCenter cursor-pointer"
-              onClick={addToFavourite}
-            >
-              <Heart className={"favourite " + (isFavourite ? "bgRed" : "")} />
-              Select
-            </div>
-          )}
-          <ControlButton 
+          <div
+            className="dFlex alignCenter"
             onClick={downloadCurrentImage}
             disabled={isDownloading}
+            id="download"
           >
             {isDownloading ? (
-              <LoadingDots />
+              <span className="isDownloading">Downloading...</span>
             ) : (
-              <ArrowDownToLine size={24} />
+              <>
+                <ArrowDownToLine />
+                Download
+              </>
             )}
-          </ControlButton>
-        </MobileControls>
-
-        <ImageContainer>
-          <img onLoad={onLoad} src={clickedImg} alt="bigger pic" />
-        </ImageContainer>
-
-        {currentIndex > 0 && (
-          <NavigationButton className="left-arrow" onClick={handlePrev}>
-            <ChevronLeft size={40} />
-          </NavigationButton>
-        )}
-        
-        {currentIndex < images.length - 1 && (
-          <NavigationButton className="right-arrow" onClick={handleNext}>
-            <ChevronRight size={40} />
-          </NavigationButton>
-        )}
-      </ModalOuter>
-    </Overlay>
+          </div>
+          {sharing && (
+            <div className="dFlex alignCenter cursor-pointer" onClick={share}>
+              <Share2 className={"favourite " + (clickedImgFavourite && "bgRed")} />
+              Share
+            </div>
+          )}
+        </div>
+        <ChevronLeft className="modal-arrow left-arrow" onClick={handlePrev} />
+        <ChevronRight className="modal-arrow right-arrow" onClick={handleNext} />
+      </div>
+    </div>
   );
 };
 
