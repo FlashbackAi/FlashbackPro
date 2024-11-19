@@ -91,6 +91,22 @@ function FlashbacksImages() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  
+  useEffect(() => {
+    const disablePinchZoom = (e) => {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener("touchmove", disablePinchZoom, {
+      passive: false,
+    });
+    return () => {
+      document.removeEventListener("touchmove", disablePinchZoom);
+    };
+  }, []);
+
+
   useEffect(() => {
     // Initial image fetch
     if(flashbackName === 'favourites'){
