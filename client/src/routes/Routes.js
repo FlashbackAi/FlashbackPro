@@ -164,7 +164,7 @@ const ROUTES=[
     {
         path:"/TermsAndConditions",
         exact:false,
-        protected:true,
+        protected:false,
         component:TermsAndConditions
     },
     // {

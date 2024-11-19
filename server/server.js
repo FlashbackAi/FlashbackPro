@@ -9830,9 +9830,299 @@ async function saveCroppedFace(user_id, face_id, croppedFaceBuffer) {
   console.log(`Saved cropped face to: ${filePath}`);
 }
 
+// Helper function to fetch data from DynamoDB
+async function fetchDataFromDynamoDB(folderName, lastEvaluatedKey = null) {
+  const params = {
+      TableName: indexedDataTableName,
+      IndexName: 'folder_name-user_id-index', // Adjust based on your table's index
+      KeyConditionExpression: 'folder_name = :folderName',
+      ExpressionAttributeValues: {
+          ':folderName': folderName,
+      },
+      ProjectionExpression: 'face_id, AgeRange_High, AgeRange_Low, Gender_Value, Gender_Confidence, Emotions',
+      ExclusiveStartKey: lastEvaluatedKey,
+  };
+
+  const data = await docClient.query(params).promise();
+  return data;
+}
+
+// Helper function to generate Excel
+async function generateExcel(data) {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Faces Data');
+
+  // Add headers
+  worksheet.columns = [
+      { header: 'Face ID', key: 'face_id', width: 30 },
+      { header: 'Age Range High', key: 'AgeRange_High', width: 15 },
+      { header: 'Age Range Low', key: 'AgeRange_Low', width: 15 },
+      { header: 'Gender', key: 'Gender_Value', width: 15 },
+      { header: 'Gender Confidence', key: 'Gender_Confidence', width: 20 },
+      { header: 'Emotions', key: 'Emotions', width: 50 },
+  ];
+
+  // Add rows
+  data.forEach((item) => {
+      worksheet.addRow({
+          face_id: item.face_id,
+          AgeRange_High: item.AgeRange_High,
+          AgeRange_Low: item.AgeRange_Low,
+          Gender_Value: item.Gender_Value,
+          Gender_Confidence: item.Gender_Confidence,
+          Emotions: item.Emotions,
+      });
+  });
+
+  // Return the buffer
+  return await workbook.xlsx.writeBuffer();
+}
+
+// API Endpoint
+app.post('/fetch_and_save_excel', async (req, res) => {
+  const { folder_name } = req.body;
+
+  if (!folder_name) {
+      return res.status(400).send({ message: 'folder_name is required' });
+  }
+
+  try {
+      let lastEvaluatedKey = null;
+      let allData = [];
+
+      // Fetch data in batches
+      do {
+          const { Items, LastEvaluatedKey } = await fetchDataFromDynamoDB(folder_name, lastEvaluatedKey);
+          allData = allData.concat(Items);
+          lastEvaluatedKey = LastEvaluatedKey;
+      } while (lastEvaluatedKey);
+
+      if (allData.length === 0) {
+          return res.status(404).send({ message: 'No records found for the specified folder name.' });
+      }
+
+      // Generate Excel file
+      const excelBuffer = await generateExcel(allData);
+
+      // Send the Excel file
+      res.setHeader(
+          'Content-Disposition',
+          `attachment; filename="${folder_name}_data.xlsx"`
+      );
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.send(excelBuffer);
+  } catch (error) {
+      console.error('Error fetching data or generating Excel:', error);
+      res.status(500).send({ message: 'An error occurred', error: error.message });
+  }
+});
+
+// Function to fetch user IDs in batches
+async function getUserIds(limit) {
+  let userIds = []; // Array to store the fetched user IDs
+  let params = {
+      TableName: 'RekognitionUsersData',
+      ProjectionExpression: 'user_id',
+      Limit: Math.min(limit, 1000), // DynamoDB maximum scan limit per request is 1000
+  };
+  let lastEvaluatedKey = null;
+
+  do {
+      if (lastEvaluatedKey) {
+          params.ExclusiveStartKey = lastEvaluatedKey;
+      }
+
+      // Fetch a batch of records from DynamoDB
+      const result = await docClient.scan(params).promise();
+
+      // Add user IDs to the array
+      const batchUserIds = result.Items.map(item => item.user_id);
+      userIds.push(...batchUserIds);
+
+      // Update the last evaluated key for the next request
+      lastEvaluatedKey = result.LastEvaluatedKey;
+
+      // If we have reached the desired limit, break the loop
+      if (userIds.length >= limit) {
+          userIds = userIds.slice(0, limit); // Trim the array to the exact limit
+          break;
+      }
+  } while (lastEvaluatedKey);
+
+  return userIds;
+}
 
 
+// Function to fetch face data for a user
+async function getFaceData(userId) {
+    const params = {
+        TableName: indexedDataTableName,
+        IndexName: 'user_id-index',
+        KeyConditionExpression: 'user_id = :userId',
+        ExpressionAttributeValues: {
+            ':userId': { S: userId },
+        },
+        ProjectionExpression: 'face_id, AgeRange_High, AgeRange_Low, Gender_Value, Emotions, Quality, bounding_box, s3_url',
+        Limit: 3,
+    };
 
+    const result = await dynamoDB.query(params).promise();
+    return result.Items.map(item => ({
+        face_id: item.face_id.S,
+        age_high: item.AgeRange_High?.N,
+        age_low: item.AgeRange_Low?.N,
+        gender: item.Gender_Value?.S,
+        emotions: item.Emotions?.S,
+        bounding_box: item.bounding_box?.M,
+        s3_url: item.s3_url.S,
+        Quality:item.Quality.S,
+    }));
+}
+
+// Function to download an image from S3
+// async function downloadImage(s3_url) {
+//     const response = await axios.get(s3_url, { responseType: 'arraybuffer' });
+//     return Buffer.from(response.data);
+// }
+
+// Function to crop a face from an image
+async function cropFaceFromImage(imageBuffer, boundingBox) {
+    const { Top, Left, Width, Height } = boundingBox;
+    const image = sharp(imageBuffer);
+
+    const metadata = await image.metadata();
+    const top = Math.round(Top * metadata.height);
+    const left = Math.round(Left * metadata.width);
+    const width = Math.round(Width * metadata.width);
+    const height = Math.round(Height * metadata.height);
+
+    return image.extract({ top, left, width, height }).toBuffer();
+}
+
+function ensureDirectoryExistence(dirPath) {
+  if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+  }
+}
+
+
+async function processUserData(userId, worksheet) {
+    try {
+        // Fetch face data for the given user ID
+        const faceData = await getFaceData(userId);
+
+        // Ensure the base 'faces' directory exists
+        const facesDir = path.join(__dirname, 'faces');
+        ensureDirectoryExistence(facesDir);
+
+       
+
+        for (const face of faceData) {
+            try {
+                const { face_id, age_high, age_low, gender, emotions, bounding_box, s3_url, Quality } = face;
+
+                // Parse and validate Quality data
+                const qualityData = Quality ? JSON.parse(Quality) : {};
+                if (qualityData.Sharpness <= 10) {
+                    console.warn(`Skipping face_id ${face_id} due to low sharpness.`);
+                    continue;
+                }
+                // Download and crop the face
+                const imageBuffer = await downloadImage(s3_url);
+                const croppedFace = await cropFaceFromImage(imageBuffer, {
+                    Top: parseFloat(bounding_box.Top.N),
+                    Left: parseFloat(bounding_box.Left.N),
+                    Width: parseFloat(bounding_box.Width.N),
+                    Height: parseFloat(bounding_box.Height.N),
+                });
+                
+                 // Create a user-specific directory
+        const userFacesDir = path.join(facesDir, userId);
+        ensureDirectoryExistence(userFacesDir);
+
+
+                // Save the cropped face locally in the user-specific folder
+                const filePath = path.join(userFacesDir, `${face_id}.jpg`);
+                fs.writeFileSync(filePath, croppedFace);
+
+                // Parse emotions
+                const parsedEmotions = JSON.parse(emotions || '[]');
+                const emotionData = parsedEmotions.reduce((acc, emotion) => {
+                    acc[emotion.Type] = emotion.Confidence;
+                    return acc;
+                }, {});
+
+                // Add row to the worksheet
+                worksheet.addRow({
+                    UserID: userId,
+                    FaceID: face_id,
+                    S3Url: s3_url,
+                    AgeRange: `${age_low || 'N/A'} - ${age_high || 'N/A'}`,
+                    Gender: gender || 'N/A',
+                    Happy: emotionData.HAPPY || 'N/A',
+                    Sad: emotionData.SAD || 'N/A',
+                    Angry: emotionData.ANGRY || 'N/A',
+                    Surprised: emotionData.SURPRISED || 'N/A',
+                    Calm: emotionData.CALM || 'N/A',
+                    Confused: emotionData.CONFUSED || 'N/A',
+                    Disgusted: emotionData.DISGUSTED || 'N/A',
+                    Fear: emotionData.FEAR || 'N/A',
+                });
+                console.log(`Processed face_id: ${face_id}`);
+            } catch (faceError) {
+                console.error(`Error processing face_id ${face.s3_url}:`, faceError);
+            }
+        }
+    } catch (error) {
+        console.error(`Error processing user_id: ${userId}`, error);
+    }
+}
+
+
+// Main API
+app.post('/process-and-save', async (req, res) => {
+    const { limit = 100 } = req.body;
+
+    try {
+        // Create Excel workbook and worksheet
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Face Records');
+        worksheet.columns = [
+            { header: 'UserID', key: 'UserID', width: 30 },
+            { header: 'FaceID', key: 'FaceID', width: 40 },
+            { header: 'S3 URL', key: 'S3Url', width: 50 },
+            { header: 'Age Range', key: 'AgeRange', width: 20 },
+            { header: 'Gender', key: 'Gender', width: 15 },
+            { header: 'Happy (%)', key: 'Happy', width: 15 },
+            { header: 'Sad (%)', key: 'Sad', width: 15 },
+            { header: 'Angry (%)', key: 'Angry', width: 15 },
+            { header: 'Surprised (%)', key: 'Surprised', width: 15 },
+            { header: 'Calm (%)', key: 'Calm', width: 15 },
+            { header: 'Confused (%)', key: 'Confused', width: 15 },
+            { header: 'Disgusted (%)', key: 'Disgusted', width: 15 },
+            { header: 'Fear (%)', key: 'Fear', width: 15 },
+        ];
+
+        // Fetch user IDs
+        const userIds = await getUserIds(limit);
+
+        // Process each user's face data
+        for (const userId of userIds) {
+         
+            await processUserData(userId, worksheet);
+        }
+
+        // Save the Excel file locally
+        const filePath = path.join(__dirname, 'FaceRecords.xlsx');
+        await workbook.xlsx.writeFile(filePath);
+
+        // Return success response
+        res.json({ message: 'Processing complete, Excel file saved.', filePath });
+    } catch (error) {
+        console.error('Error processing and saving data:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
 
 
 })
