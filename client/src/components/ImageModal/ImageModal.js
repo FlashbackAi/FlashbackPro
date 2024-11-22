@@ -16,7 +16,7 @@ const ImageModal = ({
   clickedImgFavourite,
   images,
   favourite = true,
-  sharing = true,
+  sharing = false,
   close = true,
   select = false,
 }) => {
