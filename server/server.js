@@ -5318,17 +5318,19 @@ app.get("/getEventDetailsByFolderName/:folderName", async (req, res) => {
 const getEventDetailsByFolderName = async (folderName) => {
   const eventParams = {
     TableName: eventsDetailsTable,
-    FilterExpression: "folder_name = :folderName",
+    IndexName: "folder_name-index",
+    KeyConditionExpression: "folder_name = :folderName",
     ExpressionAttributeValues: {
       ":folderName": folderName
     }
   };
 
   try {
-    const result = await docClient.scan(eventParams).promise();
+    const result = await docClient.query(eventParams).promise();
     if (result.Items && result.Items.length > 0) {
       return result.Items[0]; // Return the first item found
     } else {
+      logger.info("No Event Details found with folder name : ",folderName);
       return null; // Return null if no event is found
     }
   } catch (err) {
