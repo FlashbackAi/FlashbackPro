@@ -5261,14 +5261,14 @@ app.get("/getEventDetails/:eventId", async (req, res) => {
 const getEventDetailsById = async (eventId) => {
   const eventParams = {
     TableName: eventsDetailsTable,
-    FilterExpression: "event_id = :eventId",
+    KeyConditionExpression: "event_id = :eventId",
     ExpressionAttributeValues: {
       ":eventId": eventId
     }
   };
 
   try {
-    const result = await docClient.scan(eventParams).promise();
+    const result = await docClient.query(eventParams).promise();
     if (result.Items && result.Items.length > 0) {
       return result.Items[0]; // Return the first item found
     } else {
@@ -9715,8 +9715,13 @@ app.post("/process-images", async (req, res) => {
 
           // Process each record
           for (const record of items) {
+            
             const Quality = JSON.parse(record.Quality);
-            if(Quality.Sharpness>10)
+            const facesDir = path.join(__dirname, 'output');       
+            const userFacesDir = path.join(facesDir, record.user_id);
+            const userExists = checkDirectoryExistence(userFacesDir);
+              
+            if(Quality.Sharpness>10 && userExists)
               await processRecord(record);
           }
 
@@ -10004,23 +10009,39 @@ function ensureDirectoryExistence(dirPath) {
       fs.mkdirSync(dirPath, { recursive: true });
   }
 }
+function checkDirectoryExistence(dirPath) {
+  if (fs.existsSync(dirPath)) {
+     logger.info("userId already exists ",dirPath);
+     return true;
+  }
+  return false;
+}
 
 
 async function processUserData(userId, worksheet) {
     try {
+
+     
+
         // Fetch face data for the given user ID
         const faceData = await getFaceData(userId);
 
-        // Ensure the base 'faces' directory exists
-        const facesDir = path.join(__dirname, 'faces');
-        ensureDirectoryExistence(facesDir);
+         // Ensure the base 'faces' directory exists
+      const facesDir = path.join(__dirname, 'faces');
+
+      
 
        
-
+      const userFacesDir = path.join(facesDir, userId);
+      const userExists = checkDirectoryExistence(userFacesDir);
         for (const face of faceData) {
             try {
                 const { face_id, age_high, age_low, gender, emotions, bounding_box, s3_url, Quality } = face;
+                // Create a user-specific directory
+              
+              if(!userExists){
 
+              
                 // Parse and validate Quality data
                 const qualityData = Quality ? JSON.parse(Quality) : {};
                 if (qualityData.Sharpness <= 10) {
@@ -10037,14 +10058,13 @@ async function processUserData(userId, worksheet) {
                 });
                 
                  // Create a user-specific directory
-        const userFacesDir = path.join(facesDir, userId);
-        ensureDirectoryExistence(userFacesDir);
+                  ensureDirectoryExistence(userFacesDir);
 
 
                 // Save the cropped face locally in the user-specific folder
                 const filePath = path.join(userFacesDir, `${face_id}.jpg`);
                 fs.writeFileSync(filePath, croppedFace);
-
+              }
                 // Parse emotions
                 const parsedEmotions = JSON.parse(emotions || '[]');
                 const emotionData = parsedEmotions.reduce((acc, emotion) => {
