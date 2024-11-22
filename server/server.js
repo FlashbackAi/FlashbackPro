@@ -679,8 +679,8 @@ async function searchUsersByImage(portraitS3Url, phoneNumber) {
       Image: {
         Bytes: Buffer.from(croppedBase64EncodedImage, 'base64') // Convert the base64-encoded image to a Buffer
       },
-      MaxUsers: 2,
-      UserMatchThreshold: 90
+      MaxUsers: 1,
+      UserMatchThreshold: 98
     };
 
     // Call the searchUsersByImage operation
@@ -8146,65 +8146,78 @@ async function getUserRecordCount(userId) {
   return totalCount;
 }
 
-
 async function mergeUsers(fromUserId, toUserId, reason, eventId, user_phone_number) {
   logger.info(`Merging user ${fromUserId} into ${toUserId}`);
   try {
-      // Step 1: Compare faces
-      const similarityThreshold = reason === 'very_similar' ? 99 : 95;
-      
-      const comparisonResult = await rekognition.compareFaces({
-        SourceImage: {
-          S3Object: {
-            Bucket: 'rekognitionuserfaces',
-            Name: `thumbnails/${fromUserId}.jpg`
-          }
-        },
-        TargetImage: {
-          S3Object: {
-            Bucket: 'rekognitionuserfaces',
-            Name: `thumbnails/${toUserId}.jpg`
-          }
-        },
-        SimilarityThreshold: similarityThreshold
-      }).promise();
+    // Step 1: Compare faces
+    const similarityThreshold = reason === 'very_similar' ? 99 : 95;
+    
+    const comparisonResult = await rekognition.compareFaces({
+      SourceImage: {
+        S3Object: {
+          Bucket: 'rekognitionuserfaces',
+          Name: `thumbnails/${fromUserId}.jpg`
+        }
+      },
+      TargetImage: {
+        S3Object: {
+          Bucket: 'rekognitionuserfaces',
+          Name: `thumbnails/${toUserId}.jpg`
+        }
+      },
+      SimilarityThreshold: similarityThreshold
+    }).promise();
 
-      // console.log(`Similarity of both the faces ${comparisonResult.FaceMatches.Similarity}`);
+    if (!comparisonResult.FaceMatches || comparisonResult.FaceMatches.length === 0) {
+      return { 
+        success: false, 
+        message: "We can see that these faces doesn't match"
+      };
+    }
 
-      if (comparisonResult.FaceMatches.Similarity < 99) {
-          logger.info('These faces do not belong to the same user.');
-          return { success: false, message: "These faces do not belong to the same user." };
-      }
-      
-      const highestSimilarity = Math.max(...comparisonResult.FaceMatches.map(match => match.Similarity));
+    const highestSimilarity = Math.max(...comparisonResult.FaceMatches.map(match => match.Similarity));
 
-      if (highestSimilarity < similarityThreshold) {
-        return { 
-          success: false, 
-          message: "We can see that these faces doesn't match"
-        };
-      }
-  
-      logger.info(`Face similarity: ${highestSimilarity.toFixed(2)}%`);
-  
-      // Step 3: Perform merge
+    if (highestSimilarity < similarityThreshold) {
+      return { 
+        success: false, 
+        message: "We can see that these faces doesn't match"
+      };
+    }
+
+    logger.info(`Face similarity: ${highestSimilarity.toFixed(2)}%`);
+
+    // Step 2: Core merge operations
+    try {
       await disassociateFaces(fromUserId);
       await transferRecordsAndAssociateFaces(fromUserId, toUserId);
-      await updateUserImageActivity(fromUserId, toUserId);
-      await updateUserOutputs(fromUserId, toUserId);
-      await updateRekognitionImageProperties(fromUserId, toUserId);
-      await updateUsersTable(fromUserId, toUserId);
-      await updateUserEventMapping(fromUserId, toUserId);
-      await deleteUser(fromUserId);
-
-      // Step 4: Log the merge activity
-      await logMergeActivity(fromUserId, toUserId, reason, eventId, highestSimilarity, user_phone_number);
+      
+      // Step 3: Additional operations - don't let these fail the merge
+      try {
+        await Promise.allSettled([
+          updateUserImageActivity(fromUserId, toUserId),
+          updateUserOutputs(fromUserId, toUserId),
+          updateRekognitionImageProperties(fromUserId, toUserId),
+          updateUsersTable(fromUserId, toUserId),
+          updateUserEventMapping(fromUserId, toUserId),
+          deleteUser(fromUserId),
+          logMergeActivity(fromUserId, toUserId, reason, eventId, highestSimilarity, user_phone_number)
+        ]);
+      } catch (cleanupError) {
+        logger.error(`Non-critical error during cleanup: ${cleanupError}`);
+        // Don't fail the merge for cleanup errors
+      }
 
       logger.info(`Successfully merged user ${fromUserId} into ${toUserId}`);
       return { success: true, message: "Users merged successfully." };
+      
+    } catch (coreError) {
+      logger.error(`Critical error during core merge operations: ${coreError}`);
+      throw coreError;
+    }
+    
   } catch (e) {
-      logger.error(`Error merging users: ${e}`);
-      return { success: false, message: "An error occurred while merging users." };
+    logger.error(`Error merging users: ${e}`);
+    return { success: false, message: "An error occurred while merging users." };
   }
 }
 
@@ -8450,34 +8463,60 @@ async function updateRekognitionImageProperties(userId, primaryUserId) {
   logger.info(`Updating Rekognition image properties for user ${userId} to ${primaryUserId}`);
   let lastEvaluatedKey = null;
 
-  do {
+  try {
+    do {
       const scanParams = {
-          TableName: 'RekognitionImageProperties',
-          FilterExpression: 'contains(user_ids, :userid)',
-          ExpressionAttributeValues: { ':userid': {S: userId } },
-          ExclusiveStartKey: lastEvaluatedKey
+        TableName: 'RekognitionImageProperties',
+        FilterExpression: 'contains(user_ids, :userid)',
+        ExpressionAttributeValues: { ':userid': {S: userId} },
+        ExclusiveStartKey: lastEvaluatedKey
       };
 
       const response = await dynamoDB.scan(scanParams).promise();
 
       for (const item of response.Items) {
-          if (item.user_ids) {
-              const userIds = item.user_ids;
-              const newUserIds = [...new Set(userIds.map(uid => (uid === userId ? primaryUserId : uid)))];
+        if (item.user_ids && item.user_ids.S) { // Check if user_ids exists and has S property
+          let userIdsArray = [];
+          try {
+            // Handle both string and array formats
+            userIdsArray = typeof item.user_ids.S === 'string' 
+              ? item.user_ids.S.split(',') 
+              : Array.isArray(item.user_ids.S) 
+                ? item.user_ids.S 
+                : [item.user_ids.S];
 
-              await dynamoDB.update({
-                  TableName: 'RekognitionImageProperties',
-                  Key: { image_id: item.image_id },
-                  UpdateExpression: 'SET user_ids = :new_user_ids',
-                  ExpressionAttributeValues: { ':new_user_ids': {S: newUserIds } }
-              }).promise();
+            // Replace old userId with primaryUserId
+            const newUserIds = [...new Set(userIdsArray.map(uid => 
+              uid.trim() === userId ? primaryUserId : uid
+            ))];
 
-              logger.info(`Updated user_ids from ${userId} to ${primaryUserId} for image_id ${item.image_id}`);
+            await dynamoDB.update({
+              TableName: 'RekognitionImageProperties',
+              Key: { image_id: item.image_id },
+              UpdateExpression: 'SET user_ids = :new_user_ids',
+              ExpressionAttributeValues: { 
+                ':new_user_ids': { S: newUserIds.join(',') }
+              }
+            }).promise();
+
+            logger.info(`Updated user_ids from ${userId} to ${primaryUserId} for image_id ${item.image_id}`);
+          } catch (err) {
+            logger.error(`Error processing user_ids for image_id ${item.image_id}: ${err}`);
+            // Continue with next item instead of failing entire operation
+            continue;
           }
+        }
       }
 
       lastEvaluatedKey = response.LastEvaluatedKey;
-  } while (lastEvaluatedKey);
+    } while (lastEvaluatedKey);
+
+    return true; // Indicate successful completion
+  } catch (error) {
+    logger.error(`Error updating Rekognition image properties: ${error}`);
+    // Don't throw error, just log it and continue
+    return false;
+  }
 }
 
 async function updateUsersTable(userId, primaryUserId) {
