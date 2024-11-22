@@ -5251,6 +5251,7 @@ app.get("/getEventDetails/:eventId", async (req, res) => {
       logger.info(`Fetched event details for ${eventId}`);
       res.status(200).send(eventDetails);
     } else {
+      logger.info("Event not found ",eventId);
       res.status(404).send({ message: "Event not found" });
     }
   } catch (err) {
