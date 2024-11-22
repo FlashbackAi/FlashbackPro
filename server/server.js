@@ -5,6 +5,7 @@ const cors = require('cors');
 const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
+const xlsx = require("xlsx");
 //const { AmazonCognitoIdentity, userPool } = require('./config', 'aws-sdk');
 //const { CognitoUserPool, CognitoUserAttribute } = require('amazon-cognito-identity-js');
 const archiver = require('archiver');
@@ -10018,28 +10019,54 @@ async function getUserIds(limit) {
 
 // Function to fetch face data for a user
 async function getFaceData(userId) {
-    const params = {
-        TableName: indexedDataTableName,
-        IndexName: 'user_id-index',
-        KeyConditionExpression: 'user_id = :userId',
-        ExpressionAttributeValues: {
-            ':userId': { S: userId },
-        },
-        ProjectionExpression: 'face_id, AgeRange_High, AgeRange_Low, Gender_Value, Emotions, Quality, bounding_box, s3_url',
-        Limit: 3,
-    };
+  const params = {
+      TableName: indexedDataTableName,
+      IndexName: 'user_id-index',
+      KeyConditionExpression: 'user_id = :userId',
+      ExpressionAttributeValues: {
+          ':userId': { S: userId },
+      },
+      ProjectionExpression: 'face_id, AgeRange_High, AgeRange_Low, Gender_Value, Gender_Confidence, Emotions, Quality, bounding_box, s3_url',
+      Limit: 3,
+  };
 
-    const result = await dynamoDB.query(params).promise();
-    return result.Items.map(item => ({
-        face_id: item.face_id.S,
-        age_high: item.AgeRange_High?.N,
-        age_low: item.AgeRange_Low?.N,
-        gender: item.Gender_Value?.S,
-        emotions: item.Emotions?.S,
-        bounding_box: item.bounding_box?.M,
-        s3_url: item.s3_url.S,
-        Quality:item.Quality.S,
-    }));
+  const result = await dynamoDB.query(params).promise();
+
+  return result.Items.map(item => {
+      // Calculate age average
+      const ageHigh = item.AgeRange_High?.N ? parseFloat(item.AgeRange_High.N) : null;
+      const ageLow = item.AgeRange_Low?.N ? parseFloat(item.AgeRange_Low.N) : null;
+      const ageAverage = ageHigh !== null && ageLow !== null ? (ageHigh + ageLow) / 2 : null;
+
+      // Process gender and confidence
+      const genderValue = item.Gender_Value?.S;
+      const genderConfidence = item.Gender_Confidence?.N ? parseFloat(item.Gender_Confidence.N) : null;
+      let genderDetails = null;
+
+      if (genderValue === 'Male' && genderConfidence !== null) {
+          genderDetails = {
+              Gender: 'Male',
+              Male_Confidence: genderConfidence,
+              Female_Confidence: 100 - genderConfidence
+          };
+      } else if (genderValue === 'Female' && genderConfidence !== null) {
+          genderDetails = {
+              Gender: 'Female',
+              Male_Confidence: 100 - genderConfidence,
+              Female_Confidence: genderConfidence
+          };
+      }
+
+      return {
+          face_id: item.face_id.S,
+          age_average: ageAverage, // Include the age average
+          gender_details: genderDetails, // Include detailed gender info
+          emotions: item.Emotions?.S,
+          bounding_box: item.bounding_box?.M,
+          s3_url: item.s3_url.S,
+          Quality: item.Quality?.S,
+      };
+  });
 }
 
 // Function to download an image from S3
@@ -10094,7 +10121,7 @@ async function processUserData(userId, worksheet) {
       const userExists = checkDirectoryExistence(userFacesDir);
         for (const face of faceData) {
             try {
-                const { face_id, age_high, age_low, gender, emotions, bounding_box, s3_url, Quality } = face;
+                const { face_id, emotions, bounding_box, s3_url, Quality } = face;
                 // Create a user-specific directory
               
               if(!userExists){
@@ -10130,23 +10157,30 @@ async function processUserData(userId, worksheet) {
                     return acc;
                 }, {});
 
+                highestEmotion = parsedEmotions.reduce((max, current) => {
+                  return current.Confidence > max.Confidence ? current : max;
+              }, parsedEmotions[0]);
+              
+
                 // Add row to the worksheet
                 worksheet.addRow({
                     UserID: userId,
                     FaceID: face_id,
                     S3Url: s3_url,
-                    AgeRange: `${age_low || 'N/A'} - ${age_high || 'N/A'}`,
-                    Gender: gender || 'N/A',
-                    Happy: emotionData.HAPPY || 'N/A',
-                    Sad: emotionData.SAD || 'N/A',
-                    Angry: emotionData.ANGRY || 'N/A',
-                    Surprised: emotionData.SURPRISED || 'N/A',
-                    Calm: emotionData.CALM || 'N/A',
-                    Confused: emotionData.CONFUSED || 'N/A',
-                    Disgusted: emotionData.DISGUSTED || 'N/A',
-                    Fear: emotionData.FEAR || 'N/A',
+                    Age: face.age_average,
+                    GenderFemale:face.gender_details.Male_Confidence,
+                    GenderMale:face.gender_details.Female_Confidence,
+                    Happy: emotionData.HAPPY || 0,
+                    Sad: emotionData.SAD || 0,
+                    Angry: emotionData.ANGRY || 0,
+                    Surprised: emotionData.SURPRISED || 0,
+                    Calm: emotionData.CALM || 0,
+                    Confused: emotionData.CONFUSED || 0,
+                    Disgusted: emotionData.DISGUSTED || 0,
+                    Fear: emotionData.FEAR || 0,
+                    DominantEmotion:highestEmotion.Type
                 });
-                console.log(`Processed face_id: ${face_id}`);
+              logger.info(`Processed face_id: ${face_id}`);
             } catch (faceError) {
                 console.error(`Error processing face_id ${face.s3_url}:`, faceError);
             }
@@ -10169,16 +10203,17 @@ app.post('/process-and-save', async (req, res) => {
             { header: 'UserID', key: 'UserID', width: 30 },
             { header: 'FaceID', key: 'FaceID', width: 40 },
             { header: 'S3 URL', key: 'S3Url', width: 50 },
-            { header: 'Age Range', key: 'AgeRange', width: 20 },
-            { header: 'Gender', key: 'Gender', width: 15 },
+            { header: 'Age', key: 'Age', width: 20 },
+            { header: 'Gender (Woman)', key: 'GenderMale', width: 15 },
+            { header: 'Gender (Man)', key: 'GenderFemale', width: 15 },
             { header: 'Happy (%)', key: 'Happy', width: 15 },
             { header: 'Sad (%)', key: 'Sad', width: 15 },
             { header: 'Angry (%)', key: 'Angry', width: 15 },
             { header: 'Surprised (%)', key: 'Surprised', width: 15 },
             { header: 'Calm (%)', key: 'Calm', width: 15 },
-            { header: 'Confused (%)', key: 'Confused', width: 15 },
             { header: 'Disgusted (%)', key: 'Disgusted', width: 15 },
             { header: 'Fear (%)', key: 'Fear', width: 15 },
+            { header: 'Dominant Emotion', key: 'DominantEmotion', width: 15 }
         ];
 
         // Fetch user IDs
@@ -10200,6 +10235,44 @@ app.post('/process-and-save', async (req, res) => {
         console.error('Error processing and saving data:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
+});
+
+
+// Paths to files and folder
+const inputExcelPath = "C:/Users/AnirudhThadem/FLASHBACK/Dataset/Facial Features Dataset/FaceRecords.xlsx"; // Path to the Excel file
+const outputExcelPath = "./filtered_FaceRecords.xlsx"; // Path for the filtered output
+const folderPath = "C:/Users/AnirudhThadem/FLASHBACK/Dataset/Facial Features Dataset/Training"; // Path to the directory with UserID-named folders
+
+// API to validate UserID folders and filter data
+app.post("/validate-user-folders", (req, res) => {
+  try {
+    // Step 1: Load the Excel file
+    const workbook = xlsx.readFile(inputExcelPath);
+    const sheetName = workbook.SheetNames[0];
+    const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+    // Step 2: Filter the rows based on folder existence
+    const filteredData = data.filter((row) => {
+      const userId = row.UserID; // Adjust the key if your column name differs
+      const userFolderPath = path.join(folderPath, userId);
+      return fs.existsSync(userFolderPath); // Check if folder exists
+    });
+
+    // Step 3: Write the filtered data to a new Excel file
+    const newWorkbook = xlsx.utils.book_new();
+    const newSheet = xlsx.utils.json_to_sheet(filteredData);
+    xlsx.utils.book_append_sheet(newWorkbook, newSheet, "Filtered Data");
+    xlsx.writeFile(newWorkbook, outputExcelPath);
+
+    // Step 4: Respond to the API call
+    res.send({
+      message: "Validation complete. Filtered dataset saved.",
+      outputPath: outputExcelPath,
+    });
+  } catch (error) {
+    console.error("Error validating folders:", error);
+    res.status(500).send({ error: "An error occurred while processing the data." });
+  }
 });
 
 
