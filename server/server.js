@@ -4865,31 +4865,47 @@ app.post('/updateEventImage', upload.single('eventImage'), async (req, res) => {
 
 
 app.get("/getClientEventDetails/:clientName", async (req, res) => {
-  
   const clientName = req.params.clientName; // Adjust based on your token payload
-  logger.info(`Fetching event details for ${clientName}`)
+  logger.info(`Fetching event details for ${clientName}`);
+  
   try {
     const eventParams = {
       TableName: eventsDetailsTable,
-      FilterExpression: "client_name = :clientName",
+      IndexName: 'client_name-index', // Replace with your actual GSI name
+      KeyConditionExpression: "client_name = :clientName",
       ExpressionAttributeValues: {
         ":clientName": clientName
       }
-
     };
 
+    let items = [];
+    let lastEvaluatedKey = null;
 
-    const result = await docClient.scan(eventParams).promise();
+    do {
+      const params = { ...eventParams };
+      if (lastEvaluatedKey) {
+        params.ExclusiveStartKey = lastEvaluatedKey;
+      }
 
-    if (result.Items && result.Items.length >= 0) {
-      logger.info(`Fetched event details for ${clientName}`)
-      res.status(200).send(result.Items);
-    } 
+      const result = await docClient.query(params).promise();
+
+      items = items.concat(result.Items);
+      lastEvaluatedKey = result.LastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    if (items && items.length >= 0) {
+      logger.info(`Fetched ${items.length} event details for ${clientName}`);
+      res.status(200).send(items);
+    } else {
+      logger.info(`No event details found for ${clientName}`);
+      res.status(404).send({ message: 'No event details found' });
+    }
   } catch (err) {
-    logger.info(err.message);
+    logger.error(err.message);
     res.status(500).send(err.message);
   }
 });
+
 
 app.get("/getClientDetailsByEventname/:eventName", async (req, res) => {
   
