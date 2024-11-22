@@ -16,7 +16,7 @@ const ImageModal = ({
   clickedImgFavourite,
   images,
   favourite = true,
-  sharing = false,
+  sharing = true,
   close = true,
   select = false,
 }) => {
@@ -29,14 +29,12 @@ const ImageModal = ({
 
   // Define base font size for em calculation
   const baseFontSize = 16; // Adjust if your app uses a different base font size
-  console.log(clickedImg)
 
   useEffect(() => {
     if (isNavigatingRef.current) {
-      setClickedImg(images[currentIndex].original);
+      setClickedImg(images[currentIndex].thumbnail);
       setIsFavourite(images[currentIndex].isFavourites);
       isNavigatingRef.current = false;  // Reset after updating
-      console.log(clickedImg);
     }
   }, [currentIndex, images, setClickedImg]);
 
@@ -91,9 +89,10 @@ const ImageModal = ({
     }
   
     setIsDownloading(true);
+    const url = images[currentIndex].original;
     try {
       const response = await API_UTIL.post('/downloadImage', {
-        imageUrl: clickedImg,
+        imageUrl: url,
       });
   
       if (response.status === 200) {
@@ -101,7 +100,7 @@ const ImageModal = ({
         link.href = response.data;
         // Extract filename from Content-Disposition header if needed
         // Or just use the last part of the URL
-        const fileName = clickedImg.split('/').pop() || 'image.jpg';
+        const fileName = url.split('/').pop() || 'image.jpg';
         link.download = fileName;
         document.body.appendChild(link);
         link.click();
