@@ -1134,23 +1134,15 @@ async function updateUserDeliveryStatus(eventName, phoneNumber, flashback_status
 async function updateEventFlashbackStatus(eventName, status) {
   try {
     // First, query the events table to get the event_date
-    const queryParams = {
-      TableName: eventsDetailsTable,
-      FilterExpression: 'folder_name = :eventName',
-      ExpressionAttributeValues: {
-        ':eventName': eventName
-      },
-      ProjectionExpression: 'event_date,event_id'
-    };
-
     logger.info(eventName)
-    const queryResult = await docClient.scan(queryParams).promise();
+    //const queryResult = await docClient.scan(queryParams).promise();
+    const queryResult = await getEventDetailsByFolderName(eventName)
 
-    if (queryResult.Items.length === 0) {
+    if (!queryResult) {
       throw new Error(`Event not found: ${eventName}`);
     }
 
-    const eventId = queryResult.Items[0].event_id;
+    const eventId = queryResult.event_id;
    
     // Now update the event with the flashback status
     const updateParams = {
