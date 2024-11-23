@@ -715,8 +715,9 @@ async function searchUsersByImage(portraitS3Url, phoneNumber) {
     try {
       // Call searchUsersByImage API with portraitS3Url
       const result = await searchUsersByImage(imageUrl, phoneNumber);
-      if (!result && deletePortrait) {
+      if (!result) {
         logger.info("matched user not found: " + phoneNumber);
+        if(deletePortrait) {
         logger.info("deleting the S3 url for unmacthed userId->" + userId);
         const userDeleteParams = {
           TableName: userrecordstable,
@@ -729,8 +730,9 @@ async function searchUsersByImage(portraitS3Url, phoneNumber) {
   
         const deltResult = docClient.update(userDeleteParams).promise();
         logger.info("deleted the s3 url for userId ->" + userId);
+      }
         return;
-      }e
+      }
       const matchedUserId = result.matchedUserId[0];
       if (userId && matchedUserId != userId) {
         logger.info("deleting the S3 url for unmacthed userId->" + matchedUserId);
@@ -10027,7 +10029,61 @@ async function getFaceData(userId) {
           ':userId': { S: userId },
       },
       ProjectionExpression: 'face_id, AgeRange_High, AgeRange_Low, Gender_Value, Gender_Confidence, Emotions, Quality, bounding_box, s3_url',
-      Limit: 3,
+      Limit: 10,
+  };
+
+  const result = await dynamoDB.query(params).promise();
+
+  return result.Items.map(item => {
+      // Calculate age average
+      const ageHigh = item.AgeRange_High?.N ? parseFloat(item.AgeRange_High.N) : null;
+      const ageLow = item.AgeRange_Low?.N ? parseFloat(item.AgeRange_Low.N) : null;
+      const ageAverage = ageHigh !== null && ageLow !== null ? (ageHigh + ageLow) / 2 : null;
+
+      // Process gender and confidence
+      const genderValue = item.Gender_Value?.S;
+      const genderConfidence = item.Gender_Confidence?.N ? parseFloat(item.Gender_Confidence.N) : null;
+      let genderDetails = null;
+
+      if (genderValue === 'Male' && genderConfidence !== null) {
+          genderDetails = {
+              Gender: 'Male',
+              Male_Confidence: genderConfidence,
+              Female_Confidence: 100 - genderConfidence
+          };
+      } else if (genderValue === 'Female' && genderConfidence !== null) {
+          genderDetails = {
+              Gender: 'Female',
+              Male_Confidence: 100 - genderConfidence,
+              Female_Confidence: genderConfidence
+          };
+      }
+
+      return {
+          face_id: item.face_id.S,
+          age_average: ageAverage, // Include the age average
+          gender_details: genderDetails, // Include detailed gender info
+          emotions: item.Emotions?.S,
+          bounding_box: item.bounding_box?.M,
+          s3_url: item.s3_url.S,
+          Quality: item.Quality?.S,
+      };
+  });
+}
+
+
+
+// Function to fetch face data for a user
+async function getFaceIdsata(faceId) {
+  const params = {
+      TableName: indexedDataTableName,
+      IndexName: 'face_id-index',
+      KeyConditionExpression: 'face_id = :faceId',
+      ExpressionAttributeValues: {
+          ':faceId': { S: faceId },
+      },
+      ProjectionExpression: 'user_id, face_id, AgeRange_High, AgeRange_Low, Gender_Value, Gender_Confidence, Emotions, Quality, bounding_box, s3_url',
+
   };
 
   const result = await dynamoDB.query(params).promise();
@@ -10241,37 +10297,449 @@ app.post('/process-and-save', async (req, res) => {
 // Paths to files and folder
 const inputExcelPath = "C:/Users/AnirudhThadem/FLASHBACK/Dataset/Facial Features Dataset/FaceRecords.xlsx"; // Path to the Excel file
 const outputExcelPath = "./filtered_FaceRecords.xlsx"; // Path for the filtered output
-const folderPath = "C:/Users/AnirudhThadem/FLASHBACK/Dataset/Facial Features Dataset/Training"; // Path to the directory with UserID-named folders
+const datasetPath = "C:/Users/AnirudhThadem/FLASHBACK/Dataset/Facial Features Dataset/Training"; // Path to the directory with UserID-named folders
 
-// API to validate UserID folders and filter data
-app.post("/validate-user-folders", (req, res) => {
+
+app.post("/filter-matching-user-ids", async (req, res) => {
   try {
-    // Step 1: Load the Excel file
+    logger.info("Loading the Excel file...");
+
+    // Step 1: Read the input Excel file
     const workbook = xlsx.readFile(inputExcelPath);
     const sheetName = workbook.SheetNames[0];
     const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+    logger.info(`Total entries in Excel: ${data.length}`);
 
-    // Step 2: Filter the rows based on folder existence
-    const filteredData = data.filter((row) => {
-      const userId = row.UserID; // Adjust the key if your column name differs
-      const userFolderPath = path.join(folderPath, userId);
-      return fs.existsSync(userFolderPath); // Check if folder exists
-    });
+    // Step 2: Get a list of valid user IDs (from Excel)
+    const excelUserIds = new Set(data.map((row) => row.UserID.trim().toLowerCase()));
+    logger.info(`Unique UserIDs found in Excel: ${excelUserIds.size}`);
 
-    // Step 3: Write the filtered data to a new Excel file
+    // Step 3: Get a list of folder names in the dataset
+    const folderNames = fs.readdirSync(datasetPath).map((folder) => folder.trim().toLowerCase());
+    logger.info(`Total folders found in dataset: ${folderNames.length}`);
+
+    // Step 4: Identify matching UserIDs
+    const matchingUserIds = new Set(folderNames.filter((folder) => excelUserIds.has(folder)));
+    logger.info(`Matching UserIDs between Excel and dataset: ${matchingUserIds.size}`);
+
+    // Step 5: Filter the Excel data to keep only matching UserIDs
+    const filteredData = data.filter((row) => matchingUserIds.has(row.UserID.trim().toLowerCase()));
+    logger.info(`Filtered data entries: ${filteredData.length}`);
+
+    // Step 6: Write the filtered data to a new Excel file
     const newWorkbook = xlsx.utils.book_new();
-    const newSheet = xlsx.utils.json_to_sheet(filteredData);
-    xlsx.utils.book_append_sheet(newWorkbook, newSheet, "Filtered Data");
+    const filteredDataSheet = xlsx.utils.json_to_sheet(filteredData);
+    xlsx.utils.book_append_sheet(newWorkbook, filteredDataSheet, "MatchingData");
     xlsx.writeFile(newWorkbook, outputExcelPath);
 
-    // Step 4: Respond to the API call
+    logger.info("Filtered Excel file with matching UserIDs created successfully!");
+
+    // Step 7: Respond with success
     res.send({
-      message: "Validation complete. Filtered dataset saved.",
+      message: "Matching UserIDs filtering completed. Check the output file.",
       outputPath: outputExcelPath,
     });
   } catch (error) {
-    console.error("Error validating folders:", error);
+    logger.error(`Error during processing: ${error.message}`);
+    res.status(500).send({ error: "An error occurred during filtering." });
+  }
+});
+
+
+app.post("/compare-user-ids", async (req, res) => {
+  try {
+    console.log("Loading the Excel file...");
+
+    // Step 1: Read the Excel file
+    const workbook = xlsx.readFile(inputExcelPath);
+    const sheetName = workbook.SheetNames[0];
+    const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+    console.log(`Total entries in Excel: ${data.length}`);
+
+    // Step 2: Extract unique UserIDs from the Excel file
+    const userIdsFromExcel = [...new Set(data.map((row) => row.UserID))].sort();
+    console.log(`Unique UserIDs from Excel: ${userIdsFromExcel.length}`);
+
+    // Step 3: Get folder names from the dataset directory
+    const folderNames = fs.readdirSync(datasetPath).sort();
+    console.log(`Folder names in dataset: ${folderNames.length}`);
+
+    // Step 4: Create a comparison sheet
+    const maxLength = Math.max(userIdsFromExcel.length, folderNames.length);
+    const comparisonData = [];
+    for (let i = 0; i < maxLength; i++) {
+      comparisonData.push({
+        "Excel UserIDs": userIdsFromExcel[i] || "", // Leave blank if no value
+        "Folder Names": folderNames[i] || "", // Leave blank if no value
+      });
+    }
+
+    // Step 5: Write the comparison data to a new sheet in the Excel file
+    const newSheet = xlsx.utils.json_to_sheet(comparisonData);
+
+    // Append a new sheet with the comparison data
+    xlsx.utils.book_append_sheet(workbook, newSheet, "Comparison");
+    xlsx.writeFile(workbook, outputExcelPath);
+
+    console.log("Comparison Excel file created successfully!");
+
+    res.send({
+      message: "Comparison of UserIDs and folder names has been written to the updated Excel file.",
+      outputPath: outputExcelPath,
+    });
+  } catch (error) {
+    console.error("Error during processing:", error.message);
     res.status(500).send({ error: "An error occurred while processing the data." });
+  }
+});
+
+async function getFaceIdsData(faceId) {
+  const params = {
+      TableName: indexedDataTableName, // Replace with your table name
+      IndexName: 'face_id-index',
+      KeyConditionExpression: 'face_id = :faceId',
+      ExpressionAttributeValues: {
+          ':faceId': { S: faceId },
+      },
+      ProjectionExpression: 'user_id, face_id, AgeRange_High, AgeRange_Low, Gender_Value, Gender_Confidence, Emotions, Quality, bounding_box, s3_url',
+  };
+
+  const result = await dynamoDB.query(params).promise();
+
+  return result.Items.map(item => {
+      // Calculate age average
+      const ageHigh = item.AgeRange_High?.N ? parseFloat(item.AgeRange_High.N) : null;
+      const ageLow = item.AgeRange_Low?.N ? parseFloat(item.AgeRange_Low.N) : null;
+      const ageAverage = ageHigh !== null && ageLow !== null ? (ageHigh + ageLow) / 2 : null;
+
+      // Process gender and confidence
+      const genderValue = item.Gender_Value?.S;
+      const genderConfidence = item.Gender_Confidence?.N ? parseFloat(item.Gender_Confidence.N) : null;
+      let genderDetails = null;
+
+      if (genderValue === 'Male' && genderConfidence !== null) {
+          genderDetails = {
+              Gender: 'Male',
+              Male_Confidence: genderConfidence,
+              Female_Confidence: 100 - genderConfidence
+          };
+      } else if (genderValue === 'Female' && genderConfidence !== null) {
+          genderDetails = {
+              Gender: 'Female',
+              Male_Confidence: 100 - genderConfidence,
+              Female_Confidence: genderConfidence
+          };
+      }
+
+      return {
+          user_id: item.user_id?.S,
+          face_id: item.face_id?.S,
+          age_average: ageAverage,
+          gender_details: genderDetails,
+          emotions: item.Emotions?.S,
+          bounding_box: item.bounding_box?.M,
+          s3_url: item.s3_url?.S,
+          quality: item.Quality?.S,
+      };
+  });
+}
+
+// API Endpoint
+app.post('/process-face-records', async (req, res) => {
+  try {
+      // Load the input Excel file
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.readFile(inputExcelPath);
+
+      const worksheet = workbook.getWorksheet(1); // Assume first sheet
+      const faceIds = [];
+
+      // Extract face IDs from the input Excel file
+      worksheet.eachRow((row, rowNumber) => {
+          if (rowNumber > 1) { // Skip header
+              faceIds.push(row.getCell(2).value); // Assume face ID is in the first column
+          }
+      });
+
+      console.log(`Extracted ${faceIds.length} face IDs from the input file.`);
+
+      // Process each face ID and fetch data from DynamoDB
+      const outputWorkbook = new ExcelJS.Workbook();
+      const outputWorksheet = outputWorkbook.addWorksheet('Face Records');
+      outputWorksheet.columns = [
+          { header: 'UserID', key: 'UserID', width: 30 },
+          { header: 'FaceID', key: 'FaceID', width: 40 },
+          { header: 'S3 URL', key: 'S3Url', width: 50 },
+          { header: 'Age', key: 'Age', width: 20 },
+          { header: 'Gender (Woman)', key: 'GenderFemale', width: 15 },
+          { header: 'Gender (Man)', key: 'GenderMale', width: 15 },
+          { header: 'Happy (%)', key: 'Happy', width: 15 },
+          { header: 'Sad (%)', key: 'Sad', width: 15 },
+          { header: 'Angry (%)', key: 'Angry', width: 15 },
+          { header: 'Surprised (%)', key: 'Surprised', width: 15 },
+          { header: 'Calm (%)', key: 'Calm', width: 15 },
+          { header: 'Disgusted (%)', key: 'Disgusted', width: 15 },
+          { header: 'Fear (%)', key: 'Fear', width: 15 },
+          { header: 'Dominant Emotion', key: 'DominantEmotion', width: 15 },
+      ];
+
+      for (const faceId of faceIds) {
+          const faceData = await getFaceIdsData(faceId);
+
+          faceData.forEach(face => {
+              const emotions = face.emotions ? JSON.parse(face.emotions) : [];
+              const emotionData = emotions.reduce((acc, emotion) => {
+                  acc[emotion.Type] = emotion.Confidence;
+                  return acc;
+              }, {});
+
+              const highestEmotion = emotions.reduce((max, current) => {
+                  return current.Confidence > max.Confidence ? current : max;
+              }, emotions[0]);
+
+              outputWorksheet.addRow({
+                  UserID: face.user_id,
+                  FaceID: face.face_id,
+                  S3Url: face.s3_url,
+                  Age: face.age_average,
+                  GenderFemale: face.gender_details?.Male_Confidence || 0,
+                  GenderMale: face.gender_details?.Female_Confidence || 0,
+                  Happy: emotionData.HAPPY || 0,
+                  Sad: emotionData.SAD || 0,
+                  Angry: emotionData.ANGRY || 0,
+                  Surprised: emotionData.SURPRISED || 0,
+                  Calm: emotionData.CALM || 0,
+                  Disgusted: emotionData.DISGUSTED || 0,
+                  Fear: emotionData.FEAR || 0,
+                  DominantEmotion: highestEmotion?.Type || 'N/A',
+              });
+          });
+      }
+
+      // Save the output Excel file
+      const outputExcelPath = './ProcessedFaceRecords.xlsx';
+      await outputWorkbook.xlsx.writeFile(outputExcelPath);
+
+      console.log('Face records processed and saved to Excel.');
+      res.send({ message: 'Face records processed successfully.', outputExcelPath });
+  } catch (error) {
+      console.error('Error processing face records:', error);
+      res.status(500).send({ error: 'Failed to process face records.' });
+  }
+});
+
+
+
+// API to compare Excel and folder file counts
+app.post("/compare-user-id-counts", async (req, res) => {
+  try {
+    logger.info("Loading the Excel file...");
+
+    // Step 1: Read the input Excel file
+    const workbook = xlsx.readFile(inputExcelPath);
+    const sheetName = workbook.SheetNames[0];
+    const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+    logger.info(`Total entries in Excel: ${data.length}`);
+
+    // Step 2: Group Excel entries by UserID
+    const userIdCounts = {};
+    data.forEach((row) => {
+      const userId = row.UserID.trim().toLowerCase();
+      userIdCounts[userId] = (userIdCounts[userId] || 0) + 1;
+    });
+    logger.info(`Unique UserIDs found in Excel: ${Object.keys(userIdCounts).length}`);
+
+    // Step 3: Get folder file counts for each UserID
+    const comparisonData = [];
+    const folderNames = fs.readdirSync(datasetPath).map((folder) => folder.trim().toLowerCase());
+    folderNames.forEach((folder) => {
+      const folderPath = path.join(datasetPath, folder);
+      const fileCount = fs.readdirSync(folderPath).length;
+
+      // Compare Excel count with folder file count
+      const excelCount = userIdCounts[folder] || 0;
+      comparisonData.push({
+        UserID: folder,
+        ExcelCount: excelCount,
+        FolderFileCount: fileCount,
+        Status: excelCount === fileCount ? "Match" : "Mismatch",
+      });
+
+      if (excelCount !== fileCount) {
+        logger.warn(`Mismatch for UserID: ${folder} (Excel: ${excelCount}, Folder: ${fileCount})`);
+      }
+    });
+
+    // Step 4: Write comparison data to a new Excel file
+    const newWorkbook = xlsx.utils.book_new();
+    const comparisonSheet = xlsx.utils.json_to_sheet(comparisonData);
+    xlsx.utils.book_append_sheet(newWorkbook, comparisonSheet, "Comparison");
+    xlsx.writeFile(newWorkbook, outputExcelPath);
+
+    logger.info("Comparison report created successfully!");
+
+    // Step 5: Respond with success
+    res.send({
+      message: "Comparison completed. Check the report for details.",
+      outputPath: outputExcelPath,
+    });
+  } catch (error) {
+    logger.error(`Error during processing: ${error.message}`);
+    res.status(500).send({ error: "An error occurred during comparison." });
+  }
+});
+
+// API to clean mismatched entries
+app.post("/clean-extra-entries", async (req, res) => {
+  try {
+    logger.info("Loading the Excel file...");
+
+    // Step 1: Read the input Excel file
+    const workbook = xlsx.readFile(inputExcelPath);
+    const sheetName = workbook.SheetNames[0];
+    const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+    logger.info(`Total entries in Excel: ${data.length}`);
+
+    // Step 2: Group Excel entries by UserID
+    const userIdToFaceIds = {};
+    data.forEach((row) => {
+      const userId = row.UserID.trim().toLowerCase();
+      if (!userIdToFaceIds[userId]) {
+        userIdToFaceIds[userId] = [];
+      }
+      userIdToFaceIds[userId].push(row.FaceID.trim());
+    });
+    logger.info(`Unique UserIDs found in Excel: ${Object.keys(userIdToFaceIds).length}`);
+
+    // Step 3: Compare UserIDs with dataset folders and filter mismatched entries
+    const cleanedData = [];
+    const folderNames = fs.readdirSync(datasetPath).map((folder) => folder.trim().toLowerCase());
+    folderNames.forEach((folder) => {
+      const folderPath = path.join(datasetPath, folder);
+      const filesInFolder = fs.readdirSync(folderPath).map((file) => file.split('.')[0]); // Remove extensions
+
+      // Get Excel FaceIDs for this UserID
+      const excelFaceIds = userIdToFaceIds[folder] || [];
+
+      // Keep only matching FaceIDs
+      const matchingFaceIds = excelFaceIds.filter((faceId) => filesInFolder.includes(faceId));
+      const removedFaceIds = excelFaceIds.filter((faceId) => !filesInFolder.includes(faceId));
+
+      logger.info(
+        `UserID: ${folder}, Matching FaceIDs: ${matchingFaceIds.length}, Removed FaceIDs: ${removedFaceIds.length}`
+      );
+
+      // Keep rows only for matching FaceIDs
+      matchingFaceIds.forEach((faceId) => {
+        cleanedData.push(...data.filter((row) => row.UserID.trim().toLowerCase() === folder && row.FaceID.trim() === faceId));
+      });
+    });
+
+    logger.info(`Total cleaned entries: ${cleanedData.length}`);
+
+    // Step 4: Write the cleaned data to a new Excel file
+    const newWorkbook = xlsx.utils.book_new();
+    const cleanedDataSheet = xlsx.utils.json_to_sheet(cleanedData);
+    xlsx.utils.book_append_sheet(newWorkbook, cleanedDataSheet, "CleanedData");
+    xlsx.writeFile(newWorkbook, outputExcelPath);
+
+    logger.info("Cleaned Excel file created successfully!");
+
+    // Step 5: Respond with success
+    res.send({
+      message: "Extra entries cleaned. Check the output file.",
+      outputPath: outputExcelPath,
+    });
+  } catch (error) {
+    logger.error(`Error during processing: ${error.message}`);
+    res.status(500).send({ error: "An error occurred during cleaning." });
+  }
+});
+
+// API to remove duplicate FaceIDs
+app.post("/remove-duplicate-faceids", async (req, res) => {
+  try {
+    logger.info("Loading the Excel file...");
+
+    // Step 1: Read the input Excel file
+    const workbook = xlsx.readFile(inputExcelPath);
+    const sheetName = workbook.SheetNames[0];
+    const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+    logger.info(`Total entries in Excel: ${data.length}`);
+
+    // Step 2: Remove duplicate FaceIDs
+    const seenFaceIds = new Set();
+    const deduplicatedData = data.filter((row) => {
+      const faceId = row.FaceID?.trim();
+      if (!faceId || seenFaceIds.has(faceId)) {
+        return false; // Skip duplicates
+      }
+      seenFaceIds.add(faceId); // Add unique FaceID to the set
+      return true; // Retain unique entry
+    });
+    logger.info(`Total deduplicated entries: ${deduplicatedData.length}`);
+
+    // Step 3: Write the deduplicated data to a new Excel file
+    const newWorkbook = xlsx.utils.book_new();
+    const deduplicatedDataSheet = xlsx.utils.json_to_sheet(deduplicatedData);
+    xlsx.utils.book_append_sheet(newWorkbook, deduplicatedDataSheet, "DeduplicatedData");
+    xlsx.writeFile(newWorkbook, outputExcelPath);
+
+    logger.info("Deduplicated Excel file created successfully!");
+
+    // Step 4: Respond with success
+    res.send({
+      message: "Duplicate FaceIDs removed. Check the output file.",
+      outputPath: outputExcelPath,
+    });
+  } catch (error) {
+    logger.error(`Error during processing: ${error.message}`);
+    res.status(500).send({ error: "An error occurred while removing duplicates." });
+  }
+});
+
+// API to remove extra folders
+app.post("/remove-extra-folders", async (req, res) => {
+  try {
+    logger.info("Loading the Excel file...");
+
+    // Step 1: Read the input Excel file
+    const workbook = xlsx.readFile(inputExcelPath);
+    const sheetName = workbook.SheetNames[0];
+    const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+    logger.info(`Total entries in Excel: ${data.length}`);
+
+    // Step 2: Get unique UserIDs from the Excel file
+    const excelUserIds = new Set(data.map((row) => row.UserID.trim().toLowerCase()));
+    logger.info(`Unique UserIDs found in Excel: ${excelUserIds.size}`);
+
+    // Step 3: Get a list of folder names in the dataset
+    const folderNames = fs.readdirSync(datasetPath).map((folder) => folder.trim().toLowerCase());
+    logger.info(`Total folders found in dataset: ${folderNames.length}`);
+
+    // Step 4: Identify folders not listed in the Excel file
+    const foldersNotInExcel = folderNames.filter((folder) => !excelUserIds.has(folder));
+    logger.info(`Folders not listed in Excel: ${foldersNotInExcel.length}`);
+
+    // Step 5: Remove unmatched folders
+    foldersNotInExcel.forEach((folder) => {
+      const folderPath = path.join(datasetPath, folder);
+      try {
+        fs.rmdirSync(folderPath, { recursive: true }); // Delete the folder
+        logger.info(`Deleted folder: ${folderPath}`);
+      } catch (err) {
+        logger.error(`Failed to delete folder ${folderPath}: ${err.message}`);
+      }
+    });
+
+    // Step 6: Respond with success
+    res.send({
+      message: "Extra folders removed. Check logs for details.",
+      removedFolders: foldersNotInExcel,
+    });
+  } catch (error) {
+    logger.error(`Error during processing: ${error.message}`);
+    res.status(500).send({ error: "An error occurred while removing extra folders." });
   }
 });
 
