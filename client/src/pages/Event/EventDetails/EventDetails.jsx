@@ -1251,9 +1251,9 @@ const saveFlashback = async () => {
 
 const onDrop = useCallback((acceptedFiles) => {
   const totalFiles = acceptedFiles.length;
-  if (totalFiles > 500) {
+  if (totalFiles > 1000) {
     setFileCount(totalFiles);
-    setUploadStatus(`You have selected ${totalFiles} files. You can upload a maximum of 500 files at a time.`);
+    setUploadStatus(`You have selected ${totalFiles} files. You can upload a maximum of 1000 files at a time.`);
     setUploading(false);
   } else {
     setFiles(acceptedFiles);
@@ -2495,7 +2495,7 @@ const createFlashback =({
               alignItems: 'center', 
               gap: '2rem', 
               paddingTop: '1rem' }}>
-            <ActionButton onClick={uploadFiles} disabled={!canUpload || files.length === 0 || fileCount > 500}>
+            <ActionButton onClick={uploadFiles} disabled={!canUpload || files.length === 0 || fileCount > 1000}>
             {uploading ? "Uploading..." : "Upload"}
               
             </ActionButton>
@@ -2656,7 +2656,7 @@ const createFlashback =({
               alignItems: 'center', 
               gap: '2rem', 
               paddingTop: '1rem' }}>
-            <ActionButton onClick={uploadFlashbackFiles} disabled={!canUpload || files.length === 0 || fileCount > 500}>
+            <ActionButton onClick={uploadFlashbackFiles} disabled={!canUpload || files.length === 0 || fileCount > 1000}>
               Upload
             </ActionButton>
             </div>
