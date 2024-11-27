@@ -2790,21 +2790,37 @@ app.get('/downloadFlashbacks/:eventId/:flashbackName', async (req, res) => {
     // Process each item
     for (const item of data.Contents) {
       const fileKey = item.Key;
+    
+      try {
+        if(fileKey.includes('/thumbnails'))
+          continue;
+        // Retrieve the metadata of the object to get the file size
+        const headObject = await s3.headObject({ Bucket: flashbacksBucketname, Key: fileKey }).promise();
+        const fileSizeInBytes = headObject.ContentLength; // File size in bytes
+        const fileSizeInMB = (fileSizeInBytes / (1024 * 1024)).toFixed(2); // Convert to MB and format to 2 decimal places
 
-      // Stream files directly from S3 to the ZIP file
-      const s3Stream = s3.getObject({ Bucket: flashbacksBucketname, Key: fileKey }).createReadStream();
-
-      // Handle S3 stream errors
-      s3Stream.on('error', err => {
-        logger.error(`Error reading S3 object ${fileKey}:`, err);
-        // Optionally handle the error (e.g., skip the file or append an error message to the ZIP)
-      });
-
-      // Append the file to the archive, preserving the folder structure after the specified prefix
-      const relativePath = path.relative(folderName, fileKey);
-      logger.info("Image downloaded from cloud: " + fileKey);
-      zip.append(s3Stream, { name: relativePath });
+        logger.info(`Downloading Image: ${fileKey} | Size: ${fileSizeInMB} MB`);
+    
+    
+        // Stream files directly from S3 to the ZIP file
+        const s3Stream = s3.getObject({ Bucket: flashbacksBucketname, Key: fileKey }).createReadStream();
+    
+        // Handle S3 stream errors
+        s3Stream.on('error', err => {
+          logger.error(`Error reading S3 object ${fileKey}:`, err);
+          // Optionally handle the error (e.g., skip the file or append an error message to the ZIP)
+        });
+    
+        // Append the file to the archive, preserving the folder structure after the specified prefix
+        const relativePath = path.relative(folderName, fileKey);
+        logger.info(`Image downloaded from cloud: ${fileKey}`);
+        zip.append(s3Stream, { name: relativePath });
+    
+      } catch (err) {
+        logger.error(`Failed to retrieve metadata or download image for ${fileKey}:`, err);
+      }
     }
+    
 
     // Finalize the archive
     zip.finalize();
