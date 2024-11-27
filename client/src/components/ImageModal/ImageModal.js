@@ -199,6 +199,10 @@ const ImageModal = ({
   const [isFavourite, setIsFavourite] = useState(clickedImgFavourite);
   const touchStartRef = useRef(0);
   const isNavigatingRef = useRef(false);
+  const [touchStartX, setTouchStartX] = useState(0);
+const [touchEndX, setTouchEndX] = useState(0);
+const [isSwiping, setIsSwiping] = useState(false);
+const [isZooming, setIsZooming] = useState(false);
 
   useEffect(() => {
     if (isNavigatingRef.current) {
@@ -230,6 +234,34 @@ const ImageModal = ({
   };
 
   useEffect(() => {
+    const disablePinchZoom = (e) => {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener("touchmove", disablePinchZoom, {
+      passive: false,
+    });
+    return () => {
+      document.removeEventListener("touchmove", disablePinchZoom);
+    };
+  }, []);
+
+  useEffect(() => {
+    function touchHandler(event) {
+      if (event.touches.length > 1) {
+        //the event is multi-touch
+        //you can then prevent the behavior
+        event.preventDefault();
+      }
+    }
+    window.addEventListener("touchstart", touchHandler, { passive: false });
+    return () => {
+      window.removeEventListener("touchstart",touchHandler);
+    }
+  }, []);
+
+  useEffect(() => {
     const handleKeyDown = (e) => {
       switch(e.key) {
         case 'ArrowLeft':
@@ -251,8 +283,52 @@ const ImageModal = ({
   }, [currentIndex]); 
 
   const handleSwipeStart = (e) => {
-    touchStartRef.current = e.touches[0].clientX;
-  };
+    if (e.touches.length > 1) {
+      // Prevent zoom by stopping the event propagation and preventing default behavior
+      // e.preventDefault();
+      setIsZooming(true);
+      setIsSwiping(false);
+    } else{
+      setTouchStartX(e.touches[0].clientX);
+
+    }
+   
+};
+
+const handleSwipeMove = (e) => {
+  if (e.touches.length > 1) {
+    // Block zoom during touch move
+    // e.preventDefault();    
+    setIsZooming(true);
+    setIsSwiping(false);
+} else {
+  if (!isSwiping){
+    setIsSwiping(true);
+    setIsZooming(false);
+  } 
+  setTouchEndX(e.touches[0].clientX);
+}
+ 
+    
+};
+
+const handleSwipeEnd = () => {
+    if (!isSwiping || isZooming) return;
+
+    const swipeDistance = touchStartX - touchEndX;
+    const swipeThreshold = window.innerWidth / 4; // 25% of the screen width
+
+    if (swipeDistance > swipeThreshold) {
+        handleNext(); // Navigate to next image
+    } else if (swipeDistance < -swipeThreshold) {
+        handlePrev(); // Navigate to previous image
+    }
+
+    // Reset swipe tracking
+    setTouchStartX(0);
+    setTouchEndX(0);
+    setIsSwiping(false);
+};
 
   const onLoad = () => {
     const lazySpan = document.querySelector(".lazyImage");
@@ -262,19 +338,19 @@ const ImageModal = ({
     loader && loader.remove();
     lazySpan && lazySpan.classList.add("visible");
   };
-  const handleSwipeMove = (e) => {
-    const touch = e.touches[0];
-    const touchEnd = touch.clientX;
-    const swipeThresholdInPixels = 32;
+  // const handleSwipeMove = (e) => {
+  //   const touch = e.touches[0];
+  //   const touchEnd = touch.clientX;
+  //   const swipeThresholdInPixels = 32;
 
-    if (touchStartRef.current - touchEnd > swipeThresholdInPixels) {
-      handleNext();
-      touchStartRef.current = touchEnd;
-    } else if (touchEnd - touchStartRef.current > swipeThresholdInPixels) {
-      handlePrev();
-      touchStartRef.current = touchEnd;
-    }
-  };
+  //   if (touchStartRef.current - touchEnd > swipeThresholdInPixels) {
+  //     handleNext();
+  //     touchStartRef.current = touchEnd;
+  //   } else if (touchEnd - touchStartRef.current > swipeThresholdInPixels) {
+  //     handlePrev();
+  //     touchStartRef.current = touchEnd;
+  //   }
+  // };
 
   const downloadCurrentImage = async (e) => {
     e.stopPropagation();
@@ -331,12 +407,14 @@ const ImageModal = ({
   };
 
   return (
-    <Overlay 
-      className="overlay dismiss" 
-      onClick={handleClick}
-      onTouchStart={handleSwipeStart}
-      onTouchMove={handleSwipeMove}
-    >
+<Overlay 
+    className="overlay dismiss"
+    onTouchStart={handleSwipeStart}
+    onTouchMove={handleSwipeMove}
+    onTouchEnd={handleSwipeEnd} // Add this for swipe completion
+    onClick={handleClick}
+>
+
       <LoadingSpinner />
       <ModalOuter className="modalOuter lazyImage hidden" onClick={e => e.stopPropagation()}>
         {/* Desktop Controls */}
