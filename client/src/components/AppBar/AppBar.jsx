@@ -147,7 +147,7 @@ const ModalContent = styled(BaseModalContent)`
 
   const ModalHeader = styled.div`
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
   align-items: center;
   margin-bottom: 1rem;
 
@@ -195,6 +195,9 @@ const SubmitButton = styled.button`
   }
 `;
 
+const RewardsText = styled.span`
+  font-size:0.6em;
+`
 
 const CloseButton = styled.button`
   background: #2a2a2a;
@@ -225,6 +228,7 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false); // State to control menu visibility
   const [balance, setBalance] = useState(0);
   const [isWalletExists, setIsWalletExists] = useState(false);
+  const [isWalletCreating, setIsWalletCreating] = useState(false);
   const [createWalletModalOpen, setCreateWalletModalOpen] = useState(false);
   
 
@@ -333,7 +337,7 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
     setIsWalletModalOpen(false);
   };
  const acceptWalletPermissions=async ()=>{
-
+  setIsWalletCreating(true);
   const updateData = {
     user_phone_number: userDetails.user_phone_number,
     is_permission_enabled:true
@@ -353,11 +357,12 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
     }
   } catch (error) {
     toast.error("An error occurred. Please try again.");
+  }finally{
+    setIsWalletCreating(false);
   }
 
  };
  const declineWalletPermissions = async () => {
-  
   const updateData = {
     user_phone_number: userDetails.user_phone_number,
     is_permission_enabled:false
@@ -426,11 +431,15 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
   </ModalHeader>
 
     <>
-      <p>Earn 100 Coins by Sharing the permissions for Unity to securely train model on your data</p>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem' }}>
-        <SubmitButton onClick={() => acceptWalletPermissions()}>Accept</SubmitButton>
+      <p>Earn 100 🍥 Reward Points</p>
+      <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: '1rem' }}>
+      <SubmitButton onClick={() => acceptWalletPermissions()}>
+        {isWalletCreating ? "Accepting..." : "Accept"}
+      </SubmitButton>
+
         <SubmitButton onClick={()=>declineWalletPermissions()} style={{ backgroundColor: '#3a3a3a' }}>Deny</SubmitButton>
       </div>
+      <RewardsText>*Granting permissions for Unity to securely train a model using your data</RewardsText>
     </>
 
 </ModalContent>

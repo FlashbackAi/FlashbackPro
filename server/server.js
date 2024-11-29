@@ -9237,7 +9237,8 @@ const storeWalletInDynamoDB = async (mobileNumber, walletDetails) => {
       wallet_address: walletDetails.walletAddress,
       public_key: walletDetails.publicKey,
       encrypted_private_key: walletDetails.encryptedPrivateKey,
-      balance: walletDetails.balance,  // Set balance as '0'
+      balance: walletDetails.balance,
+      created_date:new Date().toISOString(),
     }
   };
 
