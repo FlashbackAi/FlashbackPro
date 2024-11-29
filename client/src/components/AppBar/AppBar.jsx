@@ -230,6 +230,7 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
   const [isWalletExists, setIsWalletExists] = useState(false);
   const [isWalletCreating, setIsWalletCreating] = useState(false);
   const [createWalletModalOpen, setCreateWalletModalOpen] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(true);
   
 
   const toggleMenu = () => {
@@ -433,13 +434,19 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
     <>
       <p>Earn 100 🍥 Reward Points</p>
       <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: '1rem' }}>
-      <SubmitButton onClick={() => acceptWalletPermissions()}>
+      <SubmitButton
+        onClick={() => acceptWalletPermissions()}
+        disabled={!termsAccepted}
+      >
         {isWalletCreating ? "Accepting..." : "Accept"}
       </SubmitButton>
 
         <SubmitButton onClick={()=>declineWalletPermissions()} style={{ backgroundColor: '#3a3a3a' }}>Deny</SubmitButton>
       </div>
-      <RewardsText>*Granting permissions for Unity to securely train a model using your data</RewardsText>
+      <label style={{ display: "flex", justifyContent: "center", marginTop:"1em" }}>
+        <input name="checkbox" type="checkbox" defaultChecked required style={{ transform: "scale(1.1)" }} onChange={(e) => setTermsAccepted(e.target.checked)} onInvalid={(e) => e.target.setCustomValidity("Please accept the terms and conditions.")} onInput={(e) => e.target.setCustomValidity("")} />
+        <a href="/TermsAndConditions" target="_blank" rel="noopener noreferrer" className="termsAndConditionButton">Accept terms and conditions</a>
+      </label>
     </>
 
 </ModalContent>
