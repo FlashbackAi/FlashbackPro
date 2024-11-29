@@ -9251,8 +9251,6 @@ const storeWalletInDynamoDB = async (mobileNumber, walletDetails) => {
   }
 };
 
-
-
 // Define the function to handle wallet creation and transaction
 async function handleWalletCreation(mobileNumber) {
   logger.info(`Received request to create wallet for mobile number: ${mobileNumber}`);
@@ -9324,6 +9322,7 @@ app.post('/createWallet', async (req, res) => {
 
   try {
     const response = await handleWalletCreation(mobileNumber);
+    logger.info("Successfully created wallet for mobile number : ",mobileNumber);
     res.status(response.status).json(response);
   } catch (error) {
     res.status(500).json({ message: 'Failed to create Aptos wallet', error: error.message });
