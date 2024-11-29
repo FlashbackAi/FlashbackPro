@@ -495,7 +495,7 @@ const Wallet = ({ isOpen, onClose, userPhoneNumber, datasetName, showCoins }) =>
             setLabel(
                 <>
                   Enable to Earn {Math.floor(response.data.count / 2)} 
-                  <img className='unityLogo' src='/unityLogo.png' alt='Coin' />
+                  🍥
                 </>
               );
               
@@ -876,7 +876,7 @@ const fetchModelData = async (request) => {
                         <StatusBadge status={request.status}>{request.status}</StatusBadge>
                         {request.status === 'Accepted' && (
                           <CoinsEarned>
-                            {Math.floor(request.dataset_size / 2)} <img src='/unityLogo.png' alt='Coin' />
+                            {Math.floor(request.dataset_size / 2)}  🍥
                           </CoinsEarned>
                         )}
                       </RequestStatus>
@@ -925,7 +925,7 @@ const fetchModelData = async (request) => {
       >
         Balance: {balance !== null ? (
           <>
-            {balance} <img className='unityLogo' src='/unityLogo.png' alt='Unity Coin' />
+            {balance}  🍥
           </>
         ) : (
           <motion.div
@@ -1052,7 +1052,7 @@ const RequestDetailsModal = ({ isOpen, onClose, request, model, onAccept, onReje
               {request.status === 'Accepted' && (
                 <RequestAcceptInfo>
                   Coins Credited: {Math.floor(request.dataset_size / 2)}
-                  <UnityLogo src='/unityLogo.png' alt='Coin' />
+                  🍥
                 </RequestAcceptInfo>
               )}
             </>

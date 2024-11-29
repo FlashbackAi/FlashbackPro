@@ -11,6 +11,34 @@ const secretsClient = new SecretsManagerClient({
 });
 let config = {}; 
 
+async function fetchAptosSecrets() {
+  const secretName = 'flashback-prod-aptos-secrets'; // Replace with your actual secret name
+
+  try {
+    const response = await secretsClient.send(
+      new GetSecretValueCommand({
+        SecretId: secretName,
+        VersionStage: 'AWSCURRENT', // Optional: Fetch the current version of the secret
+      })
+    );
+
+    const secretString = response.SecretString;
+    const secrets = JSON.parse(secretString); // Parse the JSON string to an object
+
+    return {
+        senderMobileNumber: secrets.APTOS_SENDER_MOBILE_NUMBER,
+        aptosNodeUrl: secrets.APTOS_NODE_URL,
+        senderAddress: secrets.SENDER_ADDRESS,
+        senderPrivateKey: secrets.SENDER_PRIVATE_KEY,
+        recipientAddress: secrets.RECIPIENT_ADDRESS,
+      
+    };
+  } catch (error) {
+    console.error('Error retrieving secrets from AWS Secrets Manager:', error);
+    throw error;
+  }
+}
+
 async function fetchWhatsappSecrets() {
   const secretName = 'flashback-prod-whatsapp-secrets'; // Replace with your actual secret name
 
@@ -63,7 +91,7 @@ async function fetchAWSSecrets() {
 // Function to initialize the app with secrets
 async function initializeConfig() {
   try {
-    //const aptosConfig  = await fetchAptosSecrets();
+    const aptosConfig  = await fetchAptosSecrets();
     const whatsappConfig = await fetchWhatsappSecrets();
     const awsCredentials = await fetchAWSSecrets();
 
@@ -76,7 +104,8 @@ async function initializeConfig() {
     config= {
       AWS: AWS,
       awsCredentials: awsCredentials,
-      whatsapp: whatsappConfig
+      whatsapp: whatsappConfig,
+      aptosConfig: aptosConfig,
     };
     return config;
   } catch (error) {

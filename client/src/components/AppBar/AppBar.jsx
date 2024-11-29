@@ -10,6 +10,7 @@ import Modal from 'react-modal'; // Assuming you are using react-modal
 import {  Menu, User, LogOut, Gem} from 'lucide-react';
 import { IoDiamond } from "react-icons/io5";
 
+import { toast } from 'react-toastify';
 import Wallet from '../WalletModal/WalletModal';
 
 
@@ -125,6 +126,97 @@ const MenuItem = styled.div`
 `;
 
 
+const BaseModalContent = styled.div`
+  background-color: #1e1e1e;
+  border-radius: 1rem;
+  padding: 2rem;
+  outline: none;
+  color: #ffffff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin: 0.5rem;
+  }`;
+
+const ModalContent = styled(BaseModalContent)`
+  max-width: 300px;
+  width: 90%;
+`;
+
+  const ModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+
+  @media (max-width: 768px) {
+    margin-bottom: 0.75rem;
+  }
+`;
+
+const ModalTitle = styled.h2`
+  font-size: 1.5rem;
+  color: #00ffff;
+  margin: 0;
+
+  @media (max-width: 768px) {
+    font-size: 1.2rem;
+  }
+`;
+
+const SubmitButton = styled.button`
+  background-color: #2a2a2a;
+  color: #ffffff;
+  border: none;
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  grid-column: 1 / -1;
+
+  @media (max-width: 768px) {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.7rem;
+    border-radius: 1px;
+  }
+
+  &:hover {
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+    transform: scale(1.03);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+
+const CloseButton = styled.button`
+  background: #2a2a2a;
+  border: 2rem;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #ffffff;
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+    padding: 0.2rem 0.5rem;
+    max-width: 10%;
+  }
+
+    &:hover {
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+    transform: scale(1.03);
+  }
+`;
+
+
+
 const AppBar = ({ showLogout = true, showCoins = false }) => {
   const navigate = useNavigate();
   const [userDetails, setUserDetails] = useState(null); // State to hold user details
@@ -132,6 +224,8 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
  
   const [isMenuOpen, setIsMenuOpen] = useState(false); // State to control menu visibility
   const [balance, setBalance] = useState(0);
+  const [isWalletExists, setIsWalletExists] = useState(false);
+  const [createWalletModalOpen, setCreateWalletModalOpen] = useState(false);
   
 
   const toggleMenu = () => {
@@ -143,7 +237,21 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
       const response = await API_UTIL.get(`/fetchUserDetails/${userPhoneNumber}`);
 
       setUserDetails(response.data.data);
+      if(response.data.data.reward_points || response.data.data.reward_points!==0|| 'is_permission_enabled' in response.data.data){
       setBalance(response.data.data.reward_points);
+      if(response.data.data.is_permission_enabled)
+      {
+        setIsWalletExists(true);
+      }
+      else{
+        setIsWalletExists(false);
+      }
+      
+      }
+      else{
+        setIsWalletExists(false);
+        setCreateWalletModalOpen(true);
+      }
     } catch (error) {
       console.error('Error fetching user details:', error);
     }
@@ -175,14 +283,29 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
   }
   }, [showCoins]);
 
-  // const fetchBalance = async (walletAddress) => {
-  //   try {
-  //     const response = await API_UTIL.get(`/wallet-balance/${walletAddress}`); // Use your API endpoint
-  //     setBalance(response.data.balance);
-  //   } catch (error) {
-  //     console.error('Error fetching wallet balance:', error);
-  //   }
-  // };
+
+  useEffect(() => {
+    if (showCoins && isWalletExists) {
+      const userPhoneNumber = localStorage.getItem('userPhoneNumber');
+    // Poll to fetch balance every 10 seconds
+    const interval = setInterval(() => {
+      if (userPhoneNumber) {
+        fetchBalance(userPhoneNumber );
+      }
+    }, 5000); 
+    // Clear interval on component unmount
+    return () => clearInterval(interval);
+  }
+  }, [showCoins,isWalletExists]);
+
+   const fetchBalance = async (walletAddress) => {
+    try {
+      const response = await API_UTIL.get(`/wallet-balance/${walletAddress}`); // Use your API endpoint
+      setBalance(response.data.balance);
+    } catch (error) {
+      console.error('Error fetching wallet balance:', error);
+    }
+  };
 
 
 
@@ -198,13 +321,58 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
 
 
   const openQrModal = () => {
-    setIsWalletModalOpen(true);
+    if(!isWalletExists){
+      setCreateWalletModalOpen(true);
+    }
+    else{
+      setIsWalletModalOpen(true);
+    }
   };
 
   const closeQrModal = () => {
     setIsWalletModalOpen(false);
   };
+ const acceptWalletPermissions=async ()=>{
 
+  const updateData = {
+    user_phone_number: userDetails.user_phone_number,
+    is_permission_enabled:true
+  };
+  try {
+    const response = await API_UTIL.post('/updateUserDetails', updateData);
+    if (response.status === 200) {
+      const walletResponse = await API_UTIL.post('/createWallet', {'mobileNumber':userDetails.user_phone_number});
+      if(walletResponse.status ===200||walletResponse.status ===201){
+        setCreateWalletModalOpen(false);
+        setIsWalletExists(true);
+      }else {
+        throw Error("An error occurred. Please try again.")
+      }
+    } else {
+      throw Error("An error occurred. Please try again.")
+    }
+  } catch (error) {
+    toast.error("An error occurred. Please try again.");
+  }
+
+ };
+ const declineWalletPermissions = async () => {
+  
+  const updateData = {
+    user_phone_number: userDetails.user_phone_number,
+    is_permission_enabled:false
+  };
+  try {
+    const response = await API_UTIL.post('/updateUserDetails', updateData);
+    if (response.status === 200) {
+      setCreateWalletModalOpen(false);
+    } else {
+      throw Error("An error occurred. Please try again.")
+    }
+  } catch (error) {
+    toast.error("An error occurred. Please try again.");
+  }
+ }
 
 
 
@@ -217,9 +385,9 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
       <UserSection>
         { userDetails && (
           <>
-            <CoinDisplay >
+            <CoinDisplay onClick={openQrModal}>
               <span >{balance}</span>
-              <IoDiamond color="Yellow" size="1.4em"/>
+              🍥
               {/* <img className='unityLogo' src='/unityLogo.png' alt=''/> */}
             </CoinDisplay> 
           
@@ -246,39 +414,27 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
         )}
       </UserSection>
 
-      {/* <StyledModal
-        isOpen={isQrModalOpen}
-        onRequestClose={closeQrModal}
-        contentLabel="Wallet Details"
-        className="wallet-modal-content"
+      <Modal
+        isOpen={createWalletModalOpen}
+        contentLabel="Delete Confirmation"
+        className="modal-content"
         overlayClassName="modal-overlay"
       >
-        <ModalHeader>
-          <ModalTitle>Wallet Details</ModalTitle>
-          <CloseButton onClick={closeQrModal}><X size={25} /></CloseButton>
-        </ModalHeader>
-        
-        <WalletDetails>
-          <Balance>
-            {balance} <img className='unityLogo' src='/unityLogo.png' alt=''/>
-          </Balance>
-          
-          <HashCode>
-            {formatHashCode(hashCode)}
-            <CopyButton onClick={copyHashCode} title={copyStatus}>
-              <Copy size={18} /> {copyStatus}
-            </CopyButton>
-          </HashCode>
-          
-          <QRCodeWrapper ref={qrRef}>
-            <QRCode value={hashCode} size={200} />
-          </QRCodeWrapper>
-          
-          <WithdrawButton onClick={() => navigate('/withdraw')}>
-            Withdraw
-          </WithdrawButton>
-        </WalletDetails>
-      </StyledModal> */}
+<ModalContent>
+  <ModalHeader>
+    <ModalTitle>Create Wallet</ModalTitle>
+  </ModalHeader>
+
+    <>
+      <p>Earn 100 Coins by Sharing the permissions for Unity to securely train model on your data</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem' }}>
+        <SubmitButton onClick={() => acceptWalletPermissions()}>Accept</SubmitButton>
+        <SubmitButton onClick={()=>declineWalletPermissions()} style={{ backgroundColor: '#3a3a3a' }}>Deny</SubmitButton>
+      </div>
+    </>
+
+</ModalContent>
+      </Modal>
     {isWalletModalOpen &&(
 
    

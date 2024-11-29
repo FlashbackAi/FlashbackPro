@@ -1279,7 +1279,7 @@ const uploadFiles = async () => {
   setUploading(true);
   setUploadFilesModalStatus('Uploading files...');
   setIsUploadFilesFailed(false);
-  setOverallProgress(10); // Start at 0% progress
+  setOverallProgress(2); // Start at 0% progress
 
   const MAX_CONCURRENT_UPLOADS = 3; // Limit to avoid overloading the server
   const MAX_RETRIES = 3;
@@ -1364,8 +1364,8 @@ const uploadFiles = async () => {
       toast.error('Failed to update the event with new file count. Please try again.');
     }
 
-    await updateRewards(-files.length);
-
+    //await updateRewards(-files.length);
+    await deductCoins(files.length);
     setUploadStatus('Upload completed successfully');
     setFiles([]);
   } catch (error) {
@@ -1459,8 +1459,8 @@ const uploadFlashbackFiles = async () => {
     // After all files are uploaded successfully, update the uploaded files count
     // const newUploadedFilesCount = uploadedFilesCount + files.length;
     // setUploadedFilesCount(newUploadedFilesCount);
-    await updateRewards(-files.length);
-    //await deductCoins(files.length);
+    //await updateRewards(-files.length);
+    await deductCoins(files.length);
 
     setUploadStatus('Upload completed successfully');
     setFiles([]);
@@ -1957,28 +1957,50 @@ const uploadFlashbackFiles = async () => {
     setIsClaimPopupOpen(false);
   };
 
-  // const transferChewyCoins = async (recipientMobileNumber, amount) => {
-  //   try {
-  //     const senderMobileNumber = "+919090401234";
-  //     const payload = {
-  //       amount: amount,
-  //       senderMobileNumber: senderMobileNumber,
-  //       recipientMobileNumber: recipientMobileNumber,
-  //     };
+  const deductCoins = async (numberOfImages) => {
+    try {
+      // Prepare the request payload
+      const payload = {
+        amount: numberOfImages.toString(), // The number of images is the amount to deduct
+        senderMobileNumber: userPhoneNumber, // The current user's phone number
+        recipientMobileNumber: "+919090401234" // The fixed recipient phone number
+      };
+  
+      // Call the API to transfer Chewy coins
+      const response = await API_UTIL.post('/transfer-chewy-coins', payload);
+  
+      if (response.status === 200) {
+        setIsCoinsDeducted(true);
+      } else {
+        throw new Error('Failed to deduct coins.');
+      }
+    } catch (error) {
+      console.error('Error deducting coins:', error);
+      toast.error('Failed to deduct coins. Please try again.');
+    }
+  };
+  const transferChewyCoins = async (recipientMobileNumber, amount) => {
+    try {
+      const senderMobileNumber = "+919090401234";
+      const payload = {
+        amount: amount,
+        senderMobileNumber: senderMobileNumber,
+        recipientMobileNumber: recipientMobileNumber,
+      };
 
-  //     const response = await API_UTIL.post('/transfer-chewy-coins', payload);
+      const response = await API_UTIL.post('/transfer-chewy-coins', payload);
 
-  //     if (response.status === 200) {
-  //       toast.success('Rewards added successfully!');
-  //       fetchUserDetails();
-  //     } else {
-  //       throw new Error('Failed to transfer Chewy Coins.');
-  //     }
-  //   } catch (error) {
-  //     console.error('Error transferring Chewy Coins:', error);
-  //     toast.error('Failed to transfer Unity Coins. Please try again.');
-  //   }
-  // };
+      if (response.status === 200) {
+        toast.success('Rewards added successfully!');
+        fetchUserDetails();
+      } else {
+        throw new Error('Failed to transfer Chewy Coins.');
+      }
+    } catch (error) {
+      console.error('Error transferring Chewy Coins:', error);
+      toast.error('Failed to transfer Unity Coins. Please try again.');
+    }
+  };
 
   const registeredUsers = userThumbnails.filter((thumbnail) => thumbnail.is_registered);
   const unregisteredUsers = userThumbnails.filter((thumbnail) => !thumbnail.is_registered);

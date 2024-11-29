@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@aptos-labs/ts-sdk": "^1.33.0",
     "@aws-sdk/client-secrets-manager": "^3.675.0",
     "amazon-cognito-identity-js": "^6.3.7",
     "archiver": "^6.0.1",

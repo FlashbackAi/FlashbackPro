@@ -23,18 +23,18 @@ const WhatsAppSender = require('./WhatsappSender');
 const { v4: uuidv4 } = require('uuid');
 const busboy = require('busboy');
 //const { log } = require('console');
-//const { Account,AptosConfig, Aptos, AptosClient,Network, TxnBuilderTypes, BCS,Ed25519PrivateKey,AccountAddress } = require( '@aptos-labs/ts-sdk');
+const { Account,AptosConfig, Aptos, AptosClient,Network, TxnBuilderTypes, BCS,Ed25519PrivateKey,AccountAddress } = require( '@aptos-labs/ts-sdk');
 const { initializeConfig, getConfig } = require('./config');
 const { ENV } = require('./config');
 const crypto = require('crypto');
-//const config = new AptosConfig({ network: Network.MAINNET});
-//const aptosClient = new Aptos(config);
+const aptconfig = new AptosConfig({ network: Network.MAINNET});
+const aptosClient = new Aptos(aptconfig);
 const schedule = require('node-schedule');
 const bodyParser = require("body-parser");
 const axios = require("axios");
 
 const oldEvents = ["Aarthi_Vinay_19122021","Convocation_PrathimaCollege","KSL_25042024","Jahnavi_Vaishnavi_SC_28042024","KSL_22052024","KSL_16052024","V20_BootCamp_2024","Neha_ShivaTeja_18042024"];
-//const CHEWY_AMOUNT =1000;
+const CHEWY_AMOUNT =100;
 
 const logger = require('./logger');
 const e = require('express');
@@ -3344,7 +3344,7 @@ app.post('/uploadUserPotrait', upload.single('image'), async (req, res) => {
         let eventName = req.body.eventName;
         const userSource = req.body.userSource;
         const role = req.body.role;
-        const reward_points  = req.body.reward_points
+        const reward_points  = 0;
         logger.info("creating user "+username);
       
         try {
@@ -5465,7 +5465,6 @@ app.delete('/deleteEvent/:eventId/:userPhoneNumber', async (req, res) => {
 
             try {
               const res = await docClient.delete(deleteImageDataParams).promise();
-              logger.info(res);
               //logger.info(`Deleted image record from ImageUploadData table for s3_url: ${s3Url}`);
             } catch (deleteError) {
               logger.error(`Failed to delete image record from ImageUploadData table for s3_url: ${s3Url} - Error: ${deleteError.message}`);
@@ -8750,460 +8749,421 @@ app.post('/backfillFolderNames', async (req, res) => {
   }
 });
 
-// app.post('/transfer-chewy-coins-by-wallet-address', async (req, res) => {
-//   try {
-//       const { amount, senderMobileNumber,recipientAddress} = req.body;
+app.post('/transfer-chewy-coins-by-wallet-address', async (req, res) => {
+  try {
+      const { amount, senderMobileNumber,recipientAddress} = req.body;
 
-//       // Log incoming request
-//       logger.info(`Transfer request received: amount = ${amount}`);
+      // Log incoming request
+      logger.info(`Transfer request received: amount = ${amount}`);
 
-//       // Read sender's private key and recipient address from config
+      // Read sender's private key and recipient address from config
         
-//       //const recipientAddress = aptosConfig.RECIPIENT_ADDRESS;
-//       const transferAmount = amount ;  // Use provided amount or default
-//       //const recipientWalletDetails = await fetchWalletDetails(recipientMobileNumber)
+      //const recipientAddress = aptosConfig.RECIPIENT_ADDRESS;
+      const transferAmount = amount ;  // Use provided amount or default
+      //const recipientWalletDetails = await fetchWalletDetails(recipientMobileNumber)
 
-//       // const status = await transferAptosCoins(recipientAddress, transferAmount);
-//       const status = await transferChewyCoins(recipientAddress, transferAmount,senderMobileNumber, '');
+      // const status = await transferAptosCoins(recipientAddress, transferAmount);
+      const status = await transferCoins(recipientAddress, transferAmount,senderMobileNumber, '');
 
-//       res.status(200).json({
-//           message: 'Chewy Coin transfer successful',
-//           status: status
-//       });
-//   } catch (error) {
-//       logger.error(`Transfer failed: ${error}`);
-//       res.status(500).json({ error: 'Chewy Coin transfer failed', details: error.message });
-//   }
-// });
+      res.status(200).json({
+          message: 'Chewy Coin transfer successful',
+          status: status
+      });
+  } catch (error) {
+      logger.error(`Transfer failed: ${error}`);
+      res.status(500).json({ error: 'Chewy Coin transfer failed', details: error.message });
+  }
+});
 
-// app.post('/transfer-chewy-coins', async (req, res) => {
-//   try {
-//       const { amount, senderMobileNumber,recipientMobileNumber} = req.body;
+app.post('/transfer-chewy-coins', async (req, res) => {
+  try {
+      const { amount, senderMobileNumber,recipientMobileNumber} = req.body;
 
-//       // Log incoming request
-//       logger.info(`Transfer request received: amount = ${amount}`);
+      // Log incoming request
+      logger.info(`Transfer request received: amount = ${amount}`);
 
-//       // Read sender's private key and recipient address from config
+      // Read sender's private key and recipient address from config
         
-//       //const recipientAddress = aptosConfig.RECIPIENT_ADDRESS;
-//       const transferAmount = amount ;  // Use provided amount or default
-//       const recipientWalletDetails = await fetchWalletDetails(recipientMobileNumber)
+      //const recipientAddress = aptosConfig.RECIPIENT_ADDRESS;
+      const transferAmount = amount ;  // Use provided amount or default
+      const recipientWalletDetails = await fetchWalletDetails(recipientMobileNumber)
 
-//       // const status = await transferAptosCoins(recipientAddress, transferAmount);
-//       const status = await transferChewyCoins(recipientWalletDetails.wallet_address, transferAmount,senderMobileNumber, recipientMobileNumber);
+      // const status = await transferAptosCoins(recipientAddress, transferAmount);
+      const status = await transferCoins(recipientWalletDetails.wallet_address, transferAmount,senderMobileNumber, recipientMobileNumber);
 
-//       res.status(200).json({
-//           message: 'Chewy Coin transfer successful',
-//           status: status
-//       });
-//   } catch (error) {
-//       logger.error(`Transfer failed: ${error}`);
-//       res.status(500).json({ error: 'Chewy Coin transfer failed', details: error.message });
-//   }
-// });
-
-
+      res.status(200).json({
+          message: 'Chewy Coin transfer successful',
+          status: status
+      });
+  } catch (error) {
+      logger.error(`Transfer failed: ${error}`);
+      res.status(500).json({ error: 'Chewy Coin transfer failed', details: error.message });
+  }
+});
 
 
-// app.post('/transfer-aptos-coins', async (req, res) => {
-//   try {
-//      // const { amount, recipientAddress, mobileNumber } = req.body;
-//      const { amount, senderMobileNumber,recipientMobileNumber} = req.body;
-//       // Log incoming request
-//       logger.info(`Transfer request received: amount = ${amount}`);
-//       const recipientWalletDetails = await fetchWalletDetails(recipientMobileNumber)
-//       // Read sender's private key and recipient address from config
+
+
+app.post('/transfer-aptos-coins', async (req, res) => {
+  try {
+     // const { amount, recipientAddress, mobileNumber } = req.body;
+     const { amount, senderMobileNumber,recipientMobileNumber} = req.body;
+      // Log incoming request
+      logger.info(`Transfer request received: amount = ${amount}`);
+      const recipientWalletDetails = await fetchWalletDetails(recipientMobileNumber)
+      // Read sender's private key and recipient address from config
         
-//       //const recipientAddress = aptosConfig.RECIPIENT_ADDRESS;
-//       const transferAmount = amount ;  // Use provided amount or default
+      //const recipientAddress = aptosConfig.RECIPIENT_ADDRESS;
+      const transferAmount = amount ;  // Use provided amount or default
 
-//       // const status = await transferAptosCoins(recipientAddress, transferAmount);
-//       const status = await transferAptosCoins(recipientWalletDetails.wallet_address, transferAmount,senderMobileNumber,recipientMobileNumber);
+      // const status = await transferAptosCoins(recipientAddress, transferAmount);
+      const status = await transferAptosCoins(recipientWalletDetails.wallet_address, transferAmount,senderMobileNumber,recipientMobileNumber);
 
-//       res.status(200).json({
-//           message: 'Chewy Coin transfer successful',
-//           status: status
-//       });
-//   } catch (error) {
-//       logger.error(`Transfer failed: ${error}`);
-//       res.status(500).json({ error: 'Chewy Coin transfer failed', details: error.message });
-//   }
-// });
+      res.status(200).json({
+          message: 'Chewy Coin transfer successful',
+          status: status
+      });
+  } catch (error) {
+      logger.error(`Transfer failed: ${error}`);
+      res.status(500).json({ error: 'Chewy Coin transfer failed', details: error.message });
+  }
+});
 
-// // Global error handling for unhandled promise rejections
-// process.on('unhandledRejection', (reason, promise) => {
-//   logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
-// });
+// Global error handling for unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
 
-// // Encryption function for private keys (for secure storage)
-// const encrypt = (text, secret) => {
-//   const iv = crypto.randomBytes(16);  // Generate a random initialization vector
+// Encryption function for private keys (for secure storage)
+const encrypt = (text, secret) => {
+  const iv = crypto.randomBytes(16);  // Generate a random initialization vector
   
-//   // Hash the secret to ensure it's 32 bytes (256 bits)
-//   const key = crypto.createHash('sha256').update(secret).digest('base64').substr(0, 32);
+  // Hash the secret to ensure it's 32 bytes (256 bits)
+  const key = crypto.createHash('sha256').update(secret).digest('base64').substr(0, 32);
 
-//   const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(key), iv);
+  const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(key), iv);
 
-//   let encrypted = cipher.update(text, 'utf8', 'hex');
-//   encrypted += cipher.final('hex');
+  let encrypted = cipher.update(text, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
 
-//   return iv.toString('hex') + ':' + encrypted;
-// };
+  return iv.toString('hex') + ':' + encrypted;
+};
 
-// // Function to check if wallet exists in DynamoDB
-// const checkWalletExists = async (mobileNumber) => {
-//   const params = {
-//     TableName: 'wallet_details',
-//     Key: {
-//       user_phone_number: mobileNumber
-//     }
-//   };
 
-//   try {
-//     const result = await docClient.get(params).promise();  // Use docClient
-//     return result.Item ? result.Item : null;
-//   } catch (error) {
-//     logger.error(`Error checking wallet for mobile number: ${mobileNumber}: ${error.message}`);
-//     throw error;
-//   }
-// };
+// Function to update wallet transaction in DynamoDB
+async function updateWalletTransaction(transactionId, senderMobileNumber,recipientMobileNumber, fromAddress, toAddress, amount, transactionStatus, coinType) {
+  const params = {
+    TableName: walletTransactions,  // DynamoDB table name
+    Item: {
+      transaction_id: transactionId,  // Primary key: transaction ID provided by the SDK
+      from_mobile_number: senderMobileNumber,
+      to_mobile_number:recipientMobileNumber,
+      from_address: fromAddress,      // From address (sender's wallet address)
+      to_address: toAddress,          // To address (receiver's wallet address)
+      amount: amount,                 // Amount of coins transferred
+      coin_type: coinType,            // Type of coin being transferred (e.g., Aptos, ChewyCoin)
+      status: transactionStatus,      // Status of the transaction (e.g., COMPLETED, FAILED)
+      transaction_date: new Date().toISOString()  // Storing the transaction date
+    }
+  };
 
-// // Function to store wallet info in DynamoDB
-// const storeWalletInDynamoDB = async (mobileNumber, walletDetails) => {
-//   const params = {
-//     TableName: walletDetailsTable,
-//     Item: {
-//       user_phone_number: mobileNumber,
-//       wallet_address: walletDetails.walletAddress,
-//       public_key: walletDetails.publicKey,
-//       encrypted_private_key: walletDetails.encryptedPrivateKey,
-//       balance: walletDetails.balance,  // Set balance as '0'
-//     }
-//   };
+  try {
+    // Insert the transaction details into the DynamoDB table
+    await docClient.put(params).promise();
+    logger.info(`Transaction with ID ${transactionId} successfully logged in wallet_transactions table`);
+    return true;
+  } catch (error) {
+    logger.error(`Error updating transaction with ID ${transactionId}: ${error.message}`);
+    throw new Error(`Failed to update transaction: ${error.message}`);
+  }
+}
+async function fetchTransactionForUserPhoneNumber(userPhoneNumber) {
+  try {
+    const params = {
+      TableName: walletTransactions,
+      FilterExpression: '(from_mobile_number = :phone OR to_mobile_number = :phone) AND coin_type = :coinType',
+      ExpressionAttributeValues: {
+        ':phone': userPhoneNumber,
+        ':coinType': 'Chewy', // Assuming 'Chewy' is a fixed coin type
+      },
+    };
 
-//   try {
-//     await docClient.put(params).promise();  // Use docClient
-//     logger.info(`Wallet info stored in DynamoDB for mobile number: ${mobileNumber}`);
-//   } catch (error) {
-//     logger.error(`Error storing wallet info in DynamoDB for mobile number: ${mobileNumber}: ${error.message}`);
-//     throw error;
-//   }
-// };
+    let items = [];
+    let lastEvaluatedKey = null;
 
-// // Function to update wallet transaction in DynamoDB
-// async function updateWalletTransaction(transactionId, senderMobileNumber,recipientMobileNumber, fromAddress, toAddress, amount, transactionStatus, coinType) {
-//   const params = {
-//     TableName: walletTransactions,  // DynamoDB table name
-//     Item: {
-//       transaction_id: transactionId,  // Primary key: transaction ID provided by the SDK
-//       from_mobile_number: senderMobileNumber,
-//       to_mobile_number:recipientMobileNumber,
-//       from_address: fromAddress,      // From address (sender's wallet address)
-//       to_address: toAddress,          // To address (receiver's wallet address)
-//       amount: amount,                 // Amount of coins transferred
-//       coin_type: coinType,            // Type of coin being transferred (e.g., Aptos, ChewyCoin)
-//       status: transactionStatus,      // Status of the transaction (e.g., COMPLETED, FAILED)
-//       transaction_date: new Date().toISOString()  // Storing the transaction date
-//     }
-//   };
+    // Fetching paginated data
+    do {
+      if (lastEvaluatedKey) {
+        params.ExclusiveStartKey = lastEvaluatedKey;
+      }
 
-//   try {
-//     // Insert the transaction details into the DynamoDB table
-//     await docClient.put(params).promise();
-//     logger.info(`Transaction with ID ${transactionId} successfully logged in wallet_transactions table`);
-//     return true;
-//   } catch (error) {
-//     logger.error(`Error updating transaction with ID ${transactionId}: ${error.message}`);
-//     throw new Error(`Failed to update transaction: ${error.message}`);
-//   }
-// }
-// async function fetchTransactionForUserPhoneNumber(userPhoneNumber) {
-//   try {
-//     const params = {
-//       TableName: walletTransactions,
-//       FilterExpression: '(from_mobile_number = :phone OR to_mobile_number = :phone) AND coin_type = :coinType',
-//       ExpressionAttributeValues: {
-//         ':phone': userPhoneNumber,
-//         ':coinType': 'Chewy', // Assuming 'Chewy' is a fixed coin type
-//       },
-//     };
+      const data = await docClient.scan(params).promise();
+      items = items.concat(data.Items);
+      lastEvaluatedKey = data.LastEvaluatedKey;
+    } while (lastEvaluatedKey);
 
-//     let items = [];
-//     let lastEvaluatedKey = null;
-
-//     // Fetching paginated data
-//     do {
-//       if (lastEvaluatedKey) {
-//         params.ExclusiveStartKey = lastEvaluatedKey;
-//       }
-
-//       const data = await docClient.scan(params).promise();
-//       items = items.concat(data.Items);
-//       lastEvaluatedKey = data.LastEvaluatedKey;
-//     } while (lastEvaluatedKey);
-
-//     logger.info("Total number of transactions fetched: " + items.length); // Correcting size to length for array
-//     return items;
+    logger.info("Total number of transactions fetched: " + items.length); // Correcting size to length for array
+    return items;
     
-//   } catch (error) {
-//     logger.error('Error fetching transactions: ', error);
-//     throw error; // Rethrow error to be caught in the route handler
-//   }
-// }
+  } catch (error) {
+    logger.error('Error fetching transactions: ', error);
+    throw error; // Rethrow error to be caught in the route handler
+  }
+}
 
-// // Route handler to fetch transactions by user phone number
-// app.get('/transactionsByUserPhoneNumber/:userPhoneNumber', async (req, res) => {
-//   const { userPhoneNumber } = req.params;
+// Route handler to fetch transactions by user phone number
+app.get('/transactionsByUserPhoneNumber/:userPhoneNumber', async (req, res) => {
+  const { userPhoneNumber } = req.params;
 
-//   if (!userPhoneNumber) {
-//     return res.status(400).json({ message: 'Phone number is required' });
-//   }
+  if (!userPhoneNumber) {
+    return res.status(400).json({ message: 'Phone number is required' });
+  }
 
-//   try {
-//     const allTransactions = await fetchTransactionForUserPhoneNumber(userPhoneNumber);
-//     res.status(200).json(allTransactions);
-//   } catch (error) {
-//     console.error('Error:', error);
-//     res.status(500).json({ message: 'Something went wrong' });
-//   }
-// });
-
-
-// app.get('/transactionsByUserPhoneNumber/:userPhoneNumber', async (req, res) => {
-//   const { userPhoneNumber } = req.params;
-
-//   if (!userPhoneNumber) {
-//     return res.status(400).json({ message: 'Phone number is required' });
-//   }
-
-//   try {
-//     // Fetch all transactions by phone number with pagination
-//     const allTransactions = await fetchTransactionForUserPhoneNumber(userPhoneNumber);
-//     res.status(200).send(allTransactions);
-
-//   } catch (error) {
-//     console.error('Error:', error);
-//     res.status(500).json({ message: 'Something went wrong' });
-//   }
-// });
+  try {
+    const allTransactions = await fetchTransactionForUserPhoneNumber(userPhoneNumber);
+    res.status(200).json(allTransactions);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ message: 'Something went wrong' });
+  }
+});
 
 
-// /** Register the receiver account to receive transfers for Chewy Coin, paid by feePayer. */
-// async function registerChewyCoinStore(account) {
-//   try {
-//     // const privateKeyHex = feePayer.encrypted_private_key.startsWith('0X')
-//     // ? feePayer.encrypted_private_key.slice(2) // Remove the '0x' prefix
-//     // : feePayer.encrypted_private_key;
+app.get('/transactionsByUserPhoneNumber/:userPhoneNumber', async (req, res) => {
+  const { userPhoneNumber } = req.params;
+
+  if (!userPhoneNumber) {
+    return res.status(400).json({ message: 'Phone number is required' });
+  }
+
+  try {
+    // Fetch all transactions by phone number with pagination
+    const allTransactions = await fetchTransactionForUserPhoneNumber(userPhoneNumber);
+    res.status(200).send(allTransactions);
+
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ message: 'Something went wrong' });
+  }
+});
+
+
+/** Register the receiver account to receive transfers for Chewy Coin, paid by feePayer. */
+async function registerCoinStore(account) {
+  try {
+    // const privateKeyHex = feePayer.encrypted_private_key.startsWith('0X')
+    // ? feePayer.encrypted_private_key.slice(2) // Remove the '0x' prefix
+    // : feePayer.encrypted_private_key;
   
-//     // // Derive an account with a private key and account address
-//     // const privateKey = new Ed25519PrivateKey(privateKeyHex);
-//     // const address = AccountAddress.from(feePayer.wallet_address);
-//     // const feePayerAccount = Account.fromPrivateKey({ privateKey, address });
-//     const feePayerAccount =  await getAccountInfo(config.aptosConfig.senderMobileNumber)
-//     // Build the transaction for registering the CoinStore
-//     const transaction = await aptosClient.transaction.build.simple({
-//       sender: account.accountAddress,  // Primary account (Receiver in your case)
-//       withFeePayer: true,
-//       data: {
-//         function: "0x1::managed_coin::register",  // Managed coin register function
-//         typeArguments: ["0xc26a8eda1c3ab69a157815183ddda88c89d6758ee491dd1647a70af2907ce074::coin::Chewy"],  // Chewy coin type
-//         functionArguments: [],  // No arguments needed for registration
-//       },
-//     });
+    // // Derive an account with a private key and account address
+    // const privateKey = new Ed25519PrivateKey(privateKeyHex);
+    // const address = AccountAddress.from(feePayer.wallet_address);
+    // const feePayerAccount = Account.fromPrivateKey({ privateKey, address });
+    const feePayerAccount =  await getAccountInfo(config.aptosConfig.senderMobileNumber)
+    // Build the transaction for registering the CoinStore
+    const transaction = await aptosClient.transaction.build.simple({
+      sender: account.accountAddress,  // Primary account (Receiver in your case)
+      withFeePayer: true,
+      data: {
+        function: "0x1::managed_coin::register",  // Managed coin register function
+        typeArguments: ["0x7cc1f48fc513e64cf759190a8425591a2949394af8139e98d96e861d4973aa9e::coin_factory::Emojicoin"],  // Chewy coin type
+        functionArguments: [],  // No arguments needed for registration
+      },
+    });
 
-//     // Simulate the transaction with both signer (receiver) and fee payer
-//     const [simulationResult] = await aptosClient.transaction.simulate.simple({
-//       signerPublicKey: account.publicKey,
-//       feePayerPublicKey: feePayerAccount.publicKey, // Fee payer as secondary signer
-//       transaction,
-//     });
-//     logger.info("Transaction simulation result: ", simulationResult);
+    // Simulate the transaction with both signer (receiver) and fee payer
+    const [simulationResult] = await aptosClient.transaction.simulate.simple({
+      signerPublicKey: account.publicKey,
+      feePayerPublicKey: feePayerAccount.publicKey, // Fee payer as secondary signer
+      transaction,
+    });
+    logger.info("Transaction simulation result: ", simulationResult);
 
-//     // Sign the transaction with both the receiver and fee payer accounts
-//     const senderAuthenticator = aptosClient.transaction.sign({ signer: account, transaction });
-//     const feePayerAuthenticator = aptosClient.transaction.signAsFeePayer({
-//       signer: feePayerAccount,
-//       transaction
-//   })
+    // Sign the transaction with both the receiver and fee payer accounts
+    const senderAuthenticator = aptosClient.transaction.sign({ signer: account, transaction });
+    const feePayerAuthenticator = aptosClient.transaction.signAsFeePayer({
+      signer: feePayerAccount,
+      transaction
+  })
 
-//     // Submit the multi-agent transaction to the blockchain
-//     const pendingTxn = await aptosClient.transaction.submit.simple({
-//       transaction,
-//       senderAuthenticator:senderAuthenticator,
-//       feePayerAuthenticator: feePayerAuthenticator, // Include fee payer's authenticator
-//     });
+    // Submit the multi-agent transaction to the blockchain
+    const pendingTxn = await aptosClient.transaction.submit.simple({
+      transaction,
+      senderAuthenticator:senderAuthenticator,
+      feePayerAuthenticator: feePayerAuthenticator, // Include fee payer's authenticator
+    });
 
-//     logger.info(`Transaction submitted. Hash: ${pendingTxn.hash}`);
+    logger.info(`Transaction submitted. Hash: ${pendingTxn.hash}`);
 
-//     // Wait for the transaction to be confirmed
-//     const transRes = await aptosClient.waitForTransaction({ transactionHash: pendingTxn.hash });
-//     logger.info(`Transaction confirmed. Hash: ${pendingTxn.hash}`);
-//     logger.info('User Registration Status : '+transRes);
+    // Wait for the transaction to be confirmed
+    const transRes = await aptosClient.waitForTransaction({ transactionHash: pendingTxn.hash });
+    logger.info(`Transaction confirmed. Hash: ${pendingTxn.hash}`);
+    logger.info('User Registration Status : '+transRes);
 
-//     return pendingTxn.hash;
-//   } catch (error) {
-//     console.error(`Error registering Chewy Coin with fee payer: ${error.message}`);
-//     return new Error(error.message);
-//   }
-// }
+    return pendingTxn.hash;
+  } catch (error) {
+    console.error(`Error registering Chewy Coin with fee payer: ${error.message}`);
+    return new Error(error.message);
+  }
+}
 
-// // Function to fund the account
-// const transferAptosCoins = async ( recipientAddress, amount, senderMobileNumber,recipientMobileNumber) => {
-//   try {
-//     // to derive an account with a private key and account address
-//     const senderWalletDetails = await fetchWalletDetails(senderMobileNumber);
-//     const privateKeyHex = senderWalletDetails.encrypted_private_key.startsWith('0X')
-//     ? senderWalletDetails.encrypted_private_key.slice(2) // Remove the '0x' prefix
-//     : senderWalletDetails.encrypted_private_key;
+// Function to fund the account
+const transferAptosCoins = async ( recipientAddress, amount, senderMobileNumber,recipientMobileNumber) => {
+  try {
+    // to derive an account with a private key and account address
+    const senderWalletDetails = await fetchWalletDetails(senderMobileNumber);
+    const privateKeyHex = senderWalletDetails.encrypted_private_key.startsWith('0X')
+    ? senderWalletDetails.encrypted_private_key.slice(2) // Remove the '0x' prefix
+    : senderWalletDetails.encrypted_private_key;
   
-//     // Derive an account with a private key and account address
-//     const privateKey = new Ed25519PrivateKey(privateKeyHex);
-//     const address = AccountAddress.from(senderWalletDetails.wallet_address);
-//     const senderAccount = Account.fromPrivateKey({ privateKey, address });
+    // Derive an account with a private key and account address
+    const privateKey = new Ed25519PrivateKey(privateKeyHex);
+    const address = AccountAddress.from(senderWalletDetails.wallet_address);
+    const senderAccount = Account.fromPrivateKey({ privateKey, address });
 
-//     // Generate and sign the transaction
-//     //Generate
-//     const transaction = await aptosClient.transaction.build.simple({
-//       sender: senderAccount.accountAddress,
-//       data: {
-//         // All transactions on Aptos are implemented via smart contracts.
-//         type: 'entry_function_payload',
-//         function: "0x1::aptos_account::transfer",
-//        functionArguments: [recipientAddress, amount],
-//       },
-//     });
+    // Generate and sign the transaction
+    //Generate
+    const transaction = await aptosClient.transaction.build.simple({
+      sender: senderAccount.accountAddress,
+      data: {
+        // All transactions on Aptos are implemented via smart contracts.
+        type: 'entry_function_payload',
+        function: "0x1::aptos_account::transfer",
+       functionArguments: [recipientAddress, amount],
+      },
+    });
 
-//     //Sign
-//     const senderAuthenticator = aptosClient.transaction.sign({
-//       signer: senderAccount,
-//       transaction,
-//     });
+    //Sign
+    const senderAuthenticator = aptosClient.transaction.sign({
+      signer: senderAccount,
+      transaction,
+    });
 
-//     logger.info("Transaction generated and Signed Successfully");
-//     // If the fee looks ok, continue to signing!
+    logger.info("Transaction generated and Signed Successfully");
+    // If the fee looks ok, continue to signing!
 
-//     // Submit the transaction    
-//     const committedTransaction = await aptosClient.transaction.submit.simple({
-//       transaction,
-//       senderAuthenticator,
-//     });
-//     logger.info(`Transaction submitted: ${committedTransaction.hash}`);
+    // Submit the transaction    
+    const committedTransaction = await aptosClient.transaction.submit.simple({
+      transaction,
+      senderAuthenticator,
+    });
+    logger.info(`Transaction submitted: ${committedTransaction.hash}`);
 
-//     // Wait for confirmation
-//     const executedTransaction = await aptosClient.waitForTransaction({ transactionHash: committedTransaction.hash });
-//     logger.info(`Transaction confirmed: ${executedTransaction.success}`);
+    // Wait for confirmation
+    const executedTransaction = await aptosClient.waitForTransaction({ transactionHash: committedTransaction.hash });
+    logger.info(`Transaction confirmed: ${executedTransaction.success}`);
     
-//     await updateWalletTransaction(
-//       executedTransaction.hash, 
-//       senderMobileNumber,
-//       recipientMobileNumber, 
-//       senderWalletDetails.wallet_address,         // Sender's wallet address (from_address)
-//       recipientAddress,      // Receiver's wallet address (to_address)
-//       amount, 
-//       executedTransaction.success, 
-//       "Aptos"                           // Type of coin being transferred
-//     );
-//     return executedTransaction.success;
+    await updateWalletTransaction(
+      executedTransaction.hash, 
+      senderMobileNumber,
+      recipientMobileNumber, 
+      senderWalletDetails.wallet_address,         // Sender's wallet address (from_address)
+      recipientAddress,      // Receiver's wallet address (to_address)
+      amount, 
+      executedTransaction.success, 
+      "Aptos"                           // Type of coin being transferred
+    );
+    return executedTransaction.success;
     
-//   } catch (error) {
-//     logger.error(`Error funding account: ${error.message}`);
-//     throw new Error(error.message);
-//   }
-// };
+  } catch (error) {
+    logger.error(`Error funding account: ${error.message}`);
+    throw new Error(error.message);
+  }
+};
 
-// const transferChewyCoins = async (recipientAddress, amount, senderMobileNumber, recipientMobileNumber) => {
-//   try {
+const transferCoins = async (recipientAddress, amount, senderMobileNumber, recipientMobileNumber) => {
+  try {
     
-//     const senderAccount = await getAccountInfo(senderMobileNumber);
-//     const parentAccount = await getAccountInfo(config.aptosConfig.senderMobileNumber);
+    const senderAccount = await getAccountInfo(senderMobileNumber);
+    const parentAccount = await getAccountInfo(config.aptosConfig.senderMobileNumber);
 
-//     // Generate and sign the transaction
-//     const transaction = await aptosClient.transaction.build.simple({
-//       sender: senderAccount.accountAddress,
-//       withFeePayer:true,
-//       data: {
-//         type: 'entry_function_payload',
-//         function: '0x1::coin::transfer',
-//         typeArguments: ['0xc26a8eda1c3ab69a157815183ddda88c89d6758ee491dd1647a70af2907ce074::coin::Chewy'],  // Chewy Coin type
-//         functionArguments: [recipientAddress, amount],
-//       },
-//     });
+    // Generate and sign the transaction
+    const transaction = await aptosClient.transaction.build.simple({
+      sender: senderAccount.accountAddress,
+      withFeePayer:true,
+      data: {
+        type: 'entry_function_payload',
+        function: '0x1::aptos_account::transfer_coins',
+        typeArguments: ['0x7cc1f48fc513e64cf759190a8425591a2949394af8139e98d96e861d4973aa9e::coin_factory::Emojicoin'],  // Chewy Coin type
+        functionArguments: [recipientAddress, amount],
+      },
+    });
 
-//     // Sign the transaction
-//     const senderAuthenticator = aptosClient.transaction.sign({
-//       signer: senderAccount,
-//       transaction,
-//     });
-//     const parentAccountAuthenticator = aptosClient.transaction.signAsFeePayer({
-//       signer: parentAccount,
-//       transaction
-//     })
+    // Sign the transaction
+    const senderAuthenticator = aptosClient.transaction.sign({
+      signer: senderAccount,
+      transaction,
+    });
+    const parentAccountAuthenticator = aptosClient.transaction.signAsFeePayer({
+      signer: parentAccount,
+      transaction
+    })
 
-//     logger.info("Transaction generated and Signed Successfully");
-//     const [userTransactionResponse] = await aptosClient.transaction.simulate.simple({
-//       signerPublicKey: senderAccount.publicKey,
-//       feePayerPublicKey: parentAccount.publicKey,
-//       transaction,
-//   });
-//   logger.info(userTransactionResponse.max_gas_amount)
+    logger.info("Transaction generated and Signed Successfully");
+    const [userTransactionResponse] = await aptosClient.transaction.simulate.simple({
+      signerPublicKey: senderAccount.publicKey,
+      feePayerPublicKey: parentAccount.publicKey,
+      transaction,
+  });
+  logger.info(userTransactionResponse.max_gas_amount)
 
-//     // Submit the transaction    
-//     const committedTransaction = await aptosClient.transaction.submit.simple({
-//       transaction,
-//       senderAuthenticator : senderAuthenticator,
-//       feePayerAuthenticator : parentAccountAuthenticator,
-//     });
-//     logger.info(`Transaction submitted: ${committedTransaction.hash}`);
+    // Submit the transaction    
+    const committedTransaction = await aptosClient.transaction.submit.simple({
+      transaction,
+      senderAuthenticator : senderAuthenticator,
+      feePayerAuthenticator : parentAccountAuthenticator,
+    });
+    logger.info(`Transaction submitted: ${committedTransaction.hash}`);
 
-//     // Wait for confirmation
-//     const executedTransaction = await aptosClient.waitForTransaction({ transactionHash: committedTransaction.hash });
-//     logger.info(`Transaction confirmed: ${executedTransaction.success}`);
+    // Wait for confirmation
+    const executedTransaction = await aptosClient.waitForTransaction({ transactionHash: committedTransaction.hash });
+    logger.info(`Transaction confirmed: ${executedTransaction.success}`);
 
-//     // Update the wallet transaction details
-//     await updateWalletTransaction(
-//       executedTransaction.hash,
-//       senderMobileNumber,
-//       recipientMobileNumber,
-//       senderAccount.accountAddress.toString('hex'), // Sender's wallet address (from_address)
-//       recipientAddress, // Receiver's wallet address (to_address)
-//       amount,
-//       executedTransaction.success,
-//       "Chewy" // Type of coin being transferred
-//     );
+    // Update the wallet transaction details
+    await updateWalletTransaction(
+      executedTransaction.hash,
+      senderMobileNumber,
+      recipientMobileNumber,
+      senderAccount.accountAddress.toString('hex'), // Sender's wallet address (from_address)
+      recipientAddress, // Receiver's wallet address (to_address)
+      amount,
+      executedTransaction.success,
+      "Chewy" // Type of coin being transferred
+    );
 
-//     // If the transaction is successful, update reward points for sender and receiver
-//     // if (executedTransaction.success) {
-//     //   await updateRewards(senderMobileNumber, recipientMobileNumber, amount);
-//     // }
+    // If the transaction is successful, update reward points for sender and receiver
+    // if (executedTransaction.success) {
+    //   await updateRewards(senderMobileNumber, recipientMobileNumber, amount);
+    // }
 
-//     return executedTransaction.success;
+    return executedTransaction.success;
 
-//   } catch (error) {
-//     console.error(`Error transferring Chewy coins: ${error.message}`);
-//     throw new Error(error.message);
-//   }
-// };
+  } catch (error) {
+    console.error(`Error transferring Chewy coins: ${error.message}`);
+    throw new Error(error.message);
+  }
+};
 
 
-// const getAccountInfo = async(mobileNumber)=>{
-//   try{
+const getAccountInfo = async(mobileNumber)=>{
+  try{
 
-//     // Fetch wallet details for the sender
-//     const walletDetails = await fetchWalletDetails(mobileNumber);
-//     const privateKeyHex = walletDetails.encrypted_private_key.startsWith('0X')
-//   ? walletDetails.encrypted_private_key.slice(2) // Remove the '0x' prefix
-//   : walletDetails.encrypted_private_key;
+    // Fetch wallet details for the sender
+    const walletDetails = await fetchWalletDetails(mobileNumber);
+    const privateKeyHex = walletDetails.encrypted_private_key.startsWith('0X')
+  ? walletDetails.encrypted_private_key.slice(2) // Remove the '0x' prefix
+  : walletDetails.encrypted_private_key;
 
-//     // Derive an account with a private key and account address
-//     const privateKey = new Ed25519PrivateKey(privateKeyHex);
-//     const address = AccountAddress.from(walletDetails.wallet_address);
-//     const account = Account.fromPrivateKey({ privateKey, address });
-//     return account;
-//   }
-//   catch(err){
-//     return new Error(err.message);
-//   }
-// }
+    // Derive an account with a private key and account address
+    const privateKey = new Ed25519PrivateKey(privateKeyHex);
+    const address = AccountAddress.from(walletDetails.wallet_address);
+    const account = Account.fromPrivateKey({ privateKey, address });
+    return account;
+  }
+  catch(err){
+    return new Error(err.message);
+  }
+}
 
 app.post("/updateRewards", async (req, res) => {
   const { senderMobileNumber, amount } = req.body;
@@ -9250,232 +9210,277 @@ const updateRewards = async (senderMobileNumber, amount) => {
   }
 };
 
-// // Define the function to handle wallet creation and transaction
-// async function handleWalletCreation(mobileNumber) {
-//   logger.info(`Received request to create wallet for mobile number: ${mobileNumber}`);
+// Function to check if wallet exists in DynamoDB
+const checkWalletExists = async (mobileNumber) => {
+  const params = {
+    TableName: 'wallet_details',
+    Key: {
+      user_phone_number: mobileNumber
+    }
+  };
+
+  try {
+    const result = await docClient.get(params).promise();  // Use docClient
+    return result.Item ? result.Item : null;
+  } catch (error) {
+    logger.error(`Error checking wallet for mobile number: ${mobileNumber}: ${error.message}`);
+    throw error;
+  }
+};
+
+// Function to store wallet info in DynamoDB
+const storeWalletInDynamoDB = async (mobileNumber, walletDetails) => {
+  const params = {
+    TableName: walletDetailsTable,
+    Item: {
+      user_phone_number: mobileNumber,
+      wallet_address: walletDetails.walletAddress,
+      public_key: walletDetails.publicKey,
+      encrypted_private_key: walletDetails.encryptedPrivateKey,
+      balance: walletDetails.balance,  // Set balance as '0'
+    }
+  };
+
+  try {
+    await docClient.put(params).promise();  // Use docClient
+    logger.info(`Wallet info stored in DynamoDB for mobile number: ${mobileNumber}`);
+  } catch (error) {
+    logger.error(`Error storing wallet info in DynamoDB for mobile number: ${mobileNumber}: ${error.message}`);
+    throw error;
+  }
+};
+
+
+
+// Define the function to handle wallet creation and transaction
+async function handleWalletCreation(mobileNumber) {
+  logger.info(`Received request to create wallet for mobile number: ${mobileNumber}`);
   
-//   try {
-//     // Check if the wallet already exists for the given mobile number
-//     const existingWallet = await checkWalletExists(mobileNumber);
+  try {
+    // Check if the wallet already exists for the given mobile number
+    const existingWallet = await checkWalletExists(mobileNumber);
 
-//     if (existingWallet) {
-//       // If the wallet exists, return the existing wallet details
-//       logger.info(`Wallet already exists for mobile number: ${mobileNumber}`);
-//       return {
-//         message: 'Wallet already exists',
-//         walletAddress: existingWallet.wallet_address,
-//         balance: existingWallet.balance,
-//         status: 200
-//       };
-//     }
+    if (existingWallet) {
+      // If the wallet exists, return the existing wallet details
+      logger.info(`Wallet already exists for mobile number: ${mobileNumber}`);
+      return {
+        message: 'Wallet already exists',
+        walletAddress: existingWallet.wallet_address,
+        balance: existingWallet.balance,
+        status: 200
+      };
+    }
 
-//     // If no wallet exists, create a new Aptos wallet
-//     const aptosAccount = Account.generate();
-//     logger.info("Account created Successfully");
+    // If no wallet exists, create a new Aptos wallet
+    const aptosAccount = Account.generate();
+    logger.info("Account created Successfully");
 
-//     // Encrypt the private key and prepare wallet details
-//     const encryptedPrivateKey = aptosAccount.privateKey.signingKey.toString('hex');  // Encryption can be added as per your logic
+    // Encrypt the private key and prepare wallet details
+    const encryptedPrivateKey = aptosAccount.privateKey.signingKey.toString('hex');  // Encryption can be added as per your logic
 
-//     const walletDetails = {
-//       walletAddress: aptosAccount.accountAddress.toString('hex'),  // Hex representation of the wallet address
-//       publicKey: aptosAccount.publicKey.key.toString('hex'),  // Hex representation of the public key
-//       balance: CHEWY_AMOUNT,
-//       encryptedPrivateKey,  // The encrypted private key
-//     };
+    const walletDetails = {
+      walletAddress: aptosAccount.accountAddress.toString('hex'),  // Hex representation of the wallet address
+      publicKey: aptosAccount.publicKey.key.toString('hex'),  // Hex representation of the public key
+      balance: CHEWY_AMOUNT,
+      encryptedPrivateKey,  // The encrypted private key
+    };
 
-//     // Store the wallet info in DynamoDB
-//     await storeWalletInDynamoDB(mobileNumber, walletDetails);
+    // Store the wallet info in DynamoDB
+    await storeWalletInDynamoDB(mobileNumber, walletDetails);
 
-//     // Log successful wallet creation
-//     logger.info(`Aptos Wallet created for mobile number: ${mobileNumber} with wallet address: ${walletDetails.walletAddress}`);
+    // Log successful wallet creation
+    logger.info(`Aptos Wallet created for mobile number: ${mobileNumber} with wallet address: ${walletDetails.walletAddress}`);
 
-//     // Transfer Aptos coins to the newly created wallet
-//    // const transactionStatus = await transferAptosCoins(walletDetails.walletAddress, APTOS_AMOUNT || aptosConfig.DEFAULT_TRANSFER_AMOUNT,aptosConfig.SENDER_MOBILE_NUMBER, mobileNumber);
+    // Transfer Aptos coins to the newly created wallet
+   // const transactionStatus = await transferAptosCoins(walletDetails.walletAddress, APTOS_AMOUNT || aptosConfig.DEFAULT_TRANSFER_AMOUNT,aptosConfig.SENDER_MOBILE_NUMBER, mobileNumber);
 
-//     // if (transactionStatus !== true) {
-//     //   throw new Error("Transaction failed");
-//     // }
+    // if (transactionStatus !== true) {
+    //   throw new Error("Transaction failed");
+    // }
 
-//     //const parentWallet = await fetchWalletDetails(aptosConfig.SENDER_MOBILE_NUMBER);
-//     // Register the wallet with ChewyCoin store and transfer coins
-//     await registerChewyCoinStore(aptosAccount);
-//     await transferChewyCoins(walletDetails.walletAddress, CHEWY_AMOUNT, config.aptosConfig.senderMobileNumber, mobileNumber);
+    //const parentWallet = await fetchWalletDetails(aptosConfig.SENDER_MOBILE_NUMBER);
+    // Register the wallet with ChewyCoin store and transfer coins
+    await registerCoinStore(aptosAccount);
+    await transferCoins(walletDetails.walletAddress, CHEWY_AMOUNT, config.aptosConfig.senderMobileNumber, mobileNumber);
+    await updateUserDetails(mobileNumber,{reward_points:CHEWY_AMOUNT})
+    // Return wallet details and transaction status
+    return {
+      message: 'Aptos Wallet created and coins transferred successfully',
+      walletAddress: walletDetails.walletAddress,
+      balance: CHEWY_AMOUNT || aptosConfig.DEFAULT_TRANSFER_AMOUNT,
+      status: 201
+    };
+  } catch (error) {
+    // Log any error that occurs during the process
+    logger.error(`Error creating Aptos wallet for mobile number: ${mobileNumber}: ${error.message}`);
+    throw new Error(`Failed to create Aptos wallet: ${error.message}`);
+  }
+}
 
-//     // Return wallet details and transaction status
-//     return {
-//       message: 'Aptos Wallet created and coins transferred successfully',
-//       walletAddress: walletDetails.walletAddress,
-//       balance: CHEWY_AMOUNT || aptosConfig.DEFAULT_TRANSFER_AMOUNT,
-//       status: 201
-//     };
-//   } catch (error) {
-//     // Log any error that occurs during the process
-//     logger.error(`Error creating Aptos wallet for mobile number: ${mobileNumber}: ${error.message}`);
-//     throw new Error(`Failed to create Aptos wallet: ${error.message}`);
-//   }
-// }
+// Express route
+app.post('/createWallet', async (req, res) => {
+  const { mobileNumber } = req.body;  // Accept the mobileNumber from the request
 
-// // Express route
-// app.post('/createWallet', async (req, res) => {
-//   const { mobileNumber } = req.body;  // Accept the mobileNumber from the request
-
-//   try {
-//     const response = await handleWalletCreation(mobileNumber);
-//     res.status(response.status).json(response);
-//   } catch (error) {
-//     res.status(500).json({ message: 'Failed to create Aptos wallet', error: error.message });
-//   }
-// });
+  try {
+    const response = await handleWalletCreation(mobileNumber);
+    res.status(response.status).json(response);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to create Aptos wallet', error: error.message });
+  }
+});
 
 
-// app.get('/fetchWallet/:mobileNumber', async (req, res) => {
-//   const { mobileNumber } = req.params; // Accept the mobileNumber from the route parameters
+app.get('/fetchWallet/:mobileNumber', async (req, res) => {
+  const { mobileNumber } = req.params; // Accept the mobileNumber from the route parameters
 
-//   try {
-//     logger.info(`Received request to fetch wallet for mobile number: ${mobileNumber}`);
+  try {
+    logger.info(`Received request to fetch wallet for mobile number: ${mobileNumber}`);
     
-//     // Call the function to fetch wallet details
-//     const walletDetails = await fetchWalletDetails(mobileNumber);
+    // Call the function to fetch wallet details
+    const walletDetails = await fetchWalletDetails(mobileNumber);
     
-//     // Return the wallet details if found
-//     res.status(200).json({
-//       message: 'Wallet found',
-//       walletDetails,
-//       status: 200
-//     });
+    // Return the wallet details if found
+    res.status(200).json({
+      message: 'Wallet found',
+      walletDetails,
+      status: 200
+    });
 
-//   } catch (error) {
-//     // Handle known errors
-//     if (error.message === "Mobile number is required" || error.message === "Wallet not found") {
-//       return res.status(400).json({
-//         message: error.message,
-//         status: 400
-//       });
-//     }
+  } catch (error) {
+    // Handle known errors
+    if (error.message === "Mobile number is required" || error.message === "Wallet not found") {
+      return res.status(400).json({
+        message: error.message,
+        status: 400
+      });
+    }
 
-//     // Log and handle other errors
-//     logger.error(`Error in fetching wallet for mobile number ${mobileNumber}: ${error.message}`);
-//     res.status(500).json({
-//       message: 'Failed to fetch wallet',
-//       error: error.message,
-//       status: 500
-//     });
-//   }
-// });
-
-
-// const fetchWalletDetails = async (mobileNumber) => {
-//   if (!mobileNumber) {
-//     throw new Error("Mobile number is required");
-//   }
-
-//   // Define the DynamoDB query parameters
-//   const params = {
-//     TableName: walletDetailsTable,
-//     Key: {
-//       user_phone_number: mobileNumber
-//     }
-//   };
-
-//   try {
-//     logger.info(`Fetching wallet for mobile number: ${mobileNumber}`);
-
-//     // Fetch wallet from DynamoDB
-//     const result = await docClient.get(params).promise();
-
-//     logger.info("Fetched wallet for mobile number:", mobileNumber);
-
-//     // If no wallet found, throw an error
-//     if (!result || !result.Item) {
-//       throw new Error("Wallet not found");
-//     }
-
-//     // Return the wallet details
-//     return result.Item;
-
-//   } catch (error) {
-//     // Log the error and rethrow it
-//     logger.error(`Error fetching wallet for mobile number ${mobileNumber}: ${error.message}`);
-//     throw error;
-//   }
-// };
+    // Log and handle other errors
+    logger.error(`Error in fetching wallet for mobile number ${mobileNumber}: ${error.message}`);
+    res.status(500).json({
+      message: 'Failed to fetch wallet',
+      error: error.message,
+      status: 500
+    });
+  }
+});
 
 
+const fetchWalletDetails = async (mobileNumber) => {
+  if (!mobileNumber) {
+    throw new Error("Mobile number is required");
+  }
 
-// Function to get balance using Aptos SDK
-// const getWalletBalance = async (walletAddress) => {
-//   try {
-//     const resources = await aptosClient.getAccountResource({ accountAddress: walletAddress,
-//       resourceType: "0x1::coin::CoinStore<0xc26a8eda1c3ab69a157815183ddda88c89d6758ee491dd1647a70af2907ce074::coin::Chewy>"})
+  // Define the DynamoDB query parameters
+  const params = {
+    TableName: walletDetailsTable,
+    Key: {
+      user_phone_number: mobileNumber
+    }
+  };
+
+  try {
+    logger.info(`Fetching wallet for mobile number: ${mobileNumber}`);
+
+    // Fetch wallet from DynamoDB
+    const result = await docClient.get(params).promise();
+
+    logger.info("Fetched wallet for mobile number:", mobileNumber);
+
+    // If no wallet found, throw an error
+    if (!result || !result.Item) {
+      return;
+    }
+
+    // Return the wallet details
+    return result.Item;
+
+  } catch (error) {
+    // Log the error and rethrow it
+    logger.error(`Error fetching wallet for mobile number ${mobileNumber}: ${error.message}`);
+    throw error;
+  }
+};
+
+
+
+//Function to get balance using Aptos SDK
+const getWalletBalance = async (walletAddress) => {
+  try {
+    const resources = await aptosClient.getAccountResource({ accountAddress: walletAddress,
+      resourceType: "0x1::coin::CoinStore<0x7cc1f48fc513e64cf759190a8425591a2949394af8139e98d96e861d4973aa9e::coin_factory::Emojicoin>"})
       
 
-//     // Find the specific CoinStore resource for AptosCoin
-//     // const aptosCoinResource = resources.find(
-//     //   (resource) => resource.type === '0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>'
-//     // );
+    // Find the specific CoinStore resource for AptosCoin
+    // const aptosCoinResource = resources.find(
+    //   (resource) => resource.type === '0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>'
+    // );
 
-//     if (resources) {
-//       // Get the coin balance from the resource data
-//       return resources.coin.value;
-//     } else {
-//       return 0; // No balance found
-//     }
-//   } catch (error) {
-//     throw new Error(`Error fetching wallet balance: ${error.message}`);
-//   }
-// };
+    if (resources) {
+      // Get the coin balance from the resource data
+      return resources.coin.value;
+    } else {
+      return 0; // No balance found
+    }
+  } catch (error) {
+    throw new Error(`Error fetching wallet balance: ${error.message}`);
+  }
+};
 
-// API endpoint to get wallet details and balance
-// app.get('/wallet-balance/:phoneNumber', async (req, res) => {
-//   const { phoneNumber } = req.params;
+//API endpoint to get wallet details and balance
+app.get('/wallet-balance/:phoneNumber', async (req, res) => {
+  const { phoneNumber } = req.params;
 
-//   try {
-//     // Get wallet details from DynamoDB
-//     const walletDetails = await fetchWalletDetails(phoneNumber);
-//     const userDetails = await getUserObjectByUserPhoneNumber(phoneNumber);
+  try {
+    // Get wallet details from DynamoDB
+    const walletDetails = await fetchWalletDetails(phoneNumber);
+    if(!walletDetails){
+      return res.status(200).json({});
+    }
+    const userDetails = await getUserObjectByUserPhoneNumber(phoneNumber);
 
-//     if (!walletDetails) {
-//       return res.status(404).json({ message: 'Wallet not found' });
-//     }
+    if (!walletDetails) {
+      return res.status(404).json({ message: 'Wallet not found' });
+    }
 
-//     // Get the balance of the wallet
-//     const balance = await getWalletBalance(walletDetails.wallet_address);
+    // Get the balance of the wallet
+    const balance = await getWalletBalance(walletDetails.wallet_address);
 
-//     if(balance!=userDetails.reward_points){
-//       updateUserDetails(phoneNumber,{reward_points:balance})
-//     }
-//     // Return the wallet details and balance
-//     res.status(200).json({
-//       walletAddress: walletDetails.wallet_address,
-//       balance: balance,
-//     });
-//   } catch (error) {
-//     console.error('Error fetching wallet balance:', error);
-//     res.status(500).json({ message: 'Error fetching wallet balance', error: error.message });
-//   }
-// });
+    if(balance!=userDetails.reward_points){
+      updateUserDetails(phoneNumber,{reward_points:balance})
+    }
+    // Return the wallet details and balance
+    res.status(200).json({
+      walletAddress: walletDetails.wallet_address,
+      balance: balance,
+    });
+  } catch (error) {
+    console.error('Error fetching wallet balance:', error);
+    res.status(500).json({ message: 'Error fetching wallet balance', error: error.message });
+  }
+});
 
-// app.get("/getAccountInfo/:walletAddress", async (req, res) => {
-//   const walletAddress = req.params.walletAddress;
+app.get("/getAccountInfo/:walletAddress", async (req, res) => {
+  const walletAddress = req.params.walletAddress;
 
-//   try {
-//     const fund = await aptosClient.getAccountInfo({ accountAddress: walletAddress });
+  try {
+    const fund = await aptosClient.getAccountInfo({ accountAddress: walletAddress });
     
-//     // If account info is found, return success response with status 200
-//     if (fund) {
-//       return res.status(200).json({
-//         message: "Account Details found",
-//         accountInfo: fund // Optional: you can include the account information in the response
-//       });
-//     }
+    // If account info is found, return success response with status 200
+    if (fund) {
+      return res.status(200).json({
+        message: "Account Details found",
+        accountInfo: fund // Optional: you can include the account information in the response
+      });
+    }
     
-//   } catch (err) {
-//     // If account is not found or any error occurs, return a 404 response
-//     return res.status(404).json({
-//       message: "No account found with wallet address"
-//     });
-//   }
-// });
+  } catch (err) {
+    // If account is not found or any error occurs, return a 404 response
+    return res.status(404).json({
+      message: "No account found with wallet address"
+    });
+  }
+});
 
 app.post("/saveInvitationDetails", async (req, res) => {
   const { user_phone_number, event_id, ...otherDetails } = req.body;
@@ -10750,6 +10755,109 @@ app.post("/remove-extra-folders", async (req, res) => {
     res.status(500).send({ error: "An error occurred while removing extra folders." });
   }
 });
+
+const S3_BUCKET_NAME = 'flashbackuserthumbnails';
+const S3_BASE_URL = `https://${S3_BUCKET_NAME}.s3.amazonaws.com/`;
+
+// Helper function to check if an object exists in S3
+const checkObjectExists = async (bucket, key) => {
+  try {
+    await s3.headObject({ Bucket: bucket, Key: key }).promise();
+    return key;
+  } catch (error) {
+    // Try with the plus prefix if the first attempt fails
+    try {
+      const keyWithPlus = key.startsWith('+') ? key : `+${key}`;
+      await s3.headObject({ Bucket: bucket, Key: keyWithPlus }).promise();
+      return keyWithPlus;
+    } catch (err) {
+      return false;
+    }
+  }
+};
+
+// Helper function to construct an S3 URL
+const constructS3Url = (phoneNumber) => {
+  const urlSafePhone = encodeURIComponent(phoneNumber);
+  return `${S3_BASE_URL}${urlSafePhone}.jpg`;
+};
+
+// API Endpoint
+app.get('/process-users', async (req, res) => {
+  let totalUsers = 0;
+  let missingPortraitCount = 0;
+  let refilledCount = 0;
+  let failedCount = 0;
+
+  try {
+    let items = [];
+    let params = {
+      TableName: userrecordstable,
+      ProjectionExpression: 'user_phone_number, reward_points',
+    };
+
+    // Scan the DynamoDB table (handle pagination)
+    do {
+      const data = await docClient.scan(params).promise();
+      items = items.concat(data.Items);
+      params.ExclusiveStartKey = data.LastEvaluatedKey;
+    } while (params.ExclusiveStartKey);
+
+    totalUsers = items.length;
+    logger.info(`Total users found: ${totalUsers}`);
+
+    // Process each user
+    for (const item of items) {
+      const phoneNumber = item.user_phone_number;
+
+      // Check if portrait_s3_url is missing
+      if (item.reward_points<=100) {
+        
+          try {
+            // Construct the URL
+            const rewards = 0;
+
+            // Update DynamoDB record
+            await docClient
+              .update({
+                TableName: userrecordstable,
+                Key: { user_phone_number: phoneNumber },
+                UpdateExpression: 'SET reward_points = :rewards',
+                ExpressionAttributeValues: { ':rewards': rewards },
+              })
+              .promise();
+
+            logger.info(`Successfully updated for ${phoneNumber}`);
+          } catch (error) {
+            failedCount++;
+            logger.error(`Failed to update DynamoDB for ${phoneNumber}: ${error.message}`);
+          }
+        } 
+      }
+    
+
+    // Log final statistics
+    logger.info(`
+      Processing completed:
+      - Total users processed: ${totalUsers}
+      - Users missing portrait URL: ${missingPortraitCount}
+      - Successfully refilled: ${refilledCount}
+      - Failed to refill: ${failedCount}
+    `);
+
+    res.status(200).json({
+      total_users: totalUsers,
+      missing_portrait_count: missingPortraitCount,
+      refilled_count: refilledCount,
+      failed_count: failedCount,
+    });
+  } catch (error) {
+    const errorMsg = `Error processing users: ${error.message}`;
+    logger.error(errorMsg);
+    res.status(500).json({ error: errorMsg });
+  }
+});
+
 
 
 })

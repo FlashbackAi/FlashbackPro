@@ -88,7 +88,7 @@ function Login({ name, onLoginSuccess, showAppBar = true }) {
   //const fromUrl = location.state?.from?.pathname || "/dashboard";
   const fromUrl = location.state?.from?.pathname 
   ? location.state.from.pathname 
-  : (eventName ? `/photosv1/${eventName}/undefined` : "/dashboard");
+  : (eventName ? `/photosv1/${eventName}/upcoming` : "/dashboard");
 
   console.log(fromUrl);
 
@@ -193,7 +193,6 @@ function Login({ name, onLoginSuccess, showAppBar = true }) {
         eventName: eventName,
         userSource: userSource,
         role: role,
-        reward_points: reward_points
       });
       setIsPhoneNumberValid(true);
       if (response.status === 201) {
