@@ -9237,7 +9237,8 @@ const storeWalletInDynamoDB = async (mobileNumber, walletDetails) => {
       wallet_address: walletDetails.walletAddress,
       public_key: walletDetails.publicKey,
       encrypted_private_key: walletDetails.encryptedPrivateKey,
-      balance: walletDetails.balance,  // Set balance as '0'
+      balance: walletDetails.balance,
+      created_date:new Date().toISOString(),
     }
   };
 
@@ -9249,8 +9250,6 @@ const storeWalletInDynamoDB = async (mobileNumber, walletDetails) => {
     throw error;
   }
 };
-
-
 
 // Define the function to handle wallet creation and transaction
 async function handleWalletCreation(mobileNumber) {
@@ -9323,6 +9322,7 @@ app.post('/createWallet', async (req, res) => {
 
   try {
     const response = await handleWalletCreation(mobileNumber);
+    logger.info("Successfully created wallet for mobile number : ",mobileNumber);
     res.status(response.status).json(response);
   } catch (error) {
     res.status(500).json({ message: 'Failed to create Aptos wallet', error: error.message });
