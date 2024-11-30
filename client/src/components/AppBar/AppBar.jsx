@@ -35,6 +35,7 @@ const Logo = styled.div`
   height: 1.875rem;
   align-items: center;
   cursor: pointer;
+  margin-left: 1rem;
   
   img {
     height: 1.25rem;

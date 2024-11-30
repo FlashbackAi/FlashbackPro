@@ -71,19 +71,25 @@ import defaultBanner from '../../media/images/defaultbanner.jpg';
     flex: 1;
     min-width: 0;
   `;
+
   const CenteredSpinner = styled.div`
   position: absolute;
   top: 75%;
   left: 60%;
   transform: translate(-50%, -50%);
 `;
+
 const StyledMasonry = styled(Masonry)`
   display: flex;
-  margin-left:1rem;
+  margin-left: 0.5rem;
   width: auto;
 
   .my-masonry-grid_column {
     background-clip: padding-box;
+  }
+
+  .my-masonry-grid_column > div { // Target the row gaps
+    margin-bottom: 6px !important; // Reduce space between rows
   }
 
   .image-item {
@@ -91,14 +97,18 @@ const StyledMasonry = styled(Masonry)`
     break-inside: avoid;
   }
 
-    @media (max-width: 768px) {
+    @media (max-width: 884px) {
     .my-masonry-grid_column {
+      padding: 0rem;
+    }
+    .my-masonry-grid_column > div {
+      margin-bottom: 3px !important; // Even smaller gap for mobile
     }
   }
 `;
 
 const ImageWrapper = styled.div`
-  margin-bottom: 16px;
+  margin-bottom: 8px;
   break-inside: avoid;
   position: relative;
   overflow: hidden;
@@ -115,6 +125,10 @@ const ImageWrapper = styled.div`
     &:hover {
       transform: scale(1.05);
     }
+  }
+
+  @media (max-width: 768px) {
+    margin-bottom: 0.2rem; // Adjusted margin for mobile screens
   }
 `;
 

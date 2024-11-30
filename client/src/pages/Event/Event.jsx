@@ -110,6 +110,13 @@ const EventGrid = styled(motion.div)`
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 1rem;
   }
+
+  @media screen (max-width: 344px) {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+    padding: 0rem;
+    margin-right: 1rem;
+  }
 `;
 
 const EventCard = styled(motion.div)`
@@ -132,6 +139,14 @@ const EventCard = styled(motion.div)`
     min-height: 150px;
     margin: 0 auto 0.5rem auto;
   }
+
+  @media (max-width: 344px) {
+    max-width: 100%;
+    width: 100%;
+    max-height: 100px;
+    margin: 0;
+  }
+
 `;
 
 const EventImage = styled.img`
@@ -143,15 +158,25 @@ const EventImage = styled.img`
     height: 100px;
     object-fit: cover;
   }
+
+ @media (max-width: 344px) {
+    height: 110px;
+    object-fit: cover;
+ }
 `;
 
 const EventInfo = styled.div`
   padding: 1rem;
 
   @media (max-width: 768px) {
-  padding: 0.5rem;
-  height: 30%;
+    padding: 0.5rem;
+    height: 40%;
   }
+
+ @media (max-width: 344px) {
+    padding: 0.2rem;
+    height: 40%;
+}
 `;
 
 const EventName = styled.h3`
@@ -162,6 +187,11 @@ const EventName = styled.h3`
   @media (max-width: 768px) {
     font-size: 0.9rem;
     margin: 0 0 0.25rem;
+  }
+  
+  @media (max-width: 344px) {
+    font-size: 0.8rem;
+    margin: 0 0 0.1rem;
   }
 `;
 
@@ -183,6 +213,17 @@ const EventDetail = styled.p`
     svg {
       width: 14px;
       height: 14px;
+      margin-right: 0.25rem;
+    }
+  }
+
+  @media (max-width: 344px) {
+      font-size: 0.7rem;
+      margin: 0.1rem 0;
+
+      svg {
+      width: 12px;
+      height: 12px;
       margin-right: 0.25rem;
     }
   }
@@ -213,6 +254,11 @@ const CreateEventCard = styled(motion.div)`
     max-height: 150px;
   }
 
+  @media (max-width: 344px) {
+    padding: 0.5rem;
+    max-width: 100%;
+    max-height: 120px;
+  }
 `;
 
 const PlusIcon = styled(Plus)`
@@ -469,27 +515,6 @@ const ProjectButton = styled.button`
   }
 `;
 
-
-// const PanelContainer = styled.div`
-//   position: fixed;
-//   top: 105px; // Adjust based on your AppBar height
-//   left: ${({ isOpen }) => (isOpen ? '0' : '-320px')};
-//   width: 320px;
-//   height: fit-content;
-//   background-color: #121212;
-//   transition: left 0.3s ease;
-//   z-index: 1000;
-//   overflow-y: auto;
-//   box-shadow: 0 0 15px rgba(0, 255, 255, 0.1);
-//   display: flex;
-//   flex-direction: column;
-
-//   @media (max-width: 768px) {
-//     width: 100%;
-//     left: ${({ isOpen }) => (isOpen ? '0' : '-100%')};
-//   }
-// `;
-
 const PanelContainer = styled.div`
   position: fixed;
   top: 105px;
@@ -502,13 +527,17 @@ const PanelContainer = styled.div`
   overflow-y: auto;
   box-shadow: 0 0 15px rgba(31, 184, 249, 0.5);
 
-  @media (max-width: ${breakpoints.lg}) {
+  @media (max-width: 884px) {
     top: 90px;
     // height: calc(100vh - 60px);
-    width: 80%; // Reduced from 100% to 80%
+    width: 280px; // Reduced from 100% to 80%
     max-width: 300px; // Maximum width on mobile
     left: 0;
     transform: translateX(${({ isOpen }) => (isOpen ? '0' : '-100%')});
+  }
+
+  @media (max-width: 344px) {
+    width: 240px;
   }
 `;
 
@@ -533,16 +562,9 @@ const ToggleButton = styled.button`
   }
 
   // Adjust width and padding for mobile devices
-  @media (max-width: 1024px) {
+  @media (max-width: 768px) {
     top: 90px;
-    left: ${({ isOpen }) => (isOpen ? 'calc(100% - 90px)' : '0')};
-    padding: 8px;
-    width: 35px; /* Reduce width */
-  }
-
-  @media (max-width: ${breakpoints.sm}) {
-    top: 90px;
-    left: ${({ isOpen }) => (isOpen ? 'calc(100% - 95px)' : '0')};
+    left: ${({ isOpen }) => (isOpen ? '245px' : '0')};
     padding: 8px;
     width: 35px; /* Reduce width */
   }
@@ -595,23 +617,6 @@ const BannerImage = styled.div`
   border-radius: 1rem 1rem 0 0;
   transition: opacity 0.3s ease;
 `;
-
-// const EditBannerButton = styled.button`
-//   position: absolute;
-//   top: 10px;
-//   right: 10px;
-//   background-color: rgba(42, 42, 42, 0.7);
-//   border: none;
-//   border-radius: 5px;
-//   padding: 5px 10px;
-//   cursor: pointer;
-//   color: #ffffff;
-//   transition: all 0.3s ease;
-
-//   &:hover {
-//     background-color: rgba(58, 58, 58, 0.7);
-//   }
-// `;
 
 const EditBannerButton = styled.button`
   position: absolute;

@@ -36,14 +36,21 @@
 
 .heart-icon {
   position: absolute;
-  bottom: 0.5em;
-  right: 0.3em;
+  bottom: 0.1em;
+  right: 0.1em;
   border-radius: 50%;
   padding: 0.3em; /* Use em for consistent scaling */
   width: 1.5em; /* Smaller size for the heart icon */
   height: 1.5em;
   cursor: pointer;
   transition: background-color 0.2s;
+
+  @media (max-width: 768px) {
+    width: 1em;
+    height: 1em;
+    right: 0.01em;
+    bottom: 0.01em;
+}
 }
 
 @media (max-width: 768px) {
