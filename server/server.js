@@ -766,6 +766,7 @@ async function searchUsersByImage(portraitS3Url, phoneNumber) {
         const userResult = await docClient.update(userUpdateParams).promise();
         
         // Call the new function for updating event mapping
+        // Commented to test thumbnails issue
         //await updateEventMappingWithUserId(phoneNumber, eventName, matchedUserId);
         
         logger.info('Updated userId and flashback status for :' + phoneNumber);
