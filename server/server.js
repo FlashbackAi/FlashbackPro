@@ -9449,13 +9449,14 @@ app.get('/wallet-balance/:phoneNumber', async (req, res) => {
     if(balance!=userDetails.reward_points){
       updateUserDetails(phoneNumber,{reward_points:balance})
     }
+    logger.info(`Successfully fetched wallet details for the user: ${phoneNumber}`);
     // Return the wallet details and balance
     res.status(200).json({
       walletAddress: walletDetails.wallet_address,
       balance: balance,
     });
   } catch (error) {
-    console.error('Error fetching wallet balance:', error);
+    logger.error('Error fetching wallet balance:', error);
     res.status(500).json({ message: 'Error fetching wallet balance', error: error.message });
   }
 });
