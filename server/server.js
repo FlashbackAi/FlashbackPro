@@ -766,7 +766,7 @@ async function searchUsersByImage(portraitS3Url, phoneNumber) {
         const userResult = await docClient.update(userUpdateParams).promise();
         
         // Call the new function for updating event mapping
-        await updateEventMappingWithUserId(phoneNumber, eventName, matchedUserId);
+        //await updateEventMappingWithUserId(phoneNumber, eventName, matchedUserId);
         
         logger.info('Updated userId and flashback status for :' + phoneNumber);
         return userResult;
@@ -1678,9 +1678,8 @@ app.get('/getEventImages/:eventName', async (req, res) => {
 
     // Fetch client details only if continuationToken is not provided (first request)
     if (!continuationToken) {
-      const temp = eventName.split('_');
-      const eventId = temp[temp.length - 1];
-      clientObject = await getClientObjectNew(eventId);
+      const eventDetails = await getEventDetailsByFolderName(eventName);
+      clientObject = await getClientObjectNew(eventDetails.event_id);
     }
 
     // Configure S3 list parameters
