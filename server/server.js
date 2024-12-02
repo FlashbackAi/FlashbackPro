@@ -2058,7 +2058,7 @@ async function getUserObjectByUserPhoneNumber(userPhoneNumber){
     if (result.Items.length === 0) {
       throw new Error("userPhoneNumber not found");
     }
-    logger.info("Successfully fetched user info for userPhoneNumber : "+userPhoneNumber);
+    logger.info("Returning user info for userPhoneNumber : "+userPhoneNumber);
     return result.Items[0];
   } catch (error) {
     console.error("Error getting user object:", error);
@@ -6404,6 +6404,7 @@ app.get("/fetchUserDetails/:userPhoneNumber",async (req,res)=>{
   try{
     const userPhoneNumber =req.params.userPhoneNumber;
     const result = await getUserObjectByUserPhoneNumber(userPhoneNumber);
+    logger.info("Successfully fetched user info for userPhoneNumber : "+userPhoneNumber);
     res.send({"message":"Successfully fetched user details","data":result});
   }
   catch(err){
