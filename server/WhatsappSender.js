@@ -62,29 +62,10 @@ class WhatsAppSender {
           to: recipientPhoneNumber,
           type: 'template',
           template: {
-            name: 'authflash',
+            name: 'flashback_announcement',
             language: {
               code: 'en'
-            },
-            components: [
-              {
-                type: 'body',
-                parameters: [
-                  { type: 'text', text: otp }
-                ]
-              },
-              {
-                type: 'button',
-                sub_type: 'url',
-                index: 0,
-                parameters: [
-                  {
-                    type: 'text',
-                    text: otp
-                  }
-                ]
-              }
-            ]
+            }
           }
         },
         {
@@ -94,6 +75,7 @@ class WhatsAppSender {
           }
         }
       );
+      
 
       logger.info(`Successfully sent OTP to: ${recipientPhoneNumber}`);
       return response.data;
@@ -202,6 +184,38 @@ class WhatsAppSender {
       return response.data;
     } catch (error) {
       logger.error('Failed to send event reminder via WhatsApp: ', error.response ? error.response.data : error.message);
+      throw error;
+    }
+  }
+
+  async sendAnnouncementMessage(recipientPhoneNumber) {
+    try {
+      const response = await axios.post(
+        this.apiUrl,
+        {
+          messaging_product: 'whatsapp',
+          to: recipientPhoneNumber,
+          type: 'template',
+          template: {
+            name: 'flashback_announcement',
+            language: {
+              code: 'en'
+            }
+          }
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+
+      logger.info('Successfully sent announcement: ', recipientPhoneNumber);
+      return response.  data;
+    } catch (error) {
+      logger.error('Failed to send announcement via WhatsApp:', error.response ? error.response.data : error.message);
       throw error;
     }
   }

@@ -2056,7 +2056,8 @@ async function getUserObjectByUserPhoneNumber(userPhoneNumber){
     const result = await docClient.scan(params).promise();
 
     if (result.Items.length === 0) {
-      throw new Error("userPhoneNumber not found");
+      logger.error("User Phone number not found : ",userPhoneNumber)
+      //throw new Error("userPhoneNumber not found");
     }
     logger.info("Returning user info for userPhoneNumber : "+userPhoneNumber);
     return result.Items[0];
@@ -10859,6 +10860,109 @@ app.get('/process-users', async (req, res) => {
     res.status(500).json({ error: errorMsg });
   }
 });
+
+
+app.post('/send-anouncement', async (req, res) => {
+  let totalUsers = 0;
+  let missingUserIds = 0;
+  let failedCount = 0;
+  let oldUserCount = 0;
+
+  try {
+    let items = [];
+    let params = {
+      TableName: userrecordstable,
+    };
+
+    // Scan the DynamoDB table (handle pagination)
+    do {
+      const data = await docClient.scan(params).promise();
+      items = items.concat(data.Items);
+      params.ExclusiveStartKey = data.LastEvaluatedKey;
+    } while (params.ExclusiveStartKey);
+
+    totalUsers = items.length;
+    logger.info(`Total users found: ${totalUsers}`);
+    const oldEventUsersObj = await getUsersForEvent("KSL_Event1");
+    const oldEventUsersList = oldEventUsersObj.map(user => user.user_phone_number);
+    const sentParams = {
+      TableName: 'FlashbackDeliveryHistory',
+      FilterExpression: 'event_name = :event_name',
+      ExpressionAttributeValues: {
+        ':event_name': "announcement"
+      }
+    };
+
+    const sentUsersData = await docClient.scan(sentParams).promise();
+    const sentUsers = sentUsersData.Items.map(item => item.user_phone_number);
+    // Process each user
+    for (const item of items) {
+      const phoneNumber = item.user_phone_number;
+      if(sentUsers.includes(item.user_phone_number))
+        continue;
+      // Check if userId is missing
+      if (item.user_id && !oldEventUsersList.includes(item.user_phone_number)) {
+        
+          try {
+             await whatsappSender.sendAnnouncementMessage(phoneNumber);
+             await storeSentData(phoneNumber,'announcement', 'announcement');
+            logger.info(`Successfully Sent for ${phoneNumber}`);
+          } catch (error) {
+            failedCount++;
+            logger.error(`Failed to Send for ${phoneNumber}: ${error.message}`);
+          }
+        } 
+        else{
+          if(oldEventUsersList.includes(item.user_phone_number))
+            oldUserCount++;
+          missingUserIds++;
+        }
+      }
+    
+
+    // Log final statistics
+    logger.info(`
+      Processing completed:
+      - Total users processed: ${totalUsers}
+      - Users missing portrait URL: ${missingUserIds}
+      - Successfully refilled: ${oldUserCount}
+      - Failed to refill: ${failedCount}
+    `);
+
+    res.status(200).json({
+      total_users: totalUsers,
+      missing_portrait_count: missingUserIds,
+      refilled_count: oldUserCount,
+      failed_count: failedCount,
+    });
+  } catch (error) {
+    const errorMsg = `Error processing users: ${error.message}`;
+    logger.error(errorMsg);
+    res.status(500).json({ error: errorMsg });
+  }
+});
+
+app.post('/send-anouncement-test', async (req, res) => {
+  const phoneNumber = req.body.phoneNumber;
+        
+          try {
+             await whatsappSender.sendAnnouncementMessage(phoneNumber);
+             await storeSentData(phoneNumber,'announcement', 'announcement');
+            logger.info(`Successfully Sent for ${phoneNumber}`);
+          
+    
+
+  
+
+    res.status(200).json({
+    });
+  } catch (error) {
+    const errorMsg = `Error processing users: ${error.message}`;
+    logger.error(errorMsg);
+    res.status(500).json({ error: errorMsg });
+  }
+});
+
 
 
 
