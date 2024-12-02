@@ -62,10 +62,29 @@ class WhatsAppSender {
           to: recipientPhoneNumber,
           type: 'template',
           template: {
-            name: 'flashback_announcement',
+            name: 'authflash',
             language: {
               code: 'en'
-            }
+            },
+            components: [
+              {
+                type: 'body',
+                parameters: [
+                  { type: 'text', text: otp }
+                ]
+              },
+              {
+                type: 'button',
+                sub_type: 'url',
+                index: 0,
+                parameters: [
+                  {
+                    type: 'text',
+                    text: otp
+                  }
+                ]
+              }
+            ]
           }
         },
         {
@@ -75,7 +94,6 @@ class WhatsAppSender {
           }
         }
       );
-      
 
       logger.info(`Successfully sent OTP to: ${recipientPhoneNumber}`);
       return response.data;
@@ -187,7 +205,6 @@ class WhatsAppSender {
       throw error;
     }
   }
-
   async sendAnnouncementMessage(recipientPhoneNumber) {
     try {
       const response = await axios.post(
