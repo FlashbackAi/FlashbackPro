@@ -735,7 +735,7 @@ const Event = () => {
   const [userDetails, setUserDetails] = useState([]);
   const [displayNone, setDisplayNone] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedTab, setSelectedTab] = useState('myFlashbacks');
+  const [selectedTab, setSelectedTab] = useState('attendedFlashbacks');
   const [eventToDelete, setEventToDelete] = useState(null);
   const [isClaimPopupOpen, setIsClaimPopupOpen] = useState(false);
   const userPhoneNumber = localStorage.userPhoneNumber;
