@@ -6,6 +6,9 @@ import API_UTIL from "../../../services/AuthIntereptor";
 import CountryCodes from "../../../media/json/CountryCodes.json";
 import Select, { components } from "react-select";
 import "./login.css";
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css';
+import styled from 'styled-components';
 import AppBar from "../../../components/AppBar/AppBar";
 import OTPAuth from "../WhatsappAuth/OTPAuth";
 import { from } from "readable-stream";
@@ -41,6 +44,137 @@ const CustomControl = ({ children, ...props }) => {
   );
 };
 
+const colors = {
+  primary: '#1fb8f9',
+  secondary: '#0000ff',
+  background: '#ffffff',
+  text: '#000000',
+  lightGray: '#f0f0f0',
+  darkGray: '#666666',
+};
+
+const breakpoints = {
+  xs: '480px',   // Extra small devices (phones)
+  sm: '600px',   // Small devices (larger phones)
+  md: '768px',   // Medium devices (tablets)
+  lg: '1024px',  // Large devices (desktops)
+  xl: '1200px'   // Extra large devices
+};
+
+const StyledPhoneInput = styled.div`
+  .react-tel-input {
+    width: 100%;
+  }
+
+  .form-control {
+    width: 100% !important;
+    height: 56px !important;
+    border-radius: 4px !important;
+    border: 1px solid rgba(0, 0, 0, 0.23) !important;
+    font-size: 16px !important;
+    background: ${colors.background} !important;
+    color: ${colors.text} !important;
+    padding-left: 50px !important;
+    
+    &:hover {
+      border-color: rgba(0, 0, 0, 0.87) !important;
+    }
+    
+    &:focus {
+      border-color: ${colors.primary} !important;
+      border-width: 2px !important;
+      box-shadow: none !important;
+    }
+
+    @media (max-width: ${breakpoints.xs}) {
+      height: 48px !important;
+      font-size: 14px !important;
+    }
+  }
+
+  .flag-dropdown {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 4px 0 0 4px !important;
+    height: 56px !important;
+
+    @media (max-width: ${breakpoints.xs}) {
+      height: 48px !important;
+    }
+    
+    &.open {
+      background: transparent !important;
+      border-radius: 4px 0 0 4px !important;
+    }
+  }
+
+  .selected-flag {
+    background: transparent !important;
+    width: 45px !important;
+    height: 54px !important;
+    padding: 0 0 0 8px !important;
+    border-radius: 4px 0 0 4px !important;
+
+    @media (max-width: ${breakpoints.xs}) {
+      height: 46px !important;
+    }
+
+    &:hover, &:focus {
+      background: transparent !important;
+      border-radius: 4px 0 0 4px !important;
+    }
+  }
+
+  .country-list {
+    border-radius: 4px !important;
+    margin-top: 4px !important;
+    max-height: 300px !important;
+    overflow-y: auto !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+
+    .country {
+      padding: 10px !important;
+      color: ${colors.text};
+      
+      &:hover {
+        background: ${colors.primary} !important;
+      }
+      
+      &.highlight {
+        background: ${colors.lightGray} !important;
+      }
+
+      .dial-code {
+        color: ${colors.text} !important;
+      }
+    }
+
+    .search {
+      padding: 10px !important;
+      
+      input {
+        width: 80% !important;
+        padding: 8px !important;
+        border: 1px solid rgba(0, 0, 0, 0.23) !important;
+        border-radius: 4px !important;
+
+        &:focus {
+          border-color: ${colors.primary} !important;
+          outline: none !important;
+        }
+      }
+    }
+  }
+
+  .invalid-number-message {
+    color: #d32f2f;
+    font-size: 0.75rem;
+    margin-top: 4px;
+    margin-left: 14px;
+  }
+`;
+
+
 function Login({ name, onLoginSuccess, showAppBar = true }) {
   const [error] = useState("");
   const { eventName } = useParams();
@@ -49,6 +183,7 @@ function Login({ name, onLoginSuccess, showAppBar = true }) {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [countryCode, setCountryCode] = useState("+91");
   const [phoneNumberError, setPhoneNumberError] = useState("");
+  const [fullPhoneValue, setFullPhoneValue] = useState("");
   const webcamRef = useRef(null);
   const [imgSrc, setImgSrc] = useState(null);
   const [termsAccepted, setTermsAccepted] = useState(true);
@@ -273,6 +408,15 @@ function Login({ name, onLoginSuccess, showAppBar = true }) {
   const onChangeCountryCode = (event) => {
     setCountryCode(event.label);
   };
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter' || event.keyCode === 13) {
+      event.preventDefault();
+      if (phoneNumber.length === 10) {
+        handleSubmit(event);
+      }
+    }
+  };
+  
 
   return (
     <div className="login-root">
@@ -292,23 +436,69 @@ function Login({ name, onLoginSuccess, showAppBar = true }) {
           <div className="login-form-container">
             {!isPhoneNumberValid && !showOTP && (
               <form onSubmit={handleSubmit} className="login-form">
-                <div className={"phoneOuter " + (phoneNumberError && "error")} style={{ position: "relative" }}>
-                  <Select
-                    className="country-code"
-                    classNamePrefix={"fb"}
-                    options={CountryCodes}
-                    onChange={onChangeCountryCode}
-                    defaultValue={{
-                      name: "India",
-                      dial_code: "+91",
-                      code: "IN",
-                      label: "+91",
-                      value: "+91",
+                 <StyledPhoneInput>
+                  <PhoneInput
+                    country={'in'}
+                    value={fullPhoneValue}
+                    onChange={(value, data) => {
+                      // Get the input element
+                      const inputElement = document.querySelector('.react-tel-input input');
+                      const selectionStart = inputElement?.selectionStart || 0;
+                      const selectionEnd = inputElement?.selectionEnd || 0;
+                      const isSelected = selectionEnd - selectionStart > 0;
+                      
+                      // Handle selection deletion or replacement
+                      if (isSelected) {
+                        const beforeSelection = value.slice(0, data.dialCode.length + selectionStart);
+                        const afterSelection = value.slice(data.dialCode.length + selectionEnd);
+                        const newValue = beforeSelection + afterSelection;
+                        value = newValue;
+                      }
+
+                      setFullPhoneValue(value);
+                      
+                      // Only update country code when explicitly changed via dropdown
+                      if (value.length <= data.dialCode.length) {
+                        setCountryCode('+' + data.dialCode);
+                      }
+                      
+                      // Extract the phone number without country code
+                      const numberWithoutCode = value.slice(data.dialCode.length).replace(/\D/g, '');
+                      setPhoneNumber(numberWithoutCode);
+                      
+                      // Validate the phone number
+                      if (!numberWithoutCode) {
+                        setPhoneNumberError("Phone number is required");
+                      } else if (numberWithoutCode.length !== 10) {
+                        setPhoneNumberError("Please enter a valid 10-digit phone number");
+                      } else {
+                        setPhoneNumberError("");
+                      }
                     }}
-                    components={{ Option: CustomOption, Control: CustomControl }}
+                    onCountryChange={(countryCode, data) => {
+                      setCountryCode('+' + data.dialCode);
+                      // Preserve the phone number when changing country
+                      setFullPhoneValue(data.dialCode + phoneNumber);
+                    }}
+                    enableSearch
+                    searchPlaceholder="Search countries..."
+                    inputProps={{
+                      name: 'phone',
+                      required: true,
+                      placeholder: 'Phone Number',
+                      onKeyDown: handleKeyDown
+                    }}
+                    specialLabel=""
+                    countryCodeEditable={false}
+                    disableCountryCode={false}
+                    preserveOrder={['onCountryChange', 'onChange']}
                   />
-                  <input name="phoneNumber" required type="tel" placeholder="Phone Number" onChange={handlePhoneNumberChange} />
-                </div>
+                  {phoneNumberError && (
+                    <div className="invalid-number-message">
+                      {phoneNumberError}
+                    </div>
+                  )}
+                </StyledPhoneInput>
                 <div className="privacyNotice">
                   <p>By Submitting your phone number, you confirm you've read this <a href="/TermsAndConditions" target="_blank">Privacy Notice</a></p>
                 </div>
