@@ -34,7 +34,7 @@ const bodyParser = require("body-parser");
 const axios = require("axios");
 
 const oldEvents = ["Aarthi_Vinay_19122021","Convocation_PrathimaCollege","KSL_25042024","Jahnavi_Vaishnavi_SC_28042024","KSL_22052024","KSL_16052024","V20_BootCamp_2024","Neha_ShivaTeja_18042024"];
-const CHEWY_AMOUNT =100;
+const CHEWY_AMOUNT =500;
 
 const logger = require('./logger');
 const e = require('express');
