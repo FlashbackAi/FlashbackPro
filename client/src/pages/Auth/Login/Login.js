@@ -223,7 +223,7 @@ function Login({ name, onLoginSuccess, showAppBar = true }) {
   //const fromUrl = location.state?.from?.pathname || "/dashboard";
   const fromUrl = location.state?.from?.pathname 
   ? location.state.from.pathname 
-  : (eventName ? `/photosv1/${eventName}/upcoming` : "/dashboard");
+  : (eventName ? `/photosv1/${eventName}/undefined` : "/dashboard");
 
   console.log(fromUrl);
 
