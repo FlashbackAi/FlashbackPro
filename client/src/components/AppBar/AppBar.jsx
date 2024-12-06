@@ -551,7 +551,7 @@ const AppBar = ({ showLogout = true, showCoins = false }) => {
         
         <RewardSection>
           <RewardText>
-            Earn <span style={{ fontSize: '1.5rem', marginRight: '0.25rem', color: '#00ffff' }}>100</span> 
+            Earn <span style={{ fontSize: '1.5rem', marginRight: '0.25rem', color: '#00ffff' }}>500</span> 
             <span style={{ fontSize: '1.5rem' }}>🍥</span> 
             Reward Points
           </RewardText>
