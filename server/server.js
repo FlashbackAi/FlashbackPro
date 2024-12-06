@@ -3287,12 +3287,12 @@ app.post('/uploadUserPotrait', upload.single('image'), async (req, res) => {
           try {
             await sendWhatsAppMessage(username, event, matchedUserId);
             await updateUserDeliveryStatus(event, username, 'Flashback_Delivered');
-            await storeSentData(user_phone_number, event, `https://flashback.inc/photosV1/${event}/${userData.user_id}`)
+            await storeSentData(username, event, `https://flashback.inc/photosV1/${event}/${userData.user_id}`)
 
 
             logger.info(`Successfully sent message to ${username}`); 
           } catch (error) {
-            logger.error(`Error sending message to ${user_phone_number}: ${error.message}`); // Log error in sending message
+            logger.error(`Error sending message to ${username}: ${error.message}`); // Log error in sending message
           }
       }
     }
