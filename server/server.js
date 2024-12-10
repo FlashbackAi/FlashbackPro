@@ -11202,6 +11202,124 @@ app.post('/setFlashbackFavourite', async (req, res) => {
 
   }
 });
+app.get('/getUserFlashbackImages/:flashbackId', async (req, res) => {
+  const { flashbackId } = req.params;
+  const { continuationToken } = req.query;
+  const bucketName = thumbnailBucketName; // Replace with your actual bucket name
+
+  if (!flashbackId) {
+    return res.status(400).json({ error: 'eventName parameter is required' });
+  }
+
+  try {
+    let clientObject = null;
+
+    // Fetch client details only if continuationToken is not provided (first request)
+    if (!continuationToken) {
+      const flashbackDetails = await getUserFlashbackDetailsById_Creator(flashbackId);
+      clientObject = await getUserObjectByUserPhoneNumber(flashbackDetails.user_phone_number);
+    }
+
+    // Configure S3 list parameters
+    const listParams = {
+      Bucket: bucketName,
+      Prefix: `${flashbackId}/`,
+      MaxKeys: 500 // Fetch 100 images at a time
+    };
+
+    // Validate and add ContinuationToken if it's provided
+    if (continuationToken) {
+      console.log("Received continuationToken:", continuationToken); // Log the token
+      listParams.ContinuationToken = continuationToken;
+    }
+
+    // Fetch S3 objects
+    const listedObjects = await s3.listObjectsV2(listParams).promise();
+    const objectUrls = listedObjects.Contents.map(obj => `https://${bucketName}.s3.amazonaws.com/${obj.Key}`);
+
+    // Log the next continuation token
+    console.log("Next continuationToken:", listedObjects.NextContinuationToken);
+
+    // Return the response with images, total images, and client details (if fetched)
+    res.json({
+      images: objectUrls,
+      totalImages: listedObjects.KeyCount || listedObjects.Contents.length,
+      lastEvaluatedKey: listedObjects.NextContinuationToken,
+      clientObj: clientObject
+    });
+  } catch (error) {
+    console.error('Error fetching S3 URLs or client details:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+
+app.get("/getUserFlashbackDetailsById/:flashbackId/:userPhoneNumber", async (req, res) => {
+  const flashbackId = req.params.flashbackId;
+  const userPhoneNumber = req.params.userPhoneNumber;
+
+  // Validate input
+  if (!flashbackId || typeof flashbackId !== "string") {
+    logger.info("Invalid flashbackId provided");
+    return res.status(400).send({ message: "Invalid flashbackId" });
+  }
+
+  logger.info(`Fetching flashback details for ${flashbackId}`);
+
+  try {
+    const flashbackDetails = await getUserFlashbackDetailsById(flashbackId,userPhoneNumber);
+
+    if (flashbackDetails) {
+      logger.info(`Fetched flashback details for ${flashbackId}`);
+      res.status(200).json({ data: flashbackDetails });
+    } else {
+      logger.info("Flashback not found:", flashbackId);
+      res.status(404).send({ message: "Flashback not found" });
+    }
+  } catch (err) {
+    logger.error(`Error fetching flashback details for ${flashbackId}: ${err.message}`);
+    res.status(500).send({ message: "Internal Server Error", details: err.message });
+  }
+});
+
+const getUserFlashbackDetailsById = async (flashbackId,userPhoneNumber) => {
+  const eventParams = {
+    TableName: userFlashbackDetailsTable,
+    Key: {
+       flashback_id: flashbackId,
+       user_phone_number:userPhoneNumber
+      },
+  };
+
+  try {
+    const result = await docClient.get(eventParams).promise();
+    return result.Item || null; // Return the item or null if not found
+  } catch (err) {
+    throw new Error(`Error fetching flashback details: ${err.message}`);
+  }
+};
+
+const getUserFlashbackDetailsById_Creator = async (flashbackId) => {
+  const eventParams = {
+    TableName: userFlashbackDetailsTable,
+    KeyConditionExpression: "flashback_id = :flashbackId",
+    FilterExpression: "access_level = :accessLevel",
+    ExpressionAttributeValues: {
+      ":flashbackId": flashbackId,
+      ":accessLevel": "creator",
+    },
+  };
+
+  try {
+    const result = await docClient.query(eventParams).promise();
+
+    // Return the first item that matches or null if not found
+    return result.Items && result.Items.length > 0 ? result.Items[0] : null;
+  } catch (err) {
+    throw new Error(`Error fetching flashback details: ${err.message}`);
+  }
+};
+
 
 
 })
