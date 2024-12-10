@@ -156,8 +156,10 @@ const userImageActivityTableName = 'user_image_activity';
 const ImageUploadData  = 'image_upload_data';   
 const FlashbackImageUploadData  = 'flashbacks_image_upload_data';  
 const FlashbackDetailsTable  = 'flashback_details';  
+const userFlashbackDetailsTable = 'user_flashbacks';
 const walletTransactions = 'wallet_transactions';
 const walletDetailsTable = 'wallet_details'
+const UserFlashbackImageUploadData = 'user_flashback_upload_data';
 
 
 const ClientId = '6goctqurrumilpurvtnh6s4fl1'
@@ -4818,9 +4820,9 @@ const createS3Folder = async (bucketName, folderName) => {
 
   try {
     await s3.putObject(createFolderParams).promise();
-    console.info('Folder created successfully:', folderName);
+    logger.info('Folder created successfully:', folderName);
   } catch (error) {
-    console.error('S3 Error Creating Folder:', error);
+    logger.error('S3 Error Creating Folder:', error);
     throw new Error(`Failed to create S3 folder: ${error.message}`);
   }
 };
@@ -10964,6 +10966,242 @@ app.post('/send-anouncement-test', async (req, res) => {
 });
 
 
+
+async function saveUserFlashbackDetails(flashDetails){
+  const {
+    file,
+    flashbackName,
+    user_phone_number,
+  } = flashDetails;
+
+  const flashbackId = crypto.randomBytes(4).toString('hex');
+  logger.info('flashbackId created ' + flashbackId);
+  const fileKey = `${flashbackId}.jpg`;
+
+  try {
+    // Create folder in S3
+    await createS3Folder(indexBucketName, flashbackId);
+
+    // Upload image to S3
+    const imageUrl = await uploadImageToS3('flashbackuserflashbackthumbnails', fileKey, file.buffer, file.mimetype);
+
+    // Save event details to DynamoDB
+    const flashbackParams = {
+      TableName: userFlashbackDetailsTable,
+      Item: {
+        flashback_id: flashbackId,
+        flashback_name: flashbackName,
+        created_date: new Date().toISOString(),
+        flashback_image: imageUrl,
+        folder_name: flashbackId,
+        is_favourite:false,
+        user_phone_number:user_phone_number,
+        access_level:'creator'
+      },
+    };
+
+    const result = await docClient.put(flashbackParams).promise();
+    logger.info('Flashback Created Successfully: ' ,flashbackName," created by : ",user_phone_number);
+
+     return flashbackParams.Item;
+  } catch (error) {
+    logger.error('Error creating flashback:', error);
+    throw new Error('Error creating flashback',error);
+  }
+};
+
+app.post('/saveUserFlashbackDetails', upload.single('flashbackImage'), async (req, res) => {
+  const file = req.file;
+  const {
+    flashbackName,
+    user_phone_number
+  } = req.body;
+
+  try {
+    const result = await saveUserFlashbackDetails({
+      file,
+      flashbackName,
+      user_phone_number
+    });
+
+    res.status(200).send({"message":"Flashback Created Successfully","data":result});
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+async function updateUserFlashbackUploadData(s3Result, userPhoneNumber, originalName, flashbackId) {
+  const now = new Date();
+  const dynamoDbParams = {
+    TableName: UserFlashbackImageUploadData,
+    Item: {
+      s3_url: s3Result.Location,
+      user_phone_number: userPhoneNumber,
+      file_name: originalName,
+      flashback_id: flashbackId,
+      uploaded_date: now.toISOString(),
+      enable_sharing:false,
+
+    }
+  };
+
+  try {
+    await docClient.put(dynamoDbParams).promise();
+    logger.info("Updated Image data in ImageUploadData table");
+  } catch (error) {
+    logger.error(`Error updating DynamoDB for file ${originalName}:`, error);
+    throw error;
+  }
+}
+
+app.post('/uploadUserFlashback/:flashbackId/:userPhoneNumber', (req, res) => {
+  
+  const { flashbackId, userPhoneNumber } = req.params;
+  logger.info("Started uploading files for the flashback: " + flashbackId);
+
+  const bb = busboy({ headers: req.headers });
+  const uploadPromises = [];
+
+  bb.on('file', (fieldname, fileStream, filename, encoding, mimetype) => {
+    const fileId = `${flashbackId}/${filename.filename}`;
+    const s3Params = {
+      Bucket: indexBucketName,
+      Key: fileId,
+      Body: fileStream, // Stream the file directly
+      ContentType: mimetype,
+    };
+
+    // Create a promise for each upload
+    const uploadPromise = s3.upload(s3Params).promise()
+      .then(async (s3Result) => {
+        // Update DynamoDB with the new entry
+        await updateUserFlashbackUploadData(s3Result, userPhoneNumber, filename, flashbackId);
+        return s3Result;
+      })
+      .catch((error) => {
+        console.error(`Error uploading file ${filename}:`, error);
+        throw error;
+      });
+
+    uploadPromises.push(uploadPromise);
+  });
+
+  bb.on('field', (fieldname, val) => {
+    // Handle any form fields if necessary
+  });
+
+  bb.on('finish', async () => {
+    try {
+      const results = await Promise.allSettled(uploadPromises);
+      const successfulUploads = results.filter(r => r.status === 'fulfilled').map(r => r.value);
+      const failedUploads = results.filter(r => r.status === 'rejected').map(r => r.reason);
+
+      logger.info("Upload process completed for the event: " + flashbackId);
+      res.status(200).json({
+        message: 'Upload process completed',
+        successfulUploads,
+        failedUploads,
+        totalFiles: successfulUploads.length + failedUploads.length,
+      });
+    } catch (error) {
+      console.error('Error in upload process:', error);
+      res.status(500).json({ error: 'Error in upload process' });
+    }
+  });
+
+  bb.on('error', (err) => {
+    console.error('Error parsing form:', err);
+    res.status(500).json({ error: 'Error parsing form' });
+  });
+
+  req.pipe(bb);
+});
+
+async function getUserFlashbacks(userPhoneNumber) {
+  logger.info("Fetching user flashbacks for userPhoneNumber : ", userPhoneNumber);
+  const userPhoneNumberIndex = 'user_phone_number-index'; // Replace with your actual GSI name
+  const params = {
+    TableName: userFlashbackDetailsTable, // Replace with your table name
+    IndexName: userPhoneNumberIndex,
+    KeyConditionExpression: 'user_phone_number = :phoneNumber',
+    ExpressionAttributeValues: {
+      ':phoneNumber': userPhoneNumber,
+    },
+  };
+
+  let flashbacks = [];
+  let lastEvaluatedKey = null;
+
+  try {
+    do {
+      if (lastEvaluatedKey) {
+        params.ExclusiveStartKey = lastEvaluatedKey;
+      }
+
+      const result = await docClient.query(params).promise();
+
+      if (result.Items) {
+        flashbacks = flashbacks.concat(result.Items);
+      }
+
+      lastEvaluatedKey = result.LastEvaluatedKey;
+    } while (lastEvaluatedKey);
+    // Sort the flashbacks by is_favourite (true values first)
+    flashbacks.sort((a, b) => {
+      if (a.is_favourite === b.is_favourite) return 0;
+      return a.is_favourite ? -1 : 1; // Move `true` values to the beginning
+    });
+    
+    logger.info("Successfully fetched user flashbacks for userPhoneNumber : ", userPhoneNumber);
+    return flashbacks;
+  } catch (error) {
+    logger.error('Error fetching flashbacks:', error);
+    throw new Error('Error fetching flashbacks');
+  }
+}
+
+app.get('/getUserFlashbacks/:userPhoneNumber', async (req, res) => {
+  const { userPhoneNumber } = req.params;
+
+  try {
+    const flashbacks = await getUserFlashbacks(userPhoneNumber);
+    res.status(200).json({ message: 'Flashbacks retrieved successfully', flashbacks });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+app.post('/setFlashbackFavourite', async (req, res) => {
+  try {
+    
+    const userPhoneNumber = req.body.userPhoneNumber;
+    const flashbackId = req.body.flashbackId;
+    const isFavourite = req.body.isFavourite;
+    logger.info(`Updating favourite status for Flashback ID: ${flashbackId}`);
+    const params = {
+      TableName: userFlashbackDetailsTable,
+      Key: {
+        flashback_id: flashbackId,
+        user_phone_number:userPhoneNumber
+      },
+      UpdateExpression: 'set is_favourite = :isFavourite',
+      ExpressionAttributeValues: {
+        ':isFavourite': isFavourite
+      },
+      ReturnValues: 'UPDATED_NEW'
+    };
+
+    const result =  await docClient.update(params).promise();
+    logger.info("Put operation succeeded:", result);
+    res.send({"message":"Flashback Favourites status updated successfully","data":result});
+  } catch (err) {
+    logger.error("Unable to update item. Error JSON:", err);
+    res.status(500).send({ error: 'Unable to mark the flashback as favourite', details: err.message });
+
+  }
+});
 
 
 })
