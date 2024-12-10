@@ -11065,7 +11065,7 @@ app.post('/uploadUserFlashback/:flashbackId/:userPhoneNumber', (req, res) => {
 
   bb.on('file', (fieldname, fileStream, filename, encoding, mimetype) => {
     console.log(`Received file: ${filename}, fieldname: ${fieldname}, mimetype: ${mimetype}`);
-    const fileId = `${flashbackId}/${filename}`;
+    const fileId = `${flashbackId}/${filename.filename}`;
     const s3Params = {
       Bucket: indexBucketName,
       Key: fileId,
