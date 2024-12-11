@@ -138,6 +138,7 @@ const userDataTableName = 'userData';
 const userUploadsTableName = 'userUploads';
 const userFoldersTableName = 'userFolders';
 const userEventTableName='user_event_mapping';
+const userFlashbackMapping = 'user_flashback_mapping';
 const userOutputTable='user_outputs';
 const userClientInteractionTable ='user_client_interaction';
 const eventsTable = 'events';
@@ -160,6 +161,7 @@ const userFlashbackDetailsTable = 'user_flashbacks';
 const walletTransactions = 'wallet_transactions';
 const walletDetailsTable = 'wallet_details'
 const UserFlashbackImageUploadData = 'user_flashback_upload_data';
+const userFlashbackMappingTable = 'user_flashback_mapping';
 
 
 const ClientId = '6goctqurrumilpurvtnh6s4fl1'
@@ -11267,7 +11269,7 @@ app.get("/getUserFlashbackDetailsById/:flashbackId/:userPhoneNumber", async (req
   logger.info(`Fetching flashback details for ${flashbackId}`);
 
   try {
-    const flashbackDetails = await getUserFlashbackDetailsById(flashbackId,userPhoneNumber);
+    const flashbackDetails = await getUserFlashbackDetailsById_UserPhoneNumber(flashbackId,userPhoneNumber);
 
     if (flashbackDetails) {
       logger.info(`Fetched flashback details for ${flashbackId}`);
@@ -11282,7 +11284,7 @@ app.get("/getUserFlashbackDetailsById/:flashbackId/:userPhoneNumber", async (req
   }
 });
 
-const getUserFlashbackDetailsById = async (flashbackId,userPhoneNumber) => {
+const getUserFlashbackDetailsById_UserPhoneNumber = async (flashbackId,userPhoneNumber) => {
   const eventParams = {
     TableName: userFlashbackDetailsTable,
     Key: {
@@ -11320,6 +11322,462 @@ const getUserFlashbackDetailsById_Creator = async (flashbackId) => {
   }
 };
 
+const getUserFlashbackOwners = async (flashbackId) => {
+  const eventParams = {
+    TableName: userFlashbackDetailsTable,
+    KeyConditionExpression: "flashback_id = :flashbackId",
+    ExpressionAttributeValues: {
+      ":flashbackId": flashbackId
+    }
+  };
+
+  try {
+    const result = await docClient.query(eventParams).promise();
+
+   
+    return result.Items;
+  } catch (err) {
+    throw new Error(`Error fetching flashback details: ${err.message}`);
+  }
+};
+
+
+app.get('/userThumbnailsByFlashbackId/:flashbackId', async (req, res) => {
+  const flashbackId = req.params.flashbackId;
+
+  try {
+    logger.info("Thumbnails are being fetched for flashback ID: " + flashbackId);
+
+
+    // Fetch event details from the database without checking for existing thumbnails
+    
+
+    const flashbackDetailsResult = await getUserFlashbackDetailsById_Creator(flashbackId);
+
+    if (!flashbackDetailsResult) {
+      logger.info("No flashback details found for event ID: " + flashbackId);
+      return res.status(404).send('flashback not found');
+    }
+
+  
+
+    // Create folder name using event_name + client_name + event_id
+    const folderName = flashbackDetailsResult.folder_name;
+    logger.info("Constructed folder name: " + folderName);
+
+    // Step 2: Query indexedDataTableName to get imageIds associated with the constructed folder name
+    const params = {
+      TableName: indexedDataTableName,
+      IndexName: 'folder_name-user_id-index',
+      ProjectionExpression: 'user_id, image_id, Gender_Value, AgeRange_Low, AgeRange_High',
+      KeyConditionExpression: 'folder_name = :folderName',
+      ExpressionAttributeValues: {
+        ':folderName': folderName
+      }
+    };
+
+    let items = [];
+    let lastEvaluatedKey = null;
+    do {
+      if (lastEvaluatedKey) {
+        params.ExclusiveStartKey = lastEvaluatedKey;
+      }
+
+      const data = await docClient.query(params).promise();
+      items = items.concat(data.Items);
+      lastEvaluatedKey = data.LastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    const userCountMap = new Map();
+
+    items.forEach(item => {
+      const userId = item.user_id;
+      const gender = item.Gender_Value;
+      const ageLow = item.AgeRange_Low;
+      const ageHigh = item.AgeRange_High;
+      if (!userCountMap.has(userId)) {
+        userCountMap.set(userId, { userId, count: 0, gender, age: 0 });
+      }
+
+      const userInfo = userCountMap.get(userId);
+      userInfo.count += 1;
+      if (ageLow && ageHigh) {
+        userInfo.age = (userInfo.age + ((ageLow + ageHigh) / 2)) / 2;
+      }
+      userCountMap.set(userId, userInfo);
+    });
+
+    logger.info("Total number of user userIds fetched: " + userCountMap.size);
+    const usersIds = Array.from(userCountMap.keys());
+    const keys = usersIds.map(userId => ({ user_id: userId }));
+
+    const thumbnailObject = await getThumbanailsForUserIds(keys);
+    thumbnailObject.forEach(item => {
+      item.count = userCountMap.get(item.user_id).count;
+      item.gender = userCountMap.get(item.user_id).gender;
+      item.avgAge = userCountMap.get(item.user_id).age;
+    });
+    thumbnailObject.sort((a, b) => b.count - a.count);
+
+    logger.info("Total number of user thumbnails fetched: " + thumbnailObject.length);
+
+    // Step 5: Check if user_id from thumbnailObject exists in usersForEvent and modify thumbnailObject
+    for (const thumbnail of thumbnailObject) {
+  
+        const userObj = await getUserObjectByUserId(thumbnail.user_id);
+        if(userObj){
+          thumbnail.is_registered = true;
+          mapUserToFlashback(flashbackId,userObj.user_phone_number,thumbnail.user_id);
+          logger.info(`Thumbnail with image_id ${thumbnail.user_id} is registered.`);
+        }else{
+          thumbnail.is_registered = false;
+          logger.info(`Thumbnail with image_id ${thumbnail.user_id} is unregistered.`);
+        }
+       
+      
+    }
+
+    // Step 3: Fetch users for the event
+   // const usersForEvent = await getUsersForEvent(folderName);
+
+    // Step 4: Check if user_id exists and map if necessary
+    // for (const user of usersForEvent) {
+    //   if (!user.user_id) {
+    //     const userObj = await getUserObjectByUserPhoneNumber(user.user_phone_number)
+    //     const phoneNumber = user.user_phone_number; // Adjust according to your user data structure
+    //     const imageUrl = userObj.potrait_s3_url; // Adjust according to your user data structure
+    //     console.log("mapping user_id with phone Number : ",phoneNumber)
+    //     try {
+    //       const result = await mapUserIdAndPhoneNumber(phoneNumber, imageUrl, eventName, user.user_id,false);
+    //       if (result && result.Attributes && result.Attributes.user_id) {
+    //         user.user_id = result.Attributes.user_id; // Update the user with the mapped user_id
+    //         logger.info(`Mapped user_id ${user.user_id} for phone number ${phoneNumber}`);
+    //       } else {
+    //         logger.info(`No user_id found for phone number ${phoneNumber} using imageUrl ${imageUrl}`);
+    //       }
+    //     } catch (error) {
+    //       logger.error(`Error mapping user_id for phone number ${phoneNumber}: ${error.message}`);
+    //     }
+    //   }
+    // }
+
+    // Create a Set of user_ids from usersForEvent for quick lookup
+    // const userIdsSet = new Set(usersForEvent.map(user => user.user_id));
+
+    
+    
+
+
+    // // Step 6: Store the modified thumbnailObject in eventsDetailsTable using eventId
+    // const updateParams = {
+    //   TableName: eventsDetailsTable,
+    //   Key: {
+    //     event_id: eventId,
+    //     event_date: eventDetailsResult.Item.event_date // Ensure you fetch event_date in the ProjectionExpression if needed
+    //   },
+    //   UpdateExpression: 'set userThumbnails = :thumbnails',
+    //   ExpressionAttributeValues: {
+    //     ':thumbnails': thumbnailObject
+    //   },
+    //   ReturnValues: 'UPDATED_NEW'
+    // };
+
+   // await docClient.update(updateParams).promise();
+   // logger.info("User thumbnails updated with registration status and saved for event ID: " + eventId);
+
+    // Respond with the modified thumbnailObject
+    res.json(thumbnailObject);
+
+  } catch (err) {
+    logger.error("Error in fetching thumbnails for event ID: " + eventId, err);
+    res.status(500).send('Error getting thumbnails for the event ID: ' + eventId);
+  }
+});
+
+const mapUserToFlashback = async (flashbackId, userPhoneNumber, userId) => {
+  const updateParamsUserEvent = {
+    TableName: userFlashbackMapping,
+    Item: {
+      flashback_id: flashbackId,
+      user_phone_number: userPhoneNumber,
+      created_date: new Date().toISOString(),
+      user_id: userId
+    }
+  };
+
+  try {
+    const putResult = await docClient.put(updateParamsUserEvent).promise();
+    logger.info('Insert in user-flashback mapping is successful:', flashbackId);
+    return { success: true, message: 'User-flashback mapping successful' };
+  } catch (error) {
+    logger.error('Error in user-flashback mapping:', error);
+    throw new Error(error);
+  }
+};
+
+app.post('/send-user-flashbacks', async (req, res) => {
+  const { flashbackId } = req.body;
+
+  // Start the flashback sending process asynchronously
+  await sendUserFlashbacksAsync(flashbackId);
+  res.json({ taskId });
+});
+
+async function getUserFlashbackMappings(flashbackId) {
+  const params = {
+    TableName: userFlashbackMappingTable,
+    KeyConditionExpression: 'flashback_id = :flashbackId',
+    ExpressionAttributeValues: {
+      ':flashbackId': flashbackId,
+    }
+  };
+
+  try {
+    const result = await docClient.query(params).promise();
+    return result.Items;
+  } catch (error) {
+    console.error('Error fetching user event mappings:', error);
+    throw error;
+  }
+}
+async function updateUserFlashbackDeliveryStatus(flashbackId, phoneNumber, flashback_status) {
+  const params = {
+    TableName: userFlashbackMappingTable,
+    Key: {
+      'flashback_id': { S: flashbackId },
+      'user_phone_number': { S: phoneNumber }
+    },
+    UpdateExpression: 'SET flashback_status = :flashback_status',
+    ExpressionAttributeValues: {
+      ':flashback_status': { S: flashback_status }
+    }
+  };
+
+  try {
+    await dynamoDB.updateItem(params).promise();
+    logger.info(`Successfully updated status for flashback: ${flashbackId}, phone: ${phoneNumber}`);
+  } catch (error) {
+    console.error('Error updating user event mapping:', error);
+    throw error;
+  }
+}
+
+
+async function sendUserFlashbacksAsync(flashbackId) {
+  try {
+    const usersForFlashback = await getUserForEvent(flashbackId);
+    const userFlashbackMappings = await getUserFlashbackMappings(flashbackId);
+    const flashbackDetails = await getUserFlashbackDetailsById_Creator(flashbackId);
+    logger.info(`Started sending Whatsapp Messages for event: ${flashbackId}`); // Log the start of the process
+
+    let status = 'Flashbacks_Fully_Delivered';
+    let sentUsers = 0; // Initialize sentUsers to track the number of messages sent successfully
+
+    // Create a map of userEventMappings with user_phone_number as key
+    const userFlashbackMappingMap = new Map();
+    for (const mapping of userFlashbackMappings) {
+      if(mapping && mapping.user_phone_number)
+        userFlashbackMappingMap.set(mapping.user_phone_number, mapping);
+    }
+    logger.info(`Created user flashback mapping map with ${userFlashbackMappingMap.size} entries`); // Log the size of the mapping map
+
+    for (const userId of usersForFlashback) {
+      const userData = await getUserObjectByUserId(userId);
+      if(!userData){
+        logger.info("User id is not a registered user : ",userId);
+        continue;
+      }
+      const user_phone_number = userData.user_phone_number;
+
+      logger.info(`Processing user: ${user_phone_number}`); // Log the user being processed
+
+      // Check if userEventMappings has an entry with user_phone_number
+      const existingMapping = userFlashbackMappingMap.get(user_phone_number);
+      const isUserMapped = !!existingMapping;
+
+      if (!isUserMapped) {
+        //logger.info(`User ${user_phone_number} is already mapped to flashback ${eventName}`); // Log if the user is already mapped
+        await mapUserToFlashback(flashbackId, user_phone_number, userData.user_id);
+        logger.info(`Mapped user ${user_phone_number} to flashback ${flashbackId}`); // Log the mapping action
+      }
+
+      if (userData && userData.user_id && userData.potrait_s3_url && 
+          (!isUserMapped || (isUserMapped && existingMapping.flashback_status !== 'Flashback_Delivered'))) {
+        try {
+          //await sendWhatsAppMessage(user_phone_number, eventName, userData.user_id);
+
+          await whatsappSender.sendMessage(user_phone_number,flashbackId, flashbackDetails.flashback_name, userData.user_id);
+
+          await updateUserFlashbackDeliveryStatus(flashbackId, user_phone_number, 'Flashback_Delivered');
+
+          await storeSentData(user_phone_number, flashbackId, `https://flashback.inc/photosV1/${flashbackId}/${userData.user_id}`);
+
+          logger.info(`Successfully sent WhatsApp message to ${user_phone_number}`); 
+        } catch (error) {
+          logger.error(`Error sending message to ${user_phone_number}: ${error.message}`); // Log error in sending message
+        }
+      } else {
+        logger.info(`Skipping user ${user_phone_number} as message is already delivered or user is not eligible`); // Log if the user is skipped
+      }
+    }
+
+    await updateEventFlashbackStatus(eventName, 'triggered');
+    logger.info(`Updated event flashback status for ${eventName} to 'triggered'`); // Log the event status update
+
+    // Mark task as completed
+    taskProgress.set(taskId, { progress: 100, status: 'completed' });
+    logger.info(`Completed sending Whatsapp messages for event: ${eventName}, total users processed: ${sentUsers}`); // Log the completion of the process
+  } catch (error) {
+    logger.error(`Error sending flashbacks for event ${eventName}: ${error.message}`); // Log error in the entire process
+    taskProgress.set(taskId, { progress: 0, status: 'failed' });
+  }
+}
+
+app.post('/flashbackImages/:flashbackId/:userId', async (req, res) => {
+  try {
+   
+    
+     const flashbackId = req.params.flashbackId;
+     const userId = req.params.userId;
+     const isFavourites = req.body.isFavourites;
+     const lastEvaluatedKey = req.body.lastEvaluatedKey;
+
+    
+     let isUserRegistered ;
+     let clientName;
+     let clientObject;
+     let userObject;
+        isUserRegistered = await checkIsUserRegistered(userId);
+      
+     // isUserRegistered = await checkIsUserRegistered(userId);
+     logger.info("isUserRegistered: "+ isUserRegistered);
+     if(!isUserRegistered)
+      {
+        logger.info("user doesnot exists... navigate to login page");
+          res.status(700).send({"message":"Oh! You are not registered, please register to view photographs"})
+      }else{
+      logger.info("user exists:"+userId);
+     logger.info("Image are being fetched for flashback  -> "+flashbackId+"; userId -> "+userId +"; isFavourites -> "+isFavourites);
+
+    const result = await userEventImagesNew(flashbackId,userId,lastEvaluatedKey,isFavourites);
+    logger.info("total"+result.Items.length)
+    if(!lastEvaluatedKey && isFavourites){
+      const flashbackDetails = await getUserFlashbackDetailsById_Creator(flashbackId);
+      clientObject = await getUserObjectByUserPhoneNumber(flashbackDetails.user_phone_number);
+    }
+       
+    
+    result.Items.sort((a, b) => a.faces_in_image - b.faces_in_image);
+      const imagesPromises = result.Items.map(async file => {
+        const base64ImageData =  {
+          "facesCount":file.faces_in_image,
+          "thumbnailUrl":"https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/"+file.s3_url.split("amazonaws.com/")[1]
+        }
+           base64ImageData.url = file.s3_url;
+         
+          return base64ImageData;
+      
+    });
+      const images = await Promise.all(imagesPromises);
+      logger.info('total images fetched for the user -> '+userId+'  in flashbackId -> '+flashbackId +"isFavourites -> "+isFavourites+' : '+result.Count);
+      res.json({"images":images, 'totalImages':result.Count,'lastEvaluatedKey':result.LastEvaluatedKey,'clientObj':clientObject,'userObj':userObject});
+  }
+  } catch (err) {
+     logger.info("Error in S3 get", err);
+      res.status(500).send('Error getting images from S3');
+  }
+});
+
+app.put('/updateUserFlashback/:flashbackId', async (req, res) => {
+  const { flashbackId } = req.params;
+  const updateFields = req.body;
+
+  try {
+    const updatedFlashback = await updateUserFlashbackDetails(flashbackId, updateFields);
+    logger.info(`Updated flashback: ${flashbackId}`);
+    res.status(200).send(updatedFlashback);
+  } catch (error) {
+    logger.error(`Failed to update event ${flashbackId}: ${error.message}`);
+    res.status(500).send({ error: error.message });
+  }
+});
+
+const updateUserFlashbackDetails = async (flashbackId, updateFields) => {
+  // Build Update Parameters
+  try{
+  const flashbackOwners = await getUserFlashbackOwners(flashbackId);
+  let updateExpression = "set";
+  let expressionAttributeValues = {};
+
+  Object.keys(updateFields).forEach((key, index) => {
+    const attributeKey = `:${key}`;
+
+    if (index > 0) {
+      updateExpression += ",";
+    }
+
+    updateExpression += ` ${key} = ${attributeKey}`;
+    expressionAttributeValues[attributeKey] = updateFields[key];
+  });
+
+  // Return null if no fields are provided
+  if (Object.keys(expressionAttributeValues).length === 0) {
+    throw new Error('No fields provided to update');
+  }
+  const results = [];
+  for (const owner of flashbackOwners) {
+    const updateParams = {
+      TableName: userFlashbackDetailsTable,
+      Key: {
+        flashback_id: flashbackId,
+        user_phone_number: owner.user_phone_number
+      },
+      UpdateExpression: updateExpression,
+      ExpressionAttributeValues: expressionAttributeValues,
+      ReturnValues: "ALL_NEW",
+    };
+
+    // Perform the update operation
+
+      const result = await docClient.update(updateParams).promise();
+      results.push(result.Attributes);
+   
+  }
+  return results;
+} catch (error) {
+  throw new Error(`Failed to update event for user ${owner.user_phone_number}: ${error.message}`);
+}
+};
+
+app.post('/updateUserFlashbackImage', upload.single('flashbackImage'), async (req, res) => {
+  const { flashbackId } = req.body;
+  const file = req.file;
+
+  if (!flashbackId) {
+    return res.status(400).json({ error: 'Missing required fields: flashbackId' });
+  }
+
+  // // Remove spaces to match the existing naming convention
+  // const eventNameWithoutSpaces = eventName.replace(/\s+/g, '_');
+  // const clientNameWithoutSpaces = clientName.replace(/\s+/g, '_');
+  // const CreateUploadFolderName = `${eventNameWithoutSpaces}_${clientNameWithoutSpaces}_${eventId}`;
+  
+  const fileKey = `${flashbackId}.jpg`;
+
+  try {
+    // Upload the new image to S3
+    const imageUrl = await uploadImageToS3('flashbackuserflashbackthumbnails', fileKey, file.buffer, file.mimetype);
+
+    // Update event details in DynamoDB with the new image URL
+    //const updateFields = { flashback_image: imageUrl };
+    //await updateUserFlashbackDetails(flashbackId, updateFields);
+
+    res.status(200).send({ message: 'Flashback image updated successfully', imageUrl });
+  } catch (error) {
+    console.error('Error updating flashback image:', error);
+    res.status(500).json({ error: 'Error updating flashback image' });
+  }
+});
 
 
 })
