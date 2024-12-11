@@ -11759,11 +11759,6 @@ app.post('/updateUserFlashbackImage', upload.single('flashbackImage'), async (re
   if (!flashbackId) {
     return res.status(400).json({ error: 'Missing required fields: flashbackId' });
   }
-
-  // // Remove spaces to match the existing naming convention
-  // const eventNameWithoutSpaces = eventName.replace(/\s+/g, '_');
-  // const clientNameWithoutSpaces = clientName.replace(/\s+/g, '_');
-  // const CreateUploadFolderName = `${eventNameWithoutSpaces}_${clientNameWithoutSpaces}_${eventId}`;
   
   const fileKey = `${flashbackId}.jpg`;
 
