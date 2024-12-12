@@ -11025,6 +11025,7 @@ app.post('/saveUserFlashbackDetails', upload.single('flashbackImage'), async (re
       flashbackName,
       user_phone_number
     });
+    await mapUserToFlashback(result.flashback_id,user_phone_number,'');
 
     res.status(200).send({"message":"Flashback Created Successfully","data":result});
   } catch (error) {
@@ -11774,6 +11775,296 @@ app.post('/updateUserFlashbackImage', upload.single('flashbackImage'), async (re
   } catch (error) {
     console.error('Error updating flashback image:', error);
     res.status(500).json({ error: 'Error updating flashback image' });
+  }
+});
+
+// API endpoint to delete an event
+app.delete('/deleteUserFlashback/:flashbackId/:userPhoneNumber', async (req, res) => {
+  const { flashbackId, userPhoneNumber } = req.params;
+
+  logger.info(`Deletion Process Started for flashbackId: ${flashbackId}, userPhoneNumber: ${userPhoneNumber}`);
+
+  try {
+    // Step 1: Fetch event details to get the folder name
+    logger.info('Step 1: Fetching flashback details from DynamoDB');
+    const flashbackDetails = await getUserFlashbackDetailsById_Creator(flashbackId);
+    logger.info('Step 1 Completed: flashback details fetched successfully');
+
+    if (!flashbackDetails.Item) {
+      logger.error('flashback not found in DynamoDB');
+      return res.status(404).json({ message: 'flashback not found' });
+    }
+
+    const folderName = flashbackDetails.Item.folder_name;
+
+    // Step 2: List and delete all objects within the folder in S3 (indexBucketName)
+    logger.info(`Step 2: Listing and deleting all objects in S3 folder: ${folderName} in bucket: ${indexBucketName}`);
+    let isTruncated = true;
+    let continuationToken = null;
+    let totalObjectsDeleted = 0;
+
+    while (isTruncated) {
+      const listParams = {
+        Bucket: indexBucketName,
+        Prefix: `${folderName}/`,
+        ContinuationToken: continuationToken
+      };
+
+      const listedObjects = await s3.listObjectsV2(listParams).promise();
+      logger.info(`Step 2: Fetched ${listedObjects.Contents.length} objects from S3 folder: ${folderName} in bucket: ${indexBucketName}`);
+
+      if (listedObjects.Contents.length > 0) {
+        const deleteParamsIndex = {
+          Bucket: indexBucketName,
+          Delete: { Objects: listedObjects.Contents.map(({ Key }) => ({ Key })) }
+        };
+
+        const deleteParamsThumbnail = {
+          Bucket: thumbnailBucketName,
+          Delete: { Objects: listedObjects.Contents.map(({ Key }) => ({ Key })) }
+        };
+
+        try {
+          // Step 1: Delete image records from DynamoDB (ImageUploadData table) using s3_url
+          logger.info(`Step 1: Deleting image records from DynamoDB (UserFlashbackImageUploadData table) using s3_url values`);
+
+          for (const object of listedObjects.Contents) {
+            const s3Url = `https://${indexBucketName}.s3.ap-south-1.amazonaws.com/${object.Key}`; // Construct the s3_url
+
+            const deleteImageDataParams = {
+              TableName: UserFlashbackImageUploadData,
+              Key: {
+                s3_url: s3Url
+              }
+            };
+
+            try {
+              const res = await docClient.delete(deleteImageDataParams).promise();
+              //logger.info(`Deleted image record from UserFlashbackImageUploadData table for s3_url: ${s3Url}`);
+            } catch (deleteError) {
+              logger.error(`Failed to delete image record from ImageUploadData table for s3_url: ${s3Url} - Error: ${deleteError.message}`);
+              return res.status(500).json({ message: 'Error deleting image records from UserFlashbackImageUploadData table', error: deleteError.message });
+            }
+          }
+
+          logger.info(`Step 1a Completed: Deleted image records from DynamoDB (UserFlashbackImageUploadData table)`);
+
+          // Step 2: Delete the objects from indexBucketName
+  
+          // Delete the objects from indexBucketName
+          const deleteResultIndex = await s3.deleteObjects(deleteParamsIndex).promise();
+          if (deleteResultIndex.Errors && deleteResultIndex.Errors.length > 0) {
+            logger.error(`Error deleting some objects from ${indexBucketName}: ${JSON.stringify(deleteResultIndex.Errors)}`);
+            return res.status(500).json({ message: 'Error deleting some objects from S3', errors: deleteResultIndex.Errors });
+          }
+          totalObjectsDeleted += deleteParamsIndex.Delete.Objects.length;
+          logger.info(`Step 2: Deleted ${deleteParamsIndex.Delete.Objects.length} objects from S3 folder: ${folderName} in bucket: ${indexBucketName}`);
+
+          // Delete the objects from thumbnailBucketName
+          const deleteResultThumbnail = await s3.deleteObjects(deleteParamsThumbnail).promise();
+          if (deleteResultThumbnail.Errors && deleteResultThumbnail.Errors.length > 0) {
+            logger.error(`Error deleting some objects from ${thumbnailBucketName}: ${JSON.stringify(deleteResultThumbnail.Errors)}`);
+            return res.status(500).json({ message: 'Error deleting some objects from S3', errors: deleteResultThumbnail.Errors });
+          }
+          logger.info(`Step 2: Deleted ${deleteParamsThumbnail.Delete.Objects.length} objects from S3 folder: ${folderName} in bucket: ${thumbnailBucketName}`);
+        } catch (deleteError) {
+          logger.error(`Failed to delete objects in S3: ${deleteError.message}`);
+          return res.status(500).json({ message: 'Error deleting objects from S3', error: deleteError.message });
+        }
+      } else {
+        logger.info(`Step 2: No objects found in S3 folder: ${folderName} in bucket: ${indexBucketName}`);
+        break; // Skip further steps if no objects are found
+      }
+
+      isTruncated = listedObjects.IsTruncated;
+      continuationToken = listedObjects.NextContinuationToken;
+    }
+
+    logger.info(`Step 2 Completed: Total objects deleted from S3 folder: ${totalObjectsDeleted} in bucket: ${indexBucketName} and ${thumbnailBucketName}`);
+
+    // Step 3: Query the table using the existing partition key (event_name)
+    logger.info(`Step 3: Fetching items from userEventTableName using event_name`);
+    let lastEvaluatedKey = null;
+    let queryResult = { Items: [] };
+
+    do {
+      const queryParams = {
+        TableName: userEventTableName,
+        KeyConditionExpression: 'event_name = :eventName',
+        ExpressionAttributeValues: {
+          ':eventName': folderName
+        },
+        ExclusiveStartKey: lastEvaluatedKey
+      };
+
+      const result = await docClient.query(queryParams).promise();
+      queryResult.Items = queryResult.Items.concat(result.Items);
+      lastEvaluatedKey = result.LastEvaluatedKey;
+
+    } while (lastEvaluatedKey);
+
+    if (!queryResult.Items || queryResult.Items.length === 0) {
+      logger.info('No entries found for event_name in userEventTableName');
+      logger.info(`Step 3: Total items fetched: ${queryResult.Items.length}`);
+      logger.info(`No entries to update in userEventTableName for eventId: ${eventId}`);
+    } else {
+      // Step 4: Update event status in the event mapping table for all fetched items
+      logger.info(`Step 4: Updating event status to "deleted" in event mapping table for eventId: ${eventId}`);
+      for (const item of queryResult.Items) {
+        const updateParams = {
+          TableName: userEventTableName,
+          Key: {
+            event_name: item.event_name,
+            user_phone_number: item.user_phone_number
+          },
+          UpdateExpression: "SET event_status = :deleted",
+          ExpressionAttributeValues: {
+            ":deleted": "deleted"
+          }
+        };
+
+        try {
+          await docClient.update(updateParams).promise();
+          logger.info(`Event status updated to "deleted" for event_name: ${item.event_name}, user_phone: ${item.user_phone_number}`);
+        } catch (updateError) {
+          logger.error(`Failed to update event status for event_name: ${item.event_name}, user_phone: ${item.user_phone_number} - Error: ${updateError.message}`);
+          return res.status(500).json({ message: 'Error updating event status', error: updateError.message });
+        }
+      }
+      logger.info(`Step 4 Completed: Event status updated for all fetched items`);
+    }
+
+    // Step 4a: Fetch and delete entries from event_collabs table using event_id
+    logger.info(`Step 4a: Fetching and deleting entries from event_collabs table for eventId: ${eventId}`);
+    lastEvaluatedKey = null;
+    let collabsQueryResult = { Items: [] };
+
+    do {
+      const collabsQueryParams = {
+        TableName: 'event_collabs',
+        KeyConditionExpression: 'event_id = :eventId',
+        ExpressionAttributeValues: {
+          ':eventId': eventId
+        },
+        ExclusiveStartKey: lastEvaluatedKey
+      };
+
+      const collabsResult = await docClient.query(collabsQueryParams).promise();
+      collabsQueryResult.Items = collabsQueryResult.Items.concat(collabsResult.Items);
+      lastEvaluatedKey = collabsResult.LastEvaluatedKey;
+
+    } while (lastEvaluatedKey);
+
+    if (collabsQueryResult.Items.length > 0) {
+      for (const collab of collabsQueryResult.Items) {
+        const deleteCollabParams = {
+          TableName: 'event_collabs',
+          Key: {
+            event_id: collab.event_id,
+            user_name: collab.user_name
+          }
+        };
+
+        try {
+          await docClient.delete(deleteCollabParams).promise();
+          logger.info(`Deleted entry from event_collabs table for event_id: ${collab.event_id}, user_name: ${collab.user_name}`);
+        } catch (deleteError) {
+          logger.error(`Failed to delete entry from event_collabs table for event_id: ${collab.event_id}, user_name: ${collab.user_name} - Error: ${deleteError.message}`);
+          return res.status(500).json({ message: 'Error deleting entry from event_collabs table', error: deleteError.message });
+        }
+      }
+      logger.info(`Step 4a Completed: Deleted all fetched entries from event_collabs table`);
+    } else {
+      logger.info('No entries found in event_collabs table for eventId');
+    }
+
+    // Step 5a: Delete the event-related thumbnail image from flashbackeventthumbnail bucket
+    logger.info(`Step 5a: Deleting event-related thumbnail from flashbackeventthumbnail bucket`);
+    const thumbnailKey = `${folderName}.jpg`; // Construct the key for the thumbnail image
+    const deleteThumbnailParams = {
+      Bucket: 'flashbackeventthumbnail',
+      Key: thumbnailKey
+    };
+
+    try {
+      const deleteThumbnailResult = await s3.deleteObject(deleteThumbnailParams).promise();
+      logger.info(`Step 5a Completed: Deleted thumbnail image ${thumbnailKey} from flashbackeventthumbnail bucket`);
+    } catch (thumbnailDeleteError) {
+      logger.error(`Failed to delete thumbnail image from flashbackeventthumbnail bucket: ${thumbnailDeleteError.message}`);
+      return res.status(500).json({ message: 'Error deleting thumbnail image from S3', error: thumbnailDeleteError.message });
+    }
+
+    // Step 5: Delete the event from the primary event details table
+    logger.info(`Step 5: Deleting event from primary table for eventId: ${eventId}`);
+    await docClient.delete(getParams).promise();
+    logger.info(`Step 5 Completed: Event deleted from primary table for eventId: ${eventId}`);
+
+    // Step 6: Insert entry into event_delete table with event_id, user_phone_number, and deleted date
+    logger.info(`Step 6: Inserting entry into event_delete table for eventId: ${eventId}, userPhoneNumber: ${userPhoneNumber}`);
+    const deleteDate = new Date().toISOString(); // Get the current date in ISO format
+    const eventDeleteParams = {
+      TableName: deletedEventsTable,
+      Item: {
+        event_id: eventId,
+        user_phone_number: userPhoneNumber,
+        deleted_date: deleteDate
+      }
+    };
+
+    try {
+      await docClient.put(eventDeleteParams).promise();
+      logger.info(`Step 6 Completed: Inserted entry into event_delete table for eventId: ${eventId}, userPhoneNumber: ${userPhoneNumber}`);
+    } catch (eventDeleteError) {
+      logger.error(`Failed to insert entry into event_delete table for eventId: ${eventId}, userPhoneNumber: ${userPhoneNumber} - Error: ${eventDeleteError.message}`);
+      return res.status(500).json({ message: 'Error inserting entry into event_delete table', error: eventDeleteError.message });
+    }
+
+    logger.info(`Deletion Process Completed successfully for eventId: ${eventId}`);
+    res.status(200).json({ message: 'Event deleted successfully and marked as deleted in event mapping table' });
+  } catch (error) {
+    logger.error(`Error during deletion process for eventId: ${eventId}:`, error);
+    res.status(500).json({ message: 'Error deleting event', error: error.message });
+  }
+});
+
+async function getFlashbacksForUser(userPhoneNumber) {
+  const params = {
+    TableName: userFlashbackMappingTable,
+    IndexName:'user_phone_number-index',
+    KeyConditionExpression: 'user_phone_number = :userPhoneNumber',
+    ExpressionAttributeValues: {
+      ':userPhoneNumber': userPhoneNumber,
+    }
+  };
+
+  try {
+    const result = await docClient.query(params).promise();
+    return result.Items;
+  } catch (error) {
+    console.error('Error fetching user event mappings:', error);
+    throw error;
+  }
+}
+
+app.get("/getUserTaggedFlashbacks/:user_phone_number", async (req, res) => {
+  const userPhoneNumber = req.params.user_phone_number;
+
+  try {
+    // Fetch event IDs for the user
+    logger.info("Fetching Tagged Flashbacks for the userPhoneNumber : ", userPhoneNumber);
+    const flashbacks = await getFlashbacksForUser(userPhoneNumber);
+
+    const flashbackDetailsPromises = flashbacks.map(flashback => getUserFlashbackDetailsById_Creator(flashback.flashback_id));
+    const flashbackDetails = await Promise.all(flashbackDetailsPromises);
+
+    // Filter out any null results
+    const validflashbackDetails = flashbackDetails.filter(flashback => flashback !== null);
+    logger.info("Successfully Fetched Tagged Flashbacks for the userPhoneNumber : ", userPhoneNumber);
+    // Send the valid event details as the response
+    res.json(validflashbackDetails);
+  } catch (error) {
+    logger.error(`Error fetching user attended flashbacks: ${error.message}`);
+    res.status(500).send('Error fetching user attended events');
   }
 });
 
