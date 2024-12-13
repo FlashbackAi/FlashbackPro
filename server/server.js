@@ -11693,6 +11693,125 @@ app.post('/flashbackImages/:flashbackId/:userId', async (req, res) => {
   }
 });
 
+
+app.get('/getUserMemoriesFeed/:userPhoneNumber', async (req, res) => {
+  try {
+    const userPhoneNumber = req.params.userPhoneNumber;
+    const limit = parseInt(req.query.limit) || 5;
+    const lastEvaluatedKey = req.query.lastEvaluatedKey ? JSON.parse(req.query.lastEvaluatedKey) : undefined;
+
+    // Get flashback IDs with pagination
+    const flashbackParams = {
+      TableName: 'user_flashbacks',
+      IndexName: 'user_phone_number-index',
+      KeyConditionExpression: 'user_phone_number = :phone',
+      ExpressionAttributeValues: {
+        ':phone': userPhoneNumber
+      },
+      Limit: limit,
+      ExclusiveStartKey: lastEvaluatedKey
+    };
+
+    const flashbacksResult = await docClient.query(flashbackParams).promise();
+    const flashbackIds = flashbacksResult.Items.map(item => item.flashback_id);
+
+    const feedData = await Promise.all(flashbackIds.map(async (flashbackId) => {
+      try {
+        // Get unique user_ids for this flashback
+        const userIdsParams = {
+          TableName: indexedDataTableName,
+          IndexName: 'folder_name-user_id-index',
+          KeyConditionExpression: 'folder_name = :foldername',
+          ExpressionAttributeValues: {
+            ':foldername': flashbackId
+          },
+          ProjectionExpression: 'user_id'
+        };
+
+        const userIdsResult = await docClient.query(userIdsParams).promise();
+        const uniqueUserIds = [...new Set(userIdsResult.Items.map(item => item.user_id))];
+
+        // Get images for each user
+        const userImages = await Promise.all(uniqueUserIds.map(async (userId) => {
+          try {
+            const imagesParams = {
+              TableName: indexedDataTableName,
+              IndexName: 'folder_name-user_id-index',
+              KeyConditionExpression: 'folder_name = :foldername AND user_id = :userId',
+              ExpressionAttributeValues: {
+                ':foldername': flashbackId,
+                ':userId': userId
+              }
+            };
+
+            const imagesResult = await docClient.query(imagesParams).promise();
+            
+            const processedImages = imagesResult.Items.map(item => ({
+              imageUrl: item.s3_url,
+              thumbnailUrl: `https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/${item.s3_url.split("amazonaws.com/")[1]}`,
+              facesCount: item.faces_in_image,
+              userId: item.user_id
+            }));
+
+            return {
+              userId,
+              images: processedImages
+            };
+          } catch (error) {
+            console.error(`Error fetching images for user ${userId} in flashback ${flashbackId}:`, error);
+            throw error;
+          }
+        }));
+
+        return {
+          flashbackId,
+          userImages,
+          totalUsers: uniqueUserIds.length
+        };
+
+      } catch (error) {
+        console.error(`Error processing flashback ${flashbackId}:`, error);
+        throw error;
+      }
+    }));
+
+    res.json({
+      success: true,
+      feedData,
+      pagination: {
+        lastEvaluatedKey: flashbacksResult.LastEvaluatedKey ? 
+          JSON.stringify(flashbacksResult.LastEvaluatedKey) : null,
+        hasMore: !!flashbacksResult.LastEvaluatedKey
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching memories feed:', error);
+    
+    if (error.code === 'ValidationException') {
+      res.status(400).json({
+        success: false,
+        error: 'Invalid parameters provided'
+      });
+    } else if (error.code === 'ResourceNotFoundException') {
+      res.status(404).json({
+        success: false,
+        error: 'Requested resource not found'
+      });
+    } else if (error.code === 'ProvisionedThroughputExceededException') {
+      res.status(429).json({
+        success: false,
+        error: 'Too many requests, please try again later'
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error'
+      });
+    }
+  }
+});
+
 app.put('/updateUserFlashback/:flashbackId', async (req, res) => {
   const { flashbackId } = req.params;
   const updateFields = req.body;
