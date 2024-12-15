@@ -11863,23 +11863,29 @@ app.post('/saveMemoryReaction', async (req, res) => {
   }
 });
 
-app.get('/getMemoryReaction/:flashbackId/:userId', async (req, res) => {
+app.get('/getMemoryReaction/:flashbackId/:imageName/:userPhoneNumber', async (req, res) => {
   try {
-    const { flashbackId, userId } = req.params;
+    const { flashbackId, imageName, userPhoneNumber } = req.params;
 
     const params = {
       TableName: 'memory_reactions',
-      Key: {
-        flashback_id: flashbackId,
-        user_id: userId
-      }
+      IndexName: 'flashback_image_user-index',  // Add this GSI
+      KeyConditionExpression: 'flashback_id = :fid AND image_name = :iname',
+      FilterExpression: 'user_phone_number = :phone',
+      ExpressionAttributeValues: {
+        ':fid': flashbackId,
+        ':iname': imageName,
+        ':phone': userPhoneNumber
+      },
+      ScanIndexForward: false, // Get most recent first
+      Limit: 1
     };
 
-    const result = await docClient.get(params).promise();
+    const result = await docClient.query(params).promise();
 
     res.json({
       success: true,
-      reaction: result.Item || null
+      reaction: result.Items?.[0] || null
     });
 
   } catch (error) {
