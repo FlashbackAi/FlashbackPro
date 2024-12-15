@@ -11694,6 +11694,126 @@ app.post('/flashbackImages/:flashbackId/:userId', async (req, res) => {
 });
 
 
+// app.get('/getUserMemoriesFeed/:userPhoneNumber', async (req, res) => {
+//   try {
+//     const userPhoneNumber = req.params.userPhoneNumber;
+//     const limit = parseInt(req.query.limit) || 5;
+//     const lastEvaluatedKey = req.query.lastEvaluatedKey ? JSON.parse(req.query.lastEvaluatedKey) : undefined;
+
+//     // Get flashback IDs with pagination
+//     const flashbackParams = {
+//       TableName: 'user_flashbacks',
+//       IndexName: 'user_phone_number-index',
+//       KeyConditionExpression: 'user_phone_number = :phone',
+//       ExpressionAttributeValues: {
+//         ':phone': userPhoneNumber
+//       },
+//       Limit: limit,
+//       ExclusiveStartKey: lastEvaluatedKey
+//     };
+
+//     const flashbacksResult = await docClient.query(flashbackParams).promise();
+//     const flashbackIds = flashbacksResult.Items.map(item => item.flashback_id);
+
+//     const feedData = await Promise.all(flashbackIds.map(async (flashbackId) => {
+//       try {
+//         // Get unique user_ids for this flashback
+//         const userIdsParams = {
+//           TableName: indexedDataTableName,
+//           IndexName: 'folder_name-user_id-index',
+//           KeyConditionExpression: 'folder_name = :foldername',
+//           ExpressionAttributeValues: {
+//             ':foldername': flashbackId
+//           },
+//           ProjectionExpression: 'user_id'
+//         };
+
+//         const userIdsResult = await docClient.query(userIdsParams).promise();
+//         const uniqueUserIds = [...new Set(userIdsResult.Items.map(item => item.user_id))];
+
+//         // Get images for each user
+//         const userImages = await Promise.all(uniqueUserIds.map(async (userId) => {
+//           try {
+//             const imagesParams = {
+//               TableName: indexedDataTableName,
+//               IndexName: 'folder_name-user_id-index',
+//               KeyConditionExpression: 'folder_name = :foldername AND user_id = :userId',
+//               ExpressionAttributeValues: {
+//                 ':foldername': flashbackId,
+//                 ':userId': userId
+//               }
+//             };
+
+//             const imagesResult = await docClient.query(imagesParams).promise();
+            
+//             const processedImages = imagesResult.Items.map(item => ({
+//               imageUrl: item.s3_url,
+//               thumbnailUrl: `https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/${item.s3_url.split("amazonaws.com/")[1]}`,
+//               facesCount: item.faces_in_image,
+//               userId: item.user_id
+//             }));
+
+//             return {
+//               userId,
+//               images: processedImages
+//             };
+//           } catch (error) {
+//             console.error(`Error fetching images for user ${userId} in flashback ${flashbackId}:`, error);
+//             throw error;
+//           }
+//         }));
+
+//         return {
+//           flashbackId,
+//           userImages,
+//           totalUsers: uniqueUserIds.length
+//         };
+
+//       } catch (error) {
+//         console.error(`Error processing flashback ${flashbackId}:`, error);
+//         throw error;
+//       }
+//     }));
+
+//     res.json({
+//       success: true,
+//       feedData,
+//       pagination: {
+//         lastEvaluatedKey: flashbacksResult.LastEvaluatedKey ? 
+//           JSON.stringify(flashbacksResult.LastEvaluatedKey) : null,
+//         hasMore: !!flashbacksResult.LastEvaluatedKey
+//       }
+//     });
+
+//   } catch (error) {
+//     console.error('Error fetching memories feed:', error);
+    
+//     if (error.code === 'ValidationException') {
+//       res.status(400).json({
+//         success: false,
+//         error: 'Invalid parameters provided'
+//       });
+//     } else if (error.code === 'ResourceNotFoundException') {
+//       res.status(404).json({
+//         success: false,
+//         error: 'Requested resource not found'
+//       });
+//     } else if (error.code === 'ProvisionedThroughputExceededException') {
+//       res.status(429).json({
+//         success: false,
+//         error: 'Too many requests, please try again later'
+//       });
+//     } else {
+//       res.status(500).json({
+//         success: false,
+//         error: 'Internal server error'
+//       });
+//     }
+//   }
+// });
+
+
+// Modified getUserMemoriesFeed endpoint
 app.get('/getUserMemoriesFeed/:userPhoneNumber', async (req, res) => {
   try {
     const userPhoneNumber = req.params.userPhoneNumber;
@@ -11717,56 +11837,53 @@ app.get('/getUserMemoriesFeed/:userPhoneNumber', async (req, res) => {
 
     const feedData = await Promise.all(flashbackIds.map(async (flashbackId) => {
       try {
-        // Get unique user_ids for this flashback
-        const userIdsParams = {
+        // First, get images with faces from indexed_data
+        const facesParams = {
           TableName: indexedDataTableName,
           IndexName: 'folder_name-user_id-index',
           KeyConditionExpression: 'folder_name = :foldername',
           ExpressionAttributeValues: {
             ':foldername': flashbackId
-          },
-          ProjectionExpression: 'user_id'
+          }
         };
 
-        const userIdsResult = await docClient.query(userIdsParams).promise();
-        const uniqueUserIds = [...new Set(userIdsResult.Items.map(item => item.user_id))];
+        const facesResult = await docClient.query(facesParams).promise();
 
-        // Get images for each user
-        const userImages = await Promise.all(uniqueUserIds.map(async (userId) => {
-          try {
-            const imagesParams = {
-              TableName: indexedDataTableName,
-              IndexName: 'folder_name-user_id-index',
-              KeyConditionExpression: 'folder_name = :foldername AND user_id = :userId',
-              ExpressionAttributeValues: {
-                ':foldername': flashbackId,
-                ':userId': userId
-              }
-            };
-
-            const imagesResult = await docClient.query(imagesParams).promise();
-            
-            const processedImages = imagesResult.Items.map(item => ({
-              imageUrl: item.s3_url,
-              thumbnailUrl: `https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/${item.s3_url.split("amazonaws.com/")[1]}`,
-              facesCount: item.faces_in_image,
-              userId: item.user_id
-            }));
-
-            return {
-              userId,
-              images: processedImages
-            };
-          } catch (error) {
-            console.error(`Error fetching images for user ${userId} in flashback ${flashbackId}:`, error);
-            throw error;
+        // Then, get images without faces from RekognitionImageProperties
+        const noFacesParams = {
+          TableName: 'RekognitionImageProperties',
+          IndexName: 'object_key-index',
+          KeyConditionExpression: 'begins_with(object_key, :prefix)',
+          FilterExpression: 'attribute_not_exists(user_ids)',
+          ExpressionAttributeValues: {
+            ':prefix': `${flashbackId}/`
           }
-        }));
+        };
+
+        const noFacesResult = await docClient.query(noFacesParams).promise();
+
+        // Combine and process all images
+        const allImages = [
+          ...facesResult.Items.map(item => ({
+            imageUrl: item.s3_url,
+            thumbnailUrl: `https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/${item.s3_url.split("amazonaws.com/")[1]}`,
+            userId: item.user_id,
+            boundingBox: item.faces_in_image?.[0]?.BoundingBox,
+            imageWidth: item.image_width,
+            imageHeight: item.image_height
+          })),
+          ...noFacesResult.Items.map(item => ({
+            imageUrl: `https://flashbackimages.s3.ap-south-1.amazonaws.com/${item.object_key}`,
+            thumbnailUrl: `https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/${item.object_key}`,
+            imageWidth: item.width,
+            imageHeight: item.height
+          }))
+        ];
 
         return {
           flashbackId,
-          userImages,
-          totalUsers: uniqueUserIds.length
+          images: allImages,
+          totalImages: allImages.length
         };
 
       } catch (error) {
@@ -11779,9 +11896,9 @@ app.get('/getUserMemoriesFeed/:userPhoneNumber', async (req, res) => {
       success: true,
       feedData,
       pagination: {
-        lastEvaluatedKey: flashbacksResult.LastEvaluatedKey ? 
+          lastEvaluatedKey: flashbacksResult.LastEvaluatedKey ? 
           JSON.stringify(flashbacksResult.LastEvaluatedKey) : null,
-        hasMore: !!flashbacksResult.LastEvaluatedKey
+          hasMore: !!flashbacksResult.LastEvaluatedKey
       }
     });
 
@@ -11811,6 +11928,97 @@ app.get('/getUserMemoriesFeed/:userPhoneNumber', async (req, res) => {
     }
   }
 });
+
+// New endpoint to save memory reactions
+app.post('/saveMemoryReaction', async (req, res) => {
+  try {
+    const { flashbackId, userId, reaction } = req.body;
+
+    const params = {
+      TableName: 'memory_reactions',
+      Item: {
+        flashback_id: flashbackId,
+        user_id: userId,
+        reaction: reaction,
+        created_at: new Date().toISOString()
+      }
+    };
+
+    await docClient.put(params).promise();
+
+    res.json({
+      success: true,
+      message: 'Reaction saved successfully'
+    });
+
+  } catch (error) {
+    console.error('Error saving reaction:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to save reaction'
+    });
+  }
+});
+
+// New endpoint to get memory reaction
+app.get('/getMemoryReaction/:flashbackId/:userId', async (req, res) => {
+  try {
+    const { flashbackId, userId } = req.params;
+
+    const params = {
+      TableName: 'memory_reactions',
+      Key: {
+        flashback_id: flashbackId,
+        user_id: userId
+      }
+    };
+
+    const result = await docClient.get(params).promise();
+
+    res.json({
+      success: true,
+      reaction: result.Item?.reaction || null
+    });
+
+  } catch (error) {
+    console.error('Error fetching reaction:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch reaction'
+    });
+  }
+});
+
+// New endpoint to hide memory for user
+app.post('/hideMemory', async (req, res) => {
+  try {
+    const { flashbackId, userId } = req.body;
+
+    const params = {
+      TableName: 'hidden_memories',
+      Item: {
+        flashback_id: flashbackId,
+        user_id: userId,
+        hidden_at: new Date().toISOString()
+      }
+    };
+
+    await docClient.put(params).promise();
+
+    res.json({
+      success: true,
+      message: 'Memory hidden successfully'
+    });
+
+  } catch (error) {
+    console.error('Error hiding memory:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to hide memory'
+    });
+  }
+});
+
 
 app.put('/updateUserFlashback/:flashbackId', async (req, res) => {
   const { flashbackId } = req.params;
