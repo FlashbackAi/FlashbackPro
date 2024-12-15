@@ -11694,133 +11694,12 @@ app.post('/flashbackImages/:flashbackId/:userId', async (req, res) => {
 });
 
 
-// app.get('/getUserMemoriesFeed/:userPhoneNumber', async (req, res) => {
-//   try {
-//     const userPhoneNumber = req.params.userPhoneNumber;
-//     const limit = parseInt(req.query.limit) || 5;
-//     const lastEvaluatedKey = req.query.lastEvaluatedKey ? JSON.parse(req.query.lastEvaluatedKey) : undefined;
-
-//     // Get flashback IDs with pagination
-//     const flashbackParams = {
-//       TableName: 'user_flashbacks',
-//       IndexName: 'user_phone_number-index',
-//       KeyConditionExpression: 'user_phone_number = :phone',
-//       ExpressionAttributeValues: {
-//         ':phone': userPhoneNumber
-//       },
-//       Limit: limit,
-//       ExclusiveStartKey: lastEvaluatedKey
-//     };
-
-//     const flashbacksResult = await docClient.query(flashbackParams).promise();
-//     const flashbackIds = flashbacksResult.Items.map(item => item.flashback_id);
-
-//     const feedData = await Promise.all(flashbackIds.map(async (flashbackId) => {
-//       try {
-//         // Get unique user_ids for this flashback
-//         const userIdsParams = {
-//           TableName: indexedDataTableName,
-//           IndexName: 'folder_name-user_id-index',
-//           KeyConditionExpression: 'folder_name = :foldername',
-//           ExpressionAttributeValues: {
-//             ':foldername': flashbackId
-//           },
-//           ProjectionExpression: 'user_id'
-//         };
-
-//         const userIdsResult = await docClient.query(userIdsParams).promise();
-//         const uniqueUserIds = [...new Set(userIdsResult.Items.map(item => item.user_id))];
-
-//         // Get images for each user
-//         const userImages = await Promise.all(uniqueUserIds.map(async (userId) => {
-//           try {
-//             const imagesParams = {
-//               TableName: indexedDataTableName,
-//               IndexName: 'folder_name-user_id-index',
-//               KeyConditionExpression: 'folder_name = :foldername AND user_id = :userId',
-//               ExpressionAttributeValues: {
-//                 ':foldername': flashbackId,
-//                 ':userId': userId
-//               }
-//             };
-
-//             const imagesResult = await docClient.query(imagesParams).promise();
-            
-//             const processedImages = imagesResult.Items.map(item => ({
-//               imageUrl: item.s3_url,
-//               thumbnailUrl: `https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/${item.s3_url.split("amazonaws.com/")[1]}`,
-//               facesCount: item.faces_in_image,
-//               userId: item.user_id
-//             }));
-
-//             return {
-//               userId,
-//               images: processedImages
-//             };
-//           } catch (error) {
-//             console.error(`Error fetching images for user ${userId} in flashback ${flashbackId}:`, error);
-//             throw error;
-//           }
-//         }));
-
-//         return {
-//           flashbackId,
-//           userImages,
-//           totalUsers: uniqueUserIds.length
-//         };
-
-//       } catch (error) {
-//         console.error(`Error processing flashback ${flashbackId}:`, error);
-//         throw error;
-//       }
-//     }));
-
-//     res.json({
-//       success: true,
-//       feedData,
-//       pagination: {
-//         lastEvaluatedKey: flashbacksResult.LastEvaluatedKey ? 
-//           JSON.stringify(flashbacksResult.LastEvaluatedKey) : null,
-//         hasMore: !!flashbacksResult.LastEvaluatedKey
-//       }
-//     });
-
-//   } catch (error) {
-//     console.error('Error fetching memories feed:', error);
-    
-//     if (error.code === 'ValidationException') {
-//       res.status(400).json({
-//         success: false,
-//         error: 'Invalid parameters provided'
-//       });
-//     } else if (error.code === 'ResourceNotFoundException') {
-//       res.status(404).json({
-//         success: false,
-//         error: 'Requested resource not found'
-//       });
-//     } else if (error.code === 'ProvisionedThroughputExceededException') {
-//       res.status(429).json({
-//         success: false,
-//         error: 'Too many requests, please try again later'
-//       });
-//     } else {
-//       res.status(500).json({
-//         success: false,
-//         error: 'Internal server error'
-//       });
-//     }
-//   }
-// });
-
-
-
 app.get('/getUserMemoriesFeed/:userPhoneNumber', async (req, res) => {
   try {
     const userPhoneNumber = req.params.userPhoneNumber;
     const limit = parseInt(req.query.limit) || 5;
     const lastEvaluatedKey = req.query.lastEvaluatedKey ? JSON.parse(req.query.lastEvaluatedKey) : undefined;
 
-    // Get flashback IDs with pagination
     const flashbackParams = {
       TableName: 'user_flashbacks',
       IndexName: 'user_phone_number-index',
@@ -11844,7 +11723,8 @@ app.get('/getUserMemoriesFeed/:userPhoneNumber', async (req, res) => {
           KeyConditionExpression: 'folder_name = :foldername',
           ExpressionAttributeValues: {
             ':foldername': flashbackId
-          }
+          },
+          ProjectionExpression: 's3_url, user_id, bounding_box, image_width, image_height'
         };
 
         const facesResult = await docClient.query(facesParams).promise();
@@ -11855,99 +11735,37 @@ app.get('/getUserMemoriesFeed/:userPhoneNumber', async (req, res) => {
           FilterExpression: 'begins_with(object_key, :prefix) AND attribute_not_exists(user_ids)',
           ExpressionAttributeValues: {
             ':prefix': `${flashbackId}/`
-          }
+          },
+          ProjectionExpression: 'object_key, width, height'
         };
 
         const locationResult = await docClient.scan(locationParams).promise();
 
-        // Process face images
-        const faceImages = facesResult.Items.map(item => {
-          try {
-            // Parse JSON strings
-            const emotions = JSON.parse(item.Emotions || '[]');
-            const landmarks = JSON.parse(item.Landmarks || '[]');
-            const pose = JSON.parse(item.Pose || '{}');
-            const quality = JSON.parse(item.Quality || '{}');
-
-            // Get primary emotion
-            const primaryEmotion = emotions.length > 0 ? 
-              emotions.reduce((prev, current) => 
-                (prev.Confidence > current.Confidence) ? prev : current
-              ).Type : null;
-
-            // Calculate orientation from landmarks
-            const verticalPoints = landmarks.map(l => l.Y);
-            const horizontalPoints = landmarks.map(l => l.X);
-            const verticalSpread = Math.max(...verticalPoints) - Math.min(...verticalPoints);
-            const horizontalSpread = Math.max(...horizontalPoints) - Math.min(...horizontalPoints);
-            const isPortrait = verticalSpread > horizontalSpread * 1.2;
-
-            return {
-              type: 'face',
-              imageUrl: item.s3_url,
-              thumbnailUrl: `https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/${item.s3_url.split("amazonaws.com/")[1]}`,
-              userId: item.user_id,
-              orientation: isPortrait ? 'portrait' : 'landscape',
-              boundingBox: item.bounding_box,
-              faceDetails: {
-                confidence: item.Confidence,
-                pose,
-                quality,
-                primaryEmotion,
-                landmarks,
-                emotions,
-                gender: {
-                  value: item.Gender_Value,
-                  confidence: item.Gender_Confidence
-                },
-                age: {
-                  low: item.AgeRange_Low,
-                  high: item.AgeRange_High
-                }
-              },
-              labels: Object.entries(item)
-                .filter(([key, value]) => key.startsWith('Label_'))
-                .map(([key, value]) => ({
-                  name: key.replace('Label_', ''),
-                  confidence: value
-                }))
-            };
-          } catch (error) {
-            console.error('Error processing face image:', error);
-            return null;
-          }
-        }).filter(item => item !== null);
+        // Process faces images
+        const faceImages = facesResult.Items.map(item => ({
+          type: 'face',
+          imageUrl: item.s3_url,
+          thumbnailUrl: `https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/${item.s3_url.split("amazonaws.com/")[1]}`,
+          userId: item.user_id,
+          dimensions: {
+            width: item.image_width,
+            height: item.image_height
+          },
+          boundingBox: item.bounding_box
+        }));
 
         // Process location/scenery images
-        const locationImages = locationResult.Items.map(item => {
-          try {
-            return {
-              type: 'location',
-              imageUrl: `https://flashbackimages.s3.ap-south-1.amazonaws.com/${item.object_key}`,
-              thumbnailUrl: `https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/${item.object_key}`,
-              orientation: item.height > item.width ? 'portrait' : 'landscape',
-              dimensions: {
-                width: item.width,
-                height: item.height
-              },
-              imageProperties: {
-                brightness: item.brightness,
-                sharpness: item.sharpness,
-                contrast: item.contrast
-              },
-              dominantColors: item.dominant_colors || [],
-              labels: item.labels || []
-            };
-          } catch (error) {
-            console.error('Error processing location image:', error);
-            return null;
+        const locationImages = locationResult.Items.map(item => ({
+          type: 'location',
+          imageUrl: `https://flashbackimages.s3.ap-south-1.amazonaws.com/${item.object_key}`,
+          thumbnailUrl: `https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/${item.object_key}`,
+          dimensions: {
+            width: item.width,
+            height: item.height
           }
-        }).filter(item => item !== null);
+        }));
 
-        // Combine all images
-        const allImages = [...faceImages, ...locationImages];
-
-        // Group face images by users
+        // Group images by users
         const userImagesMap = new Map();
         
         faceImages.forEach(image => {
@@ -11959,29 +11777,21 @@ app.get('/getUserMemoriesFeed/:userPhoneNumber', async (req, res) => {
 
         const userImages = Array.from(userImagesMap.entries()).map(([userId, images]) => ({
           userId,
-          images: images.sort((a, b) => {
-            const qualityA = a.faceDetails.quality.Sharpness + a.faceDetails.quality.Brightness;
-            const qualityB = b.faceDetails.quality.Sharpness + b.faceDetails.quality.Brightness;
-            return qualityB - qualityA; // Sort by image quality
-          })
+          images
         }));
 
         // Add location images as a separate group if they exist
         if (locationImages.length > 0) {
           userImages.push({
             userId: 'locations',
-            images: locationImages.sort((a, b) => {
-              const qualityA = a.imageProperties.sharpness + a.imageProperties.brightness;
-              const qualityB = b.imageProperties.sharpness + b.imageProperties.brightness;
-              return qualityB - qualityA; // Sort by image quality
-            })
+            images: locationImages
           });
         }
 
         return {
           flashbackId,
           userImages,
-          totalImages: allImages.length,
+          totalImages: faceImages.length + locationImages.length,
           totalUsers: userImagesMap.size + (locationImages.length > 0 ? 1 : 0)
         };
 
@@ -12019,10 +11829,10 @@ app.get('/getUserMemoriesFeed/:userPhoneNumber', async (req, res) => {
   }
 });
 
-// New endpoint to save memory reactions
+
 app.post('/saveMemoryReaction', async (req, res) => {
   try {
-    const { flashbackId, userId, reaction } = req.body;
+    const { flashbackId, userId, reaction, userPhoneNumber, imageName } = req.body;
 
     const params = {
       TableName: 'memory_reactions',
@@ -12030,7 +11840,10 @@ app.post('/saveMemoryReaction', async (req, res) => {
         flashback_id: flashbackId,
         user_id: userId,
         reaction: reaction,
-        created_at: new Date().toISOString()
+        user_phone_number: userPhoneNumber,
+        image_name: imageName,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }
     };
 
@@ -12050,7 +11863,6 @@ app.post('/saveMemoryReaction', async (req, res) => {
   }
 });
 
-// New endpoint to get memory reaction
 app.get('/getMemoryReaction/:flashbackId/:userId', async (req, res) => {
   try {
     const { flashbackId, userId } = req.params;
@@ -12067,7 +11879,7 @@ app.get('/getMemoryReaction/:flashbackId/:userId', async (req, res) => {
 
     res.json({
       success: true,
-      reaction: result.Item?.reaction || null
+      reaction: result.Item || null
     });
 
   } catch (error) {
@@ -12079,16 +11891,17 @@ app.get('/getMemoryReaction/:flashbackId/:userId', async (req, res) => {
   }
 });
 
-// New endpoint to hide memory for user
 app.post('/hideMemory', async (req, res) => {
   try {
-    const { flashbackId, userId } = req.body;
+    const { flashbackId, userId, userPhoneNumber, imageName } = req.body;
 
     const params = {
       TableName: 'hidden_memories',
       Item: {
         flashback_id: flashbackId,
         user_id: userId,
+        user_phone_number: userPhoneNumber,
+        image_name: imageName,
         hidden_at: new Date().toISOString()
       }
     };
