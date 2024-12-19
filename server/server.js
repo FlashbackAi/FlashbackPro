@@ -12448,23 +12448,125 @@ app.get('/getChatMessages/:chatId', async (req, res) => {
   try {
     const params = {
       TableName: 'Messages',
-      KeyConditionExpression: 'chatId = :chatId',
+      KeyConditionExpression: 'chat_id = :chatId',
       ExpressionAttributeValues: {
-        ':chatId': chatId
+        ':chatId': { S: chatId }
       },
-      Limit: 50,
-      ScanIndexForward: false // Get newest messages first
+      ScanIndexForward: false, // Get newest messages first
+      Limit: 50
     };
 
     if (lastMessageId) {
-      params.ExclusiveStartKey = { chatId, messageId: lastMessageId };
+      params.ExclusiveStartKey = { 
+        chat_id: { S: chatId },
+        message_id: { S: lastMessageId }
+      };
     }
 
-    const messages = await dynamoDB.query(params).promise();
-    res.status(200).send(messages.Items);
-  } catch (err) {
-    logger.error('Error fetching chat messages:', err);
-    res.status(500).send({ error: err.message });
+    const result = await dynamoDB.query(params).promise();
+    
+    // Transform DynamoDB items to regular objects
+    const messages = result.Items.map(item => ({
+      messageId: item.message_id.S,
+      chatId: item.chat_id.S,
+      senderId: item.sender_id.S,
+      recipientId: item.recipient_id.S,
+      type: item.message_type.S,
+      content: item.content.S,
+      timestamp: item.timestamp.S,
+      status: item.status.S,
+      reactions: item.reactions ? JSON.parse(item.reactions.S) : {}
+    }));
+
+    res.status(200).send({
+      success: true,
+      messages,
+      lastEvaluatedKey: result.LastEvaluatedKey
+    });
+  } catch (error) {
+    console.error('Error fetching chat messages:', error);
+    res.status(500).send({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+
+
+app.get('/getChats/:userId', async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    // Query both sent and received messages
+    const params = {
+      TableName: 'Chats',
+      FilterExpression: 'contains(participants, :userId)',
+      ExpressionAttributeValues: {
+        ':userId': { S: userId }
+      }
+    };
+
+    const result = await dynamoDB.scan(params).promise();
+    
+    // Transform and format the chats
+    const chats = await Promise.all(result.Items.map(async chat => {
+      // Get the last message for this chat
+      const lastMessageParams = {
+        TableName: 'Messages',
+        KeyConditionExpression: 'chat_id = :chatId',
+        ExpressionAttributeValues: {
+          ':chatId': { S: chat.chatId.S }
+        },
+        Limit: 1,
+        ScanIndexForward: false
+      };
+
+      const messageResult = await dynamoDB.query(lastMessageParams).promise();
+      const lastMessage = messageResult.Items[0];
+
+      // Get the other participant's details
+      const participants = chat.participants.S.split('#');
+      const otherUserId = participants.find(p => p !== userId);
+      
+      const userDetailsParams = {
+        TableName: 'RekognitionUsersData',
+        KeyConditionExpression: 'user_id = :userId',
+        ExpressionAttributeValues: {
+          ':userId': { S: otherUserId }
+        }
+      };
+
+      const userResult = await dynamoDB.query(userDetailsParams).promise();
+      const otherUser = userResult.Items[0];
+
+      return {
+        chatId: chat.chatId.S,
+        lastMessage: lastMessage ? {
+          type: lastMessage.message_type.S,
+          content: lastMessage.content.S,
+          timestamp: lastMessage.timestamp.S,
+        } : null,
+        otherUser: {
+          userId: otherUserId,
+          faceUrl: otherUser?.face_url?.S,
+          // Add other user details as needed
+        }
+      };
+    }));
+
+    res.status(200).send({
+      success: true,
+      chats: chats.sort((a, b) => 
+        new Date(b.lastMessage?.timestamp) - new Date(a.lastMessage?.timestamp)
+      )
+    });
+  } catch (error) {
+    console.error('Error fetching chats:', error);
+    res.status(500).send({
+      success: false,
+      error: error.message
+    });
   }
 });
 
