@@ -12565,13 +12565,13 @@ app.post('/shareMemory', async (req, res) => {
 
     let chatId;
     if (existingChatResponse.Items && existingChatResponse.Items.length > 0) {
-      chatId = existingChatResponse.Items[0].chat_id.S;
+      chatId = existingChatResponse.Items[0].chatId.S;
       
       // Update existing chat
       await dynamoDB.updateItem({
         TableName: 'Chats',
         Key: {
-          chat_id: { S: chatId }
+          chatId: { S: chatId }
         },
         UpdateExpression: 'SET last_message_at = :timestamp, last_message_id = :messageId',
         ExpressionAttributeValues: {
@@ -12585,7 +12585,7 @@ app.post('/shareMemory', async (req, res) => {
       await dynamoDB.putItem({
         TableName: 'Chats',
         Item: {
-          chat_id: { S: chatId },
+          chatId: { S: chatId },
           participants: { S: participants },
           created_date: { S: timestamp },
           last_message_at: { S: timestamp },
@@ -12599,7 +12599,7 @@ app.post('/shareMemory', async (req, res) => {
       TableName: 'Messages',
       Item: {
         message_id: { S: messageId },
-        chat_id: { S: chatId },
+        chatId: { S: chatId },
         sender_id: { S: senderId },
         recipient_id: { S: recipientId },
         message_type: { S: 'memory' },
@@ -12634,7 +12634,7 @@ app.post('/shareMemory', async (req, res) => {
     res.status(200).send({
       success: true,
       data: {
-        chat_id: chatId,
+        chatId: chatId,
         message_id: messageId
       }
     });
@@ -12655,7 +12655,7 @@ app.get('/getChatMemories/:chatId', async (req, res) => {
   try {
     const params = {
       TableName: 'Messages',
-      KeyConditionExpression: 'chat_id = :chatId',
+      KeyConditionExpression: 'chatId = :chatId',
       FilterExpression: 'message_type = :type',
       ExpressionAttributeValues: {
         ':chatId': { S: chatId },
