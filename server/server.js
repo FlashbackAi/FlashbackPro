@@ -12323,43 +12323,29 @@ app.get("/getUserTaggedFlashbacks/:user_phone_number", async (req, res) => {
 
 app.get('/getUserFaceBubbles/:userId', async (req, res) => {
   try {
-    const { userId } = req.params;
-    
-    if (!userId) {
-      return res.status(400).send({ 
-        success: false, 
-        error: 'User ID is required' 
-      });
-    }
+    const userId = req.params.userId;
 
     const params = {
       TableName: 'RekognitionUsersData',
       KeyConditionExpression: 'user_id = :userId',
       ExpressionAttributeValues: {
-        ':userId': userId
-      },
-      Limit: 1
+        ':userId': { S: userId }  // Need to specify the type as String
+      }
     };
 
     const result = await dynamoDB.query(params).promise();
     
-    if (result.Items && result.Items.length > 0) {
+    if (result.Items?.length > 0) {
       res.status(200).send({
         success: true,
         face_url: result.Items[0].face_url
       });
     } else {
-      res.status(404).send({ 
-        success: false, 
-        message: 'User not found' 
-      });
+      res.status(404).send({ message: 'User not found' });
     }
   } catch (error) {
     console.error('Error fetching user data:', error);
-    res.status(500).send({ 
-      success: false, 
-      error: error.message 
-    });
+    res.status(500).send({ error: error.message });
   }
 });
 
