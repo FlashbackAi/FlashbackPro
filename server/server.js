@@ -114,6 +114,7 @@ const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.
     region: 'ap-south-1' // Update with your AWS region 
 });
 
+const MemoryCarrierARN = 'arn:aws:sns:ap-south-1:768699754860:MemoryShareNotifier.fifo;'
 const bucketName = 'flashbackuseruploads';
 const userBucketName='flashbackuserthumbnails';
 const indexBucketName = 'flashbackusercollection';
@@ -131,6 +132,10 @@ const rekognition = new AWS.Rekognition({ region: 'ap-south-1' });
 // Setting up AWS DynamoDB
 const dynamoDB = new AWS.DynamoDB({ region: 'ap-south-1' });
 const docClient = new AWS.DynamoDB.DocumentClient({ region: 'ap-south-1' });
+
+const WebSocket = new AWS.ApiGatewayManagementApi({
+  endpoint: process.env.WEBSOCKET_ENDPOINT
+});
 
 // Below are the tables we are using currently
 const userrecordstable = 'users';
@@ -12312,6 +12317,436 @@ app.get("/getUserTaggedFlashbacks/:user_phone_number", async (req, res) => {
   } catch (error) {
     logger.error(`Error fetching user attended flashbacks: ${error.message}`);
     res.status(500).send('Error fetching user attended events');
+  }
+});
+
+app.get('/getUserFaceBubbles/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const params = {
+      TableName: 'RekognitionUsersData',
+      KeyConditionExpression: 'user_id = :userId',
+      ExpressionAttributeValues: {
+        ':userId': userId
+      },
+      Limit: 1
+    };
+
+    const result = await dynamoDB.query(params).promise();
+    
+    if (result.Items && result.Items.length > 0) {
+      res.status(200).send(result.Items[0]);
+    } else {
+      res.status(404).send({ message: 'User not found' });
+    }
+  } catch (error) {
+    console.error('Error fetching user data:', error);
+    res.status(500).send({ error: error.message });
+  }
+});
+
+app.post('/initializeChat', async (req, res) => {
+  const { senderId, recipientId } = req.body;
+  try {
+    // Check if chat already exists
+    const existingChat = await dynamoDB.query({
+      TableName: 'Chats',
+      IndexName: 'ParticipantsIndex',
+      KeyConditionExpression: 'participants = :participants',
+      ExpressionAttributeValues: {
+        ':participants': [senderId, recipientId].sort().join('#')
+      }
+    }).promise();
+
+    if (existingChat.Items.length > 0) {
+      return res.status(200).send({ 
+        chatId: existingChat.Items[0].chatId,
+        isExisting: true 
+      });
+    }
+
+    // Create new chat
+    const chatId = uuidv4();
+    const timestamp = new Date().toISOString();
+
+    await dynamoDB.put({
+      TableName: 'Chats',
+      Item: {
+        chatId,
+        participants: [senderId, recipientId].sort().join('#'),
+        createdAt: timestamp,
+        lastMessageAt: timestamp,
+        lastMessage: null
+      }
+    }).promise();
+
+    res.status(200).send({ chatId, isExisting: false });
+  } catch (err) {
+    logger.error('Error initializing chat:', err);
+    res.status(500).send({ error: err.message });
+  }
+});
+
+// Send a memory share message
+app.post('/sendMemory', async (req, res) => {
+  const { senderId, recipientId, memoryId, chatId } = req.body;
+  try {
+    const messageId = uuidv4();
+    const timestamp = new Date().toISOString();
+
+    // Save message to DynamoDB
+    await dynamoDB.put({
+      TableName: 'Messages',
+      Item: {
+        messageId,
+        chatId,
+        senderId,
+        recipientId,
+        type: 'memory',
+        content: memoryId,
+        timestamp,
+        status: 'sent'
+      }
+    }).promise();
+
+    // Update chat's last message
+    await dynamoDB.update({
+      TableName: 'Chats',
+      Key: { chatId },
+      UpdateExpression: 'SET lastMessageAt = :timestamp, lastMessage = :messageId',
+      ExpressionAttributeValues: {
+        ':timestamp': timestamp,
+        ':messageId': messageId
+      }
+    }).promise();
+
+    // Send real-time notification via WebSocket
+    const connections = await getActiveConnections(recipientId);
+    await Promise.all(connections.map(connection => 
+      sendWebSocketMessage(connection.connectionId, {
+        type: 'new_message',
+        chatId,
+        messageId
+      })
+    ));
+
+    res.status(200).send({ messageId });
+  } catch (err) {
+    logger.error('Error sending memory:', err);
+    res.status(500).send({ error: err.message });
+  }
+});
+
+// Get chat messages
+app.get('/getChatMessages/:chatId', async (req, res) => {
+  const { chatId } = req.params;
+  const { lastMessageId } = req.query;
+  
+  try {
+    const params = {
+      TableName: 'Messages',
+      KeyConditionExpression: 'chatId = :chatId',
+      ExpressionAttributeValues: {
+        ':chatId': chatId
+      },
+      Limit: 50,
+      ScanIndexForward: false // Get newest messages first
+    };
+
+    if (lastMessageId) {
+      params.ExclusiveStartKey = { chatId, messageId: lastMessageId };
+    }
+
+    const messages = await dynamoDB.query(params).promise();
+    res.status(200).send(messages.Items);
+  } catch (err) {
+    logger.error('Error fetching chat messages:', err);
+    res.status(500).send({ error: err.message });
+  }
+});
+
+// Add reaction to message
+app.post('/addReaction', async (req, res) => {
+  const { messageId, user_id, emoji } = req.body;
+  try {
+    await dynamoDB.update({
+      TableName: 'Messages',
+      Key: { messageId },
+      UpdateExpression: 'SET reactions.#user_id = :emoji',
+      ExpressionAttributeNames: {
+        '#user_id': user_id
+      },
+      ExpressionAttributeValues: {
+        ':emoji': emoji
+      }
+    }).promise();
+
+    res.status(200).send({ success: true });
+  } catch (err) {
+    logger.error('Error adding reaction:', err);
+    res.status(500).send({ error: err.message });
+  }
+});
+
+// Mark messages as read
+app.post('/markAsRead', async (req, res) => {
+  const { chatId, user_id, lastMessageId } = req.body;
+  try {
+    await dynamoDB.update({
+      TableName: 'ChatMembers',
+      Key: { chatId, user_id },
+      UpdateExpression: 'SET lastReadMessageId = :messageId',
+      ExpressionAttributeValues: {
+        ':messageId': lastMessageId
+      }
+    }).promise();
+
+    res.status(200).send({ success: true });
+  } catch (err) {
+    logger.error('Error marking messages as read:', err);
+    res.status(500).send({ error: err.message });
+  }
+});
+
+// WebSocket helper functions
+async function getActiveConnections(user_id) {
+  const connections = await dynamoDB.query({
+    TableName: 'WebSocketConnections',
+    KeyConditionExpression: 'user_id = :user_id',
+    ExpressionAttributeValues: {
+      ':user_id': user_id
+    }
+  }).promise();
+  return connections.Items;
+}
+
+async function sendWebSocketMessage(connectionId, message) {
+  try {
+    await WebSocket.postToConnection({
+      ConnectionId: connectionId,
+      Data: JSON.stringify(message)
+    }).promise();
+  } catch (err) {
+    if (err.statusCode === 410) {
+      // Connection is stale, remove it
+      await dynamoDB.delete({
+        TableName: 'WebSocketConnections',
+        Key: { connectionId }
+      }).promise();
+    }
+  }
+}
+
+
+// Server endpoint implementation
+// app.post('/shareMemory', async (req, res) => {
+//   const { senderId, recipientId, memoryId, memoryUrl, flashbackId } = req.body;
+  
+//   try {
+//     // Generate unique IDs for the chat and message
+//     const chatId = require('crypto').randomBytes(16).toString('hex');
+//     const messageId = require('crypto').randomBytes(16).toString('hex');
+//     const timestamp = new Date().toISOString();
+
+//     // Create or update chat entry
+//     const chatParams = {
+//       TableName: 'Chats',
+//       Item: {
+//         chat_id: chatId,
+//         participants: [senderId, recipientId].sort().join('#'),
+//         created_date: timestamp,
+//         last_message_at: timestamp,
+//         last_message_id: messageId
+//       }
+//     };
+
+//     // Create message entry
+//     const messageParams = {
+//       TableName: 'Messages',
+//       Item: {
+//         message_id: messageId,
+//         chat_id: chatId,
+//         sender_id: senderId,
+//         recipient_id: recipientId,
+//         message_type: 'memory',
+//         content: memoryUrl,
+//         memory_id: memoryId,
+//         flashback_id: flashbackId,
+//         timestamp: timestamp,
+//         status: 'sent'
+//       }
+//     };
+
+//     // Save both entries
+//     await dynamoDB.put(chatParams).promise();
+//     await dynamoDB.put(messageParams).promise();
+
+
+//     const sns = new AWS.SNS();
+//     await sns.publish({
+//       TopicArn: MemoryCarrierARN,
+//       Message: JSON.stringify({
+//         type: 'memory_share',
+//         senderId,
+//         recipientId,
+//         chatId,
+//         messageId,
+//         memoryUrl
+//       }),
+//       MessageAttributes: {
+//         'type': {
+//           DataType: 'String',
+//           StringValue: 'memory_share'
+//         }
+//       }
+//     }).promise();
+
+//     res.status(200).send({
+//       success: true,
+//       data: {
+//         chat_id: chatId,
+//         message_id: messageId
+//       }
+//     });
+
+//   } catch (error) {
+//     console.error('Error sharing memory:', error);
+//     res.status(500).send({
+//       success: false,
+//       error: error.message
+//     });
+//   }
+// });
+
+
+app.post('/shareMemory', async (req, res) => {
+  const { senderId, recipientId, memoryId, memoryUrl, flashbackId } = req.body;
+  
+  try {
+    const timestamp = new Date().toISOString();
+    const messageId = require('crypto').randomBytes(16).toString('hex');
+
+    // Check for existing chat between these participants
+    const existingChatResponse = await dynamoDB.query({
+      TableName: 'Chats',
+      IndexName: 'ParticipantsIndex',
+      KeyConditionExpression: 'participants = :participants',
+      ExpressionAttributeValues: {
+        ':participants': [senderId, recipientId].sort().join('#')
+      }
+    }).promise();
+
+    let chatId;
+    if (existingChatResponse.Items && existingChatResponse.Items.length > 0) {
+      chatId = existingChatResponse.Items[0].chat_id;
+      
+      // Update existing chat's last message information
+      await dynamoDB.update({
+        TableName: 'Chats',
+        Key: { chat_id: chatId },
+        UpdateExpression: 'SET last_message_at = :timestamp, last_message_id = :messageId',
+        ExpressionAttributeValues: {
+          ':timestamp': timestamp,
+          ':messageId': messageId
+        }
+      }).promise();
+    } else {
+      // Create new chat if none exists
+      chatId = require('crypto').randomBytes(16).toString('hex');
+      await dynamoDB.put({
+        TableName: 'Chats',
+        Item: {
+          chat_id: chatId,
+          participants: [senderId, recipientId].sort().join('#'),
+          created_date: timestamp,
+          last_message_at: timestamp,
+          last_message_id: messageId
+        }
+      }).promise();
+    }
+
+    // Create message entry
+    await dynamoDB.put({
+      TableName: 'Messages',
+      Item: {
+        message_id: messageId,
+        chat_id: chatId,
+        sender_id: senderId,
+        recipient_id: recipientId,
+        message_type: 'memory',
+        content: memoryUrl,
+        memory_id: memoryId,
+        flashback_id: flashbackId,
+        timestamp: timestamp,
+        status: 'sent'
+      }
+    }).promise();
+
+    // Send notification through SNS
+    const sns = new AWS.SNS();
+    await sns.publish({
+      TopicArn: MemoryCarrierARN,
+      Message: JSON.stringify({
+        type: 'memory_share',
+        senderId,
+        recipientId,
+        chatId,
+        messageId,
+        memoryUrl
+      }),
+      MessageAttributes: {
+        'type': {
+          DataType: 'String',
+          StringValue: 'memory_share'
+        }
+      }
+    }).promise();
+
+    res.status(200).send({
+      success: true,
+      data: {
+        chat_id: chatId,
+        message_id: messageId
+      }
+    });
+
+  } catch (error) {
+    console.error('Error sharing memory:', error);
+    res.status(500).send({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Add endpoint to fetch shared memories in a chat
+app.get('/getChatMemories/:chatId', async (req, res) => {
+  const { chatId } = req.params;
+
+  try {
+    const params = {
+      TableName: 'Messages',
+      KeyConditionExpression: 'chat_id = :chatId',
+      FilterExpression: 'message_type = :type',
+      ExpressionAttributeValues: {
+        ':chatId': chatId,
+        ':type': 'memory'
+      }
+    };
+
+    const result = await dynamoDB.query(params).promise();
+    
+    res.status(200).send({
+      success: true,
+      memories: result.Items
+    });
+  } catch (error) {
+    console.error('Error fetching chat memories:', error);
+    res.status(500).send({
+      success: false,
+      error: error.message
+    });
   }
 });
 
