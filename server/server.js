@@ -12373,7 +12373,7 @@ app.post('/initializeChat', async (req, res) => {
     const chatId = uuidv4();
     const timestamp = new Date().toISOString();
 
-    await dynamoDB.put({
+    await dynamoDB.putItem({
       TableName: 'Chats',
       Item: {
         chatId,
@@ -12399,7 +12399,7 @@ app.post('/sendMemory', async (req, res) => {
     const timestamp = new Date().toISOString();
 
     // Save message to DynamoDB
-    await dynamoDB.put({
+    await dynamoDB.putItem({
       TableName: 'Messages',
       Item: {
         messageId,
@@ -12576,7 +12576,7 @@ app.post('/shareMemory', async (req, res) => {
     } else {
       // Create new chat if none exists
       chatId = require('crypto').randomBytes(16).toString('hex');
-      await dynamoDB.put({
+      await dynamoDB.putItem({
         TableName: 'Chats',
         Item: {
           chat_id: chatId,
@@ -12589,7 +12589,7 @@ app.post('/shareMemory', async (req, res) => {
     }
 
     // Create message entry
-    await dynamoDB.put({
+    await dynamoDB.putItem({
       TableName: 'Messages',
       Item: {
         message_id: messageId,
