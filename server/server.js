@@ -12555,7 +12555,7 @@ app.post('/shareMemory', async (req, res) => {
       IndexName: 'ParticipantsIndex',
       KeyConditionExpression: 'participants = :participants',
       ExpressionAttributeValues: {
-        ':participants': [senderId, recipientId].sort().join('#')
+        ':participants': { S: [senderId, recipientId].sort().join('#') }
       }
     }).promise();
 
