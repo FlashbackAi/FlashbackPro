@@ -12621,6 +12621,64 @@ app.get('/getChats/:userId', async (req, res) => {
   }
 });
 
+app.post('/sendMessage', async (req, res) => {
+  const { chatId, senderId, recipientId, content, type, replyTo } = req.body;
+  
+  try {
+    const timestamp = new Date().toISOString();
+    const messageId = require('crypto').randomBytes(16).toString('hex');
+
+    const messageItem = {
+      messageId: { S: messageId },
+      chatId: { S: chatId },
+      senderId: { S: senderId },
+      recipientId: { S: recipientId },
+      messageType: { S: type },
+      content: { S: content },
+      timestamp: { S: timestamp },
+      status: { S: 'sent' }
+    };
+
+    if (replyTo) {
+      messageItem.replyTo = { 
+        M: {
+          messageId: { S: replyTo.messageId },
+          content: { S: replyTo.content },
+          type: { S: replyTo.type }
+        }
+      };
+    }
+
+    // Add the message
+    await dynamoDB.putItem({
+      TableName: 'Messages',
+      Item: messageItem
+    }).promise();
+
+    // Update chat's last message info
+    await dynamoDB.updateItem({
+      TableName: 'Chats',
+      Key: { chatId: { S: chatId } },
+      UpdateExpression: 'SET lastMessageAt = :timestamp, lastMessageId = :messageId',
+      ExpressionAttributeValues: {
+        ':timestamp': { S: timestamp },
+        ':messageId': { S: messageId }
+      }
+    }).promise();
+
+    res.status(200).send({
+      success: true,
+      message: messageItem
+    });
+  } catch (error) {
+    console.error('Error sending message:', error);
+    res.status(500).send({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Add reaction to message
 app.post('/addReaction', async (req, res) => {
   const { messageId, user_id, emoji } = req.body;
