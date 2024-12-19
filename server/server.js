@@ -12545,6 +12545,19 @@ app.get('/getChats/:userId', async (req, res) => {
         // Get the other participant's details
         const participants = chat.participants.S.split('#');
         const otherUserId = participants.find(p => p !== userId);
+
+
+        const otherUserDetailsParams = {
+          TableName: 'Users',
+          IndexName: 'user_id-index',
+          KeyConditionExpression: 'user_id = :userId',
+          ExpressionAttributeValues: {
+            ':userId': { S: otherUserId }
+          }
+        };
+
+        const otherUserDetails = await dynamoDB.query(otherUserDetailsParams).promise();
+        const otherUserDet = otherUserDetails.Items[0];
         
         const userDetailsParams = {
           TableName: 'RekognitionUsersData',
@@ -12574,6 +12587,9 @@ app.get('/getChats/:userId', async (req, res) => {
           otherUser: {
             userId: otherUserId,
             faceUrl: otherUser?.face_url?.S
+          },
+          otherUserDet: {
+            user_name: otherUserDet?.user_name?.S || otherUserDet?.user_phone_number?.S
           }
         };
       } catch (innerError) {
