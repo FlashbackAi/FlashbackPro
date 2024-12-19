@@ -12494,8 +12494,106 @@ app.get('/getChatMessages/:chatId', async (req, res) => {
 
 
 
+// app.get('/getChats/:userId', async (req, res) => {
+//   const { userId } = req.params;
+
+//   try {
+//     // Query chats where user is a participant
+//     const params = {
+//       TableName: 'Chats',
+//       IndexName: 'ParticipantsIndex',
+//       KeyConditionExpression: 'participants = :participants',
+//       ExpressionAttributeValues: {
+//         ':participants': { S: userId } // Remove wildcards since we want exact match
+//       }
+//     };
+
+//     const result = await dynamoDB.query(params).promise();
+    
+//     // Transform and format the chats
+//     const chats = await Promise.all(result.Items.map(async chat => {
+//       try {
+//         // Get the last message for this chat using chatId-index
+//         const lastMessageParams = {
+//           TableName: 'Messages',
+//           IndexName: 'chatId-index',
+//           KeyConditionExpression: 'chatId = :chatId',
+//           ExpressionAttributeValues: {
+//             ':chatId': { S: chat.chatId.S }
+//           },
+//           ScanIndexForward: false, // Get latest message first
+//           Limit: 1
+//         };
+
+//         console.log('Querying messages with params:', lastMessageParams);
+//         const messageResult = await dynamoDB.query(lastMessageParams).promise();
+//         const lastMessage = messageResult.Items[0];
+
+//         // Get the other participant's details
+//         const participants = chat.participants.S.split('#');
+//         const otherUserId = participants.find(p => p !== userId);
+        
+//         const userDetailsParams = {
+//           TableName: 'RekognitionUsersData',
+//           KeyConditionExpression: 'user_id = :userId',
+//           ExpressionAttributeValues: {
+//             ':userId': { S: otherUserId }
+//           }
+//         };
+
+//         const userResult = await dynamoDB.query(userDetailsParams).promise();
+//         const otherUser = userResult.Items[0];
+
+//         return {
+//           chatId: chat.chatId.S,
+//           lastMessage: lastMessage ? {
+//             messageId: lastMessage.messageId.S,
+//             type: lastMessage.messageType.S,
+//             content: lastMessage.content.S,
+//             timestamp: lastMessage.timestamp.S,
+//             senderId: lastMessage.senderId.S,
+//             recipientId: lastMessage.recipientId.S,
+//             status: lastMessage.status.S,
+//             flashbackId: lastMessage.flashbackId?.S
+//           } : null,
+//           otherUser: {
+//             userId: otherUserId,
+//             faceUrl: otherUser?.face_url?.S,
+//           },
+//           participants: participants
+//         };
+//       } catch (innerError) {
+//         console.error('Error processing chat:', {
+//           chatId: chat.chatId.S,
+//           error: innerError.message
+//         });
+//         return null;
+//       }
+//     }));
+
+//     const validChats = chats
+//       .filter(chat => chat !== null)
+//       .sort((a, b) => 
+//         new Date(b.lastMessage?.timestamp || 0) - new Date(a.lastMessage?.timestamp || 0)
+//       );
+
+//     res.status(200).send({
+//       success: true,
+//       chats: validChats
+//     });
+//   } catch (error) {
+//     console.error('Error fetching chats:', error);
+//     res.status(500).send({
+//       success: false,
+//       error: error.message
+//     });
+//   }
+// });
+
+
 app.get('/getChats/:userId', async (req, res) => {
   const { userId } = req.params;
+  console.log('Fetching chats for userId:', userId);
 
   try {
     // Query chats where user is a participant
@@ -12504,16 +12602,27 @@ app.get('/getChats/:userId', async (req, res) => {
       IndexName: 'ParticipantsIndex',
       KeyConditionExpression: 'participants = :participants',
       ExpressionAttributeValues: {
-        ':participants': { S: userId } // Remove wildcards since we want exact match
+        ':participants': { S: `${userId}` }
       }
     };
 
+    console.log('Query params:', JSON.stringify(params, null, 2));
     const result = await dynamoDB.query(params).promise();
+    console.log('Found chats:', result.Items);
     
+    if (!result.Items || result.Items.length === 0) {
+      return res.status(200).send({
+        success: true,
+        chats: []
+      });
+    }
+
     // Transform and format the chats
     const chats = await Promise.all(result.Items.map(async chat => {
       try {
-        // Get the last message for this chat using chatId-index
+        console.log('Processing chat:', chat);
+        
+        // Get the last message for this chat
         const lastMessageParams = {
           TableName: 'Messages',
           IndexName: 'chatId-index',
@@ -12521,12 +12630,12 @@ app.get('/getChats/:userId', async (req, res) => {
           ExpressionAttributeValues: {
             ':chatId': { S: chat.chatId.S }
           },
-          ScanIndexForward: false, // Get latest message first
+          ScanIndexForward: false,
           Limit: 1
         };
 
-        console.log('Querying messages with params:', lastMessageParams);
         const messageResult = await dynamoDB.query(lastMessageParams).promise();
+        console.log('Last message result:', messageResult.Items);
         const lastMessage = messageResult.Items[0];
 
         // Get the other participant's details
@@ -12542,6 +12651,7 @@ app.get('/getChats/:userId', async (req, res) => {
         };
 
         const userResult = await dynamoDB.query(userDetailsParams).promise();
+        console.log('User details result:', userResult.Items);
         const otherUser = userResult.Items[0];
 
         return {
@@ -12552,21 +12662,15 @@ app.get('/getChats/:userId', async (req, res) => {
             content: lastMessage.content.S,
             timestamp: lastMessage.timestamp.S,
             senderId: lastMessage.senderId.S,
-            recipientId: lastMessage.recipientId.S,
-            status: lastMessage.status.S,
-            flashbackId: lastMessage.flashbackId?.S
+            recipientId: lastMessage.recipientId.S
           } : null,
           otherUser: {
             userId: otherUserId,
-            faceUrl: otherUser?.face_url?.S,
-          },
-          participants: participants
+            faceUrl: otherUser?.face_url?.S
+          }
         };
       } catch (innerError) {
-        console.error('Error processing chat:', {
-          chatId: chat.chatId.S,
-          error: innerError.message
-        });
+        console.error('Error processing chat:', chat?.chatId?.S, innerError);
         return null;
       }
     }));
@@ -12577,6 +12681,7 @@ app.get('/getChats/:userId', async (req, res) => {
         new Date(b.lastMessage?.timestamp || 0) - new Date(a.lastMessage?.timestamp || 0)
       );
 
+    console.log('Sending chats:', validChats);
     res.status(200).send({
       success: true,
       chats: validChats
