@@ -12496,18 +12496,21 @@ app.post('/addReaction', async (req, res) => {
 app.post('/markAsRead', async (req, res) => {
   const { chatId, user_id, lastMessageId } = req.body;
   try {
-    await dynamoDB.update({
+    await dynamoDB.updateItem({
       TableName: 'ChatMembers',
-      Key: { chatId, user_id },
+      Key: {
+        chatId: { S: chatId },
+        user_id: { S: user_id }
+      },
       UpdateExpression: 'SET lastReadMessageId = :messageId',
       ExpressionAttributeValues: {
-        ':messageId': lastMessageId
+        ':messageId': { S: lastMessageId }
       }
     }).promise();
 
     res.status(200).send({ success: true });
   } catch (err) {
-    logger.error('Error marking messages as read:', err);
+    console.error('Error marking messages as read:', err);
     res.status(500).send({ error: err.message });
   }
 });
@@ -12548,64 +12551,67 @@ app.post('/shareMemory', async (req, res) => {
   try {
     const timestamp = new Date().toISOString();
     const messageId = require('crypto').randomBytes(16).toString('hex');
+    const participants = [senderId, recipientId].sort().join('#');
 
-    // Check for existing chat between these participants
+    // Check for existing chat
     const existingChatResponse = await dynamoDB.query({
       TableName: 'Chats',
       IndexName: 'ParticipantsIndex',
       KeyConditionExpression: 'participants = :participants',
       ExpressionAttributeValues: {
-        ':participants': { S: [senderId, recipientId].sort().join('#') }
+        ':participants': { S: participants }
       }
     }).promise();
 
     let chatId;
     if (existingChatResponse.Items && existingChatResponse.Items.length > 0) {
-      chatId = existingChatResponse.Items[0].chat_id;
+      chatId = existingChatResponse.Items[0].chat_id.S;
       
-      // Update existing chat's last message information
-      await dynamoDB.update({
+      // Update existing chat
+      await dynamoDB.updateItem({
         TableName: 'Chats',
-        Key: { chat_id: chatId },
+        Key: {
+          chat_id: { S: chatId }
+        },
         UpdateExpression: 'SET last_message_at = :timestamp, last_message_id = :messageId',
         ExpressionAttributeValues: {
-          ':timestamp': timestamp,
-          ':messageId': messageId
+          ':timestamp': { S: timestamp },
+          ':messageId': { S: messageId }
         }
       }).promise();
     } else {
-      // Create new chat if none exists
+      // Create new chat
       chatId = require('crypto').randomBytes(16).toString('hex');
       await dynamoDB.putItem({
         TableName: 'Chats',
         Item: {
-          chat_id: chatId,
-          participants: [senderId, recipientId].sort().join('#'),
-          created_date: timestamp,
-          last_message_at: timestamp,
-          last_message_id: messageId
+          chat_id: { S: chatId },
+          participants: { S: participants },
+          created_date: { S: timestamp },
+          last_message_at: { S: timestamp },
+          last_message_id: { S: messageId }
         }
       }).promise();
     }
 
-    // Create message entry
+    // Create message
     await dynamoDB.putItem({
       TableName: 'Messages',
       Item: {
-        message_id: messageId,
-        chat_id: chatId,
-        sender_id: senderId,
-        recipient_id: recipientId,
-        message_type: 'memory',
-        content: memoryUrl,
-        memory_id: memoryId,
-        flashback_id: flashbackId,
-        timestamp: timestamp,
-        status: 'sent'
+        message_id: { S: messageId },
+        chat_id: { S: chatId },
+        sender_id: { S: senderId },
+        recipient_id: { S: recipientId },
+        message_type: { S: 'memory' },
+        content: { S: memoryUrl },
+        memory_id: { S: memoryId },
+        flashback_id: { S: flashbackId },
+        timestamp: { S: timestamp },
+        status: { S: 'sent' }
       }
     }).promise();
 
-    // Send notification through SNS
+    // Send SNS notification
     const sns = new AWS.SNS();
     await sns.publish({
       TopicArn: MemoryCarrierARN,
@@ -12652,8 +12658,8 @@ app.get('/getChatMemories/:chatId', async (req, res) => {
       KeyConditionExpression: 'chat_id = :chatId',
       FilterExpression: 'message_type = :type',
       ExpressionAttributeValues: {
-        ':chatId': chatId,
-        ':type': 'memory'
+        ':chatId': { S: chatId },
+        ':type': { S: 'memory' }
       }
     };
 
