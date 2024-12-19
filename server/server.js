@@ -12548,6 +12548,7 @@ async function sendWebSocketMessage(connectionId, message) {
 app.post('/shareMemory', async (req, res) => {
   const { senderId, recipientId, memoryId, memoryUrl, flashbackId } = req.body;
   
+  console.log('received sharememory request for the', senderId);
   try {
     // Input validation
     if (!senderId || !recipientId || !memoryId || !memoryUrl || !flashbackId) {
