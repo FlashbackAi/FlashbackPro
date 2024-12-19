@@ -12589,7 +12589,7 @@ app.get('/getChats/:userId', async (req, res) => {
             faceUrl: otherUser?.face_url?.S
           },
           otherUserDet: {
-            user_name: otherUserDet?.user_name?.S || otherUserDet?.user_phone_number?.S
+            user_name: otherUserDet?.org_name?.S || otherUserDet?.user_phone_number?.S
           }
         };
       } catch (innerError) {
