@@ -12498,68 +12498,88 @@ app.get('/getChats/:userId', async (req, res) => {
   const { userId } = req.params;
 
   try {
-    // Query both sent and received messages
+    // Query chats where user is a participant
     const params = {
       TableName: 'Chats',
-      FilterExpression: 'contains(participants, :userId)',
+      IndexName: 'ParticipantsIndex',
+      KeyConditionExpression: 'participants = :participants',
       ExpressionAttributeValues: {
-        ':userId': { S: userId }
+        ':participants': { S: userId } // Remove wildcards since we want exact match
       }
     };
 
-    const result = await dynamoDB.scan(params).promise();
+    const result = await dynamoDB.query(params).promise();
     
     // Transform and format the chats
     const chats = await Promise.all(result.Items.map(async chat => {
-      // Get the last message for this chat
-      const lastMessageParams = {
-        TableName: 'Messages',
-        KeyConditionExpression: 'chat_id = :chatId',
-        ExpressionAttributeValues: {
-          ':chatId': { S: chat.chatId.S }
-        },
-        Limit: 1,
-        ScanIndexForward: false
-      };
+      try {
+        // Get the last message for this chat using chatId-index
+        const lastMessageParams = {
+          TableName: 'Messages',
+          IndexName: 'chatId-index',
+          KeyConditionExpression: 'chatId = :chatId',
+          ExpressionAttributeValues: {
+            ':chatId': { S: chat.chatId.S }
+          },
+          ScanIndexForward: false, // Get latest message first
+          Limit: 1
+        };
 
-      const messageResult = await dynamoDB.query(lastMessageParams).promise();
-      const lastMessage = messageResult.Items[0];
+        console.log('Querying messages with params:', lastMessageParams);
+        const messageResult = await dynamoDB.query(lastMessageParams).promise();
+        const lastMessage = messageResult.Items[0];
 
-      // Get the other participant's details
-      const participants = chat.participants.S.split('#');
-      const otherUserId = participants.find(p => p !== userId);
-      
-      const userDetailsParams = {
-        TableName: 'RekognitionUsersData',
-        KeyConditionExpression: 'user_id = :userId',
-        ExpressionAttributeValues: {
-          ':userId': { S: otherUserId }
-        }
-      };
+        // Get the other participant's details
+        const participants = chat.participants.S.split('#');
+        const otherUserId = participants.find(p => p !== userId);
+        
+        const userDetailsParams = {
+          TableName: 'RekognitionUsersData',
+          KeyConditionExpression: 'user_id = :userId',
+          ExpressionAttributeValues: {
+            ':userId': { S: otherUserId }
+          }
+        };
 
-      const userResult = await dynamoDB.query(userDetailsParams).promise();
-      const otherUser = userResult.Items[0];
+        const userResult = await dynamoDB.query(userDetailsParams).promise();
+        const otherUser = userResult.Items[0];
 
-      return {
-        chatId: chat.chatId.S,
-        lastMessage: lastMessage ? {
-          type: lastMessage.message_type.S,
-          content: lastMessage.content.S,
-          timestamp: lastMessage.timestamp.S,
-        } : null,
-        otherUser: {
-          userId: otherUserId,
-          faceUrl: otherUser?.face_url?.S,
-          // Add other user details as needed
-        }
-      };
+        return {
+          chatId: chat.chatId.S,
+          lastMessage: lastMessage ? {
+            messageId: lastMessage.messageId.S,
+            type: lastMessage.messageType.S,
+            content: lastMessage.content.S,
+            timestamp: lastMessage.timestamp.S,
+            senderId: lastMessage.senderId.S,
+            recipientId: lastMessage.recipientId.S,
+            status: lastMessage.status.S,
+            flashbackId: lastMessage.flashbackId?.S
+          } : null,
+          otherUser: {
+            userId: otherUserId,
+            faceUrl: otherUser?.face_url?.S,
+          },
+          participants: participants
+        };
+      } catch (innerError) {
+        console.error('Error processing chat:', {
+          chatId: chat.chatId.S,
+          error: innerError.message
+        });
+        return null;
+      }
     }));
+
+    const validChats = chats
+      .filter(chat => chat !== null)
+      .sort((a, b) => 
+        new Date(b.lastMessage?.timestamp || 0) - new Date(a.lastMessage?.timestamp || 0)
+      );
 
     res.status(200).send({
       success: true,
-      chats: chats.sort((a, b) => 
-        new Date(b.lastMessage?.timestamp) - new Date(a.lastMessage?.timestamp)
-      )
+      chats: validChats
     });
   } catch (error) {
     console.error('Error fetching chats:', error);
