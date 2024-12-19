@@ -12549,6 +12549,14 @@ app.post('/shareMemory', async (req, res) => {
   const { senderId, recipientId, memoryId, memoryUrl, flashbackId } = req.body;
   
   try {
+    // Input validation
+    if (!senderId || !recipientId || !memoryId || !memoryUrl || !flashbackId) {
+      return res.status(400).send({
+        success: false,
+        error: 'Missing required fields'
+      });
+    }
+
     const timestamp = new Date().toISOString();
     const messageId = require('crypto').randomBytes(16).toString('hex');
     const participants = [senderId, recipientId].sort().join('#');
@@ -12565,7 +12573,7 @@ app.post('/shareMemory', async (req, res) => {
 
     let chatId;
     if (existingChatResponse.Items && existingChatResponse.Items.length > 0) {
-      chatId = existingChatResponse.Items[0].chatId.S;
+      chatId = existingChatResponse.Items[0].chatId;
       
       // Update existing chat
       await dynamoDB.updateItem({
@@ -12573,7 +12581,7 @@ app.post('/shareMemory', async (req, res) => {
         Key: {
           chatId: { S: chatId }
         },
-        UpdateExpression: 'SET last_message_at = :timestamp, last_message_id = :messageId',
+        UpdateExpression: 'SET lastMessageAt = :timestamp, lastMessageId = :messageId',
         ExpressionAttributeValues: {
           ':timestamp': { S: timestamp },
           ':messageId': { S: messageId }
@@ -12582,36 +12590,41 @@ app.post('/shareMemory', async (req, res) => {
     } else {
       // Create new chat
       chatId = require('crypto').randomBytes(16).toString('hex');
+      
+      const chatItem = {
+        chatId: { S: chatId },
+        participants: { S: participants },
+        createdAt: { S: timestamp },
+        lastMessageAt: { S: timestamp },
+        lastMessageId: { S: messageId }
+      };
+
       await dynamoDB.putItem({
         TableName: 'Chats',
-        Item: {
-          chatId: { S: chatId },
-          participants: { S: participants },
-          created_date: { S: timestamp },
-          last_message_at: { S: timestamp },
-          last_message_id: { S: messageId }
-        }
+        Item: chatItem
       }).promise();
     }
 
     // Create message
+    const messageItem = {
+      messageId: { S: messageId },
+      chatId: { S: chatId },
+      senderId: { S: senderId },
+      recipientId: { S: recipientId },
+      messageType: { S: 'memory' },
+      content: { S: memoryUrl },
+      memoryId: { S: memoryId },
+      flashbackId: { S: flashbackId },
+      timestamp: { S: timestamp },
+      status: { S: 'sent' }
+    };
+
     await dynamoDB.putItem({
       TableName: 'Messages',
-      Item: {
-        message_id: { S: messageId },
-        chatId: { S: chatId },
-        sender_id: { S: senderId },
-        recipient_id: { S: recipientId },
-        message_type: { S: 'memory' },
-        content: { S: memoryUrl },
-        memory_id: { S: memoryId },
-        flashback_id: { S: flashbackId },
-        timestamp: { S: timestamp },
-        status: { S: 'sent' }
-      }
+      Item: messageItem
     }).promise();
 
-    // Send SNS notification
+    // Send notification through SNS
     const sns = new AWS.SNS();
     await sns.publish({
       TopicArn: MemoryCarrierARN,
@@ -12634,8 +12647,8 @@ app.post('/shareMemory', async (req, res) => {
     res.status(200).send({
       success: true,
       data: {
-        chatId: chatId,
-        message_id: messageId
+        chatId,
+        messageId
       }
     });
 
@@ -12647,7 +12660,6 @@ app.post('/shareMemory', async (req, res) => {
     });
   }
 });
-
 // Add endpoint to fetch shared memories in a chat
 app.get('/getChatMemories/:chatId', async (req, res) => {
   const { chatId } = req.params;
