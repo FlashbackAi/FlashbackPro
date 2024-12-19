@@ -12479,7 +12479,8 @@ app.get('/getChatMessages/:chatId', async (req, res) => {
       timestamp: item.timestamp.S,
       status: item.status.S,
       reactions: item.reactions ? JSON.parse(item.reactions.S) : {}
-    }));
+    }))
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
     res.status(200).send({
       success: true,
@@ -12627,21 +12628,52 @@ app.post('/addReaction', async (req, res) => {
   }
 });
 
-// Mark messages as read
 app.post('/markAsRead', async (req, res) => {
-  const { chatId, user_id, lastMessageId } = req.body;
+  const { chatId, user_id, messageId } = req.body;
+  
+  if (!chatId || !user_id || !messageId) {
+    return res.status(400).send({ 
+      success: false, 
+      error: 'Missing required fields' 
+    });
+  }
+
   try {
-    await dynamoDB.updateItem({
+    // First check if the record exists
+    const existingItem = await dynamoDB.getItem({
       TableName: 'ChatMembers',
       Key: {
         chatId: { S: chatId },
         user_id: { S: user_id }
-      },
-      UpdateExpression: 'SET lastReadMessageId = :messageId',
-      ExpressionAttributeValues: {
-        ':messageId': { S: lastMessageId }
       }
     }).promise();
+
+    // If record doesn't exist, create it
+    if (!existingItem.Item) {
+      await dynamoDB.putItem({
+        TableName: 'ChatMembers',
+        Item: {
+          chatId: { S: chatId },
+          user_id: { S: user_id },
+          lastReadMessageId: { S: messageId },
+          updatedAt: { S: new Date().toISOString() }
+        }
+      }).promise();
+    } else {
+      // Update existing record
+      await dynamoDB.updateItem({
+        TableName: 'ChatMembers',
+        Key: {
+          chatId: { S: chatId },
+          user_id: { S: user_id }
+        },
+        UpdateExpression: 'SET lastReadMessageId = :messageId, updatedAt = :timestamp',
+        ExpressionAttributeValues: {
+          ':messageId': { S: messageId },
+          ':timestamp': { S: new Date().toISOString() }
+        }
+      }).promise();
+    }
 
     res.status(200).send({ success: true });
   } catch (err) {
