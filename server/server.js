@@ -12496,136 +12496,12 @@ app.get('/getChatMessages/:chatId', async (req, res) => {
   }
 });
 
-// app.get('/getChats/:userId', async (req, res) => {
-//   const { userId } = req.params;
-//   console.log('Fetching chats for userId:', userId);
-
-//   try {
-//     // Use scan with FilterExpression since we need to check for partial string match
-//     const params = {
-//       TableName: 'Chats',
-//       FilterExpression: 'contains(participants, :userId)',
-//       ExpressionAttributeValues: {
-//         ':userId': { S: userId }
-//       }
-//     };
-
-//     console.log('Query params:', JSON.stringify(params, null, 2));
-//     const result = await dynamoDB.scan(params).promise();
-//     console.log('Found chats:', result.Items);
-    
-//     if (!result.Items || result.Items.length === 0) {
-//       return res.status(200).send({
-//         success: true,
-//         chats: []
-//       });
-//     }
-
-//     // Transform and format the chats
-//     const chats = await Promise.all(result.Items.map(async chat => {
-//       try {
-//         console.log('Processing chat:', chat);
-        
-//         // Get the last message for this chat
-//         const lastMessageParams = {
-//           TableName: 'Messages',
-//           IndexName: 'chatId-index',
-//           KeyConditionExpression: 'chatId = :chatId',
-//           ExpressionAttributeValues: {
-//             ':chatId': { S: chat.chatId.S }
-//           },
-//           ScanIndexForward: false,
-//           Limit: 1
-//         };
-
-//         const messageResult = await dynamoDB.query(lastMessageParams).promise();
-//         console.log('Last message result:', messageResult.Items);
-//         const lastMessage = messageResult.Items[0];
-
-//         // Get the other participant's details
-//         const participants = chat.participants.S.split('#');
-//         const otherUserId = participants.find(p => p !== userId);
-
-
-//         const otherUserDetailsParams = {
-//           TableName: 'users',
-//           IndexName: 'user_id-index',
-//           KeyConditionExpression: 'user_id = :userId',
-//           ExpressionAttributeValues: {
-//             ':userId': { S: otherUserId }
-//           }
-//         };
-
-//         const otherUserDetails = await dynamoDB.query(otherUserDetailsParams).promise();
-//         const otherUserDet = otherUserDetails.Items[0];
-        
-//         const userDetailsParams = {
-//           TableName: 'RekognitionUsersData',
-//           KeyConditionExpression: 'user_id = :userId',
-//           ExpressionAttributeValues: {
-//             ':userId': { S: otherUserId }
-//           }
-//         };
-
-//         const userResult = await dynamoDB.query(userDetailsParams).promise();
-//         console.log('User details result:', userResult.Items);
-//         const otherUser = userResult.Items[0];
-
-//         return {
-//           chatId: chat.chatId.S,
-//           participants: chat.participants.S,
-//           createdAt: chat.createdAt.S,
-//           lastMessageAt: chat.lastMessageAt.S,
-//           lastMessage: lastMessage ? {
-//             messageId: lastMessage.messageId.S,
-//             type: lastMessage.messageType.S,
-//             content: lastMessage.content.S,
-//             timestamp: lastMessage.timestamp.S,
-//             senderId: lastMessage.senderId.S,
-//             recipientId: lastMessage.recipientId.S
-//           } : null,
-//           otherUser: {
-//             userId: otherUserId,
-//             faceUrl: otherUser?.face_url?.S
-//           },
-//           otherUserDet: {
-//             user_name: otherUserDet?.org_name?.S || otherUserDet?.user_phone_number?.S
-//           }
-//         };
-//       } catch (innerError) {
-//         console.error('Error processing chat:', {
-//           chatId: chat?.chatId?.S,
-//           error: innerError.message
-//         });
-//         return null;
-//       }
-//     }));
-
-//     const validChats = chats
-//       .filter(chat => chat !== null)
-//       .sort((a, b) => 
-//         new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0)
-//       );
-
-//     console.log('Sending chats:', validChats);
-//     res.status(200).send({
-//       success: true,
-//       chats: validChats
-//     });
-//   } catch (error) {
-//     console.error('Error fetching chats:', error);
-//     res.status(500).send({
-//       success: false,
-//       error: error.message
-//     });
-//   }
-// });
-
 app.get('/getChats/:userId', async (req, res) => {
   const { userId } = req.params;
   console.log('Fetching chats for userId:', userId);
 
   try {
+    // Use scan with FilterExpression since we need to check for partial string match
     const params = {
       TableName: 'Chats',
       FilterExpression: 'contains(participants, :userId)',
@@ -12634,7 +12510,9 @@ app.get('/getChats/:userId', async (req, res) => {
       }
     };
 
+    console.log('Query params:', JSON.stringify(params, null, 2));
     const result = await dynamoDB.scan(params).promise();
+    console.log('Found chats:', result.Items);
     
     if (!result.Items || result.Items.length === 0) {
       return res.status(200).send({
@@ -12643,9 +12521,12 @@ app.get('/getChats/:userId', async (req, res) => {
       });
     }
 
+    // Transform and format the chats
     const chats = await Promise.all(result.Items.map(async chat => {
       try {
-        // Get the last message
+        console.log('Processing chat:', chat);
+        
+        // Get the last message for this chat
         const lastMessageParams = {
           TableName: 'Messages',
           IndexName: 'chatId-index',
@@ -12658,48 +12539,41 @@ app.get('/getChats/:userId', async (req, res) => {
         };
 
         const messageResult = await dynamoDB.query(lastMessageParams).promise();
+        console.log('Last message result:', messageResult.Items);
         const lastMessage = messageResult.Items[0];
 
-        // Get the other user's ID
+        // Get the other participant's details
         const participants = chat.participants.S.split('#');
         const otherUserId = participants.find(p => p !== userId);
 
-        // Try to get user details from Users table first
-        let userName;
-        try {
-          const userResponse = await dynamoDB.query({
-            TableName: 'Users',
-            IndexName: 'user_id-index',
-            KeyConditionExpression: 'user_id = :userId',
-            ExpressionAttributeValues: {
-              ':userId': { S: otherUserId }
-            }
-          }).promise();
-          
-          userName = userResponse.Items[0]?.org_name?.S || 
-                    userResponse.Items[0]?.user_phone_number?.S;
-        } catch (error) {
-          console.log('Error fetching from Users table:', error);
-        }
 
-        // Get face URL from RekognitionUsersData
-        let faceUrl;
-        try {
-          const rekogResponse = await dynamoDB.query({
-            TableName: 'RekognitionUsersData',
-            KeyConditionExpression: 'user_id = :userId',
-            ExpressionAttributeValues: {
-              ':userId': { S: otherUserId }
-            }
-          }).promise();
-          
-          faceUrl = rekogResponse.Items[0]?.face_url?.S;
-        } catch (error) {
-          console.log('Error fetching from RekognitionUsersData:', error);
-        }
+        const otherUserDetailsParams = {
+          TableName: 'users',
+          IndexName: 'user_id-index',
+          KeyConditionExpression: 'user_id = :userId',
+          ExpressionAttributeValues: {
+            ':userId': { S: otherUserId }
+          }
+        };
+
+        const otherUserDetails = await dynamoDB.query(otherUserDetailsParams).promise();
+        const otherUserDet = otherUserDetails.Items[0];
+        
+        const userDetailsParams = {
+          TableName: 'RekognitionUsersData',
+          KeyConditionExpression: 'user_id = :userId',
+          ExpressionAttributeValues: {
+            ':userId': { S: otherUserId }
+          }
+        };
+
+        const userResult = await dynamoDB.query(userDetailsParams).promise();
+        console.log('User details result:', userResult.Items);
+        const otherUser = userResult.Items[0];
 
         return {
           chatId: chat.chatId.S,
+          participants: chat.participants.S,
           createdAt: chat.createdAt.S,
           lastMessageAt: chat.lastMessageAt.S,
           lastMessage: lastMessage ? {
@@ -12712,8 +12586,10 @@ app.get('/getChats/:userId', async (req, res) => {
           } : null,
           otherUser: {
             userId: otherUserId,
-            userName: userName || otherUserId,
-            faceUrl: faceUrl
+            faceUrl: otherUser?.face_url?.S
+          },
+          otherUserDet: {
+            user_name: otherUserDet?.org_name?.S || otherUserDet?.user_phone_number?.S
           }
         };
       } catch (innerError) {
@@ -12731,6 +12607,7 @@ app.get('/getChats/:userId', async (req, res) => {
         new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0)
       );
 
+    console.log('Sending chats:', validChats);
     res.status(200).send({
       success: true,
       chats: validChats
