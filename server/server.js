@@ -12448,7 +12448,8 @@ app.get('/getChatMessages/:chatId', async (req, res) => {
   try {
     const params = {
       TableName: 'Messages',
-      KeyConditionExpression: 'chat_id = :chatId',
+      IndexName: 'chatId-index',
+      KeyConditionExpression: 'chatId = :chatId',
       ExpressionAttributeValues: {
         ':chatId': { S: chatId }
       },
@@ -12458,20 +12459,22 @@ app.get('/getChatMessages/:chatId', async (req, res) => {
 
     if (lastMessageId) {
       params.ExclusiveStartKey = { 
-        chat_id: { S: chatId },
-        message_id: { S: lastMessageId }
+        messageId: { S: lastMessageId }, // Primary key
+        chatId: { S: chatId }          // Index key
       };
     }
 
+    console.log('Query params:', JSON.stringify(params, null, 2));
     const result = await dynamoDB.query(params).promise();
-    
+    console.log('Query result:', JSON.stringify(result, null, 2));
+
     // Transform DynamoDB items to regular objects
     const messages = result.Items.map(item => ({
-      messageId: item.message_id.S,
-      chatId: item.chat_id.S,
-      senderId: item.sender_id.S,
-      recipientId: item.recipient_id.S,
-      type: item.message_type.S,
+      messageId: item.messageId.S,
+      chatId: item.chatId.S,
+      senderId: item.senderId.S,
+      recipientId: item.recipientId.S,
+      type: item.messageType.S,
       content: item.content.S,
       timestamp: item.timestamp.S,
       status: item.status.S,
