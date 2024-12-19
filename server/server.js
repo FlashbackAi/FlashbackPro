@@ -12635,6 +12635,8 @@ app.post('/shareMemory', async (req, res) => {
         messageId,
         memoryUrl
       }),
+      MessageGroupId: chatId, // Using chatId as the group ID to maintain order per chat
+      MessageDeduplicationId: messageId,
       MessageAttributes: {
         'type': {
           DataType: 'String',
