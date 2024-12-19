@@ -115,6 +115,7 @@ const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.
 });
 
 const MemoryCarrierARN = 'arn:aws:sns:ap-south-1:768699754860:MemoryShareNotifier.fifo;'
+const endpoint = 'wss://nh8j3qoqtb.execute-api.ap-south-1.amazonaws.com/production/';
 const bucketName = 'flashbackuseruploads';
 const userBucketName='flashbackuserthumbnails';
 const indexBucketName = 'flashbackusercollection';
@@ -134,7 +135,7 @@ const dynamoDB = new AWS.DynamoDB({ region: 'ap-south-1' });
 const docClient = new AWS.DynamoDB.DocumentClient({ region: 'ap-south-1' });
 
 const WebSocket = new AWS.ApiGatewayManagementApi({
-  endpoint: process.env.WEBSOCKET_ENDPOINT
+  endpoint: endpoint
 });
 
 // Below are the tables we are using currently
@@ -12322,21 +12323,28 @@ app.get("/getUserTaggedFlashbacks/:user_phone_number", async (req, res) => {
 
 app.get('/getUserFaceBubbles/:userId', async (req, res) => {
   try {
-    const { userId } = req.params;
+    const userId = req.params.userId;
+
+    // Check if userId is valid
+    if (!userId) {
+      return res.status(400).send({ error: 'Invalid user ID' });
+    }
 
     const params = {
       TableName: 'RekognitionUsersData',
       KeyConditionExpression: 'user_id = :userId',
       ExpressionAttributeValues: {
-        ':userId': userId
-      },
-      Limit: 1
+        ':userId': String(userId) // Ensure userId is a string
+      }
     };
 
     const result = await dynamoDB.query(params).promise();
     
-    if (result.Items && result.Items.length > 0) {
-      res.status(200).send(result.Items[0]);
+    if (result.Items?.length > 0) {
+      res.status(200).send({
+        success: true,
+        face_url: result.Items[0].face_url
+      });
     } else {
       res.status(404).send({ message: 'User not found' });
     }
@@ -12537,87 +12545,6 @@ async function sendWebSocketMessage(connectionId, message) {
     }
   }
 }
-
-
-// Server endpoint implementation
-// app.post('/shareMemory', async (req, res) => {
-//   const { senderId, recipientId, memoryId, memoryUrl, flashbackId } = req.body;
-  
-//   try {
-//     // Generate unique IDs for the chat and message
-//     const chatId = require('crypto').randomBytes(16).toString('hex');
-//     const messageId = require('crypto').randomBytes(16).toString('hex');
-//     const timestamp = new Date().toISOString();
-
-//     // Create or update chat entry
-//     const chatParams = {
-//       TableName: 'Chats',
-//       Item: {
-//         chat_id: chatId,
-//         participants: [senderId, recipientId].sort().join('#'),
-//         created_date: timestamp,
-//         last_message_at: timestamp,
-//         last_message_id: messageId
-//       }
-//     };
-
-//     // Create message entry
-//     const messageParams = {
-//       TableName: 'Messages',
-//       Item: {
-//         message_id: messageId,
-//         chat_id: chatId,
-//         sender_id: senderId,
-//         recipient_id: recipientId,
-//         message_type: 'memory',
-//         content: memoryUrl,
-//         memory_id: memoryId,
-//         flashback_id: flashbackId,
-//         timestamp: timestamp,
-//         status: 'sent'
-//       }
-//     };
-
-//     // Save both entries
-//     await dynamoDB.put(chatParams).promise();
-//     await dynamoDB.put(messageParams).promise();
-
-
-//     const sns = new AWS.SNS();
-//     await sns.publish({
-//       TopicArn: MemoryCarrierARN,
-//       Message: JSON.stringify({
-//         type: 'memory_share',
-//         senderId,
-//         recipientId,
-//         chatId,
-//         messageId,
-//         memoryUrl
-//       }),
-//       MessageAttributes: {
-//         'type': {
-//           DataType: 'String',
-//           StringValue: 'memory_share'
-//         }
-//       }
-//     }).promise();
-
-//     res.status(200).send({
-//       success: true,
-//       data: {
-//         chat_id: chatId,
-//         message_id: messageId
-//       }
-//     });
-
-//   } catch (error) {
-//     console.error('Error sharing memory:', error);
-//     res.status(500).send({
-//       success: false,
-//       error: error.message
-//     });
-//   }
-// });
 
 
 app.post('/shareMemory', async (req, res) => {
