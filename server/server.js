@@ -12573,7 +12573,7 @@ app.post('/shareMemory', async (req, res) => {
 
     let chatId;
     if (existingChatResponse.Items && existingChatResponse.Items.length > 0) {
-      chatId = existingChatResponse.Items[0].chatId;
+      chatId = existingChatResponse.Items[0].chatId.S;
       
       // Update existing chat
       await dynamoDB.updateItem({
