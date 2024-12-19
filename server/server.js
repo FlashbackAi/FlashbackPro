@@ -12393,7 +12393,7 @@ app.post('/initializeChat', async (req, res) => {
 
 // Send a memory share message
 app.post('/sendMemory', async (req, res) => {
-  const { senderId, recipientId, memoryId, chatId } = req.body;
+  const { senderId, recipientId, chatId } = req.body;
   try {
     const messageId = uuidv4();
     const timestamp = new Date().toISOString();
@@ -12407,7 +12407,6 @@ app.post('/sendMemory', async (req, res) => {
         senderId,
         recipientId,
         type: 'memory',
-        content: memoryId,
         timestamp,
         status: 'sent'
       }
@@ -12546,12 +12545,12 @@ async function sendWebSocketMessage(connectionId, message) {
 
 
 app.post('/shareMemory', async (req, res) => {
-  const { senderId, recipientId, memoryId, memoryUrl, flashbackId } = req.body;
+  const { senderId, recipientId, memoryUrl, flashbackId } = req.body;
   
-  console.log('received sharememory request for the details', senderId, recipientId, memoryId, memoryUrl, flashbackId);
+  console.log('received sharememory request for the details', senderId, recipientId, memoryUrl, flashbackId);
   try {
     // Input validation
-    if (!senderId || !recipientId || !memoryId || !memoryUrl || !flashbackId) {
+    if (!senderId || !recipientId || !memoryUrl || !flashbackId) {
       return res.status(400).send({
         success: false,
         error: 'Missing required fields'
@@ -12614,7 +12613,6 @@ app.post('/shareMemory', async (req, res) => {
       recipientId: { S: recipientId },
       messageType: { S: 'memory' },
       content: { S: memoryUrl },
-      memoryId: { S: memoryId },
       flashbackId: { S: flashbackId },
       timestamp: { S: timestamp },
       status: { S: 'sent' }
