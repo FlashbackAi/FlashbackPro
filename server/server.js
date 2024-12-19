@@ -114,7 +114,7 @@ const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.
     region: 'ap-south-1' // Update with your AWS region 
 });
 
-const MemoryCarrierARN = 'arn:aws:sns:ap-south-1:768699754860:MemoryShareNotifier.fifo;'
+const MemoryCarrierARN = 'arn:aws:sns:ap-south-1:768699754860:MemoryShareNotifier.fifo';
 const endpoint = 'wss://nh8j3qoqtb.execute-api.ap-south-1.amazonaws.com/production/';
 const bucketName = 'flashbackuseruploads';
 const userBucketName='flashbackuserthumbnails';
