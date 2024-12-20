@@ -12590,7 +12590,7 @@ app.get('/getChats/:userId', async (req, res) => {
           },
           otherUserDet: {
             user_name: otherUserDet?.org_name?.S || otherUserDet?.user_phone_number?.S,
-            display_picture: otherUserDet.displaypictureurl
+            display_picture: otherUserDet.displaypictureurl.S
           }
         };
       } catch (innerError) {
