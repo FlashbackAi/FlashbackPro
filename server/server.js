@@ -11838,7 +11838,7 @@ app.get('/getUserMemoriesFeed/:userPhoneNumber', async (req, res) => {
 
 app.post('/saveMemoryReaction', async (req, res) => {
   try {
-    const { flashbackId, userId, reaction, userPhoneNumber, imageName } = req.body;
+    const { flashbackId, userId, reaction, userPhoneNumber, imageName, imageUrl } = req.body;
 
     const params = {
       TableName: 'memory_reactions',
@@ -11848,6 +11848,7 @@ app.post('/saveMemoryReaction', async (req, res) => {
         reaction: reaction,
         user_phone_number: userPhoneNumber,
         image_name: imageName,
+        imageUrl: imageUrl,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }
