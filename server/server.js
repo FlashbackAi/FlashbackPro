@@ -12589,7 +12589,8 @@ app.get('/getChats/:userId', async (req, res) => {
             faceUrl: otherUser?.face_url?.S
           },
           otherUserDet: {
-            user_name: otherUserDet?.org_name?.S || otherUserDet?.user_phone_number?.S
+            user_name: otherUserDet?.org_name?.S || otherUserDet?.user_phone_number?.S,
+            display_picture: otherUserDet.displaypictureurl
           }
         };
       } catch (innerError) {
@@ -13015,8 +13016,10 @@ app.post('/updateProfilePicture/:userPhoneNumber', upload.single('image'), async
         force: false           // Preserve original format if it's better
       })
       .toBuffer();
-
+      
+      
     const key = `${userPhoneNumber}.jpg`;
+    const formattedkey = encodeURIComponent(userPhoneNumber) + '.jpg';
     
     // Upload to S3 with optimized settings
     await s3.putObject({
@@ -13035,8 +13038,7 @@ app.post('/updateProfilePicture/:userPhoneNumber', upload.single('image'), async
       }
     }).promise();
 
-    const s3Url = `https://flashbackuserdisplaypicture.s3.ap-south-1.amazonaws.com/${key}`;
-    
+    const s3Url = `https://flashbackuserdisplaypicture.s3.ap-south-1.amazonaws.com/${formattedkey}`;
     const updatedUser = await updateUserProfile(userPhoneNumber, {
       displaypictureurl: s3Url
     });
