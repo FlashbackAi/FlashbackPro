@@ -12934,6 +12934,137 @@ app.get('/getChatMemories/:chatId', async (req, res) => {
 });
 
 
+const updateUserProfile = async (userPhoneNumber, updates) => {
+  // Start with base update expression for org_name
+  let updateExpression = 'set';
+  const expressionAttributeNames = {};
+  const expressionAttributeValues = {};
+
+  // Only add org_name if it's being updated
+  if (updates.displayName) {
+    updateExpression += ' #on = :name';
+    expressionAttributeNames['#on'] = 'org_name';
+    expressionAttributeValues[':name'] = updates.displayName;
+  }
+
+  // Add displaypictureurl if it's being updated
+  if (updates.displaypictureurl) {
+    updateExpression += updateExpression === 'set' ? ' #dp = :url' : ', #dp = :url';
+    expressionAttributeNames['#dp'] = 'displaypictureurl';
+    expressionAttributeValues[':url'] = updates.displaypictureurl;
+  }
+
+  // If nothing to update, return early
+  if (updateExpression === 'set') {
+    throw new Error('No updates provided');
+  }
+
+  const params = {
+    TableName: 'users',
+    Key: {
+      user_phone_number: userPhoneNumber
+    },
+    UpdateExpression: updateExpression,
+    ExpressionAttributeNames: expressionAttributeNames,
+    ExpressionAttributeValues: expressionAttributeValues,
+    ReturnValues: 'ALL_NEW'
+  };
+
+  try {
+    const result = await docClient.update(params).promise();
+    return result.Attributes;
+  } catch (error) {
+    console.error('Error updating user:', error);
+    throw new Error('Failed to update user profile');
+  }
+};
+
+// Endpoint to update profile picture
+app.post('/updateProfilePicture/:userPhoneNumber', upload.single('image'), async (req, res) => {
+  const { userPhoneNumber } = req.params;
+  
+  if (!req.file) {
+    return res.status(400).json({ error: 'No image provided' });
+  }
+
+  try {
+    const key = `${userPhoneNumber}.jpg`;
+    
+    // Upload to S3
+    await s3.putObject({
+      Bucket: 'flashbackuserdisplaypicture',
+      Key: key,
+      Body: req.file.buffer,
+      ContentType: 'image/jpeg'
+    }).promise();
+
+    const s3Url = `https://flashbackuserdisplaypicture.s3.ap-south-1.amazonaws.com/${key}`;
+    
+    // Update DynamoDB with only the displaypictureurl
+    const updatedUser = await updateUserProfile(userPhoneNumber, {
+      displaypictureurl: s3Url
+    });
+
+    res.status(200).json({
+      message: 'Profile picture updated successfully',
+      user: updatedUser
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+app.post('/updateProfile/:userPhoneNumber', async (req, res) => {
+  const { userPhoneNumber } = req.params;
+  const { displayName } = req.body;
+
+  try {
+    // Validate input
+    if (!displayName || displayName.trim().length === 0) {
+      return res.status(400).json({ error: 'Display name is required' });
+    }
+
+    // Update only org_name
+    const updatedUser = await updateUserProfile(userPhoneNumber, {
+      displayName: displayName.trim()
+    });
+
+    res.status(200).json({
+      message: 'Profile updated successfully',
+      user: updatedUser
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+app.get('/getUserProfile/:userPhoneNumber', async (req, res) => {
+  const { userPhoneNumber } = req.params;
+
+  const params = {
+    TableName: 'users',
+    Key: {
+      user_phone_number: userPhoneNumber
+    }
+  };
+
+  try {
+    const result = await docClient.get(params).promise();
+    if (!result.Item) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.status(200).json({ user: result.Item });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
 })
 .catch((error) => {
   logger.error('Failed to initialize app due to config error:', error);
