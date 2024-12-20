@@ -12989,7 +12989,7 @@ app.post('/updateProfilePicture/:userPhoneNumber', upload.single('image'), async
 
   try {
     const key = `${userPhoneNumber}.jpg`;
-    
+    console.log(`updating display picture for the user: ${userPhoneNumber}`);
     // Upload to S3
     await s3.putObject({
       Bucket: 'flashbackuserdisplaypicture',
@@ -13020,6 +13020,7 @@ app.post('/updateProfile/:userPhoneNumber', async (req, res) => {
   const { userPhoneNumber } = req.params;
   const { displayName } = req.body;
 
+  console.log(`updating profile name: ${displayName}, for the phone: ${userPhoneNumber}`);
   try {
     // Validate input
     if (!displayName || displayName.trim().length === 0) {
@@ -13053,11 +13054,12 @@ app.get('/getUserProfile/:userPhoneNumber', async (req, res) => {
   };
 
   try {
-    const result = await docClient.get(params).promise();
+    const result = await docClient.query(params).promise();
+    console.log(`result for getUserProfile API call: ${result}`);
     if (!result.Item) {
       return res.status(404).json({ error: 'User not found' });
     }
-    res.status(200).json({ user: result.Item });
+    res.status(200).json({ user: result.Items });
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: error.message });
