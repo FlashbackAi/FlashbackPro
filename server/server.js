@@ -12935,43 +12935,42 @@ app.get('/getChatMemories/:chatId', async (req, res) => {
 
 
 const updateUserProfile = async (userPhoneNumber, updates) => {
-  // Start with base update expression for org_name
-  let updateExpression = 'set';
-  const expressionAttributeNames = {};
-  const expressionAttributeValues = {};
-
-  // Only add org_name if it's being updated
-  if (updates.displayName) {
-    updateExpression += ' #on = :name';
-    expressionAttributeNames['#on'] = 'org_name';
-    expressionAttributeValues[':name'] = updates.displayName;
-  }
-
-  // Add displaypictureurl if it's being updated
-  if (updates.displaypictureurl) {
-    updateExpression += updateExpression === 'set' ? ' #dp = :url' : ', #dp = :url';
-    expressionAttributeNames['#dp'] = 'displaypictureurl';
-    expressionAttributeValues[':url'] = updates.displaypictureurl;
-  }
-
-  // If nothing to update, return early
-  if (updateExpression === 'set') {
-    throw new Error('No updates provided');
-  }
 
   const params = {
     TableName: 'users',
     Key: {
       user_phone_number: userPhoneNumber
     },
-    UpdateExpression: updateExpression,
-    ExpressionAttributeNames: expressionAttributeNames,
-    ExpressionAttributeValues: expressionAttributeValues,
+    UpdateExpression: 'set',
+    ExpressionAttributeNames: {},
+    ExpressionAttributeValues: {},
     ReturnValues: 'ALL_NEW'
   };
 
+
+  const updateParts = [];
+  
+  if (updates.displayName) {
+    updateParts.push('#on = :name');
+    params.ExpressionAttributeNames['#on'] = 'org_name';
+    params.ExpressionAttributeValues[':name'] = updates.displayName;
+  }
+
+  if (updates.displaypictureurl) {
+    updateParts.push('#dp = :url');
+    params.ExpressionAttributeNames['#dp'] = 'displaypictureurl';
+    params.ExpressionAttributeValues[':url'] = updates.displaypictureurl;
+  }
+
+  if (updateParts.length === 0) {
+    throw new Error('No updates provided');
+  }
+
+  params.UpdateExpression += ' ' + updateParts.join(', ');
+
   try {
     const result = await docClient.update(params).promise();
+    console.log('Update result:', result);
     return result.Attributes;
   } catch (error) {
     console.error('Error updating user:', error);
@@ -12986,7 +12985,7 @@ app.post('/updateProfilePicture/:userPhoneNumber', upload.single('image'), async
   if (!req.file) {
     return res.status(400).json({ error: 'No image provided' });
   }
-
+  logger.info(`Updating profile display picture for : ${userPhoneNumber}`);
   try {
     const key = `${userPhoneNumber}.jpg`;
     console.log(`updating display picture for the user: ${userPhoneNumber}`);
@@ -13018,16 +13017,15 @@ app.post('/updateProfilePicture/:userPhoneNumber', upload.single('image'), async
 
 app.post('/updateProfile/:userPhoneNumber', async (req, res) => {
   const { userPhoneNumber } = req.params;
-  const { displayName } = req.body;
+  const { displayName } = req.body;  // Changed from req.body.body
 
-  console.log(`updating profile name: ${displayName}, for the phone: ${userPhoneNumber}`);
+  logger.info(`Updating profile name for : ${userPhoneNumber}`);
+  
   try {
-    // Validate input
     if (!displayName || displayName.trim().length === 0) {
       return res.status(400).json({ error: 'Display name is required' });
     }
 
-    // Update only org_name
     const updatedUser = await updateUserProfile(userPhoneNumber, {
       displayName: displayName.trim()
     });
@@ -13037,7 +13035,7 @@ app.post('/updateProfile/:userPhoneNumber', async (req, res) => {
       user: updatedUser
     });
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error updating profile:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -13054,18 +13052,19 @@ app.get('/getUserProfile/:userPhoneNumber', async (req, res) => {
   };
 
   try {
-    const result = await docClient.query(params).promise();
-    console.log(`result for getUserProfile API call: ${result}`);
+
+    const result = await docClient.get(params).promise();
+    logger.info('getUserProfile result:', result);
+    
     if (!result.Item) {
       return res.status(404).json({ error: 'User not found' });
     }
-    res.status(200).json({ user: result.Items });
+    res.status(200).json({ user: result.Item });
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: error.message });
   }
 });
-
 
 })
 .catch((error) => {
