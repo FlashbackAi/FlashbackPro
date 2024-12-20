@@ -12978,38 +12978,88 @@ const updateUserProfile = async (userPhoneNumber, updates) => {
   }
 };
 
-// Endpoint to update profile picture
 app.post('/updateProfilePicture/:userPhoneNumber', upload.single('image'), async (req, res) => {
   const { userPhoneNumber } = req.params;
   
   if (!req.file) {
     return res.status(400).json({ error: 'No image provided' });
   }
+
+  const MAX_SIZE = 15 * 1024 * 1024; // 15MB
+  const TARGET_SIZE = 200; // 200x200px is a good size for profile pictures
+  
+  if (req.file.size > MAX_SIZE) {
+    return res.status(400).json({ error: 'Image too large. Maximum size is 15MB' });
+  }
+
   logger.info(`Updating profile display picture for : ${userPhoneNumber}`);
+  
   try {
+    // Get original metadata
+    const metadata = await sharp(req.file.buffer).metadata();
+
+    // Process image
+    const compressedImageBuffer = await sharp(req.file.buffer)
+      // Resize while maintaining aspect ratio
+      .resize({
+        width: TARGET_SIZE,
+        height: TARGET_SIZE,
+        fit: 'cover',
+        position: 'centre'
+      })
+      // Optimize for profile pictures
+      .jpeg({ 
+        quality: 85,            // Good balance between quality and size
+        progressive: true,      // Better loading experience
+        chromaSubsampling: '4:4:4',  // Better quality for faces
+        force: false           // Preserve original format if it's better
+      })
+      .toBuffer();
+
     const key = `${userPhoneNumber}.jpg`;
-    console.log(`updating display picture for the user: ${userPhoneNumber}`);
-    // Upload to S3
+    
+    // Upload to S3 with optimized settings
     await s3.putObject({
       Bucket: 'flashbackuserdisplaypicture',
       Key: key,
-      Body: req.file.buffer,
-      ContentType: 'image/jpeg'
+      Body: compressedImageBuffer,
+      ContentType: 'image/jpeg',
+      CacheControl: 'public, max-age=31536000', // Cache for 1 year
+      Metadata: {
+        'original-size': req.file.size.toString(),
+        'original-width': metadata.width.toString(),
+        'original-height': metadata.height.toString(),
+        'compressed-size': compressedImageBuffer.length.toString(),
+        'final-width': TARGET_SIZE.toString(),
+        'final-height': TARGET_SIZE.toString()
+      }
     }).promise();
 
     const s3Url = `https://flashbackuserdisplaypicture.s3.ap-south-1.amazonaws.com/${key}`;
     
-    // Update DynamoDB with only the displaypictureurl
     const updatedUser = await updateUserProfile(userPhoneNumber, {
       displaypictureurl: s3Url
     });
 
+    logger.info(`Successfully updated profile picture for : ${userPhoneNumber}`, {
+      originalSize: req.file.size,
+      compressedSize: compressedImageBuffer.length,
+      compressionRatio: ((1 - (compressedImageBuffer.length / req.file.size)) * 100).toFixed(2) + '%'
+    });
+
     res.status(200).json({
       message: 'Profile picture updated successfully',
-      user: updatedUser
+      user: updatedUser,
+      imageStats: {
+        originalSize: req.file.size,
+        originalDimensions: `${metadata.width}x${metadata.height}`,
+        compressedSize: compressedImageBuffer.length,
+        finalDimensions: `${TARGET_SIZE}x${TARGET_SIZE}`,
+        compressionRatio: ((1 - (compressedImageBuffer.length / req.file.size)) * 100).toFixed(2) + '%'
+      }
     });
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Error updating profile picture:', error);
     res.status(500).json({ error: error.message });
   }
 });
