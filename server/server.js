@@ -11356,11 +11356,23 @@ const getUserFlashbackOwners = async (flashbackId) => {
 };
 
 
-app.get('/getPeopleFromFlashbacks/:userPhoneNumber', async (req, res) => {
-  const userPhoneNumber = req.params.userPhoneNumber;
+app.get('/getPeopleFromFlashbacks/:userPhoneNumber/:userId', async (req, res) => {
+  const { userPhoneNumber, userId } = req.params;
   
   try {
-    // 1. Query userFlashbackDetailsTable using phone number index
+    // First, get the user's own face URL using userId
+    const userParams = {
+      TableName: 'RekognitionUsersData',
+      KeyConditionExpression: 'user_id = :userId',
+      ExpressionAttributeValues: {
+        ':userId': userId
+      }
+    };
+    
+    const userResult = await docClient.query(userParams).promise();
+    const userData = userResult.Items && userResult.Items.length > 0 ? userResult.Items[0] : null;
+
+    // Then proceed with getting related people
     const flashbackParams = {
       TableName: userFlashbackDetailsTable,
       IndexName: 'user_phone_number-index',
@@ -11373,11 +11385,8 @@ app.get('/getPeopleFromFlashbacks/:userPhoneNumber', async (req, res) => {
     };
 
     const flashbackResult = await docClient.query(flashbackParams).promise();
-    
-    // Extract unique folder names
     const folderNames = [...new Set(flashbackResult.Items.map(item => item.folder_name))];
     
-    // 2. Query indexedDataTableName for each folder name to get user_ids
     const userIdsPromises = folderNames.map(async folderName => {
       const params = {
         TableName: indexedDataTableName,
@@ -11396,8 +11405,10 @@ app.get('/getPeopleFromFlashbacks/:userPhoneNumber', async (req, res) => {
     const userIdsNestedArray = await Promise.all(userIdsPromises);
     const uniqueUserIds = [...new Set(userIdsNestedArray.flat())];
     
-    // 3. Query RekognitionUsersData for face URLs
-    const faceUrlsPromises = uniqueUserIds.map(async userId => {
+    // Filter out the user's own ID
+    const filteredUserIds = uniqueUserIds.filter(id => id !== userId);
+    
+    const faceUrlsPromises = filteredUserIds.map(async userId => {
       const params = {
         TableName: 'RekognitionUsersData',
         KeyConditionExpression: 'user_id = :userId',
@@ -11410,17 +11421,25 @@ app.get('/getPeopleFromFlashbacks/:userPhoneNumber', async (req, res) => {
       if (result.Items && result.Items.length > 0) {
         return {
           userId: userId,
-          faceUrl: result.Items[0].face_url
+          faceUrl: result.Items[0].face_url,
+          name: result.Items[0].name || result.Items[0].user_name || 'Unknown'
         };
       }
       return null;
     });
     
-    const faceUrls = (await Promise.all(faceUrlsPromises)).filter(Boolean);
+    const relatedFaceUrls = (await Promise.all(faceUrlsPromises)).filter(Boolean);
     
     res.json({
       success: true,
-      data: faceUrls
+      data: {
+        mainUser: userData ? {
+          userId: userData.user_id,
+          faceUrl: userData.face_url,
+          name: userData.name || userData.user_name || 'You'
+        } : null,
+        relations: relatedFaceUrls
+      }
     });
     
   } catch (error) {
