@@ -44,7 +44,7 @@ initializeConfig()
 const config = getConfig();
 app.use(cors()); 
 app.use(express.json({ limit: '15mb' })); 
-const sns = new AWS.SNS();
+
 
 // SSR Start
 app.set("view engine", "ejs");
@@ -114,6 +114,8 @@ app.get("/share/:eventName/:userId", async(req, res) => {
 const s3 = new AWS.S3({ // accessKey and SecretKey is being fetched from config.js
     region: 'ap-south-1' // Update with your AWS region 
 });
+
+const sns = new AWS.SNS();
 
 const MemoryCarrierARN = 'arn:aws:sns:ap-south-1:768699754860:MemoryShareNotifier.fifo';
 const endpoint = 'wss://nh8j3qoqtb.execute-api.ap-south-1.amazonaws.com/production/';
