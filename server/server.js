@@ -44,6 +44,7 @@ initializeConfig()
 const config = getConfig();
 app.use(cors()); 
 app.use(express.json({ limit: '15mb' })); 
+const sns = new AWS.SNS();
 
 // SSR Start
 app.set("view engine", "ejs");
@@ -12789,7 +12790,7 @@ async function sendWebSocketMessage(connectionId, message) {
 
 
 app.post('/shareMemory', async (req, res) => {
-  const { senderId, recipientId, memoryUrl, flashbackId } = req.body;
+  const { senderId, recipientId, memoryUrl, flashbackId, senderName, senderPhone } = req.body;
   
   console.log('received sharememory request for the details', senderId, recipientId, memoryUrl, flashbackId);
   try {
@@ -12840,7 +12841,9 @@ app.post('/shareMemory', async (req, res) => {
         participants: { S: participants },
         createdAt: { S: timestamp },
         lastMessageAt: { S: timestamp },
-        lastMessageId: { S: messageId }
+        lastMessageId: { S: messageId },
+        senderPhone: { S: senderPhone },
+        senderName: { S: senderName },
       };
 
       await dynamoDB.putItem({
@@ -12859,7 +12862,9 @@ app.post('/shareMemory', async (req, res) => {
       content: { S: memoryUrl },
       flashbackId: { S: flashbackId },
       timestamp: { S: timestamp },
-      status: { S: 'sent' }
+      status: { S: 'sent' },
+      senderPhone: { S: senderPhone },
+      senderName: { S: senderName },
     };
 
     await dynamoDB.putItem({
@@ -12867,27 +12872,40 @@ app.post('/shareMemory', async (req, res) => {
       Item: messageItem
     }).promise();
 
-    // Send notification through SNS
-    const sns = new AWS.SNS();
-    await sns.publish({
-      TopicArn: MemoryCarrierARN,
-      Message: JSON.stringify({
+
+
+    // await sns.publish({
+    //   TopicArn: MemoryCarrierARN,
+    //   Message: JSON.stringify({
+    //     type: 'memory_share',
+    //     senderId,
+    //     recipientId,
+    //     chatId,
+    //     messageId,
+    //     memoryUrl
+    //   }),
+    //   MessageGroupId: chatId, // Using chatId as the group ID to maintain order per chat
+    //   MessageDeduplicationId: messageId,
+    //   MessageAttributes: {
+    //     'type': {
+    //       DataType: 'String',
+    //       StringValue: 'memory_share'
+    //     }
+    //   }
+    // }).promise();
+
+
+    await sendPushNotification(recipientId, senderName, {
+      title: 'New Memory Incoming',
+      body: `${senderName} shared a memory with you`,
+      data: {
         type: 'memory_share',
-        senderId,
-        recipientId,
         chatId,
         messageId,
+        senderId,
         memoryUrl
-      }),
-      MessageGroupId: chatId, // Using chatId as the group ID to maintain order per chat
-      MessageDeduplicationId: messageId,
-      MessageAttributes: {
-        'type': {
-          DataType: 'String',
-          StringValue: 'memory_share'
-        }
       }
-    }).promise();
+    });
 
     res.status(200).send({
       success: true,
@@ -13118,6 +13136,93 @@ app.get('/getUserProfile/:userPhoneNumber', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+app.post('/registerDevice', async (req, res) => {
+  const { userId, deviceToken } = req.body;
+  
+  try {
+    // Create an endpoint for the device
+    const createEndpointResponse = await sns.createPlatformEndpoint({
+      PlatformApplicationArn: MemoryCarrierARN,
+      Token: deviceToken,
+      CustomUserData: userId
+    }).promise();
+
+    // Store the endpoint ARN in DynamoDB
+    await dynamoDB.put({
+      TableName: 'UserDevices',
+      Item: {
+        user_id: userId,
+        endpoint_arn: createEndpointResponse.EndpointArn,
+        updated_at: new Date().toISOString()
+      }
+    }).promise();
+
+    res.status(200).send({
+      success: true,
+      message: 'Device registered successfully'
+    });
+  } catch (error) {
+    console.error('Error registering device:', error);
+    res.status(500).send({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+
+async function sendPushNotification(userId, notification) {
+  try {
+    // Get endpoint ARN for the user
+    const userDevice = await dynamoDB.get({
+      TableName: 'UserDevices',
+      Key: {
+        user_id: userId
+      }
+    }).promise();
+
+    if (!userDevice.Item?.endpoint_arn) {
+      console.log('No device endpoint found for user:', userId);
+      return;
+    }
+
+    // Prepare message
+    const message = {
+      default: notification.body,
+      APNS: JSON.stringify({
+        aps: {
+          alert: {
+            title: notification.title,
+            body: notification.body
+          },
+          sound: 'default',
+          badge: 1
+        },
+        data: notification.data
+      }),
+      GCM: JSON.stringify({
+        notification: {
+          title: notification.title,
+          body: notification.body
+        },
+        data: notification.data
+      })
+    };
+
+    // Send notification
+    await sns.publish({
+      Message: JSON.stringify(message),
+      MessageStructure: 'json',
+      TargetArn: userDevice.Item.endpoint_arn
+    }).promise();
+
+    console.log('Push notification sent successfully to user:', userId);
+  } catch (error) {
+    console.error('Error sending push notification:', error);
+  }
+}
+
 
 })
 .catch((error) => {
