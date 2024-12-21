@@ -11356,6 +11356,83 @@ const getUserFlashbackOwners = async (flashbackId) => {
 };
 
 
+app.get('/getPeopleFromFlashbacks/:userPhoneNumber', async (req, res) => {
+  const userPhoneNumber = req.params.userPhoneNumber;
+  
+  try {
+    // 1. Query userFlashbackDetailsTable using phone number index
+    const flashbackParams = {
+      TableName: userFlashbackDetailsTable,
+      IndexName: 'user_phone_number-index',
+      KeyConditionExpression: 'user_phone_number = :phoneNumber',
+      FilterExpression: 'access_level = :accessLevel',
+      ExpressionAttributeValues: {
+        ':phoneNumber': userPhoneNumber,
+        ':accessLevel': 'creator'
+      }
+    };
+
+    const flashbackResult = await docClient.query(flashbackParams).promise();
+    
+    // Extract unique folder names
+    const folderNames = [...new Set(flashbackResult.Items.map(item => item.folder_name))];
+    
+    // 2. Query indexedDataTableName for each folder name to get user_ids
+    const userIdsPromises = folderNames.map(async folderName => {
+      const params = {
+        TableName: indexedDataTableName,
+        IndexName: 'folder_name-user_id-index',
+        KeyConditionExpression: 'folder_name = :folderName',
+        ProjectionExpression: 'user_id',
+        ExpressionAttributeValues: {
+          ':folderName': folderName
+        }
+      };
+      
+      const result = await docClient.query(params).promise();
+      return result.Items.map(item => item.user_id);
+    });
+    
+    const userIdsNestedArray = await Promise.all(userIdsPromises);
+    const uniqueUserIds = [...new Set(userIdsNestedArray.flat())];
+    
+    // 3. Query RekognitionUsersData for face URLs
+    const faceUrlsPromises = uniqueUserIds.map(async userId => {
+      const params = {
+        TableName: 'RekognitionUsersData',
+        KeyConditionExpression: 'user_id = :userId',
+        ExpressionAttributeValues: {
+          ':userId': userId
+        }
+      };
+      
+      const result = await docClient.query(params).promise();
+      if (result.Items && result.Items.length > 0) {
+        return {
+          userId: userId,
+          faceUrl: result.Items[0].face_url
+        };
+      }
+      return null;
+    });
+    
+    const faceUrls = (await Promise.all(faceUrlsPromises)).filter(Boolean);
+    
+    res.json({
+      success: true,
+      data: faceUrls
+    });
+    
+  } catch (error) {
+    logger.error('Error in getPeopleFromFlashbacks:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch people relations'
+    });
+  }
+});
+
+
 app.get('/userThumbnailsByFlashbackId/:flashbackId', async (req, res) => {
   const flashbackId = req.params.flashbackId;
 
