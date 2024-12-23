@@ -13322,6 +13322,100 @@ async function sendPushNotification(userId, notification) {
 }
 
 
+app.post('/createGroupChat', async (req, res) => {
+  const { creatorId, memberIds, initialMessage } = req.body;
+  
+  try {
+    // Input validation
+    if (!creatorId || !memberIds || !Array.isArray(memberIds) || memberIds.length === 0) {
+      return res.status(400).send({
+        success: false,
+        error: 'Invalid input parameters'
+      });
+    }
+
+    const timestamp = new Date().toISOString();
+    const chatId = require('crypto').randomBytes(16).toString('hex');
+    const messageId = require('crypto').randomBytes(16).toString('hex');
+
+    // Include creator in members if not already included
+    const allMembers = new Set([creatorId, ...memberIds]);
+    const participants = Array.from(allMembers).sort().join('#');
+
+    // Create group chat
+    const chatItem = {
+      chatId: { S: chatId },
+      participants: { S: participants },
+      isGroup: { BOOL: true },
+      createdAt: { S: timestamp },
+      lastMessageAt: { S: timestamp },
+      lastMessageId: { S: messageId },
+      creatorId: { S: creatorId },
+      memberIds: { SS: Array.from(allMembers) }
+    };
+
+    await dynamoDB.putItem({
+      TableName: 'Chats',
+      Item: chatItem
+    }).promise();
+
+    // Create initial message if provided
+    if (initialMessage) {
+      const messageItem = {
+        messageId: { S: messageId },
+        chatId: { S: chatId },
+        senderId: { S: creatorId },
+        messageType: { S: initialMessage.type },
+        content: { S: initialMessage.content },
+        timestamp: { S: timestamp },
+        status: { S: 'sent' }
+      };
+
+      if (initialMessage.flashbackId) {
+        messageItem.flashbackId = { S: initialMessage.flashbackId };
+      }
+
+      await dynamoDB.putItem({
+        TableName: 'Messages',
+        Item: messageItem
+      }).promise();
+    }
+
+    // Send notifications to all members except creator
+    const notificationPromises = Array.from(allMembers)
+      .filter(memberId => memberId !== creatorId)
+      .map(memberId => 
+        sendPushNotification(memberId, {
+          title: 'New Group Chat',
+          body: 'You have been added to a new group chat',
+          data: {
+            type: 'new_group_chat',
+            chatId,
+            messageId
+          }
+        })
+      );
+
+    await Promise.all(notificationPromises);
+
+    res.status(200).send({
+      success: true,
+      data: {
+        chatId,
+        messageId
+      }
+    });
+
+  } catch (error) {
+    console.error('Error creating group chat:', error);
+    res.status(500).send({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+
 })
 .catch((error) => {
   logger.error('Failed to initialize app due to config error:', error);
