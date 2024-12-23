@@ -11799,12 +11799,48 @@ app.post('/flashbackImages/:flashbackId/:userId', async (req, res) => {
 });
 
 
+const getUserIdFromPhone = async (userPhoneNumber) => {
+  try {
+    // Query your users table to get the user_id for this phone number
+    const userParams = {
+      TableName: 'users',
+      KeyConditionExpression: 'user_phone_number = :phone',
+      ExpressionAttributeValues: {
+        ':phone': userPhoneNumber
+      },
+      ProjectionExpression: 'user_id'
+    };
+
+    const userResult = await docClient.query(userParams).promise();
+    return userResult.Items[0]?.user_id;
+  } catch (error) {
+    console.error('Error getting user_id:', error);
+    return null;
+  }
+};
+
+
 app.get('/getUserMemoriesFeed/:userPhoneNumber', async (req, res) => {
   try {
     const userPhoneNumber = req.params.userPhoneNumber;
+    const userId = await getUserIdFromPhone(userPhoneNumber);
     const limit = parseInt(req.query.limit) || 5;
     const lastEvaluatedKey = req.query.lastEvaluatedKey ? JSON.parse(req.query.lastEvaluatedKey) : undefined;
 
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // console.log('Starting Feed Request:', {
+    //   userPhoneNumber,
+    //   limit,
+    //   lastEvaluatedKey
+    // });
+
+    // 1. Get user's flashbacks
     const flashbackParams = {
       TableName: 'user_flashbacks',
       IndexName: 'user_phone_number-index',
@@ -11816,12 +11852,22 @@ app.get('/getUserMemoriesFeed/:userPhoneNumber', async (req, res) => {
       ExclusiveStartKey: lastEvaluatedKey
     };
 
+    // console.log('Querying flashbacks with params:', flashbackParams);
+
     const flashbacksResult = await docClient.query(flashbackParams).promise();
     const flashbackIds = flashbacksResult.Items.map(item => item.flashback_id);
 
+    // console.log('Flashbacks found:', {
+    //   count: flashbacksResult.Items.length,
+    //   flashbackIds
+    // });
+
+    // 2. Process each flashback to get memories
     const feedData = await Promise.all(flashbackIds.map(async (flashbackId) => {
       try {
-        // 1. Get images with faces from indexed_data
+        // console.log(`Processing flashback: ${flashbackId}`);
+
+        // Get face images
         const facesParams = {
           TableName: indexedDataTableName,
           IndexName: 'folder_name-user_id-index',
@@ -11832,9 +11878,16 @@ app.get('/getUserMemoriesFeed/:userPhoneNumber', async (req, res) => {
           ProjectionExpression: 's3_url, user_id, bounding_box, image_width, image_height'
         };
 
+        // console.log('Querying faces with params:', facesParams);
+
         const facesResult = await docClient.query(facesParams).promise();
         
-        // 2. Get location/scenery images from RekognitionImageProperties
+        // console.log(`Faces found for flashback ${flashbackId}:`, {
+        //   count: facesResult.Items.length,
+        //   sample: facesResult.Items.slice(0, 2)
+        // });
+
+        // Get location/scenery images
         const locationParams = {
           TableName: 'RekognitionImageProperties',
           FilterExpression: 'begins_with(object_key, :prefix) AND attribute_not_exists(user_ids)',
@@ -11844,9 +11897,29 @@ app.get('/getUserMemoriesFeed/:userPhoneNumber', async (req, res) => {
           ProjectionExpression: 'object_key, width, height'
         };
 
+        // console.log('Querying locations with params:', locationParams);
+
         const locationResult = await docClient.scan(locationParams).promise();
 
-        // Process faces images
+        // console.log(`Locations found for flashback ${flashbackId}:`, {
+        //   count: locationResult.Items.length
+        // });
+
+        // Create map of images to their users
+        const imageUsersMap = new Map();
+        facesResult.Items.forEach(item => {
+          if (!imageUsersMap.has(item.s3_url)) {
+            imageUsersMap.set(item.s3_url, new Set());
+          }
+          imageUsersMap.get(item.s3_url).add(item.user_id);
+        });
+
+        // console.log('Image Users Map created:', {
+        //   totalImages: imageUsersMap.size,
+        //   sampleEntry: Array.from(imageUsersMap.entries())[0]
+        // });
+
+        // Process face images with other users
         const faceImages = facesResult.Items.map(item => ({
           type: 'face',
           imageUrl: item.s3_url,
@@ -11856,10 +11929,18 @@ app.get('/getUserMemoriesFeed/:userPhoneNumber', async (req, res) => {
             width: item.image_width,
             height: item.image_height
           },
-          boundingBox: item.bounding_box
+          boundingBox: item.bounding_box,
+          // Add all other users who have this image
+          otherUsers: Array.from(imageUsersMap.get(item.s3_url) || [])
+            .filter(uid => uid !== item.user_id) // Exclude the current image's user
         }));
 
-        // Process location/scenery images
+        // console.log('Processed face images:', {
+        //   count: faceImages.length,
+        //   sample: faceImages.slice(0, 2)
+        // });
+
+        // Process location images
         const locationImages = locationResult.Items.map(item => ({
           type: 'location',
           imageUrl: `https://flashbackimages.s3.ap-south-1.amazonaws.com/${item.object_key}`,
@@ -11869,36 +11950,43 @@ app.get('/getUserMemoriesFeed/:userPhoneNumber', async (req, res) => {
             height: item.height
           }
         }));
-
         // Group images by users
         const userImagesMap = new Map();
-        
+    
         faceImages.forEach(image => {
           if (!userImagesMap.has(image.userId)) {
             userImagesMap.set(image.userId, []);
           }
           userImagesMap.get(image.userId).push(image);
         });
-
+    
         const userImages = Array.from(userImagesMap.entries()).map(([userId, images]) => ({
           userId,
           images
         }));
-
-        // Add location images as a separate group if they exist
+    
+        // Add location images as before
         if (locationImages.length > 0) {
           userImages.push({
             userId: 'locations',
             images: locationImages
           });
         }
-
+    
         return {
           flashbackId,
           userImages,
           totalImages: faceImages.length + locationImages.length,
-          totalUsers: userImagesMap.size + (locationImages.length > 0 ? 1 : 0)
+          totalUsers: userImagesMap.size + (locationImages.length > 0 ? 1 : 0),
+          currentUserId: userPhoneNumber // Add this to help frontend identify current user
         };
+
+        // return {
+        //   flashbackId,
+        //   userImages,
+        //   totalImages: faceImages.length + locationImages.length,
+        //   totalUsers: userImagesMap.size + (locationImages.length > 0 ? 1 : 0)
+        // };
 
       } catch (error) {
         console.error(`Error processing flashback ${flashbackId}:`, error);
@@ -11914,6 +12002,11 @@ app.get('/getUserMemoriesFeed/:userPhoneNumber', async (req, res) => {
 
     // Filter out empty flashbacks
     const validFeedData = feedData.filter(item => item.totalImages > 0);
+
+    // console.log('Final response data:', {
+    //   totalFlashbacks: feedData.length,
+    //   validFlashbacks: validFeedData.length
+    // });
 
     res.json({
       success: true,
@@ -12937,6 +13030,7 @@ app.post('/shareMemory', async (req, res) => {
       const chatItem = {
         chatId: { S: chatId },
         participants: { S: participants },
+        isGroup: { BOOL: false },
         createdAt: { S: timestamp },
         lastMessageAt: { S: timestamp },
         lastMessageId: { S: messageId },
@@ -13021,6 +13115,133 @@ app.post('/shareMemory', async (req, res) => {
     });
   }
 });
+
+
+app.post('/shareMemoryToGroup', async (req, res) => {
+  const { senderId, memberIds, memoryUrl, flashbackId, senderName, senderPhone } = req.body;
+  
+  console.log('Received share memory to group request:', { senderId, memberIds, memoryUrl, flashbackId });
+  
+  try {
+    // Input validation
+    if (!senderId || !memberIds || !Array.isArray(memberIds) || !memoryUrl || !flashbackId) {
+      return res.status(400).send({
+        success: false,
+        error: 'Missing required fields'
+      });
+    }
+
+    const timestamp = new Date().toISOString();
+    const messageId = require('crypto').randomBytes(16).toString('hex');
+    
+    // Include sender in members and sort for consistency
+    const allMembers = [...new Set([senderId, ...memberIds])];
+    const participants = allMembers.sort().join('#');
+
+    // Check for existing group chat
+    const existingChatResponse = await dynamoDB.query({
+      TableName: 'Chats',
+      IndexName: 'ParticipantsIndex',
+      KeyConditionExpression: 'participants = :participants',
+      ExpressionAttributeValues: {
+        ':participants': { S: participants }
+      }
+    }).promise();
+
+    let chatId;
+    if (existingChatResponse.Items && existingChatResponse.Items.length > 0) {
+      chatId = existingChatResponse.Items[0].chatId.S;
+      
+      // Update existing chat
+      await dynamoDB.updateItem({
+        TableName: 'Chats',
+        Key: {
+          chatId: { S: chatId }
+        },
+        UpdateExpression: 'SET lastMessageAt = :timestamp, lastMessageId = :messageId',
+        ExpressionAttributeValues: {
+          ':timestamp': { S: timestamp },
+          ':messageId': { S: messageId }
+        }
+      }).promise();
+    } else {
+      // Create new group chat
+      chatId = require('crypto').randomBytes(16).toString('hex');
+      
+      const chatItem = {
+        chatId: { S: chatId },
+        participants: { S: participants },
+        isGroup: { BOOL: true },
+        createdAt: { S: timestamp },
+        lastMessageAt: { S: timestamp },
+        lastMessageId: { S: messageId },
+        senderPhone: { S: senderPhone },
+        senderName: { S: senderName },
+        memberIds: { SS: allMembers }
+      };
+
+      await dynamoDB.putItem({
+        TableName: 'Chats',
+        Item: chatItem
+      }).promise();
+    }
+
+    // Create message
+    const messageItem = {
+      messageId: { S: messageId },
+      chatId: { S: chatId },
+      senderId: { S: senderId },
+      messageType: { S: 'memory' },
+      content: { S: memoryUrl },
+      flashbackId: { S: flashbackId },
+      timestamp: { S: timestamp },
+      status: { S: 'sent' },
+      senderPhone: { S: senderPhone },
+      senderName: { S: senderName },
+    };
+
+    await dynamoDB.putItem({
+      TableName: 'Messages',
+      Item: messageItem
+    }).promise();
+
+    // Send notifications to all members except sender
+    const notificationPromises = memberIds
+      .filter(memberId => memberId !== senderId)
+      .map(memberId => 
+        sendPushNotification(memberId, senderName, {
+          title: 'New Memory in Group',
+          body: `${senderName} shared a memory in the group`,
+          data: {
+            type: 'memory_share',
+            chatId,
+            messageId,
+            senderId,
+            memoryUrl,
+            isGroup: true
+          }
+        })
+      );
+
+    await Promise.all(notificationPromises);
+
+    res.status(200).send({
+      success: true,
+      data: {
+        chatId,
+        messageId
+      }
+    });
+
+  } catch (error) {
+    console.error('Error sharing memory to group:', error);
+    res.status(500).send({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Add endpoint to fetch shared memories in a chat
 app.get('/getChatMemories/:chatId', async (req, res) => {
   const { chatId } = req.params;
