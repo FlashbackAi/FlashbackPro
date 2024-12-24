@@ -12984,6 +12984,49 @@ app.get('/getChats/:userId', async (req, res) => {
   }
 });
 
+
+app.get('/messages/:chatId', async (req, res) => {
+  const { chatId } = req.params;
+  
+  try {
+    const params = {
+      TableName: 'Messages',
+      IndexName: 'chatId-index',
+      KeyConditionExpression: 'chatId = :chatId',
+      ExpressionAttributeValues: {
+        ':chatId': { S: chatId }
+      },
+      ScanIndexForward: false, // Get newest messages first
+      Limit: 50 // Limit to last 50 messages
+    };
+
+    const result = await dynamoDB.query(params).promise();
+    
+    const messages = result.Items.map(item => ({
+      messageId: item.messageId.S,
+      chatId: item.chatId.S,
+      senderId: item.senderId.S,
+      type: item.messageType.S,
+      content: item.content.S,
+      timestamp: item.timestamp.S,
+      status: item.status?.S || 'sent',
+      reactions: item.reactions?.M || {},
+      replyTo: item.replyTo?.M
+    }));
+
+    res.status(200).send({
+      success: true,
+      messages
+    });
+  } catch (error) {
+    console.error('Error fetching messages:', error);
+    res.status(500).send({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 app.post('/sendMessage', async (req, res) => {
   const { chatId, senderId, recipientId, content, type, replyTo } = req.body;
   
