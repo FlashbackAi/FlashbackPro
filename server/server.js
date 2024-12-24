@@ -12646,33 +12646,45 @@ app.get('/getChatMessages/:chatId', async (req, res) => {
       ExpressionAttributeValues: {
         ':chatId': { S: chatId }
       },
-      ScanIndexForward: false, // Get newest messages first
+      ScanIndexForward: false,
       Limit: 50
     };
 
     if (lastMessageId) {
       params.ExclusiveStartKey = { 
-        messageId: { S: lastMessageId }, // Primary key
-        chatId: { S: chatId }          // Index key
+        messageId: { S: lastMessageId },
+        chatId: { S: chatId }
       };
     }
 
-    console.log('Query params:', JSON.stringify(params, null, 2));
     const result = await dynamoDB.query(params).promise();
-    console.log('Query result:', JSON.stringify(result, null, 2));
 
-    // Transform DynamoDB items to regular objects
+    // Transform DynamoDB items to regular objects with safe field access
     const messages = result.Items.map(item => ({
-      messageId: item.messageId.S,
-      chatId: item.chatId.S,
-      senderId: item.senderId.S,
-      recipientId: item.recipientId.S,
-      type: item.messageType.S,
-      content: item.content.S,
-      timestamp: item.timestamp.S,
-      status: item.status.S,
-      reactions: item.reactions ? JSON.parse(item.reactions.S) : {}
+      messageId: item.messageId?.S,
+      chatId: item.chatId?.S,
+      senderId: item.senderId?.S,
+      senderName: item.senderName?.S,
+      senderPhone: item.senderPhone?.S,
+      // Only include recipientId if it exists
+      ...(item.recipientId && { recipientId: item.recipientId.S }),
+      type: item.messageType?.S,
+      content: item.content?.S,
+      timestamp: item.timestamp?.S,
+      status: item.status?.S || 'sent',
+      flashbackId: item.flashbackId?.S,
+      // Safely handle reactions if they exist
+      reactions: item.reactions?.M || {},
+      // Only include replyTo if it exists
+      ...(item.replyTo?.M && {
+        replyTo: {
+          messageId: item.replyTo.M.messageId?.S,
+          content: item.replyTo.M.content?.S,
+          type: item.replyTo.M.type?.S
+        }
+      })
     }))
+    .filter(message => message.messageId && message.content) // Filter out any malformed messages
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
     res.status(200).send({
