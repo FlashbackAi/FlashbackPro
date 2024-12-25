@@ -11881,6 +11881,28 @@ app.get('/getUserMemoriesFeed/:userPhoneNumber', async (req, res) => {
         // console.log('Querying faces with params:', facesParams);
 
         const facesResult = await docClient.query(facesParams).promise();
+
+        const hiddenParams = {
+          TableName: 'hidden_memories',
+          IndexName: 'user_phone_number-index', // Use the GSI
+          KeyConditionExpression: 'user_phone_number = :phone',
+          ExpressionAttributeValues: {
+            ':phone': userPhoneNumber,
+          },
+          ProjectionExpression: 'image_name',
+        };
+        
+        const hiddenResult = await docClient.query(hiddenParams).promise();
+        if (!hiddenResult || !hiddenResult.Items) {
+          console.warn(`No hidden memories found for user ${userPhoneNumber}`);
+          return [];
+      }
+      
+        const hiddenImages = new Set((hiddenResult.Items || []).map((item) => item.image_name));        
+
+        const visibleFaces = facesResult.Items.filter(
+          (item) => !hiddenImages.has(item.s3_url.split('/').pop())
+        );
         
         // console.log(`Faces found for flashback ${flashbackId}:`, {
         //   count: facesResult.Items.length,
@@ -11920,7 +11942,7 @@ app.get('/getUserMemoriesFeed/:userPhoneNumber', async (req, res) => {
         // });
 
         // Process face images with other users
-        const faceImages = facesResult.Items.map(item => ({
+        const faceImages = visibleFaces.map(item => ({
           type: 'face',
           imageUrl: item.s3_url,
           thumbnailUrl: `https://flashbackimagesthumbnail.s3.ap-south-1.amazonaws.com/${item.s3_url.split("amazonaws.com/")[1]}`,
