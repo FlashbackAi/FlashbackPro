@@ -14086,32 +14086,33 @@ app.post('/startDeviceAnalysis', async (req, res) => {
   const { userPhoneNumber, analyzedImages = [] } = req.body;
 
   try {
-    // Create folder in S3 if it doesn't exist
-    // Note: userPhoneNumber already has '+' removed
+    // Create folder in S3
     const folderKey = `${userPhoneNumber}/`;
-    
     await s3.putObject({
       Bucket: MachineVisionCollectionBucketName,
       Key: folderKey,
       Body: ''
     }).promise();
 
-    // Save analysis state in DynamoDB
-    const analysisItem = {
-      userPhoneNumber,
-      status: 'analyzing',
-      totalImages: 0, // Will be updated as we scan
-      analyzedImages: analyzedImages.length,
-      startTime: Date.now(),
-      lastUpdated: Date.now()
+    // Generate a unique analysisId
+    const analysisId = Date.now().toString();
+
+    const params = {
+      TableName: 'DeviceAnalysis',
+      Item: AWS.DynamoDB.Converter.marshall({
+        userPhoneNumber: userPhoneNumber.toString(),
+        analysisId: analysisId,
+        status: 'analyzing',
+        totalImages: 0,
+        analyzedImages: analyzedImages.length,
+        startTime: Date.now(),
+        lastUpdated: Date.now()
+      })
     };
 
-    await dynamoDB.putItem({
-      TableName: 'DeviceAnalysis',
-      Item: analysisItem
-    }).promise();
+    await dynamoDB.putItem(params).promise();
 
-    res.json({ success: true });
+    res.json({ success: true, analysisId });
   } catch (error) {
     console.error('Error starting analysis:', error);
     res.status(500).json({ error: error.message });
@@ -14152,34 +14153,34 @@ app.post('/startDeviceAnalysis', async (req, res) => {
   }
 });
 
-app.put('/updateAnalysisStatus/:userPhoneNumber', async (req, res) => {
-  const { userPhoneNumber } = req.params;
+app.put('/updateAnalysisStatus/:userPhoneNumber/:analysisId', async (req, res) => {
+  const { userPhoneNumber, analysisId } = req.params;
   const { status, analyzedImages } = req.body;
 
   try {
     const params = {
       TableName: 'DeviceAnalysis',
-      Key: {
-        userPhoneNumber: userPhoneNumber
-      },
+      Key: AWS.DynamoDB.Converter.marshall({
+        userPhoneNumber: userPhoneNumber.toString(),
+        analysisId: analysisId
+      }),
       UpdateExpression: 'SET #status = :status, analyzedImages = :analyzedImages, lastUpdated = :timestamp',
       ExpressionAttributeNames: {
         '#status': 'status'
       },
-      ExpressionAttributeValues: {
+      ExpressionAttributeValues: AWS.DynamoDB.Converter.marshall({
         ':status': status,
         ':analyzedImages': analyzedImages,
         ':timestamp': Date.now()
-      },
-      ReturnValues: 'ALL_NEW'
+      })
     };
 
-    const result = await dynamoDB.update(params).promise();
+    const result = await dynamoDB.updateItem(params).promise();
 
     res.status(200).json({
       success: true,
       message: 'Analysis status updated successfully',
-      analysis: result.Attributes
+      analysis: AWS.DynamoDB.Converter.unmarshall(result.Attributes)
     });
   } catch (error) {
     console.error('Error updating analysis status:', error);
@@ -14240,28 +14241,43 @@ app.get('/getAnalysisProgress/:userPhoneNumber', async (req, res) => {
   const { userPhoneNumber } = req.params;
 
   try {
+    // Since we're using both partition and sort key, we should use query instead of getItem
     const params = {
       TableName: 'DeviceAnalysis',
-      Key: {
-        "userPhoneNumber": { S: userPhoneNumber }
-      }
+      KeyConditionExpression: 'userPhoneNumber = :phone',
+      ExpressionAttributeValues: {
+        ':phone': { S: userPhoneNumber.toString() }
+      },
+      // Get the most recent analysis (you might want to limit or order by timestamp)
+      Limit: 1
     };
 
-    const result = await dynamoDB.getItem(params).promise();
+    console.log('DynamoDB Params:', JSON.stringify(params, null, 2));
+
+    const result = await dynamoDB.query(params).promise();
     
-    if (!result.Item) {
+    if (!result.Items || result.Items.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'No analysis found for this user'
       });
     }
 
+    const unmarshalledItem = AWS.DynamoDB.Converter.unmarshall(result.Items[0]);
+
     res.status(200).json({
       success: true,
-      analysis: result.Item
+      analysis: unmarshalledItem
     });
   } catch (error) {
     console.error('Error fetching analysis progress:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      requestId: error.requestId,
+      statusCode: error.statusCode,
+      phoneNumber: userPhoneNumber
+    });
     res.status(500).json({ error: error.message });
   }
 });
