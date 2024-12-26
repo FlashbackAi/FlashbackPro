@@ -13715,7 +13715,7 @@ app.post('/registerDevice', async (req, res) => {
     }).promise();
 
     // Store the endpoint ARN in DynamoDB
-    await dynamoDB.put({
+    await dynamoDB.putItem({
       TableName: 'UserDevices',
       Item: {
         user_id: userId,
@@ -14143,7 +14143,7 @@ app.post('/startDeviceAnalysis', async (req, res) => {
       }
     };
 
-    await dynamoDB.put(params).promise();
+    await dynamoDB.putItem(params).promise();
 
     res.json({ success: true });
   } catch (error) {
@@ -14247,7 +14247,7 @@ app.get('/getAnalysisProgress/:userPhoneNumber', async (req, res) => {
       }
     };
 
-    const result = await dynamoDB.get(params).promise();
+    const result = await dynamoDB.getItem(params).promise();
     
     if (!result.Item) {
       return res.status(404).json({
@@ -14308,7 +14308,7 @@ app.post('/checkNewImages', async (req, res) => {
       }
     };
 
-    const result = await dynamoDB.get(params).promise();
+    const result = await dynamoDB.getItem(params).promise();
     const currentAnalysis = result.Item;
 
     const s3Objects = await s3.listObjectsV2({
