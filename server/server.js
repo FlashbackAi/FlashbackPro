@@ -14208,9 +14208,7 @@ app.get('/getAnalysisProgress/:userPhoneNumber', async (req, res) => {
   try {
     const params = {
       TableName: 'DeviceAnalysis',
-      Key: {
-        userPhoneNumber
-      }
+      Key: { userPhoneNumber: { S: userPhoneNumber } }
     };
 
     const result = await dynamoDB.getItem(params).promise();
