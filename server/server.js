@@ -14119,6 +14119,39 @@ app.post('/startDeviceAnalysis', async (req, res) => {
 });
 
 // Update analysis status
+app.post('/startDeviceAnalysis', async (req, res) => {
+  const { userPhoneNumber, analyzedImages = [] } = req.body;
+
+  try {
+    const folderKey = `${userPhoneNumber}/`;
+    
+    await s3.putObject({
+      Bucket: MachineVisionCollectionBucketName,
+      Key: folderKey,
+      Body: ''
+    }).promise();
+
+    const params = {
+      TableName: 'DeviceAnalysis',
+      Item: {
+        userPhoneNumber: userPhoneNumber,
+        status: 'analyzing',
+        totalImages: 0,
+        analyzedImages: analyzedImages.length,
+        startTime: Date.now(),
+        lastUpdated: Date.now()
+      }
+    };
+
+    await dynamoDB.put(params).promise();
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error starting analysis:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.put('/updateAnalysisStatus/:userPhoneNumber', async (req, res) => {
   const { userPhoneNumber } = req.params;
   const { status, analyzedImages } = req.body;
@@ -14127,9 +14160,9 @@ app.put('/updateAnalysisStatus/:userPhoneNumber', async (req, res) => {
     const params = {
       TableName: 'DeviceAnalysis',
       Key: {
-        userPhoneNumber
+        userPhoneNumber: userPhoneNumber
       },
-      UpdateExpression: 'SET #status = :status, analyzedImages = :analyzedImages, updatedAt = :timestamp',
+      UpdateExpression: 'SET #status = :status, analyzedImages = :analyzedImages, lastUpdated = :timestamp',
       ExpressionAttributeNames: {
         '#status': 'status'
       },
@@ -14141,7 +14174,7 @@ app.put('/updateAnalysisStatus/:userPhoneNumber', async (req, res) => {
       ReturnValues: 'ALL_NEW'
     };
 
-    const result = await dynamoDB.updateItem(params).promise();
+    const result = await dynamoDB.update(params).promise();
 
     res.status(200).json({
       success: true,
@@ -14153,7 +14186,6 @@ app.put('/updateAnalysisStatus/:userPhoneNumber', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
 
 app.post('/uploadDeviceImages', upload.array('images'), async (req, res) => {
   const { userPhoneNumber } = req.body;
@@ -14180,16 +14212,19 @@ app.post('/uploadDeviceImages', upload.array('images'), async (req, res) => {
       });
     }
 
-    // Update analysis progress
-    await dynamoDB.updateItem({
+    const params = {
       TableName: 'DeviceAnalysis',
-      Key: { userPhoneNumber: formattedPhoneNumber },
+      Key: {
+        userPhoneNumber: formattedPhoneNumber
+      },
       UpdateExpression: 'SET analyzedImages = analyzedImages + :inc, lastUpdated = :now',
       ExpressionAttributeValues: {
         ':inc': files.length,
         ':now': Date.now()
       }
-    }).promise();
+    };
+
+    await dynamoDB.update(params).promise();
 
     res.json({ 
       success: true, 
@@ -14201,17 +14236,18 @@ app.post('/uploadDeviceImages', upload.array('images'), async (req, res) => {
   }
 });
 
-
 app.get('/getAnalysisProgress/:userPhoneNumber', async (req, res) => {
   const { userPhoneNumber } = req.params;
 
   try {
     const params = {
       TableName: 'DeviceAnalysis',
-      Key: { userPhoneNumber: { S: userPhoneNumber } }
+      Key: {
+        userPhoneNumber: userPhoneNumber
+      }
     };
 
-    const result = await dynamoDB.getItem(params).promise();
+    const result = await dynamoDB.get(params).promise();
     
     if (!result.Item) {
       return res.status(404).json({
@@ -14230,7 +14266,6 @@ app.get('/getAnalysisProgress/:userPhoneNumber', async (req, res) => {
   }
 });
 
-// Get analyzed images
 app.get('/getAnalyzedImages/:userPhoneNumber', async (req, res) => {
   const { userPhoneNumber } = req.params;
   const { lastEvaluatedKey } = req.query;
@@ -14242,7 +14277,7 @@ app.get('/getAnalyzedImages/:userPhoneNumber', async (req, res) => {
       ExpressionAttributeValues: {
         ':phone': userPhoneNumber
       },
-      Limit: 20 // Paginate results
+      Limit: 20
     };
 
     if (lastEvaluatedKey) {
@@ -14262,26 +14297,25 @@ app.get('/getAnalyzedImages/:userPhoneNumber', async (req, res) => {
   }
 });
 
-
 app.post('/checkNewImages', async (req, res) => {
   const { userPhoneNumber, lastAnalysisTimestamp } = req.body;
 
   try {
-    // Query DynamoDB for the last analyzed image timestamp
-    const result = await dynamoDB.getItem({
+    const params = {
       TableName: 'DeviceAnalysis',
-      Key: { userPhoneNumber }
-    }).promise();
+      Key: {
+        userPhoneNumber: userPhoneNumber
+      }
+    };
 
+    const result = await dynamoDB.get(params).promise();
     const currentAnalysis = result.Item;
 
-    // Query S3 for any new images
     const s3Objects = await s3.listObjectsV2({
       Bucket: MachineVisionCollectionBucketName,
       Prefix: `${userPhoneNumber}/`
     }).promise();
 
-    // Check if there are any new images based on timestamp
     const hasNewImages = s3Objects.Contents.some(obj => 
       new Date(obj.LastModified).getTime() > lastAnalysisTimestamp
     );
@@ -14302,7 +14336,6 @@ app.post('/processNewImages', async (req, res) => {
   const images = JSON.parse(req.body.images);
 
   try {
-    // Process and upload each new image
     for (const image of images) {
       const s3Key = `${userPhoneNumber}/${image.fileName}`;
       
@@ -14313,16 +14346,19 @@ app.post('/processNewImages', async (req, res) => {
         ContentType: image.type
       }).promise();
 
-      // Update analysis progress in DynamoDB
-      await dynamoDB.updateItem({
+      const params = {
         TableName: 'DeviceAnalysis',
-        Key: { userPhoneNumber },
+        Key: {
+          userPhoneNumber: userPhoneNumber
+        },
         UpdateExpression: 'SET analyzedImages = analyzedImages + :inc, lastUpdated = :now',
         ExpressionAttributeValues: {
           ':inc': 1,
           ':now': Date.now()
         }
-      }).promise();
+      };
+
+      await dynamoDB.update(params).promise();
     }
 
     res.json({ success: true });
