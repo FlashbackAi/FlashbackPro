@@ -124,7 +124,8 @@ const userBucketName='flashbackuserthumbnails';
 const indexBucketName = 'flashbackusercollection';
 const thumbnailBucketName = 'flashbackimagesthumbnail';
 const imagesBucketName = 'flashbackusercollection';
-const flashbacksBucketname = 'flashbackuserflashbacks'
+const flashbacksBucketname = 'flashbackuserflashbacks';
+const MachineVisionCollectionBucketName = 'machinevisionuseruploadcollection';
 // const indexBucketName = 'devtestdnd';
 // const imagesBucketName = 'devtestdnd';
 const portfolioBucketName = 'flashbackportfoliouploads';
@@ -14079,6 +14080,260 @@ app.delete('/messageReaction', async (req, res) => {
     res.status(500).send({ success: false, error: error.message });
   }
 });
+
+
+app.post('/startDeviceAnalysis', async (req, res) => {
+  const { userPhoneNumber, analyzedImages = [] } = req.body;
+
+  try {
+    // Create folder in S3 if it doesn't exist
+    // Note: userPhoneNumber already has '+' removed
+    const folderKey = `${userPhoneNumber}/`;
+    
+    await s3.putObject({
+      Bucket: MachineVisionCollectionBucketName,
+      Key: folderKey,
+      Body: ''
+    }).promise();
+
+    // Save analysis state in DynamoDB
+    const analysisItem = {
+      userPhoneNumber,
+      status: 'analyzing',
+      totalImages: 0, // Will be updated as we scan
+      analyzedImages: analyzedImages.length,
+      startTime: Date.now(),
+      lastUpdated: Date.now()
+    };
+
+    await dynamoDB.putItem({
+      TableName: 'DeviceAnalysis',
+      Item: analysisItem
+    }).promise();
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error starting analysis:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update analysis status
+app.put('/updateAnalysisStatus/:userPhoneNumber', async (req, res) => {
+  const { userPhoneNumber } = req.params;
+  const { status, analyzedImages } = req.body;
+
+  try {
+    const params = {
+      TableName: 'DeviceAnalysis',
+      Key: {
+        userPhoneNumber
+      },
+      UpdateExpression: 'SET #status = :status, analyzedImages = :analyzedImages, updatedAt = :timestamp',
+      ExpressionAttributeNames: {
+        '#status': 'status'
+      },
+      ExpressionAttributeValues: {
+        ':status': status,
+        ':analyzedImages': analyzedImages,
+        ':timestamp': Date.now()
+      },
+      ReturnValues: 'ALL_NEW'
+    };
+
+    const result = await dynamoDB.updateItem(params).promise();
+
+    res.status(200).json({
+      success: true,
+      message: 'Analysis status updated successfully',
+      analysis: result.Attributes
+    });
+  } catch (error) {
+    console.error('Error updating analysis status:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+app.post('/uploadDeviceImages', upload.array('images'), async (req, res) => {
+  const { userPhoneNumber } = req.body;
+  const files = req.files;
+
+  try {
+    const formattedPhoneNumber = userPhoneNumber.replace('+', '');
+    const uploadResults = [];
+
+    for (const file of files) {
+      const fileName = `${file.originalname}`;
+      const s3Key = `${formattedPhoneNumber}/${fileName}`;
+
+      await s3.putObject({
+        Bucket: MachineVisionCollectionBucketName,
+        Key: s3Key,
+        Body: file.buffer,
+        ContentType: file.mimetype
+      }).promise();
+
+      uploadResults.push({
+        originalName: file.originalname,
+        s3Key: s3Key
+      });
+    }
+
+    // Update analysis progress
+    await dynamoDB.updateItem({
+      TableName: 'DeviceAnalysis',
+      Key: { userPhoneNumber: formattedPhoneNumber },
+      UpdateExpression: 'SET analyzedImages = analyzedImages + :inc, lastUpdated = :now',
+      ExpressionAttributeValues: {
+        ':inc': files.length,
+        ':now': Date.now()
+      }
+    }).promise();
+
+    res.json({ 
+      success: true, 
+      uploadedFiles: uploadResults 
+    });
+  } catch (error) {
+    console.error('Error uploading images:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+app.get('/getAnalysisProgress/:userPhoneNumber', async (req, res) => {
+  const { userPhoneNumber } = req.params;
+
+  try {
+    const params = {
+      TableName: 'DeviceAnalysis',
+      Key: {
+        userPhoneNumber
+      }
+    };
+
+    const result = await dynamoDB.getItem(params).promise();
+    
+    if (!result.Item) {
+      return res.status(404).json({
+        success: false,
+        message: 'No analysis found for this user'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      analysis: result.Item
+    });
+  } catch (error) {
+    console.error('Error fetching analysis progress:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get analyzed images
+app.get('/getAnalyzedImages/:userPhoneNumber', async (req, res) => {
+  const { userPhoneNumber } = req.params;
+  const { lastEvaluatedKey } = req.query;
+
+  try {
+    const params = {
+      TableName: 'DeviceImages',
+      KeyConditionExpression: 'userPhoneNumber = :phone',
+      ExpressionAttributeValues: {
+        ':phone': userPhoneNumber
+      },
+      Limit: 20 // Paginate results
+    };
+
+    if (lastEvaluatedKey) {
+      params.ExclusiveStartKey = JSON.parse(lastEvaluatedKey);
+    }
+
+    const result = await dynamoDB.query(params).promise();
+
+    res.status(200).json({
+      success: true,
+      images: result.Items,
+      lastEvaluatedKey: result.LastEvaluatedKey
+    });
+  } catch (error) {
+    console.error('Error fetching analyzed images:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+app.post('/checkNewImages', async (req, res) => {
+  const { userPhoneNumber, lastAnalysisTimestamp } = req.body;
+
+  try {
+    // Query DynamoDB for the last analyzed image timestamp
+    const result = await dynamoDB.getItem({
+      TableName: 'DeviceAnalysis',
+      Key: { userPhoneNumber }
+    }).promise();
+
+    const currentAnalysis = result.Item;
+
+    // Query S3 for any new images
+    const s3Objects = await s3.listObjectsV2({
+      Bucket: MachineVisionCollectionBucketName,
+      Prefix: `${userPhoneNumber}/`
+    }).promise();
+
+    // Check if there are any new images based on timestamp
+    const hasNewImages = s3Objects.Contents.some(obj => 
+      new Date(obj.LastModified).getTime() > lastAnalysisTimestamp
+    );
+
+    res.json({ 
+      success: true, 
+      hasNewImages,
+      currentAnalysis 
+    });
+  } catch (error) {
+    console.error('Error checking new images:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/processNewImages', async (req, res) => {
+  const { userPhoneNumber } = req.body;
+  const images = JSON.parse(req.body.images);
+
+  try {
+    // Process and upload each new image
+    for (const image of images) {
+      const s3Key = `${userPhoneNumber}/${image.fileName}`;
+      
+      await s3.putObject({
+        Bucket: MachineVisionCollectionBucketName,
+        Key: s3Key,
+        Body: image.data,
+        ContentType: image.type
+      }).promise();
+
+      // Update analysis progress in DynamoDB
+      await dynamoDB.updateItem({
+        TableName: 'DeviceAnalysis',
+        Key: { userPhoneNumber },
+        UpdateExpression: 'SET analyzedImages = analyzedImages + :inc, lastUpdated = :now',
+        ExpressionAttributeValues: {
+          ':inc': 1,
+          ':now': Date.now()
+        }
+      }).promise();
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error processing new images:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 
 })
