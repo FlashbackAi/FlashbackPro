@@ -14243,7 +14243,7 @@ app.get('/getAnalysisProgress/:userPhoneNumber', async (req, res) => {
     const params = {
       TableName: 'DeviceAnalysis',
       Key: {
-        userPhoneNumber: userPhoneNumber
+        "userPhoneNumber": { S: userPhoneNumber }
       }
     };
 
