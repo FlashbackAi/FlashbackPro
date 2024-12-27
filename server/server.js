@@ -14083,65 +14083,31 @@ app.delete('/messageReaction', async (req, res) => {
 
 
 app.post('/startDeviceAnalysis', async (req, res) => {
-  const { userPhoneNumber, analyzedImages = [] } = req.body;
+  const { userPhoneNumber, totalImages = 0 } = req.body;
 
   try {
+    // Format phone number for S3 (remove +)
+    const formattedPhoneNumber = userPhoneNumber.replace('+', '');
+    
     // Create folder in S3
-    const folderKey = `${userPhoneNumber}/`;
+    const folderKey = `${formattedPhoneNumber}/`;
     await s3.putObject({
       Bucket: MachineVisionCollectionBucketName,
       Key: folderKey,
       Body: ''
     }).promise();
 
-    // Generate a unique analysisId
-    const analysisId = Date.now().toString();
-
+    // Create analysis record
     const params = {
       TableName: 'DeviceAnalysis',
       Item: AWS.DynamoDB.Converter.marshall({
-        userPhoneNumber: userPhoneNumber.toString(),
-        analysisId: analysisId,
+        userPhoneNumber: userPhoneNumber,
         status: 'analyzing',
-        totalImages: 0,
-        analyzedImages: analyzedImages.length,
+        totalImages: totalImages,
+        analyzedImages: 0,
         startTime: Date.now(),
         lastUpdated: Date.now()
       })
-    };
-
-    await dynamoDB.putItem(params).promise();
-
-    res.json({ success: true, analysisId });
-  } catch (error) {
-    console.error('Error starting analysis:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Update analysis status
-app.post('/startDeviceAnalysis', async (req, res) => {
-  const { userPhoneNumber, analyzedImages = [] } = req.body;
-
-  try {
-    const folderKey = `${userPhoneNumber}/`;
-    
-    await s3.putObject({
-      Bucket: MachineVisionCollectionBucketName,
-      Key: folderKey,
-      Body: ''
-    }).promise();
-
-    const params = {
-      TableName: 'DeviceAnalysis',
-      Item: {
-        userPhoneNumber: userPhoneNumber,
-        status: 'analyzing',
-        totalImages: 0,
-        analyzedImages: analyzedImages.length,
-        startTime: Date.now(),
-        lastUpdated: Date.now()
-      }
     };
 
     await dynamoDB.putItem(params).promise();
@@ -14197,14 +14163,17 @@ app.post('/uploadDeviceImages', upload.array('images'), async (req, res) => {
     const uploadResults = [];
 
     for (const file of files) {
-      const fileName = `${file.originalname}`;
-      const s3Key = `${formattedPhoneNumber}/${fileName}`;
+      const s3Key = `${formattedPhoneNumber}/${file.originalname}`;
 
       await s3.putObject({
         Bucket: MachineVisionCollectionBucketName,
         Key: s3Key,
         Body: file.buffer,
-        ContentType: file.mimetype
+        ContentType: file.mimetype,
+        Metadata: {
+          originalName: file.originalname,
+          uploadTime: new Date().toISOString()
+        }
       }).promise();
 
       uploadResults.push({
@@ -14213,16 +14182,17 @@ app.post('/uploadDeviceImages', upload.array('images'), async (req, res) => {
       });
     }
 
+    // Update analysis progress
     const params = {
       TableName: 'DeviceAnalysis',
-      Key: {
-        userPhoneNumber: formattedPhoneNumber
-      },
+      Key: AWS.DynamoDB.Converter.marshall({
+        userPhoneNumber: userPhoneNumber
+      }),
       UpdateExpression: 'SET analyzedImages = analyzedImages + :inc, lastUpdated = :now',
-      ExpressionAttributeValues: {
+      ExpressionAttributeValues: AWS.DynamoDB.Converter.marshall({
         ':inc': files.length,
         ':now': Date.now()
-      }
+      })
     };
 
     await dynamoDB.update(params).promise();
@@ -14237,47 +14207,44 @@ app.post('/uploadDeviceImages', upload.array('images'), async (req, res) => {
   }
 });
 
+// Add this to your backend API endpoints
 app.get('/getAnalysisProgress/:userPhoneNumber', async (req, res) => {
   const { userPhoneNumber } = req.params;
 
   try {
-    // Since we're using both partition and sort key, we should use query instead of getItem
+    // Get analysis record from DynamoDB
     const params = {
       TableName: 'DeviceAnalysis',
-      KeyConditionExpression: 'userPhoneNumber = :phone',
-      ExpressionAttributeValues: {
-        ':phone': { S: userPhoneNumber.toString() }
-      },
-      // Get the most recent analysis (you might want to limit or order by timestamp)
-      Limit: 1
+      Key: AWS.DynamoDB.Converter.marshall({
+        userPhoneNumber: userPhoneNumber
+      })
     };
 
-    console.log('DynamoDB Params:', JSON.stringify(params, null, 2));
-
-    const result = await dynamoDB.query(params).promise();
+    const result = await dynamoDB.getItem(params).promise();
     
-    if (!result.Items || result.Items.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'No analysis found for this user'
+    if (!result.Item) {
+      return res.json({
+        success: true,
+        progress: {
+          totalImages: 0,
+          analyzedImages: 0,
+          status: 'idle'
+        }
       });
     }
 
-    const unmarshalledItem = AWS.DynamoDB.Converter.unmarshall(result.Items[0]);
+    const analysis = AWS.DynamoDB.Converter.unmarshall(result.Item);
 
-    res.status(200).json({
+    res.json({
       success: true,
-      analysis: unmarshalledItem
+      progress: {
+        totalImages: analysis.totalImages || 0,
+        analyzedImages: analysis.analyzedImages || 0,
+        status: analysis.status || 'idle'
+      }
     });
   } catch (error) {
     console.error('Error fetching analysis progress:', error);
-    console.error('Error details:', {
-      message: error.message,
-      code: error.code,
-      requestId: error.requestId,
-      statusCode: error.statusCode,
-      phoneNumber: userPhoneNumber
-    });
     res.status(500).json({ error: error.message });
   }
 });
