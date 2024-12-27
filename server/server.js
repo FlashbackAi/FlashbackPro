@@ -14241,7 +14241,7 @@ app.get('/getAnalysisProgress/:userPhoneNumber', async (req, res) => {
   const { userPhoneNumber } = req.params;
 
   try {
-    // Ensure userPhoneNumber starts with + for DynamoDB
+    // Ensure userPhoneNumber starts with +
     const normalizedPhoneNumber = userPhoneNumber.startsWith('+') ? 
       userPhoneNumber : `+${userPhoneNumber}`;
 
@@ -14249,9 +14249,9 @@ app.get('/getAnalysisProgress/:userPhoneNumber', async (req, res) => {
       TableName: 'DeviceAnalysis',
       KeyConditionExpression: 'userPhoneNumber = :phone',
       ExpressionAttributeValues: {
-        ':phone': normalizedPhoneNumber  // Use normalized (with +)
+        ':phone': { S: normalizedPhoneNumber }  // Specify the type as String
       },
-      ScanIndexForward: false,  // Get the most recent first
+      ScanIndexForward: false,
       Limit: 1
     };
 
@@ -14268,7 +14268,7 @@ app.get('/getAnalysisProgress/:userPhoneNumber', async (req, res) => {
       });
     }
 
-    const analysis = result.Items[0];
+    const analysis = AWS.DynamoDB.Converter.unmarshall(result.Items[0]);
     
     res.json({
       success: true,
