@@ -14164,7 +14164,7 @@ app.put('/updateAnalysisStatus/:userPhoneNumber/:analysisId', async (req, res) =
 });
 
 app.post('/uploadDeviceImages', upload.array('images'), async (req, res) => {
-  const { userPhoneNumber } = req.body;
+  const { userPhoneNumber, analysisId } = req.body;
   const files = req.files;
 
   try {
@@ -14196,27 +14196,27 @@ app.post('/uploadDeviceImages', upload.array('images'), async (req, res) => {
     }
 
     // Get latest analysis record
-    const queryParams = {
-      TableName: 'DeviceAnalysis',
-      KeyConditionExpression: 'userPhoneNumber = :phone',
-      ExpressionAttributeValues: AWS.DynamoDB.Converter.marshall({
-        ':phone': normalizedPhoneNumber
-      }),
-      ScanIndexForward: false,
-      Limit: 1
-    };
+    // const queryParams = {
+    //   TableName: 'DeviceAnalysis',
+    //   KeyConditionExpression: 'userPhoneNumber = :phone',
+    //   ExpressionAttributeValues: AWS.DynamoDB.Converter.marshall({
+    //     ':phone': userPhoneNumber
+    //   }),
+    //   ScanIndexForward: false,
+    //   Limit: 1
+    // };
 
-    const result = await dynamoDB.query(queryParams).promise();
+    // const result = await dynamoDB.query(queryParams).promise();
     
-    if (result.Items && result.Items.length > 0) {
-      const analysis = AWS.DynamoDB.Converter.unmarshall(result.Items[0]);
+    // if (result.Items && result.Items.length > 0) {
+    //   const analysis = AWS.DynamoDB.Converter.unmarshall(result.Items[0]);
 
       // Update analysis progress
       const updateParams = {
         TableName: 'DeviceAnalysis',
         Key: AWS.DynamoDB.Converter.marshall({
           userPhoneNumber: normalizedPhoneNumber,
-          analysisId: analysis.analysisId
+          analysisId: analysisId
         }),
         UpdateExpression: 'SET analyzedImages = analyzedImages + :inc, lastUpdated = :now',
         ExpressionAttributeValues: AWS.DynamoDB.Converter.marshall({
@@ -14226,7 +14226,6 @@ app.post('/uploadDeviceImages', upload.array('images'), async (req, res) => {
       };
 
       await dynamoDB.updateItem(updateParams).promise();
-    }
 
     res.json({ 
       success: true, 
