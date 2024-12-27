@@ -12119,6 +12119,62 @@ app.get('/getMemoryReaction/:flashbackId/:imageName/:userPhoneNumber', async (re
   }
 });
 
+
+
+app.get('/getDeviceMemories/:userPhoneNumber', async (req, res) => {
+  try {
+    const { userPhoneNumber } = req.params;
+
+    // Input validation
+    if (!userPhoneNumber) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required parameter: userPhoneNumber'
+      });
+    }
+
+    // Query params for machinevision_indexed_data table
+    const params = {
+      TableName: 'machinevision_indexed_data',
+      IndexName: 'folder_name-index',
+      KeyConditionExpression: 'folder_name = :phoneNumber',
+      ExpressionAttributeValues: {
+        ':phoneNumber': userPhoneNumber
+      },
+      ProjectionExpression: 'image_id, user_id, bounding_box, confidence, faces_in_image, face_id, image_name, indexed_date',
+      ScanIndexForward: false // Most recent first
+    };
+
+    const result = await docClient.query(params).promise();
+
+    // Process and format the results
+    const memories = result.Items.map(item => ({
+      image_id: item.image_id,
+      user_id: item.user_id,
+      bounding_box: item.bounding_box,
+      confidence: item.confidence,
+      faces_in_image: item.faces_in_image,
+      face_id: item.face_id,
+      image_name: item.image_name,
+      indexed_date: item.indexed_date
+    }));
+
+    // Return success response
+    res.json({
+      success: true,
+      count: memories.length,
+      memories
+    });
+
+  } catch (error) {
+    console.error('Error fetching device memories:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch device memories'
+    });
+  }
+});
+
 app.post('/hideMemory', async (req, res) => {
   try {
     const { flashbackId, userId, userPhoneNumber, imageName } = req.body;
