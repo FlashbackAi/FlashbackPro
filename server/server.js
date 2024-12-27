@@ -14104,20 +14104,21 @@ app.post('/startDeviceAnalysis', async (req, res) => {
     // Generate unique analysisId
     const analysisId = Date.now().toString();
 
-    // Create analysis record in DynamoDB
+    // Create analysis record in DynamoDB using the AWS.DynamoDB.Converter
     const params = {
       TableName: 'DeviceAnalysis',
-      Item: {
-        userPhoneNumber: normalizedPhoneNumber,  // Store with + in DynamoDB
+      Item: AWS.DynamoDB.Converter.marshall({
+        userPhoneNumber: normalizedPhoneNumber,
         analysisId: analysisId,
         status: 'analyzing',
         totalImages: totalImages,
         analyzedImages: 0,
         startTime: Date.now(),
         lastUpdated: Date.now()
-      }
+      })
     };
 
+    console.log('DynamoDB params:', JSON.stringify(params, null, 2)); // Debug log
     await dynamoDB.putItem(params).promise();
 
     res.json({ success: true, analysisId });
