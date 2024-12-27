@@ -14086,8 +14086,12 @@ app.post('/startDeviceAnalysis', async (req, res) => {
   const { userPhoneNumber, totalImages = 0 } = req.body;
 
   try {
-    // Format phone number for S3 (remove +)
-    const formattedPhoneNumber = userPhoneNumber.replace('+', '');
+    // Ensure userPhoneNumber starts with +
+    const normalizedPhoneNumber = userPhoneNumber.startsWith('+') ? 
+      userPhoneNumber : `+${userPhoneNumber}`;
+    
+    // For S3, remove the +
+    const formattedPhoneNumber = normalizedPhoneNumber.replace('+', '');
     
     // Create folder in S3
     const folderKey = `${formattedPhoneNumber}/`;
@@ -14097,22 +14101,26 @@ app.post('/startDeviceAnalysis', async (req, res) => {
       Body: ''
     }).promise();
 
-    // Create analysis record
+    // Generate unique analysisId
+    const analysisId = Date.now().toString();
+
+    // Create analysis record in DynamoDB
     const params = {
       TableName: 'DeviceAnalysis',
-      Item: AWS.DynamoDB.Converter.marshall({
-        userPhoneNumber: userPhoneNumber,
+      Item: {
+        userPhoneNumber: normalizedPhoneNumber,  // Store with + in DynamoDB
+        analysisId: analysisId,
         status: 'analyzing',
         totalImages: totalImages,
         analyzedImages: 0,
         startTime: Date.now(),
         lastUpdated: Date.now()
-      })
+      }
     };
 
     await dynamoDB.putItem(params).promise();
 
-    res.json({ success: true });
+    res.json({ success: true, analysisId });
   } catch (error) {
     console.error('Error starting analysis:', error);
     res.status(500).json({ error: error.message });
@@ -14159,7 +14167,12 @@ app.post('/uploadDeviceImages', upload.array('images'), async (req, res) => {
   const files = req.files;
 
   try {
-    const formattedPhoneNumber = userPhoneNumber.replace('+', '');
+    // Ensure userPhoneNumber starts with + for DynamoDB
+    const normalizedPhoneNumber = userPhoneNumber.startsWith('+') ? 
+      userPhoneNumber : `+${userPhoneNumber}`;
+    
+    // For S3, remove the +
+    const formattedPhoneNumber = normalizedPhoneNumber.replace('+', '');
     const uploadResults = [];
 
     for (const file of files) {
@@ -14182,20 +14195,36 @@ app.post('/uploadDeviceImages', upload.array('images'), async (req, res) => {
       });
     }
 
-    // Update analysis progress
-    const params = {
+    // Get the latest analysis for this user
+    const queryParams = {
       TableName: 'DeviceAnalysis',
-      Key: AWS.DynamoDB.Converter.marshall({
-        userPhoneNumber: userPhoneNumber
-      }),
-      UpdateExpression: 'SET analyzedImages = analyzedImages + :inc, lastUpdated = :now',
-      ExpressionAttributeValues: AWS.DynamoDB.Converter.marshall({
-        ':inc': files.length,
-        ':now': Date.now()
-      })
+      KeyConditionExpression: 'userPhoneNumber = :phone',
+      ExpressionAttributeValues: {
+        ':phone': normalizedPhoneNumber  // Use normalized (with +) for DynamoDB
+      },
+      ScanIndexForward: false,  // Get the most recent first
+      Limit: 1
     };
 
-    await dynamoDB.update(params).promise();
+    const analysis = await dynamoDB.query(queryParams).promise();
+    
+    if (analysis.Items && analysis.Items.length > 0) {
+      // Update the analysis progress
+      const updateParams = {
+        TableName: 'DeviceAnalysis',
+        Key: {
+          userPhoneNumber: normalizedPhoneNumber,  // Use normalized (with +)
+          analysisId: analysis.Items[0].analysisId
+        },
+        UpdateExpression: 'SET analyzedImages = analyzedImages + :inc, lastUpdated = :now',
+        ExpressionAttributeValues: {
+          ':inc': files.length,
+          ':now': Date.now()
+        }
+      };
+
+      await dynamoDB.updateItem(updateParams).promise();
+    }
 
     res.json({ 
       success: true, 
@@ -14212,17 +14241,23 @@ app.get('/getAnalysisProgress/:userPhoneNumber', async (req, res) => {
   const { userPhoneNumber } = req.params;
 
   try {
-    // Get analysis record from DynamoDB
+    // Ensure userPhoneNumber starts with + for DynamoDB
+    const normalizedPhoneNumber = userPhoneNumber.startsWith('+') ? 
+      userPhoneNumber : `+${userPhoneNumber}`;
+
     const params = {
       TableName: 'DeviceAnalysis',
-      Key: AWS.DynamoDB.Converter.marshall({
-        userPhoneNumber: userPhoneNumber
-      })
+      KeyConditionExpression: 'userPhoneNumber = :phone',
+      ExpressionAttributeValues: {
+        ':phone': normalizedPhoneNumber  // Use normalized (with +)
+      },
+      ScanIndexForward: false,  // Get the most recent first
+      Limit: 1
     };
 
-    const result = await dynamoDB.getItem(params).promise();
+    const result = await dynamoDB.query(params).promise();
     
-    if (!result.Item) {
+    if (!result.Items || result.Items.length === 0) {
       return res.json({
         success: true,
         progress: {
@@ -14233,14 +14268,14 @@ app.get('/getAnalysisProgress/:userPhoneNumber', async (req, res) => {
       });
     }
 
-    const analysis = AWS.DynamoDB.Converter.unmarshall(result.Item);
-
+    const analysis = result.Items[0];
+    
     res.json({
       success: true,
       progress: {
-        totalImages: analysis.totalImages || 0,
-        analyzedImages: analysis.analyzedImages || 0,
-        status: analysis.status || 'idle'
+        totalImages: analysis.totalImages,
+        analyzedImages: analysis.analyzedImages,
+        status: analysis.status
       }
     });
   } catch (error) {
