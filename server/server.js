@@ -14142,25 +14142,46 @@ app.post('/startDeviceAnalysis', async (req, res) => {
   const { userPhoneNumber, totalImages = 0 } = req.body;
 
   try {
-    // Ensure userPhoneNumber starts with +
     const normalizedPhoneNumber = userPhoneNumber.startsWith('+') ? 
       userPhoneNumber : `+${userPhoneNumber}`;
-    
-    // For S3, remove the +
     const formattedPhoneNumber = normalizedPhoneNumber.replace('+', '');
+
+    // Check for existing analysis in progress
+    const queryParams = {
+      TableName: 'DeviceAnalysis',
+      KeyConditionExpression: 'userPhoneNumber = :phone',
+      FilterExpression: '#status = :analyzing',
+      ExpressionAttributeNames: {
+        '#status': 'status'
+      },
+      ExpressionAttributeValues: AWS.DynamoDB.Converter.marshall({
+        ':phone': normalizedPhoneNumber,
+        ':analyzing': 'analyzing'
+      }),
+      ScanIndexForward: false,
+      Limit: 1
+    };
+
+    const existingAnalysis = await dynamoDB.query(queryParams).promise();
     
-    // Create folder in S3
-    const folderKey = `${formattedPhoneNumber}/`;
-    await s3.putObject({
-      Bucket: MachineVisionCollectionBucketName,
-      Key: folderKey,
-      Body: ''
-    }).promise();
+    if (existingAnalysis.Items && existingAnalysis.Items.length > 0) {
+      const analysis = AWS.DynamoDB.Converter.unmarshall(existingAnalysis.Items[0]);
+      return res.json({ 
+        success: true, 
+        analysisId: analysis.analysisId,
+        resumed: true 
+      });
+    }
 
-    // Generate unique analysisId
+    // Create new analysis if none exists
+    // const folderKey = `${formattedPhoneNumber}/`;
+    // await s3.putObject({
+    //   Bucket: MachineVisionCollectionBucketName,
+    //   Key: folderKey,
+    //   Body: ''
+    // }).promise();
+
     const analysisId = Date.now().toString();
-
-    // Create analysis record in DynamoDB using the AWS.DynamoDB.Converter
     const params = {
       TableName: 'DeviceAnalysis',
       Item: AWS.DynamoDB.Converter.marshall({
@@ -14174,19 +14195,17 @@ app.post('/startDeviceAnalysis', async (req, res) => {
       })
     };
 
-    console.log('DynamoDB params:', JSON.stringify(params, null, 2)); // Debug log
     await dynamoDB.putItem(params).promise();
-
-    res.json({ success: true, analysisId });
+    res.json({ success: true, analysisId, resumed: false });
   } catch (error) {
-    console.error('Error starting analysis:', error);
+    console.error('Error starting/resuming analysis:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
 app.put('/updateAnalysisStatus/:userPhoneNumber/:analysisId', async (req, res) => {
   const { userPhoneNumber, analysisId } = req.params;
-  const { status, analyzedImages } = req.body;
+  const { status, totalImages, analyzedImages } = req.body;
 
   try {
     const params = {
@@ -14195,26 +14214,22 @@ app.put('/updateAnalysisStatus/:userPhoneNumber/:analysisId', async (req, res) =
         userPhoneNumber: userPhoneNumber.toString(),
         analysisId: analysisId
       }),
-      UpdateExpression: 'SET #status = :status, analyzedImages = :analyzedImages, lastUpdated = :timestamp',
+      UpdateExpression: 'SET #status = :status, totalImages = :total, analyzedImages = :analyzed, lastUpdated = :timestamp',
       ExpressionAttributeNames: {
         '#status': 'status'
       },
       ExpressionAttributeValues: AWS.DynamoDB.Converter.marshall({
         ':status': status,
-        ':analyzedImages': analyzedImages,
+        ':total': totalImages,
+        ':analyzed': analyzedImages,
         ':timestamp': Date.now()
       })
     };
 
-    const result = await dynamoDB.updateItem(params).promise();
-
-    res.status(200).json({
-      success: true,
-      message: 'Analysis status updated successfully',
-      analysis: AWS.DynamoDB.Converter.unmarshall(result.Attributes)
-    });
+    await dynamoDB.updateItem(params).promise();
+    res.json({ success: true });
   } catch (error) {
-    console.error('Error updating analysis status:', error);
+    console.error('Error updating analysis:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -14341,6 +14356,39 @@ app.get('/getAnalysisProgress/:userPhoneNumber', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+
+app.get('/getCurrentAnalysis/:userPhoneNumber', async (req, res) => {
+  const { userPhoneNumber } = req.params;
+  
+  try {
+    const normalizedPhoneNumber = userPhoneNumber.startsWith('+') ? 
+      userPhoneNumber : `+${userPhoneNumber}`;
+
+    const params = {
+      TableName: 'DeviceAnalysis',
+      KeyConditionExpression: 'userPhoneNumber = :phone',
+      ExpressionAttributeValues: AWS.DynamoDB.Converter.marshall({
+        ':phone': normalizedPhoneNumber
+      }),
+      ScanIndexForward: false,
+      Limit: 1
+    };
+
+    const result = await dynamoDB.query(params).promise();
+    
+    if (result.Items && result.Items.length > 0) {
+      const analysis = AWS.DynamoDB.Converter.unmarshall(result.Items[0]);
+      res.json({ success: true, analysis });
+    } else {
+      res.json({ success: true, analysis: null });
+    }
+  } catch (error) {
+    console.error('Error fetching current analysis:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 app.get('/getAnalyzedImages/:userPhoneNumber', async (req, res) => {
   const { userPhoneNumber } = req.params;
