@@ -14214,17 +14214,26 @@ app.put('/updateAnalysisStatus/:userPhoneNumber/:analysisId', async (req, res) =
         userPhoneNumber: userPhoneNumber.toString(),
         analysisId: analysisId
       }),
-      UpdateExpression: 'SET #status = :status, totalImages = :total, analyzedImages = :analyzed, lastUpdated = :timestamp',
+      UpdateExpression: 'SET #status = :status, #analyzed = :analyzed, lastUpdated = :timestamp',
       ExpressionAttributeNames: {
-        '#status': 'status'
+        '#status': 'status',
+        '#analyzed': 'analyzedImages'
       },
       ExpressionAttributeValues: AWS.DynamoDB.Converter.marshall({
         ':status': status,
-        ':total': totalImages,
         ':analyzed': analyzedImages,
         ':timestamp': Date.now()
       })
     };
+
+    // Only include totalImages if it's provided
+    if (totalImages !== undefined) {
+      params.UpdateExpression += ', totalImages = :total';
+      params.ExpressionAttributeValues = AWS.DynamoDB.Converter.marshall({
+        ...AWS.DynamoDB.Converter.unmarshall(params.ExpressionAttributeValues),
+        ':total': totalImages
+      });
+    }
 
     await dynamoDB.updateItem(params).promise();
     res.json({ success: true });
