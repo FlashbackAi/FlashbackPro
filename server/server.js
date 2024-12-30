@@ -14633,7 +14633,7 @@ app.get('/identify-folders', async (req, res) => {
           logger.info(`Querying DynamoDB with params: ${JSON.stringify(params)}`);
 
           // Execute the query
-          const result = await dynamoDB.query(params).promise();
+          const result = await docClient.query(params).promise();
 
           logger.info(`Fetched ${result.Items.length} items from DynamoDB`);
 
@@ -14695,7 +14695,7 @@ app.post('/user-images/request', async (req, res) => {
             logger.info(`Storing request in DynamoDB: ${JSON.stringify(requestItem)}`);
 
             // Save the request in DynamoDB
-            await dynamoDB.put(requestItem).promise();
+            await docClient.put(requestItem).promise();
 
             return res.status(200).json({ message: "Request created successfully", request_id: requestId });
         } catch (err) {
@@ -14732,7 +14732,7 @@ app.post('/user-images/request', async (req, res) => {
 
             logger.info(`Updating request in DynamoDB with params: ${JSON.stringify(params)}`);
 
-            const result = await dynamoDB.update(params).promise();
+            const result = await docClient.update(params).promise();
 
             return res.status(200).json({ message: "Request updated successfully", updated_fields: result.Attributes });
         } catch (err) {
@@ -14777,10 +14777,10 @@ app.get('/user-images/request', async (req, res) => {
       };
 
       logger.info(`Querying DynamoDB for requested_by_me with params: ${JSON.stringify(requestedByMeParams)}`);
-      const requestedByMeResult = await dynamoDB.query(requestedByMeParams).promise();
+      const requestedByMeResult = await docClient.query(requestedByMeParams).promise();
 
       logger.info(`Querying DynamoDB for to_me with params: ${JSON.stringify(toMeParams)}`);
-      const toMeResult = await dynamoDB.query(toMeParams).promise();
+      const toMeResult = await docClient.query(toMeParams).promise();
 
       // Combine results
       const response = {
@@ -14828,7 +14828,7 @@ app.get('/user-images/folder', async (req, res) => {
           logger.info(`Querying DynamoDB with params: ${JSON.stringify(params)}`);
 
           // Query DynamoDB
-          const result = await dynamoDB.query(params).promise();
+          const result = await docClient.query(params).promise();
 
           logger.info(`Fetched ${result.Items.length} images for this page`);
 
@@ -14916,7 +14916,7 @@ app.post('/transfer/user-images', async (req, res) => {
                 };
 
                 logger.info(`Writing batch of ${unprocessedItems.length} items to DynamoDB (Retry ${retry + 1})`);
-                const result = await dynamoDB.batchWrite(params).promise();
+                const result = await docClient.batchWrite(params).promise();
 
                 // Check for unprocessed items
                 unprocessedItems = result.UnprocessedItems?.image_requests || [];
