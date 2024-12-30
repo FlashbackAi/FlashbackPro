@@ -11516,44 +11516,44 @@ app.get('/getPeopleFromDevice/:userPhoneNumber', async (req, res) => {
   }
 });
 
-app.post('/updateRelation', async (req, res) => {
-  const { userId, relation } = req.body;
+// app.post('/updateRelation', async (req, res) => {
+//   const { userId, relation } = req.body;
   
-  try {
-    if (!userId || !relation) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields: userId and relation'
-      });
-    }
+//   try {
+//     if (!userId || !relation) {
+//       return res.status(400).json({
+//         success: false,
+//         error: 'Missing required fields: userId and relation'
+//       });
+//     }
 
-    const updateParams = {
-      TableName: 'RekognitionUsersData',
-      Key: {
-        user_id: userId
-      },
-      UpdateExpression: 'set relation = :relation',
-      ExpressionAttributeValues: {
-        ':relation': relation
-      },
-      ReturnValues: 'ALL_NEW'
-    };
+//     const updateParams = {
+//       TableName: 'machinevision_recognition_users_data',
+//       Key: {
+//         user_id: userId
+//       },
+//       UpdateExpression: 'set relation = :relation',
+//       ExpressionAttributeValues: {
+//         ':relation': relation
+//       },
+//       ReturnValues: 'ALL_NEW'
+//     };
     
-    const result = await docClient.update(updateParams).promise();
+//     const result = await docClient.update(updateParams).promise();
     
-    res.json({
-      success: true,
-      data: result.Attributes
-    });
+//     res.json({
+//       success: true,
+//       data: result.Attributes
+//     });
     
-  } catch (error) {
-    logger.error('Error in updateRelation:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to update relation'
-    });
-  }
-});
+//   } catch (error) {
+//     logger.error('Error in updateRelation:', error);
+//     res.status(500).json({
+//       success: false,
+//       error: 'Failed to update relation'
+//     });
+//   }
+// });
 
 
 app.get('/userThumbnailsByFlashbackId/:flashbackId', async (req, res) => {
