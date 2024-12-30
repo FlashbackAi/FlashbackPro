@@ -10060,7 +10060,7 @@ async function getFaceData(userId) {
           ':userId': { S: userId },
       },
       ProjectionExpression: 'face_id, AgeRange_High, AgeRange_Low, Gender_Value, Gender_Confidence, Emotions, Quality, bounding_box, s3_url',
-      Limit: 10,
+      Limit: 15,
   };
 
   const result = await dynamoDB.query(params).promise();
@@ -10191,90 +10191,87 @@ function checkDirectoryExistence(dirPath) {
 
 
 async function processUserData(userId, worksheet) {
-    try {
+  try {
+      // Fetch face data for the given user ID
+      const faceData = await getFaceData(userId);
 
-     
+      // Check if the user has less than 7 faces
+      if (faceData.length < 7) {
+          console.warn(`User ${userId} has ${faceData.length} faces. Skipping processing.`);
+          return; // Exit the function
+      }
 
-        // Fetch face data for the given user ID
-        const faceData = await getFaceData(userId);
-
-         // Ensure the base 'faces' directory exists
+      // Ensure the base 'faces' directory exists
       const facesDir = path.join(__dirname, 'faces');
-
-      
-
-       
       const userFacesDir = path.join(facesDir, userId);
       const userExists = checkDirectoryExistence(userFacesDir);
-        for (const face of faceData) {
-            try {
-                const { face_id, emotions, bounding_box, s3_url, Quality } = face;
-                // Create a user-specific directory
-              
-              if(!userExists){
 
-              
-                // Parse and validate Quality data
-                const qualityData = Quality ? JSON.parse(Quality) : {};
-                if (qualityData.Sharpness <= 10) {
-                    console.warn(`Skipping face_id ${face_id} due to low sharpness.`);
-                    continue;
-                }
-                // Download and crop the face
-                const imageBuffer = await downloadImage(s3_url);
-                const croppedFace = await cropFaceFromImage(imageBuffer, {
-                    Top: parseFloat(bounding_box.Top.N),
-                    Left: parseFloat(bounding_box.Left.N),
-                    Width: parseFloat(bounding_box.Width.N),
-                    Height: parseFloat(bounding_box.Height.N),
-                });
-                
-                 // Create a user-specific directory
+      for (const face of faceData) {
+          try {
+              const { face_id, emotions, bounding_box, s3_url, Quality } = face;
+
+              if (!userExists) {
+                  // Parse and validate Quality data
+                  const qualityData = Quality ? JSON.parse(Quality) : {};
+                  if (qualityData.Sharpness <= 10) {
+                      console.warn(`Skipping face_id ${face_id} due to low sharpness.`);
+                      continue;
+                  }
+
+                  // Download and crop the face
+                  const imageBuffer = await downloadImage(s3_url);
+                  const croppedFace = await cropFaceFromImage(imageBuffer, {
+                      Top: parseFloat(bounding_box.Top.N),
+                      Left: parseFloat(bounding_box.Left.N),
+                      Width: parseFloat(bounding_box.Width.N),
+                      Height: parseFloat(bounding_box.Height.N),
+                  });
+
+                  // Create a user-specific directory
                   ensureDirectoryExistence(userFacesDir);
 
-
-                // Save the cropped face locally in the user-specific folder
-                const filePath = path.join(userFacesDir, `${face_id}.jpg`);
-                fs.writeFileSync(filePath, croppedFace);
+                  // Save the cropped face locally in the user-specific folder
+                  const filePath = path.join(userFacesDir, `${face_id}.jpg`);
+                  fs.writeFileSync(filePath, croppedFace);
               }
-                // Parse emotions
-                const parsedEmotions = JSON.parse(emotions || '[]');
-                const emotionData = parsedEmotions.reduce((acc, emotion) => {
-                    acc[emotion.Type] = emotion.Confidence;
-                    return acc;
-                }, {});
 
-                highestEmotion = parsedEmotions.reduce((max, current) => {
+              // Parse emotions
+              const parsedEmotions = JSON.parse(emotions || '[]');
+              const emotionData = parsedEmotions.reduce((acc, emotion) => {
+                  acc[emotion.Type] = emotion.Confidence;
+                  return acc;
+              }, {});
+
+              const highestEmotion = parsedEmotions.reduce((max, current) => {
                   return current.Confidence > max.Confidence ? current : max;
               }, parsedEmotions[0]);
-              
 
-                // Add row to the worksheet
-                worksheet.addRow({
-                    UserID: userId,
-                    FaceID: face_id,
-                    S3Url: s3_url,
-                    Age: face.age_average,
-                    GenderFemale:face.gender_details.Male_Confidence,
-                    GenderMale:face.gender_details.Female_Confidence,
-                    Happy: emotionData.HAPPY || 0,
-                    Sad: emotionData.SAD || 0,
-                    Angry: emotionData.ANGRY || 0,
-                    Surprised: emotionData.SURPRISED || 0,
-                    Calm: emotionData.CALM || 0,
-                    Confused: emotionData.CONFUSED || 0,
-                    Disgusted: emotionData.DISGUSTED || 0,
-                    Fear: emotionData.FEAR || 0,
-                    DominantEmotion:highestEmotion.Type
-                });
+              // Add row to the worksheet
+              worksheet.addRow({
+                  UserID: userId,
+                  FaceID: face_id,
+                  S3Url: s3_url,
+                  Age: face.age_average,
+                  GenderFemale: face.gender_details.Male_Confidence,
+                  GenderMale: face.gender_details.Female_Confidence,
+                  Happy: emotionData.HAPPY || 0,
+                  Sad: emotionData.SAD || 0,
+                  Angry: emotionData.ANGRY || 0,
+                  Surprised: emotionData.SURPRISED || 0,
+                  Calm: emotionData.CALM || 0,
+                  Confused: emotionData.CONFUSED || 0,
+                  Disgusted: emotionData.DISGUSTED || 0,
+                  Fear: emotionData.FEAR || 0,
+                  DominantEmotion: highestEmotion.Type,
+              });
               logger.info(`Processed face_id: ${face_id}`);
-            } catch (faceError) {
-                console.error(`Error processing face_id ${face.s3_url}:`, faceError);
-            }
-        }
-    } catch (error) {
-        console.error(`Error processing user_id: ${userId}`, error);
-    }
+          } catch (faceError) {
+              console.error(`Error processing face_id ${face.s3_url}:`, faceError);
+          }
+      }
+  } catch (error) {
+      console.error(`Error processing user_id: ${userId}`, error);
+  }
 }
 
 
@@ -14603,6 +14600,203 @@ app.post('/processNewImages', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+
+app.get('/identify-folders', async (req, res) => {
+  const userId = req.query.user_id;
+
+  logger.info(`Received request to fetch identified images for user_id: ${userId}`);
+
+  // Validate user_id
+  if (!userId) {
+      logger.info("Validation failed: user_id is missing in the request");
+      return res.status(400).json({ message: "user_id is required" });
+  }
+
+  try {
+      let uniqueFolderNames = new Set(); // Using a Set to automatically handle duplicates
+      let lastEvaluatedKey = null;
+
+      do {
+          // Ensure userId matches the DynamoDB expected type (String in this case)
+          const params = {
+              TableName: 'machinevision_indexed_data', // Replace with your DynamoDB table name
+              IndexName: 'user_id-folder_name-index', // Replace with your GSI/Index name
+              KeyConditionExpression: 'user_id = :user_id',
+              ExpressionAttributeValues: {
+                  ':user_id': { S: userId } // Match the DynamoDB String type (S)
+              },
+              ProjectionExpression: 'folder_name', // Fetch only the folder_name attribute
+              ExclusiveStartKey: lastEvaluatedKey // Set the LastEvaluatedKey for paginated queries
+          };
+
+          logger.info(`Querying DynamoDB with params: ${JSON.stringify(params)}`);
+
+          // Execute the query
+          const result = await dynamoDB.query(params).promise();
+
+          logger.info(`Fetched ${result.Items.length} items from DynamoDB`);
+
+          // Add folder names to the set
+          result.Items.forEach(item => uniqueFolderNames.add(item.folder_name.S));
+
+          // Update the last evaluated key
+          lastEvaluatedKey = result.LastEvaluatedKey;
+
+          if (lastEvaluatedKey) {
+              logger.info(`LastEvaluatedKey found, continuing query: ${JSON.stringify(lastEvaluatedKey)}`);
+          }
+      } while (lastEvaluatedKey); // Continue querying until LastEvaluatedKey is null
+
+      // Convert the set to an array for the response
+      const folderNamesArray = Array.from(uniqueFolderNames);
+
+      logger.info(`Unique folder names fetched for user_id ${userId}: ${folderNamesArray}`);
+
+      res.status(200).json({ folder_names: folderNamesArray });
+  } catch (err) {
+      logger.error(`Error fetching folder names for user_id ${userId}: ${err.message}`, { error: err });
+      res.status(500).json({ message: "Error fetching folder names", error: err.message });
+  }
+});
+
+app.post('/user-images/request', async (req, res) => {
+    const { requestor_id, requestor_number, owner_id, owner_number, status, request_id } = req.body;
+
+    // Determine if it's a create or update operation
+    if (!status && !request_id) {
+        // **CREATE REQUEST**
+        logger.info(`Received request creation from requestor_number: ${requestor_number} to owner_number: ${owner_number}`);
+
+        // Validate input for request creation
+        if (!requestor_number || !owner_number) {
+            logger.info("Validation failed: Invalid request data");
+            return res.status(400).json({ message: "Invalid request data" });
+        }
+
+        try {
+            // Generate a shorter request ID
+            const requestId = crypto.randomBytes(4).toString('hex'); // Generates an 8-character ID
+
+            // Prepare the request data
+            const requestItem = {
+                TableName: 'user_flashback_image_requests', // Replace with your DynamoDB table name
+                Item: {
+                    request_id: requestId,
+                    requestor_number: requestor_number,
+                    requestor_id: requestor_id,
+                    owner_number: owner_number,
+                    owner_id: owner_id,
+                    status: 'pending',
+                    created_at: new Date().toISOString()
+                }
+            };
+
+            logger.info(`Storing request in DynamoDB: ${JSON.stringify(requestItem)}`);
+
+            // Save the request in DynamoDB
+            await dynamoDB.put(requestItem).promise();
+
+            return res.status(200).json({ message: "Request created successfully", request_id: requestId });
+        } catch (err) {
+            logger.error(`Error creating request: ${err.message}`, { error: err });
+            return res.status(500).json({ message: "Error creating request", error: err.message });
+        }
+    } else if (status && request_id) {
+        // **UPDATE REQUEST**
+        logger.info(`Received request update for request_id: ${request_id} with new status: ${status}`);
+
+        // Validate input for request update
+        if (!['pending', 'approved', 'rejected'].includes(status)) {
+            logger.info("Validation failed: Invalid status value");
+            return res.status(400).json({ message: "Invalid status value" });
+        }
+
+        try {
+            // Update the request status in DynamoDB
+            const params = {
+                TableName: 'user_flashback_image_requests', // Replace with your DynamoDB table name
+                Key: {
+                    request_id: request_id // Primary Key of the table
+                },
+                UpdateExpression: 'SET #status = :status, updated_at = :updated_at',
+                ExpressionAttributeNames: {
+                    '#status': 'status'
+                },
+                ExpressionAttributeValues: {
+                    ':status': status,
+                    ':updated_at': new Date().toISOString()
+                },
+                ReturnValues: 'UPDATED_NEW'
+            };
+
+            logger.info(`Updating request in DynamoDB with params: ${JSON.stringify(params)}`);
+
+            const result = await dynamoDB.update(params).promise();
+
+            return res.status(200).json({ message: "Request updated successfully", updated_fields: result.Attributes });
+        } catch (err) {
+            logger.error(`Error updating request: ${err.message}`, { error: err });
+            return res.status(500).json({ message: "Error updating request", error: err.message });
+        }
+    } else {
+        // Invalid request
+        logger.info("Validation failed: Insufficient data for operation");
+        return res.status(400).json({ message: "Insufficient data for operation" });
+    }
+});
+app.get('/user-images/requests', async (req, res) => {
+  const { user_phone_number } = req.query;
+
+  logger.info(`Received request to fetch all requests for user_id: ${user_phone_number}`);
+
+  // Validate input
+  if (!user_phone_number) {
+      logger.info("Validation failed: user_phone_number is required");
+      return res.status(400).json({ message: "user_phone_number is required" });
+  }
+
+  try {
+      // Define query parameters for both types of requests
+      const requestedByMeParams = {
+          TableName: 'user_flashback_image_requests',
+          IndexName: 'requestor_number-index', // Assuming a GSI exists for requestor_id
+          KeyConditionExpression: 'requestor_number = :user_phone_number',
+          ExpressionAttributeValues: {
+              ':user_phone_number': user_phone_number
+          }
+      };
+
+      const toMeParams = {
+          TableName: 'user_flashback_image_requests',
+          IndexName: 'owner_number-index', // Assuming a GSI exists for owner_id
+          KeyConditionExpression: 'owner_number = :user_phone_number',
+          ExpressionAttributeValues: {
+              ':user_phone_number': user_phone_number
+          }
+      };
+
+      logger.info(`Querying DynamoDB for requested_by_me with params: ${JSON.stringify(requestedByMeParams)}`);
+      const requestedByMeResult = await dynamoDB.query(requestedByMeParams).promise();
+
+      logger.info(`Querying DynamoDB for to_me with params: ${JSON.stringify(toMeParams)}`);
+      const toMeResult = await dynamoDB.query(toMeParams).promise();
+
+      // Combine results
+      const response = {
+          requested_by_me: requestedByMeResult.Items,
+          to_me: toMeResult.Items
+      };
+
+      logger.info(`Fetched ${requestedByMeResult.Items.length} requested_by_me requests and ${toMeResult.Items.length} to_me requests`);
+
+      res.status(200).json(response);
+  } catch (err) {
+      logger.error(`Error fetching requests for user_id ${user_id}: ${err.message}`, { error: err });
+      res.status(500).json({ message: "Error fetching requests", error: err.message });
+  }
+});
+
 
 
 
