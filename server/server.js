@@ -12219,6 +12219,73 @@ app.get('/getMemoryReaction/:flashbackId/:imageName/:userPhoneNumber', async (re
   }
 });
 
+app.post('/saveDeviceMemoryReaction', async (req, res) => {
+  try {
+    const { userPhoneNumber, image_id, userId, imageName, reaction } = req.body;
+
+    const params = {
+      TableName: 'device_memory_reactions',
+      Item: {
+        user_phone_number: userPhoneNumber,
+        image_id: image_id,
+        user_id: userId,
+        image_name: imageName,
+        reaction: reaction,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+    };
+
+    await docClient.put(params).promise();
+
+    res.json({
+      success: true,
+      message: 'Reaction saved successfully'
+    });
+
+  } catch (error) {
+    console.error('Error saving reaction:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to save reaction'
+    });
+  }
+});
+
+app.get('/getDeviceMemoryReaction/:userPhoneNumber/:imageName/:imageId', async (req, res) => {
+  try {
+    const { userPhoneNumber, imageName, imageId } = req.params;
+
+    const params = {
+      TableName: 'device_memory_reactions',
+      IndexName: 'user_phone_number-image_name-index',
+      KeyConditionExpression: 'user_phone_number = :upn AND image_name = :iname',
+      FilterExpression: 'image_id = :iId',
+      ExpressionAttributeValues: {
+        ':upn': userPhoneNumber,
+        ':iname': imageName,
+        ':iId': imageId
+      },
+      ScanIndexForward: false, // Get most recent first
+      Limit: 1
+    };
+
+    const result = await docClient.query(params).promise();
+
+    res.json({
+      success: true,
+      reaction: result.Items?.[0] || null
+    });
+
+  } catch (error) {
+    console.error('Error fetching reaction:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch reaction'
+    });
+  }
+});
+
 
 
 app.get('/getDeviceMemories/:userPhoneNumber', async (req, res) => {
