@@ -14745,7 +14745,7 @@ app.post('/user-images/request', async (req, res) => {
         return res.status(400).json({ message: "Insufficient data for operation" });
     }
 });
-app.get('/user-images/requests', async (req, res) => {
+app.get('/user-images/request', async (req, res) => {
   const { user_phone_number } = req.query;
 
   logger.info(`Received request to fetch all requests for user_id: ${user_phone_number}`);
@@ -14797,7 +14797,146 @@ app.get('/user-images/requests', async (req, res) => {
   }
 });
 
+app.get('/user-images/folder', async (req, res) => {
+  const { user_id, folder_name } = req.query;
 
+  logger.info(`Received request to fetch images for user_id: ${user_id} in folder: ${folder_name}`);
+
+  // Validate input
+  if (!user_id || !folder_name) {
+      logger.info("Validation failed: user_id and folder_name are required");
+      return res.status(400).json({ message: "user_id and folder_name are required" });
+  }
+
+  try {
+      let s3Urls = [];
+      let lastEvaluatedKey = null;
+
+      do {
+          // Define query parameters
+          const params = {
+              TableName: 'machinevision_indexed_data', // Replace with your DynamoDB table name
+              IndexName: 'user_id-folder_name-index', // Replace with your GSI name
+              KeyConditionExpression: 'folder_name = :folder_name AND user_id = :user_id',
+              ExpressionAttributeValues: {
+                  ':folder_name': {S:folder_name},
+                  ':user_id': {S:user_id}
+              },
+              ExclusiveStartKey: lastEvaluatedKey // Continue from the last evaluated key
+          };
+
+          logger.info(`Querying DynamoDB with params: ${JSON.stringify(params)}`);
+
+          // Query DynamoDB
+          const result = await dynamoDB.query(params).promise();
+
+          logger.info(`Fetched ${result.Items.length} images for this page`);
+
+          // Extract s3_url values and append them to the s3Urls array
+          s3Urls = s3Urls.concat(result.Items.map(item => item.s3_url.S));
+
+          // Update LastEvaluatedKey
+          lastEvaluatedKey = result.LastEvaluatedKey;
+
+          if (lastEvaluatedKey) {
+              logger.info(`LastEvaluatedKey found, continuing to the next page: ${JSON.stringify(lastEvaluatedKey)}`);
+          }
+      } while (lastEvaluatedKey); // Continue querying until LastEvaluatedKey is null
+
+      logger.info(`Fetched a total of ${s3Urls.length} s3 URLs for user_id: ${user_id} in folder: ${folder_name}`);
+
+      // Respond with the s3_url collection
+      res.status(200).json({ s3_urls: s3Urls });
+  } catch (err) {
+      logger.error(`Error fetching images for user_id ${user_id} in folder ${folder_name}: ${err.message}`, { error: err });
+      res.status(500).json({ message: "Error fetching images", error: err.message });
+  }
+});
+
+const chunkArray = (array, size) => {
+  const chunks = [];
+  for (let i = 0; i < array.length; i += size) {
+      chunks.push(array.slice(i, i + size));
+  }
+  return chunks;
+};
+
+app.post('/transfer/user-images', async (req, res) => {
+    const { requests } = req.body;
+
+    logger.info(`Received request to process ${requests?.length || 0} image requests`);
+
+    // Validate input
+    if (!requests || !Array.isArray(requests) || requests.length === 0) {
+        logger.info("Validation failed: requests must be a non-empty array");
+        return res.status(400).json({ message: "Invalid input. 'requests' must be a non-empty array" });
+    }
+
+    try {
+        // Validate and process each request
+        const putRequests = requests.map((request, index) => {
+            if (
+                !request.s3_url ||
+                !request.owner_number ||
+                !request.requester_number ||
+                !request.request_status ||
+                !request.image_id
+            ) {
+                throw new Error(`Missing required fields in request at index ${index}`);
+            }
+
+            return {
+                PutRequest: {
+                    Item: {
+                        request_id: crypto.randomBytes(4).toString('hex'), // Generate unique request_id
+                        image_id: request.image_id,
+                        s3_url: request.s3_url,
+                        owner_number: request.owner_number,
+                        requester_number: request.requester_number,
+                        request_status: request.request_status,
+                        updated_date: new Date().toISOString() // Add updated_date dynamically
+                    }
+                }
+            };
+        });
+
+        // Split requests into batches of 25
+        const batches = chunkArray(putRequests, 25);
+        logger.info(`Processing ${batches.length} batches of requests`);
+
+        // Write each batch sequentially and handle retries for unprocessed items
+        for (const batch of batches) {
+            let unprocessedItems = batch;
+
+            for (let retry = 0; retry < 5 && unprocessedItems.length > 0; retry++) {
+                const params = {
+                    RequestItems: {
+                      user_images_transfer_data : unprocessedItems
+                    }
+                };
+
+                logger.info(`Writing batch of ${unprocessedItems.length} items to DynamoDB (Retry ${retry + 1})`);
+                const result = await dynamoDB.batchWrite(params).promise();
+
+                // Check for unprocessed items
+                unprocessedItems = result.UnprocessedItems?.image_requests || [];
+                if (unprocessedItems.length > 0) {
+                    logger.warn(`Retrying ${unprocessedItems.length} unprocessed items`);
+                }
+            }
+
+            if (unprocessedItems.length > 0) {
+                logger.error(`Failed to process some items after 5 retries: ${JSON.stringify(unprocessedItems)}`);
+                throw new Error(`Unprocessed items remaining: ${JSON.stringify(unprocessedItems)}`);
+            }
+        }
+
+        res.status(200).json({ message: "Requests processed successfully" });
+    } catch (err) {
+        logger.error(`Error processing requests: ${err.message}`, { error: err });
+        res.status(500).json({ message: "Error processing requests", error: err.message });
+    }
+});
 
 
 })
