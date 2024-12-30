@@ -12226,10 +12226,10 @@ app.post('/saveDeviceMemoryReaction', async (req, res) => {
     const params = {
       TableName: 'device_memory_reactions',
       Item: {
-        user_phone_number: userPhoneNumber,
         image_id: image_id,
         user_id: userId,
         image_name: imageName,
+        user_phone_number: userPhoneNumber,
         reaction: reaction,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -12252,19 +12252,19 @@ app.post('/saveDeviceMemoryReaction', async (req, res) => {
   }
 });
 
-app.get('/getDeviceMemoryReaction/:userPhoneNumber/:imageName/:imageId', async (req, res) => {
+app.get('/getDeviceMemoryReaction/:imageId/:imageName/:userPhoneNumber', async (req, res) => {
   try {
-    const { userPhoneNumber, imageName, imageId } = req.params;
+    const {  imageId, imageName, userPhoneNumber } = req.params;
 
     const params = {
       TableName: 'device_memory_reactions',
-      IndexName: 'user_phone_number-image_name-index',
-      KeyConditionExpression: 'user_phone_number = :upn AND image_name = :iname',
-      FilterExpression: 'image_id = :iId',
+      IndexName: 'image_id-image_name-index',
+      KeyConditionExpression: 'image_id = :iId AND image_name = :iname',
+      FilterExpression: 'user_phone_number = :upn',
       ExpressionAttributeValues: {
-        ':upn': userPhoneNumber,
+        ':iId': imageId,
         ':iname': imageName,
-        ':iId': imageId
+        ':upn': userPhoneNumber
       },
       ScanIndexForward: false, // Get most recent first
       Limit: 1
