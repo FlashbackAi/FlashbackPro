@@ -11450,10 +11450,86 @@ app.get('/getPeopleFromFlashbacks/:userPhoneNumber/:userId', async (req, res) =>
 });
 
 
-app.get('/getPeopleFromDevice/:userPhoneNumber', async (req, res) => {
-  const { userPhoneNumber } = req.params;
+// app.get('/getPeopleFromDevice/:userPhoneNumber', async (req, res) => {
+//   const { userPhoneNumber } = req.params;
+  
+//   try {
+//     // Query indexed data to get user IDs from the device
+//     const indexedDataParams = {
+//       TableName: 'machinevision_indexed_data',
+//       IndexName: 'folder_name-index',
+//       KeyConditionExpression: 'folder_name = :folderName',
+//       ProjectionExpression: 'user_id',
+//       ExpressionAttributeValues: {
+//         ':folderName': userPhoneNumber
+//       }
+//     };
+    
+//     const indexedDataResult = await docClient.query(indexedDataParams).promise();
+//     const uniqueUserIds = [...new Set(indexedDataResult.Items.map(item => item.user_id))];
+    
+//     const faceUrlsPromises = uniqueUserIds.map(async userId => {
+//       const params = {
+//         TableName: 'machinevision_recognition_users_data',
+//         KeyConditionExpression: 'user_id = :userId',
+//         ExpressionAttributeValues: {
+//           ':userId': userId
+//         }
+//       };
+      
+//       const result = await docClient.query(params).promise();
+//       if (result.Items && result.Items.length > 0) {
+//         // Transform the S3 URL format
+//         let faceUrl = result.Items[0].face_url;
+//         if (faceUrl && faceUrl.startsWith('s3://')) {
+//           const bucketAndKey = faceUrl.replace('s3://', '');
+//           const [bucket, ...keyParts] = bucketAndKey.split('/');
+//           faceUrl = `https://${bucket}.s3.ap-south-1.amazonaws.com/${keyParts.join('/')}`;
+//         }
+
+//         return {
+//           userId: userId,
+//           faceUrl: faceUrl,
+//           name: result.Items[0].name || result.Items[0].user_name || 'Unknown',
+//           relation: result.Items[0].relation || null
+//         };
+//       }
+//       return null;
+//     });
+    
+//     const people = (await Promise.all(faceUrlsPromises)).filter(Boolean);
+    
+//     res.json({
+//       success: true,
+//       data: people
+//     });
+    
+//   } catch (error) {
+//     logger.error('Error in getPeopleFromDevice:', error);
+//     res.status(500).json({
+//       success: false,
+//       error: 'Failed to fetch people from device'
+//     });
+//   }
+// });
+
+
+app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
+  const { userPhoneNumber, userId } = req.params;
   
   try {
+    // First, get the main user's data
+    const userParams = {
+      TableName: 'machinevision_recognition_users_data',
+      KeyConditionExpression: 'user_id = :userId',
+      ExpressionAttributeValues: {
+        ':userId': userId
+      }
+    };
+    
+    const userResult = await docClient.query(userParams).promise();
+    const userData = userResult.Items && userResult.Items.length > 0 ? userResult.Items[0] : null;
+
     // Query indexed data to get user IDs from the device
     const indexedDataParams = {
       TableName: 'machinevision_indexed_data',
@@ -11468,8 +11544,12 @@ app.get('/getPeopleFromDevice/:userPhoneNumber', async (req, res) => {
     const indexedDataResult = await docClient.query(indexedDataParams).promise();
     const uniqueUserIds = [...new Set(indexedDataResult.Items.map(item => item.user_id))];
     
-    const faceUrlsPromises = uniqueUserIds.map(async userId => {
-      const params = {
+    // Filter out the main user's ID from the list
+    const filteredUserIds = uniqueUserIds.filter(id => id !== userId);
+    
+    const peoplePromises = filteredUserIds.map(async userId => {
+      // First get user data from recognition table
+      const recognitionParams = {
         TableName: 'machinevision_recognition_users_data',
         KeyConditionExpression: 'user_id = :userId',
         ExpressionAttributeValues: {
@@ -11477,10 +11557,29 @@ app.get('/getPeopleFromDevice/:userPhoneNumber', async (req, res) => {
         }
       };
       
-      const result = await docClient.query(params).promise();
-      if (result.Items && result.Items.length > 0) {
+      const recognitionResult = await docClient.query(recognitionParams).promise();
+      if (!recognitionResult.Items || recognitionResult.Items.length === 0) {
+        return null;
+      }
+
+      const recognitionData = recognitionResult.Items[0];
+      
+      // Then get user details from users table
+      const usersParams = {
+        TableName: 'users',
+        IndexName: 'user_id-index',
+        KeyConditionExpression: 'user_id = :userId',
+        ExpressionAttributeValues: {
+          ':userId': userId
+        }
+      };
+
+      try {
+        const userResult = await docClient.query(usersParams).promise();
+        const userData = userResult.Items && userResult.Items.length > 0 ? userResult.Items[0] : null;
+
         // Transform the S3 URL format
-        let faceUrl = result.Items[0].face_url;
+        let faceUrl = recognitionData.face_url;
         if (faceUrl && faceUrl.startsWith('s3://')) {
           const bucketAndKey = faceUrl.replace('s3://', '');
           const [bucket, ...keyParts] = bucketAndKey.split('/');
@@ -11490,18 +11589,43 @@ app.get('/getPeopleFromDevice/:userPhoneNumber', async (req, res) => {
         return {
           userId: userId,
           faceUrl: faceUrl,
-          name: result.Items[0].name || result.Items[0].user_name || 'Unknown',
-          relation: result.Items[0].relation || null
+          name: recognitionData.name || recognitionData.user_name || 'Unknown',
+          relation: recognitionData.relation || null,
+          userPhoneNumber: userData ? userData.user_phone_number : null,
+          org_name: userData ? userData.org_name : null
+        };
+      } catch (error) {
+        logger.error(`Error fetching user data for ${userId}:`, error);
+        // Return the recognition data without user details if users table query fails
+        let faceUrl = recognitionData.face_url;
+        if (faceUrl && faceUrl.startsWith('s3://')) {
+          const bucketAndKey = faceUrl.replace('s3://', '');
+          const [bucket, ...keyParts] = bucketAndKey.split('/');
+          faceUrl = `https://${bucket}.s3.ap-south-1.amazonaws.com/${keyParts.join('/')}`;
+        }
+        return {
+          userId: userId,
+          faceUrl: faceUrl,
+          name: recognitionData.name || recognitionData.user_name || 'Unknown',
+          relation: recognitionData.relation || null,
+          userPhoneNumber: null,
+          org_name: null
         };
       }
-      return null;
     });
     
-    const people = (await Promise.all(faceUrlsPromises)).filter(Boolean);
+    const people = (await Promise.all(peoplePromises)).filter(Boolean);
     
     res.json({
       success: true,
-      data: people
+      data: {
+        mainUser: userData ? {
+          userId: userData.user_id,
+          faceUrl: userData.face_url,
+          name: 'You'
+        } : null,
+        relations: people
+      }
     });
     
   } catch (error) {
@@ -14812,6 +14936,7 @@ app.post('/user-images/request', async (req, res) => {
         return res.status(400).json({ message: "Insufficient data for operation" });
     }
 });
+
 app.get('/user-images/request', async (req, res) => {
   const { user_phone_number } = req.query;
 
