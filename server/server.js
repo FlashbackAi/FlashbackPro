@@ -15020,7 +15020,7 @@ app.get('/user-images/folder', async (req, res) => {
           logger.info(`Querying DynamoDB with params: ${JSON.stringify(params)}`);
 
           // Query DynamoDB
-          const result = await docClient.query(params).promise();
+          const result = await dynamoDB.query(params).promise();
 
           logger.info(`Fetched ${result.Items.length} images for this page`);
 
