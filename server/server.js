@@ -15005,6 +15005,61 @@ app.post('/transfer/user-images', async (req, res) => {
     }
 });
 
+app.get('/fetch/user-transfer-images', async (req, res) => {
+  const { requester_number, owner_number } = req.query;
+
+  logger.info(`Received request to fetch records for requester_number: ${requester_number} and owner_number: ${owner_number}`);
+
+  // Validate input
+  if (!requester_number || !owner_number) {
+      logger.info("Validation failed: requester_number and owner_number are required");
+      return res.status(400).json({ message: "requester_number and owner_number are required" });
+  }
+  try {
+      let s3Urls = [];
+      let lastEvaluatedKey = null;
+
+      do {
+          const params = {
+              TableName: 'user_images_transfer_data', // Replace with your DynamoDB table name
+              IndexName: 'requester_number-owner_number-index', // Replace with your GSI name
+              KeyConditionExpression: 'requester_number = :requester_number AND owner_number = :owner_number',
+              FilterExpression: 'request_status = :status',
+              ExpressionAttributeValues: {
+                  ':requester_number': requester_number,
+                  ':owner_number': owner_number,
+                  ':status': 'approved'
+              },
+              ExclusiveStartKey: lastEvaluatedKey // Continue from the last evaluated key
+          };
+
+          logger.info(`Querying DynamoDB with params: ${JSON.stringify(params)}`);
+
+          // Query DynamoDB
+          const result = await docClient.query(params).promise();
+
+          logger.info(`Fetched ${result.Items.length} records in this batch`);
+
+          // Extract s3_url values and append to the s3Urls array
+          s3Urls = s3Urls.concat(result.Items.map(item => item.s3_url));
+
+          // Update LastEvaluatedKey
+          lastEvaluatedKey = result.LastEvaluatedKey;
+
+          if (lastEvaluatedKey) {
+              logger.info(`LastEvaluatedKey found, continuing to next batch: ${JSON.stringify(lastEvaluatedKey)}`);
+          }
+      } while (lastEvaluatedKey); // Continue querying until LastEvaluatedKey is null
+
+      logger.info(`Fetched a total of ${s3Urls.length} s3 URLs with status "approved"`);
+
+      res.status(200).json({ s3_urls: s3Urls });
+  } catch (err) {
+      logger.error(`Error fetching records: ${err.message}`, { error: err });
+      res.status(500).json({ message: "Error fetching records", error: err.message });
+  }
+});
+
 
 })
 .catch((error) => {
