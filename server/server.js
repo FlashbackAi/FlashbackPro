@@ -14852,15 +14852,15 @@ app.get('/identify-folders', async (req, res) => {
 });
 
 app.post('/user-images/request', async (req, res) => {
-    const { requestor_id, requestor_number, owner_id, owner_number, status, request_id } = req.body;
+    const { requester_id, requester_number, owner_id, owner_number, status, request_id } = req.body;
 
     // Determine if it's a create or update operation
     if (!status && !request_id) {
         // **CREATE REQUEST**
-        logger.info(`Received request creation from requestor_number: ${requestor_number} to owner_number: ${owner_number}`);
+        logger.info(`Received request creation from requester_number: ${requester_number} to owner_number: ${owner_number}`);
 
         // Validate input for request creation
-        if (!requestor_number || !owner_number) {
+        if (!requester_number || !owner_number) {
             logger.info("Validation failed: Invalid request data");
             return res.status(400).json({ message: "Invalid request data" });
         }
@@ -14874,8 +14874,8 @@ app.post('/user-images/request', async (req, res) => {
                 TableName: 'user_flashback_image_requests', // Replace with your DynamoDB table name
                 Item: {
                     request_id: requestId,
-                    requestor_number: requestor_number,
-                    requestor_id: requestor_id,
+                    requester_number: requester_number,
+                    requester_id: requester_id,
                     owner_number: owner_number,
                     owner_id: owner_id,
                     status: 'pending',
@@ -14952,8 +14952,8 @@ app.get('/user-images/request', async (req, res) => {
       // Define query parameters for both types of requests
       const requestedByMeParams = {
           TableName: 'user_flashback_image_requests',
-          IndexName: 'requestor_number-index', // Assuming a GSI exists for requestor_id
-          KeyConditionExpression: 'requestor_number = :user_phone_number',
+          IndexName: 'requester_number-index', // Assuming a GSI exists for requester_id
+          KeyConditionExpression: 'requester_number = :user_phone_number',
           ExpressionAttributeValues: {
               ':user_phone_number': user_phone_number
           }
@@ -14984,7 +14984,7 @@ app.get('/user-images/request', async (req, res) => {
 
       res.status(200).json(response);
   } catch (err) {
-      logger.error(`Error fetching requests for user_id ${user_id}: ${err.message}`, { error: err });
+      logger.error(`Error fetching requests for user_id ${user_phone_number}: ${err.message}`, { error: err });
       res.status(500).json({ message: "Error fetching requests", error: err.message });
   }
 });
