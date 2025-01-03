@@ -14821,7 +14821,6 @@ app.get('/identify-folders', async (req, res) => {
               ExclusiveStartKey: lastEvaluatedKey // Set the LastEvaluatedKey for paginated queries
           };
 
-          logger.info(`Querying DynamoDB with params: ${JSON.stringify(params)}`);
 
           // Execute the query
           const result = await docClient.query(params).promise();
@@ -15185,6 +15184,333 @@ app.get('/fetch/user-transfer-images', async (req, res) => {
   }
 });
 
+
+//API for merging Users
+app.post("/merge-users", async (req, res) => {
+  const { user_id_1, user_id_2 } = req.body;
+
+  // Validate input
+  if (!user_id_1 || !user_id_2) {
+    return res.status(400).json({ error: "Both user_id_1 and user_id_2 are required" });
+  }
+
+  const merge_req_id = crypto.randomBytes(4).toString("hex"); // Unique ID for this merge operation
+  const merge_status_table = "flashback_user_merge_data";
+
+  try {
+    // Initialize merge request status
+    logger.info("Initializing merge request status...");
+    const mergeStatusInit = {
+      TableName: merge_status_table,
+      Item: {
+        merge_req_id,
+        merging_user_id: null, // Placeholder for now
+        target_user_id: null,  // Placeholder for now
+        merge_status: "IN_PROGRESS",
+        failed_step: null,
+        timestamp: new Date().toISOString(),
+      },
+    };
+    await docClient.put(mergeStatusInit).promise();
+
+    // Fetch user details
+    const user1Details = await getUserObjectByUserId(user_id_1);
+    const user2Details = await getUserObjectByUserId(user_id_2);
+
+    let merging_user_id;
+    let target_user_id;
+
+    // Determine merging and target user IDs
+    if (user1Details && user2Details) {
+      logger.info("Both users have phone numbers mapped, cannot merge.");
+      return res.status(400).json({
+        error: "Cannot merge users as both user_id_1 and user_id_2 have mapped phone numbers.",
+      });
+    } else if (user1Details && !user2Details) {
+      target_user_id = user_id_1;
+      merging_user_id = user_id_2;
+    } else if (user2Details && !user1Details) {
+      target_user_id = user_id_2;
+      merging_user_id = user_id_1;
+    } else {
+      target_user_id = user_id_1;
+      merging_user_id = user_id_2;
+    }
+
+    // Update merge request status with determined user IDs
+    const updateMergeRequestInit = {
+      TableName: merge_status_table,
+      Key: { merge_req_id },
+      UpdateExpression: "SET merging_user_id = :merging, target_user_id = :target",
+      ExpressionAttributeValues: {
+        ":merging": merging_user_id,
+        ":target": target_user_id,
+      },
+    };
+    await docClient.update(updateMergeRequestInit).promise();
+
+    logger.info(`Merging user_id: ${merging_user_id} into target user_id: ${target_user_id}`);
+
+    // Call the FastAPI `/merge-users` endpoint
+    const response = await axios.post("http://127.0.0.1:8000/merge-users/", {
+      merging_user_id,
+      target_user_id,
+    });
+
+    if (response.status === 200) {
+      logger.info("FastAPI merge-users call succeeded. Starting data updates.");
+
+      // Call the update method and handle any errors explicitly
+      try {
+        await updateDataAfterMerge(merge_req_id, merging_user_id, target_user_id);
+        return res.status(200).json(response.data);
+      } catch (updateError) {
+        logger.error("Error during data update after merge:", updateError.message);
+
+        // Update merge request status to FAILED
+        const updateMergeStatus = {
+          TableName: merge_status_table,
+          Key: { merge_req_id },
+          UpdateExpression: "SET merge_status = :failed, failed_step = :failedStep",
+          ExpressionAttributeValues: {
+            ":failed": "FAILED",
+            ":failedStep": updateError.message,
+          },
+        };
+        await docClient.update(updateMergeStatus).promise();
+
+        // Send error back to the client
+        return res.status(500).json({ error: "Error during data update after merge." });
+      }
+    }
+  } catch (error) {
+    logger.error("Error during merge process:", error.message);
+
+    // Update merge request status to FAILED
+    const updateMergeStatus = {
+      TableName: merge_status_table,
+      Key: { merge_req_id },
+      UpdateExpression: "SET merge_status = :failed, failed_step = :failedStep",
+      ExpressionAttributeValues: {
+        ":failed": "FAILED",
+        ":failedStep": error.message,
+      },
+    };
+    await docClient.update(updateMergeStatus).promise();
+
+    // Forward error to the client
+    if (error.response) {
+      return res.status(error.response.status).json(error.response.data);
+    }
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+const updateDataAfterMerge = async (merge_req_id, merging_user_id, target_user_id) => {
+  try {
+    const merge_status_table = "flashback_user_merge_data";
+
+    logger.info(`Starting merge process for request ID: ${merge_req_id}`);
+
+    // 1. Fetch records from `machinevision_indexed_data`
+    logger.info("Fetching records from machinevision_indexed_data table...");
+    let records = [];
+    let lastEvaluatedKey = null;
+
+    do {
+      const indexedDataQuery = {
+        TableName: "machinevision_indexed_data",
+        IndexName: "user_id-folder_name-index", // Use the secondary index
+        KeyConditionExpression: "user_id = :mergingUserId",
+        ExpressionAttributeValues: {
+          ":mergingUserId": merging_user_id,
+        },
+        ExclusiveStartKey: lastEvaluatedKey,
+      };
+
+      const indexedDataResult = await docClient.query(indexedDataQuery).promise();
+      records = records.concat(indexedDataResult.Items); // Collect full records
+      lastEvaluatedKey = indexedDataResult.LastEvaluatedKey;
+
+      logger.info(`Fetched ${indexedDataResult.Items.length} records. LastEvaluatedKey: ${lastEvaluatedKey}`);
+    } while (lastEvaluatedKey);
+
+    logger.info(`Collected ${records.length} records for merging_user_id: ${merging_user_id}.`);
+
+    // Extract face_ids and image_ids for future use
+    const faceIds = records.map(record => record.face_id);
+    const imageIds = records.map(record => record.image_id);
+
+    logger.info(`Extracted ${faceIds.length} face_ids and ${imageIds.length} image_ids.`);
+
+    // 2. Delete and re-insert records with updated `user_id`
+    logger.info("Updating user_id in machinevision_indexed_data table...");
+    for (const record of records) {
+      // Delete the old record
+      const deleteParams = {
+        TableName: "machinevision_indexed_data",
+        Key: { image_id: record.image_id, user_id: merging_user_id }, // Composite key
+      };
+      await docClient.delete(deleteParams).promise();
+
+      // Re-insert the record with the new `user_id`
+      const updatedRecord = { ...record, user_id: target_user_id };
+      const putParams = {
+        TableName: "machinevision_indexed_data",
+        Item: updatedRecord,
+      };
+      await docClient.put(putParams).promise();
+    }
+
+    logger.info(`Updated ${records.length} records in machinevision_indexed_data table.`);
+
+    // 3. Update `image_recognition` table using collected `image_ids`
+
+    logger.info("Fetching records from machinevision_recognition_image_properties table...");
+
+    // do {
+    //   const imageRecognitionQuery = {
+    //     TableName: "machinevision_recognition_image_properties",
+    //     FilterExpression: "contains(user_ids, :mergingUserId)",
+    //     ExpressionAttributeValues: {
+    //       ":mergingUserId": merging_user_id,
+    //     },
+    //     ExclusiveStartKey: lastEvaluatedKey,
+    //   };
+
+    //   const imageRecognitionResult = await docClient.scan(imageRecognitionQuery).promise();
+
+    //   // Collect `image_id` for the fetched records
+    //   imageIds = imageIds.concat(imageRecognitionResult.Items.map(item => item.image_id));
+    //   lastEvaluatedKey = imageRecognitionResult.LastEvaluatedKey;
+
+    //   logger.info(
+    //     `Fetched ${imageRecognitionResult.Items.length} records. LastEvaluatedKey: ${lastEvaluatedKey}`
+    //   );
+
+    //   // Update `user_ids` for the fetched records
+    //   for (const image of imageRecognitionResult.Items) {
+    //     if (Array.isArray(image.user_ids)) {
+    //       const updatedUserIds = image.user_ids.map(userId =>
+    //         userId === merging_user_id ? target_user_id : userId
+    //       );
+
+    //       const updateParams = {
+    //         TableName: "machinevision_recognition_image_properties",
+    //         Key: { image_id: image.image_id },
+    //         UpdateExpression: "SET user_ids = :updatedUserIds",
+    //         ExpressionAttributeValues: {
+    //           ":updatedUserIds": updatedUserIds,
+    //         },
+    //       };
+
+    //       try {
+    //         await docClient.update(updateParams).promise();
+    //         logger.info(`Updated user_ids for image_id: ${image.image_id}`);
+    //       } catch (updateError) {
+    //         logger.error(`Failed to update user_ids for image_id: ${image.image_id}: ${updateError.message}`);
+    //       }
+    //     } else {
+    //       logger.warn(`Skipping update for image_id: ${image.image_id}. Invalid or missing user_ids attribute.`);
+    //     }
+    //   }
+    // } while (lastEvaluatedKey);
+
+
+      
+  // 3. Update `image_recognition` table using collected `image_ids`
+  logger.info("Updating user_ids in machinevision_recognition_image_properties table...");
+  for (const imageId of imageIds) {
+    const getImageParams = {
+      TableName: "machinevision_recognition_image_properties",
+      Key: { image_id: imageId },
+    };
+
+    // Fetch the current record for the image
+    const imageResult = await docClient.get(getImageParams).promise();
+
+    if (imageResult.Item) {
+      try {
+        // Parse `user_ids` from JSON string to an array
+        const userIdsArray = JSON.parse(imageResult.Item.user_ids); // Convert JSON string to array
+
+        if (Array.isArray(userIdsArray)) {
+          // Replace `merging_user_id` with `target_user_id` in the array
+          const updatedUserIds = userIdsArray.map(userId =>
+            userId === merging_user_id ? target_user_id : userId
+          );
+
+          // Update `user_ids` back to DynamoDB as a JSON string
+          const updateParams = {
+            TableName: "machinevision_recognition_image_properties",
+            Key: { image_id: imageId },
+            UpdateExpression: "SET user_ids = :updatedUserIds",
+            ExpressionAttributeValues: {
+              ":updatedUserIds": JSON.stringify(updatedUserIds), // Convert back to JSON string
+            },
+          };
+
+          await docClient.update(updateParams).promise();
+          logger.info(`Updated user_ids for image_id: ${imageId}`);
+        } else {
+          logger.warn(`Invalid user_ids format for image_id: ${imageId}. Skipping update.`);
+        }
+      } catch (parseError) {
+        logger.error(`Error parsing user_ids for image_id: ${imageId}: ${parseError.message}`);
+      }
+    } else {
+      logger.warn(`No record found for image_id: ${imageId}.`);
+    }
+  }
+  logger.info(`Completed updates for ${imageIds.length} records in machinevision_recognition_image_properties table.`);
+
+
+    // 4. Store merge details in `merged_user_details`
+    logger.info("Storing merge details...");
+    const mergedUserDetails = {
+      TableName: "flashback_user_merge_data",
+      Item: {
+        merge_req_id,
+        merged_user_id: merging_user_id,
+        target_user_id: target_user_id,
+        merged_face_ids: faceIds,
+        affected_image_ids: imageIds,
+      },
+    };
+    await docClient.put(mergedUserDetails).promise();
+
+    // 5. Update merge request status to SUCCESS
+    logger.info("Updating merge request status to SUCCESS...");
+    const updateMergeStatus = {
+      TableName: merge_status_table,
+      Key: { merge_req_id },
+      UpdateExpression: "SET merge_status = :success, failed_step = :noFailure",
+      ExpressionAttributeValues: {
+        ":success": "SUCCESS",
+        ":noFailure": null,
+      },
+    };
+    await docClient.update(updateMergeStatus).promise();
+
+    logger.info("Data update after merging completed successfully.");
+  } catch (error) {
+    logger.error("Error updating data after merging:", error.message);
+
+    // Update merge request status to FAILED
+    const updateMergeStatus = {
+      TableName: merge_status_table,
+      Key: { merge_req_id },
+      UpdateExpression: "SET merge_status = :failed, failed_step = :failedStep",
+      ExpressionAttributeValues: {
+        ":failed": "FAILED",
+        ":failedStep": error.message,
+      },
+    };
+    await docClient.update(updateMergeStatus).promise();
+
+    throw new Error("Data update after merging failed.");
+  }
+};
 
 })
 .catch((error) => {
