@@ -15306,7 +15306,7 @@ app.post("/merge-users", async (req, res) => {
   }
 });
 
-const updateDataAfterMerge = async (merge_req_id, merging_user_id, target_user_id) => {
+const updateDataAfterMerge = async (merge_req_id, merging_user_id, target_user_id, folder_name = null) => {
   try {
     const merge_status_table = "flashback_user_merge_data";
 
@@ -15321,10 +15321,17 @@ const updateDataAfterMerge = async (merge_req_id, merging_user_id, target_user_i
       const indexedDataQuery = {
         TableName: "machinevision_indexed_data",
         IndexName: "user_id-folder_name-index", // Use the secondary index
-        KeyConditionExpression: "user_id = :mergingUserId",
-        ExpressionAttributeValues: {
-          ":mergingUserId": merging_user_id,
-        },
+        KeyConditionExpression: folder_name
+          ? "user_id = :mergingUserId AND folder_name = :folderName"
+          : "user_id = :mergingUserId",
+        ExpressionAttributeValues: folder_name
+          ? {
+              ":mergingUserId": merging_user_id,
+              ":folderName": folder_name,
+            }
+          : {
+              ":mergingUserId": merging_user_id,
+            },
         ExclusiveStartKey: lastEvaluatedKey,
       };
 
@@ -15365,105 +15372,50 @@ const updateDataAfterMerge = async (merge_req_id, merging_user_id, target_user_i
     logger.info(`Updated ${records.length} records in machinevision_indexed_data table.`);
 
     // 3. Update `image_recognition` table using collected `image_ids`
+    logger.info("Updating user_ids in machinevision_recognition_image_properties table...");
+    for (const imageId of imageIds) {
+      const getImageParams = {
+        TableName: "machinevision_recognition_image_properties",
+        Key: { image_id: imageId },
+      };
 
-    logger.info("Fetching records from machinevision_recognition_image_properties table...");
+      // Fetch the current record for the image
+      const imageResult = await docClient.get(getImageParams).promise();
 
-    // do {
-    //   const imageRecognitionQuery = {
-    //     TableName: "machinevision_recognition_image_properties",
-    //     FilterExpression: "contains(user_ids, :mergingUserId)",
-    //     ExpressionAttributeValues: {
-    //       ":mergingUserId": merging_user_id,
-    //     },
-    //     ExclusiveStartKey: lastEvaluatedKey,
-    //   };
+      if (imageResult.Item) {
+        try {
+          // Parse `user_ids` from JSON string to an array
+          const userIdsArray = JSON.parse(imageResult.Item.user_ids); // Convert JSON string to array
 
-    //   const imageRecognitionResult = await docClient.scan(imageRecognitionQuery).promise();
+          if (Array.isArray(userIdsArray)) {
+            // Replace `merging_user_id` with `target_user_id` in the array
+            const updatedUserIds = userIdsArray.map(userId =>
+              userId === merging_user_id ? target_user_id : userId
+            );
 
-    //   // Collect `image_id` for the fetched records
-    //   imageIds = imageIds.concat(imageRecognitionResult.Items.map(item => item.image_id));
-    //   lastEvaluatedKey = imageRecognitionResult.LastEvaluatedKey;
+            // Update `user_ids` back to DynamoDB as a JSON string
+            const updateParams = {
+              TableName: "machinevision_recognition_image_properties",
+              Key: { image_id: imageId },
+              UpdateExpression: "SET user_ids = :updatedUserIds",
+              ExpressionAttributeValues: {
+                ":updatedUserIds": JSON.stringify(updatedUserIds), // Convert back to JSON string
+              },
+            };
 
-    //   logger.info(
-    //     `Fetched ${imageRecognitionResult.Items.length} records. LastEvaluatedKey: ${lastEvaluatedKey}`
-    //   );
-
-    //   // Update `user_ids` for the fetched records
-    //   for (const image of imageRecognitionResult.Items) {
-    //     if (Array.isArray(image.user_ids)) {
-    //       const updatedUserIds = image.user_ids.map(userId =>
-    //         userId === merging_user_id ? target_user_id : userId
-    //       );
-
-    //       const updateParams = {
-    //         TableName: "machinevision_recognition_image_properties",
-    //         Key: { image_id: image.image_id },
-    //         UpdateExpression: "SET user_ids = :updatedUserIds",
-    //         ExpressionAttributeValues: {
-    //           ":updatedUserIds": updatedUserIds,
-    //         },
-    //       };
-
-    //       try {
-    //         await docClient.update(updateParams).promise();
-    //         logger.info(`Updated user_ids for image_id: ${image.image_id}`);
-    //       } catch (updateError) {
-    //         logger.error(`Failed to update user_ids for image_id: ${image.image_id}: ${updateError.message}`);
-    //       }
-    //     } else {
-    //       logger.warn(`Skipping update for image_id: ${image.image_id}. Invalid or missing user_ids attribute.`);
-    //     }
-    //   }
-    // } while (lastEvaluatedKey);
-
-
-      
-  // 3. Update `image_recognition` table using collected `image_ids`
-  logger.info("Updating user_ids in machinevision_recognition_image_properties table...");
-  for (const imageId of imageIds) {
-    const getImageParams = {
-      TableName: "machinevision_recognition_image_properties",
-      Key: { image_id: imageId },
-    };
-
-    // Fetch the current record for the image
-    const imageResult = await docClient.get(getImageParams).promise();
-
-    if (imageResult.Item) {
-      try {
-        // Parse `user_ids` from JSON string to an array
-        const userIdsArray = JSON.parse(imageResult.Item.user_ids); // Convert JSON string to array
-
-        if (Array.isArray(userIdsArray)) {
-          // Replace `merging_user_id` with `target_user_id` in the array
-          const updatedUserIds = userIdsArray.map(userId =>
-            userId === merging_user_id ? target_user_id : userId
-          );
-
-          // Update `user_ids` back to DynamoDB as a JSON string
-          const updateParams = {
-            TableName: "machinevision_recognition_image_properties",
-            Key: { image_id: imageId },
-            UpdateExpression: "SET user_ids = :updatedUserIds",
-            ExpressionAttributeValues: {
-              ":updatedUserIds": JSON.stringify(updatedUserIds), // Convert back to JSON string
-            },
-          };
-
-          await docClient.update(updateParams).promise();
-          logger.info(`Updated user_ids for image_id: ${imageId}`);
-        } else {
-          logger.warn(`Invalid user_ids format for image_id: ${imageId}. Skipping update.`);
+            await docClient.update(updateParams).promise();
+            logger.info(`Updated user_ids for image_id: ${imageId}`);
+          } else {
+            logger.warn(`Invalid user_ids format for image_id: ${imageId}. Skipping update.`);
+          }
+        } catch (parseError) {
+          logger.error(`Error parsing user_ids for image_id: ${imageId}: ${parseError.message}`);
         }
-      } catch (parseError) {
-        logger.error(`Error parsing user_ids for image_id: ${imageId}: ${parseError.message}`);
+      } else {
+        logger.warn(`No record found for image_id: ${imageId}.`);
       }
-    } else {
-      logger.warn(`No record found for image_id: ${imageId}.`);
     }
-  }
-  logger.info(`Completed updates for ${imageIds.length} records in machinevision_recognition_image_properties table.`);
-
+    logger.info(`Completed updates for ${imageIds.length} records in machinevision_recognition_image_properties table.`);
 
     // 4. Store merge details in `merged_user_details`
     logger.info("Storing merge details...");
@@ -15511,6 +15463,147 @@ const updateDataAfterMerge = async (merge_req_id, merging_user_id, target_user_i
     throw new Error("Data update after merging failed.");
   }
 };
+
+app.post("/merge-users-in-phone", async (req, res) => {
+  const { user_id_1, user_id_2, phone_number } = req.body;
+
+  // Validate input
+  if (!user_id_1 || !user_id_2 || !phone_number) {
+    return res.status(400).json({ error: "user_id_1, user_id_2, and phone_number are required." });
+  }
+
+  const merge_req_id = crypto.randomBytes(4).toString("hex"); // Unique ID for this merge operation
+  const merge_status_table = "flashback_user_merge_data";
+
+  try {
+    // Initialize merge request status
+    logger.info("Initializing merge request status...");
+    const mergeStatusInit = {
+      TableName: merge_status_table,
+      Item: {
+        merge_req_id,
+        merging_user_id: null, // Placeholder for now
+        target_user_id: null,  // Placeholder for now
+        phone_number,
+        merge_status: "IN_PROGRESS",
+        failed_step: null,
+        timestamp: new Date().toISOString(),
+      },
+    };
+    await docClient.put(mergeStatusInit).promise();
+
+    // Fetch user details
+    const user1Details = await getUserObjectByUserId(user_id_1);
+    const user2Details = await getUserObjectByUserId(user_id_2);
+
+    let merging_user_id;
+    let target_user_id;
+
+    // Determine merging and target user IDs
+    if (user1Details && user2Details) {
+      logger.info("Both users have phone numbers mapped, cannot merge.");
+      return res.status(400).json({
+        error: "Cannot merge users as both user_id_1 and user_id_2 have mapped phone numbers.",
+      });
+    } else if (user1Details && !user2Details) {
+      target_user_id = user_id_1;
+      merging_user_id = user_id_2;
+    } else if (user2Details && !user1Details) {
+      target_user_id = user_id_2;
+      merging_user_id = user_id_1;
+    } else {
+      target_user_id = user_id_1;
+      merging_user_id = user_id_2;
+    }
+
+    // Determine merging and target user IDs
+    if (user1Details?.phone_number === phone_number || user2Details?.phone_number === phone_number) {
+      logger.info("Phone number is mapped to one of the users. Proceeding with user merge.");
+
+      // Call the previous merge-users API
+      const response = await axios.post("http://127.0.0.1:8000/merge-users/", {
+        merging_user_id,
+        target_user_id,
+      });
+
+      if (response.status === 200) {
+        logger.info("Merge successful using the phone number-based logic.");
+        await updateDataAfterMerge(merge_req_id, merging_user_id, target_user_id);
+        return res.status(200).json(response.data);
+      }
+    } else {
+      logger.info("Phone number is not mapped. Fetching face_ids for the merging_user_id...");
+      const folder_name = phone_number ? phone_number.replace(/^\+/, "") : null;
+      
+      // Fetch face_ids from the indexed_data table where folder_name matches phone_number
+      const faceIds = [];
+      let lastEvaluatedKey = null;
+
+      do {
+        const indexedDataQuery = {
+          TableName: "machinevision_indexed_data",
+          IndexName: "user_id-folder_name-index", // Use the secondary index
+          KeyConditionExpression: "user_id = :mergingUserId AND folder_name = :folderName",
+          ExpressionAttributeValues: {
+            ":mergingUserId": user_id_1,
+            ":foldeName": folder_name,
+          },
+          ExclusiveStartKey: lastEvaluatedKey,
+        };
+
+        const indexedDataResult = await docClient.query(indexedDataQuery).promise();
+        faceIds.push(...indexedDataResult.Items.map(item => item.face_id));
+        lastEvaluatedKey = indexedDataResult.LastEvaluatedKey;
+
+        logger.info(
+          `Fetched ${indexedDataResult.Items.length} records from indexed_data. LastEvaluatedKey: ${lastEvaluatedKey}`
+        );
+      } while (lastEvaluatedKey);
+
+      if (faceIds.length === 0) {
+        logger.warn("No face_ids found for the provided phone number and merging_user_id.");
+        return res.status(404).json({ error: "No face_ids found for the provided phone number." });
+      }
+
+      logger.info(`Collected ${faceIds.length} face_ids for user_id: ${user_id_1} and phone_number: ${phone_number}`);
+
+      // Call the newly created Python API to update user_id for face_ids
+      const updateResponse = await axios.post("http://127.0.0.1:8000/update-user-ids/", {
+        face_ids: faceIds,
+        target_user_id: target_user_id,
+      });
+
+      if (updateResponse.status === 200) {
+        logger.info(
+          `Successfully updated user_id for ${faceIds.length} face_ids. Proceeding with data updates in DynamoDB.`
+        );
+
+        // Proceed with updating DynamoDB for the fetched face_ids
+        await updateDataAfterMerge(merge_req_id, merging_user_id, target_user_id,folder_name);
+        return res.status(200).json(updateResponse.data);
+      } else {
+        logger.error("Error updating user_id for face_ids.");
+        return res.status(500).json({ error: "Error updating user_id for face_ids." });
+      }
+    }
+  } catch (error) {
+    logger.error("Error during merge process with phone number:", error.message);
+
+    // Update merge request status to FAILED
+    const updateMergeStatus = {
+      TableName: merge_status_table,
+      Key: { merge_req_id },
+      UpdateExpression: "SET merge_status = :failed, failed_step = :failedStep",
+      ExpressionAttributeValues: {
+        ":failed": "FAILED",
+        ":failedStep": error.message,
+      },
+    };
+    await docClient.update(updateMergeStatus).promise();
+
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
 })
 .catch((error) => {
