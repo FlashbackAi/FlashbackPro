@@ -12884,14 +12884,19 @@ app.get("/getUserTaggedFlashbacks/:user_phone_number", async (req, res) => {
   }
 });
 
-app.get('/getUserFaceBubbles/:userId', async (req, res) => {
+app.get('/getUserFaceBubbles/:userId/:User', async (req, res) => {
   try {
     const userId = req.params.userId;
+    const userType = req.params.User;
 
-    logger.info('Debugging userId:', userId);
-
+    let Recognitiontablename;
+    if (userType === 'sender') {
+      Recognitiontablename = 'machinevision_recognition_users_data';
+    } else {
+      Recognitiontablename = 'RekognitionUsersData';
+    }
     const params = {
-      TableName: 'machinevision_recognition_users_data',
+      TableName: Recognitiontablename,
       KeyConditionExpression: 'user_id = :userId',
       ExpressionAttributeValues: {
         ':userId': { S: userId }  // Need to specify the type as String
