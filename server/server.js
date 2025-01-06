@@ -15545,8 +15545,8 @@ app.post("/merge-users-in-phone", async (req, res) => {
           IndexName: "user_id-folder_name-index", // Use the secondary index
           KeyConditionExpression: "user_id = :mergingUserId AND folder_name = :folderName",
           ExpressionAttributeValues: {
-            ":mergingUserId": user_id_1,
-            ":foldeName": folder_name,
+            ":mergingUserId": merging_user_id,
+            ":folderName": folder_name,
           },
           ExclusiveStartKey: lastEvaluatedKey,
         };
