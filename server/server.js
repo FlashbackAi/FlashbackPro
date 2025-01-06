@@ -12888,8 +12888,10 @@ app.get('/getUserFaceBubbles/:userId', async (req, res) => {
   try {
     const userId = req.params.userId;
 
+    logger.info('Debugging userId:', userId);
+
     const params = {
-      TableName: 'RekognitionUsersData',
+      TableName: 'machinevision_recognition_users_data',
       KeyConditionExpression: 'user_id = :userId',
       ExpressionAttributeValues: {
         ':userId': { S: userId }  // Need to specify the type as String
