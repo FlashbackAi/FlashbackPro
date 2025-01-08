@@ -315,58 +315,58 @@ const ROUTES=[
     
 
     // This routes are for protocol - dataset
-    // {
-    //     path:"/dataset",
-    //     exact:false,
-    //     protected:true,
-    //     component:Dataset, 
-    // },
-    // {
-    //     path:"/datasetForm/:orgName",
-    //     exact:false,
-    //     protected:true,
-    //     component:DatasetForm, 
-    // },
-    // {
-    //     path:"/datasetDetails/:orgName/:datasetName",
-    //     exact:false,
-    //     protected:true,
-    //     component:DatasetDetails, 
-    // }, {
-    //     path:"/model",
-    //     exact:false,
-    //     protected:true,
-    //     component:Model, 
-    // },
-    // {
-    //     path:"/modelForm/:orgName",
-    //     exact:false,
-    //     protected:true,
-    //     component:ModelForm, 
-    // },
-    // {
-    //     path:"modelDetails/:orgName/:modelName",
-    //     exact:false,
-    //     protected:true,
-    //     component:ModelDetails, 
-    // },
-    // {
-    //     path:"dataSharing",
-    //     exact:false,
-    //     protected:true,
-    //     component:DataSharingPage, 
-    // },
-    // {
-    //     path:"withdraw",
-    //     exact:false,
-    //     protected:true,
-    //     component:Withdraw, 
-    // },{
-    //     path:"orgDetails/:orgname",
-    //     exact:false,
-    //     protected:true,
-    //     component:OrgDetails, 
-    // },
+    {
+        path:"/dataset",
+        exact:false,
+        protected:true,
+        component:Dataset, 
+    },
+    {
+        path:"/datasetForm/:orgName",
+        exact:false,
+        protected:true,
+        component:DatasetForm, 
+    },
+    {
+        path:"/datasetDetails/:orgName/:datasetName",
+        exact:false,
+        protected:true,
+        component:DatasetDetails, 
+    }, {
+        path:"/model",
+        exact:false,
+        protected:true,
+        component:Model, 
+    },
+    {
+        path:"/modelForm/:orgName",
+        exact:false,
+        protected:true,
+        component:ModelForm, 
+    },
+    {
+        path:"modelDetails/:orgName/:modelName",
+        exact:false,
+        protected:true,
+        component:ModelDetails, 
+    },
+    {
+        path:"dataSharing",
+        exact:false,
+        protected:true,
+        component:DataSharingPage, 
+    },
+    {
+        path:"withdraw",
+        exact:false,
+        protected:true,
+        component:Withdraw, 
+    },{
+        path:"orgDetails/:orgname",
+        exact:false,
+        protected:true,
+        component:OrgDetails, 
+    },
     
     
 ]
