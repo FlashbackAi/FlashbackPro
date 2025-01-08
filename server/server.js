@@ -32,7 +32,6 @@ const aptosClient = new Aptos(aptconfig);
 const schedule = require('node-schedule');
 const bodyParser = require("body-parser");
 const axios = require("axios");
-
 const oldEvents = ["Aarthi_Vinay_19122021","Convocation_PrathimaCollege","KSL_25042024","Jahnavi_Vaishnavi_SC_28042024","KSL_22052024","KSL_16052024","V20_BootCamp_2024","Neha_ShivaTeja_18042024"];
 const CHEWY_AMOUNT =500;
 
@@ -15252,7 +15251,7 @@ app.post("/merge-users", async (req, res) => {
     logger.info(`Merging user_id: ${merging_user_id} into target user_id: ${target_user_id}`);
 
     // Call the FastAPI `/merge-users` endpoint
-    const response = await axios.post("http://127.0.0.1:8000/merge-users/", {
+    const response = await axios.post("https://52.66.187.182:5000/merge-users/", {
       merging_user_id,
       target_user_id,
     });
@@ -15521,7 +15520,7 @@ app.post("/merge-users-in-phone", async (req, res) => {
       logger.info("Phone number is mapped to one of the users. Proceeding with user merge.");
 
       // Call the previous merge-users API
-      const response = await axios.post("http://127.0.0.1:8000/merge-users/", {
+      const response = await axios.post("https://52.66.187.182:5000/merge-users/", {
         merging_user_id,
         target_user_id,
       });
@@ -15568,7 +15567,7 @@ app.post("/merge-users-in-phone", async (req, res) => {
       logger.info(`Collected ${faceIds.length} face_ids for user_id: ${user_id_1} and phone_number: ${phone_number}`);
 
       // Call the newly created Python API to update user_id for face_ids
-      const updateResponse = await axios.post("http://127.0.0.1:8000/update-user-ids/", {
+      const updateResponse = await axios.post("https://52.66.187.182:5000/update-user-ids/", {
         face_ids: faceIds,
         target_user_id: target_user_id,
       });
@@ -15604,6 +15603,11 @@ app.post("/merge-users-in-phone", async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+
+// const mobileApp = require('./MobileApplication/app');
+// app.use('/api/mobile', mobileApp); // Prefix for mobile backend
+
 
 })
 .catch((error) => {
