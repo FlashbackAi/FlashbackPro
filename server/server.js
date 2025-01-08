@@ -15257,7 +15257,7 @@ app.post("/merge-users", async (req, res) => {
 
     logger.info(`Merging user_id: ${merging_user_id} into target user_id: ${target_user_id}`);
 
-    // Call the FastAPI `/merge-users` endpoint
+    //External API for `/merge-users` endpoint
     const response = await axios.post("https://52.66.187.182:5000/merge-users/", {
       merging_user_id,
       target_user_id,
@@ -15526,7 +15526,7 @@ app.post("/merge-users-in-phone", async (req, res) => {
     if (user1Details?.phone_number === phone_number || user2Details?.phone_number === phone_number) {
       logger.info("Phone number is mapped to one of the users. Proceeding with user merge.");
 
-      // Call the previous merge-users API
+     //External API for merge-users API
       const response = await axios.post("https://52.66.187.182:5000/merge-users/", {
         merging_user_id,
         target_user_id,
@@ -15573,7 +15573,7 @@ app.post("/merge-users-in-phone", async (req, res) => {
 
       logger.info(`Collected ${faceIds.length} face_ids for user_id: ${user_id_1} and phone_number: ${phone_number}`);
 
-      // Call the newly created Python API to update user_id for face_ids
+      //External API for to update user_id for face_ids
       const updateResponse = await axios.post("https://52.66.187.182:5000/update-user-ids/", {
         face_ids: faceIds,
         target_user_id: target_user_id,
