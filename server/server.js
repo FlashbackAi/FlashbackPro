@@ -9,7 +9,6 @@ const xlsx = require("xlsx");
 //const { AmazonCognitoIdentity, userPool } = require('./config', 'aws-sdk');
 //const { CognitoUserPool, CognitoUserAttribute } = require('amazon-cognito-identity-js');
 const archiver = require('archiver');
-const https = require('https');
 const http = require('http');
 // const { fold, last } = require('prelude-ls');
 const { func } = require('prop-types');
@@ -34,6 +33,12 @@ const bodyParser = require("body-parser");
 const axios = require("axios");
 const oldEvents = ["Aarthi_Vinay_19122021","Convocation_PrathimaCollege","KSL_25042024","Jahnavi_Vaishnavi_SC_28042024","KSL_22052024","KSL_16052024","V20_BootCamp_2024","Neha_ShivaTeja_18042024"];
 const CHEWY_AMOUNT =500;
+const https = require('https');
+
+// Create an HTTPS agent with rejectUnauthorized set to false
+const httpsAgent = new https.Agent({
+  rejectUnauthorized: false, // Ignore self-signed certificate issues
+});
 
 const logger = require('./logger');
 const e = require('express');
@@ -15261,6 +15266,9 @@ app.post("/merge-users", async (req, res) => {
     const response = await axios.post("https://52.66.187.182:5000/merge-users/", {
       merging_user_id,
       target_user_id,
+    },
+    {
+      httpsAgent: httpsAgent, // Pass the custom HTTPS agent
     });
 
     if (response.status === 200) {
@@ -15530,6 +15538,9 @@ app.post("/merge-users-in-phone", async (req, res) => {
       const response = await axios.post("https://52.66.187.182:5000/merge-users/", {
         merging_user_id,
         target_user_id,
+      },
+      {
+        httpsAgent: httpsAgent, // Pass the custom HTTPS agent
       });
 
       if (response.status === 200) {
@@ -15577,6 +15588,8 @@ app.post("/merge-users-in-phone", async (req, res) => {
       const updateResponse = await axios.post("https://52.66.187.182:5000/update-user-ids/", {
         face_ids: faceIds,
         target_user_id: target_user_id,
+      },{
+        httpsAgent: httpsAgent, // Pass the custom HTTPS agent
       });
 
       if (updateResponse.status === 200) {
