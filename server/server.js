@@ -11220,6 +11220,7 @@ app.post('/setFlashbackFavourite', async (req, res) => {
 
   }
 });
+
 app.get('/getUserFlashbackImages/:flashbackId', async (req, res) => {
   const { flashbackId } = req.params;
   const { continuationToken } = req.query;
@@ -11449,6 +11450,110 @@ app.get('/getPeopleFromFlashbacks/:userPhoneNumber/:userId', async (req, res) =>
     res.status(500).json({
       success: false,
       error: 'Failed to fetch people relations'
+    });
+  }
+});
+
+app.delete('/deleteFlashbackImages/:flashbackId', async (req, res) => {
+  const { flashbackId } = req.params;
+  const { imageUrls, userPhoneNumber } = req.body;
+
+  if (!flashbackId || !imageUrls || !Array.isArray(imageUrls) || !userPhoneNumber) {
+    return res.status(400).json({ 
+      success: false,
+      error: 'Invalid parameters. Required: flashbackId and array of imageUrls' 
+    });
+  }
+
+  try {
+    // Check if user has creator access
+    const flashbackDetails = await getUserFlashbackDetailsById_Creator(flashbackId);
+    
+    if (!flashbackDetails || flashbackDetails.user_phone_number !== userPhoneNumber) {
+      return res.status(403).json({
+        success: false,
+        error: 'You are not authorized to delete images from this flashback'
+      });
+    }
+
+    // Extract S3 keys from image URLs
+    const s3Keys = imageUrls.map(url => {
+      const urlParts = url.split('.s3.amazonaws.com/');
+      return urlParts[1];
+    });
+
+    // Prepare delete parameters for both buckets
+    const deleteParams = {
+      original: {
+        Bucket: indexBucketName,
+        Delete: {
+          Objects: s3Keys.map(key => ({ Key: key })),
+          Quiet: false
+        }
+      },
+      thumbnail: {
+        Bucket: thumbnailBucketName,
+        Delete: {
+          Objects: s3Keys.map(key => ({ Key: key })),
+          Quiet: false
+        }
+      }
+    };
+
+    // Delete objects from both buckets concurrently
+    const [originalResult, thumbnailResult] = await Promise.all([
+      s3.deleteObjects(deleteParams.original).promise(),
+      s3.deleteObjects(deleteParams.thumbnail).promise()
+    ]);
+
+    // Combine errors from both operations
+    const allErrors = [
+      ...(originalResult.Errors || []).map(error => ({
+        ...error,
+        bucket: 'original'
+      })),
+      ...(thumbnailResult.Errors || []).map(error => ({
+        ...error,
+        bucket: 'thumbnail'
+      }))
+    ];
+
+    // Calculate total successfully deleted items
+    const totalDeleted = (originalResult.Deleted?.length || 0) + 
+                        (thumbnailResult.Deleted?.length || 0);
+
+    if (allErrors.length > 0) {
+      // Some deletions failed
+      console.error('Some images failed to delete:', allErrors);
+      return res.status(207).json({
+        success: true,
+        message: 'Some images failed to delete',
+        errors: allErrors,
+        deleted: {
+          original: originalResult.Deleted || [],
+          thumbnail: thumbnailResult.Deleted || [],
+          totalCount: totalDeleted
+        }
+      });
+    }
+
+    // All deletions successful
+    res.json({
+      success: true,
+      message: `Successfully deleted ${totalDeleted} images`,
+      deleted: {
+        original: originalResult.Deleted || [],
+        thumbnail: thumbnailResult.Deleted || [],
+        totalCount: totalDeleted
+      }
+    });
+
+  } catch (error) {
+    console.error('Error deleting images:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal Server Error',
+      details: error.message
     });
   }
 });
