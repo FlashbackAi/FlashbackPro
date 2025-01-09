@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import API_UTIL from '../../../services/AuthIntereptor';
@@ -7,10 +7,12 @@ import Modal from 'react-modal';
 import { toast } from 'react-toastify';
 import LabelAndInput from '../../../components/molecules/LabelAndInput/LabelAndInput';
 import AppBar from '../../../components/AppBar/AppBar';
-import { Plus, Trash2, User, ScrollText, X, CheckCircle, AlertCircle, Linkedin, Mail, Globe, MapPin } from 'lucide-react';
+import { Plus, Trash2, User, ScrollText, X, CheckCircle, AlertCircle, ChevronUp, ChevronDown, Globe, MapPin } from 'lucide-react';
 import { RiGithubFill } from "react-icons/ri";
 import { TbCategory } from "react-icons/tb";
 import LoadingSpinner from '../../../components/Loader/LoadingSpinner';
+import OrganizationForm from '../ModelForm/OrgForm';
+import { Range, getTrackBackground } from 'react-range';
 
 const ModelDetailsPage = styled.div`
   background-color: #121212;
@@ -175,6 +177,29 @@ const RequestButton = styled.button`
   }
 `;
 
+const Button = styled.button`
+  background: #2a2a2a;
+  color: #ffffff;
+  border: none;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  margin-bottom: 1rem;
+  margin-right:2rem;
+  box-shadow: 0 0 3px rgba(0, 255, 255, 0.5);
+
+  &:hover {
+    opacity: 0.9;
+  }
+
+  &:disabled {
+    background: #4a4a4a;
+    cursor: not-allowed;
+  }
+`;
+
 const ModalContent = styled.div`
   display: flex;
   flex-direction: column;
@@ -223,6 +248,99 @@ const UnityLogo = styled.img`
   margin-left: 0.5rem;
 `;
 
+const HeadingContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  padding: 1rem 0;
+
+`;
+
+const Heading = styled.h2`
+  color: #00ffff;
+  font-size: 1.5rem;
+`;
+const Organization = styled.div`
+  border-bottom: 1px solid #ccc;
+`
+
+const ToggleIcon = styled.span`
+  font-size: 1rem;
+  color: #ffffff;
+`;
+const OrgBidSection = styled.div`
+display:flex;
+`
+
+const SliderContainer = styled.div`
+  margin: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;
+
+const AmountDisplay = styled.div`
+  font-size: 1.2rem;
+  color: #ffffff;
+  margin-bottom: 1rem;
+`;
+const ConfirmButtonContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin-top: 1.5rem; /* Optional: Add margin if needed */
+`
+const ConfirmButton = styled.button`
+ background: #2a2a2a;
+  color: White;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  border-radius: 0.5rem;
+  transition: background-color 0.3s;
+   &:hover {
+    opacity: 0.9;
+  }
+
+  &:disabled {
+    background: #4a4a4a;
+    cursor: not-allowed;
+  }
+`;
+
+const SliderTrack = styled.div`
+  width: 100%;
+  height: 8px;
+  background: ${(props) =>
+    getTrackBackground({
+      values: props.values,
+      colors: ['#00ffff', '#3a3a3a'],
+      min: props.min,
+      max: props.max,
+    })};
+  border-radius: 4px;
+  position: relative;
+`;
+
+const TagsContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem;
+`;
+
+const Tag = styled.span`
+  background-color: #646566;
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+  border-radius: 15px;
+  font-size: 0.9rem;
+  font-weight: bold;
+`;
+
 const ModelDetails = () => {
   const { orgName, modelName } = useParams();
   const [modelDetails, setModelDetails] = useState({});
@@ -237,6 +355,10 @@ const ModelDetails = () => {
   const [isAuditing, setIsAuditing] = useState(false);
   const [requestingStatus, setRequestingStatus] = useState({});
   const userPhoneNumber = localStorage.userPhoneNumber;
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isAutoBidModalOpen, setIsAutoBidModalOpen] = useState(false)
+  const [bidAmount, setBidAmount] = useState([50000]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchModelData();
@@ -286,10 +408,56 @@ const ModelDetails = () => {
     setClickedDataset(dataset);
     setIsDatasetDetailsModalOpen(true);
   };
+  const openAutoBidModal= (dataset) => {
+    setIsAutoBidModalOpen(true);
+  };
 
   const closeDatasetDetailsModal = () => {
     setIsDatasetDetailsModalOpen(false);
   };
+  const closeAutoBidModal = () => {
+    setIsAutoBidModalOpen(false);
+  };
+
+
+
+ const deductAuditCoins = async (coins) => {
+  try {
+    setIsRequesting(true);
+    const payload = {
+      amount: coins,
+      senderMobileNumber: userPhoneNumber,
+      recipientMobileNumber: "+919090401234"
+    };
+    const response = await API_UTIL.post('/transfer-chewy-coins', payload);
+    if(response.status === 200){
+      await API_UTIL.post('/transfer-chewy-coins', {
+       amount: coins/5,
+       senderMobileNumber: "+919090401234",
+       recipientMobileNumber: userPhoneNumber
+     });
+      await API_UTIL.post('/transfer-chewy-coins',  {
+       amount: coins/10,
+       senderMobileNumber: "+919090401234",
+       recipientMobileNumber: "+918978073062"
+     });
+     await API_UTIL.post('/transfer-chewy-coins',  {
+       amount: coins/10,
+       senderMobileNumber: "+919090401234",
+       recipientMobileNumber: "+918871713331"
+     });
+   }
+    
+    return response;
+  } catch (error) {
+    console.error('Error deducting coins:', error);
+    toast.error('Failed to deduct coins. Please try again.');
+  }
+  finally{
+    closeAutoBidModal(true);
+    setIsRequesting(false);
+  }
+};
 
   const deductCoins = async (coins) => {
     try {
@@ -299,10 +467,14 @@ const ModelDetails = () => {
         recipientMobileNumber: "+919090401234"
       };
       const response = await API_UTIL.post('/transfer-chewy-coins', payload);
+      
       return response;
     } catch (error) {
       console.error('Error deducting coins:', error);
       toast.error('Failed to deduct coins. Please try again.');
+    }
+    finally{
+      closeAutoBidModal(true);
     }
   };
 
@@ -419,6 +591,21 @@ const ModelDetails = () => {
 
           <AnimatePresence mode="wait">
             {activeTab === 'datasets' && (
+              <>
+              <Organization>
+                <HeadingContainer onClick={() => setIsCollapsed(!isCollapsed)}>
+                  <Heading>Flashback.Inc</Heading>
+                  <ToggleIcon>{isCollapsed ? <ChevronDown/> : <ChevronUp/>}</ToggleIcon>
+                </HeadingContainer>
+                <OrgBidSection>
+                  <Button onClick={()=>navigate('/dataOrgProfile')}>Org Details</Button>
+                  <Button onClick={openAutoBidModal}>Auto Train</Button>
+                  <Button>Match : 96.3%</Button>
+                </OrgBidSection>
+              </Organization>
+
+             
+            {!isCollapsed && (
               <TabContent
                 key="datasets"
                 initial={{ opacity: 0 }}
@@ -436,7 +623,8 @@ const ModelDetails = () => {
                         onClick={() => openDatasetDetailsModal(dataset)}
                       >
                         <DatasetName>{dataset.dataset_name}</DatasetName>
-                        <DatasetInfo>Owner: {dataset.org_name}</DatasetInfo>
+                        <DatasetInfo>Owner: {dataset.dataset_name.split('-')[1]}</DatasetInfo>
+                        <DatasetInfo>Match: {dataset.quality_index}%</DatasetInfo>
                         <DatasetInfo>Size: {dataset.dataset_size}</DatasetInfo>
                         <RequestButton
                           onClick={(e) => {
@@ -459,6 +647,22 @@ const ModelDetails = () => {
                   <p>No datasets available at the moment.</p>
                 )}
               </TabContent>
+            )}
+
+                <Organization>
+                <HeadingContainer onClick={() => setIsCollapsed(!isCollapsed)}>
+                  <Heading>Image Shield</Heading>
+                  <ToggleIcon>{isCollapsed ? <ChevronDown/> : <ChevronUp/>}</ToggleIcon>
+                </HeadingContainer>
+                </Organization>
+
+                <Organization>
+                <HeadingContainer onClick={() => setIsCollapsed(!isCollapsed)}>
+                  <Heading>Humane</Heading>
+                  <ToggleIcon>{isCollapsed ? <ChevronDown/> : <ChevronUp/>}</ToggleIcon>
+                </HeadingContainer>
+                </Organization>
+              </>
             )}
 
             {activeTab === 'requests' && (
@@ -505,7 +709,7 @@ const ModelDetails = () => {
             </InfoItem>
             <InfoItem>
               <User size={18} />
-              Owner: {clickedDataset.org_name}
+              Owner: {clickedDataset.dataset_name.split('-')[1]}
             </InfoItem>
             <InfoItem>
               <ScrollText size={18} />
@@ -515,8 +719,65 @@ const ModelDetails = () => {
               <CheckCircle size={18} />
               Size: {clickedDataset.dataset_size}
             </InfoItem>
+            <TagsContainer>
+              <Tag>People</Tag>
+              <Tag>Objects</Tag>
+              <Tag>Accesories</Tag>
+              <Tag>Clothing</Tag>
+              <Tag>Wedding</Tag>
+              <Tag>Events</Tag>
+            </TagsContainer>
           </ModalContent>
         )}
+      </StyledModal>
+
+      <StyledModal
+        isOpen={isAutoBidModalOpen}
+        onRequestClose={closeAutoBidModal}
+        contentLabel="Auto Bid"
+      >
+        <ModalHeader>
+        <ModalTitle>Select the Number of Images to Train Your Model</ModalTitle>
+          <CloseButton onClick={closeAutoBidModal} />
+        </ModalHeader>
+        <SliderContainer>
+        <AmountDisplay>Images: {bidAmount[0].toLocaleString()}</AmountDisplay>
+        <Range
+          values={bidAmount}
+          step={10}
+          min={1000}
+          max={100000}
+          onChange={(values) => setBidAmount(values)}
+          renderTrack={({ props, children }) => (
+            <SliderTrack {...props} min={1000} max={100000} values={bidAmount}>
+              {children}
+            </SliderTrack>
+          )}
+          renderThumb={({ props }) => (
+            <div
+              {...props}
+              style={{
+                ...props.style,
+                height: '20px',
+                width: '20px',
+                borderRadius: '50%',
+                backgroundColor: '#00ffff',
+              }}
+            />
+          )}
+        />
+      </SliderContainer>
+      <ConfirmButtonContainer>
+        <ConfirmButton onClick={() => deductAuditCoins(bidAmount * 15)}  disabled={(bidAmount * 15)>balance}>
+        {isRequesting ? (
+          'Requesting...'
+        ) : (
+          <>
+            {`Request: ${bidAmount * 15}`} <UnityLogo src='/unityLogo.png' alt='Coin' />
+          </>
+        )}
+        </ConfirmButton>
+      </ConfirmButtonContainer>
       </StyledModal>
     </ModelDetailsPage>
   );

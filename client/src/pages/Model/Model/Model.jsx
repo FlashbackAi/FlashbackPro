@@ -7,7 +7,7 @@ import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import LabelAndInput from '../../../components/molecules/LabelAndInput/LabelAndInput';
 import AppBar from '../../../components/AppBar/AppBar';
-import { Plus, Trash2, X, CheckCircle, Mail, Globe, MapPin } from 'lucide-react';
+import { Plus, Trash2, X, CheckCircle, Mail, Globe, MapPin, Search } from 'lucide-react';
 import { RiGithubFill } from "react-icons/ri";
 import { GrLinkedin } from "react-icons/gr";
 import LoadingSpinner from '../../../components/Loader/LoadingSpinner';
@@ -22,7 +22,7 @@ const ModelPage = styled.div`
 const ContentWrapper = styled.div`
   display: flex;
   padding: 1rem;
-  gap: 1rem;
+  gap: 0.31rem;
   max-width: 100%;
   margin: 0 auto;
 
@@ -41,6 +41,121 @@ const SidePanel = styled.div`
 
   @media (max-width: 768px) {
     flex: 1;
+  }
+`;
+
+const SelectWrapper = styled.div`
+  position: relative;
+  margin-bottom: 1rem;
+  margin-top:0.5em;
+`;
+
+const CustomSelect = styled.div`
+  position: relative;
+`;
+
+const SearchInput = styled.input`
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #232323;
+  border: none;
+  border-bottom: 1px solid #3a3a3a;
+  color: #ffffff;
+  font-size: 1rem;
+
+  &:focus {
+    outline: none;
+  }
+`;
+
+
+const SelectButton = styled.button`
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 0.5rem;
+  color: #ffffff;
+  font-size: 1rem;
+  text-align: left;
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+    border-color: #00ffff;
+  }
+`;
+
+
+const DropdownMenu = styled.div`
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 0.5rem;
+  margin-top: 0.25rem;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+`;
+
+const OptionsList = styled.div`
+  max-height: 150px;
+  overflow-y: auto;
+
+  /* Webkit browsers (Chrome, Safari) */
+  &::-webkit-scrollbar {
+    width: 8px;
+    background-color: #1e1e1e;
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #4a4a4a;
+    border-radius: 4px;
+    
+    &:hover {
+      background-color: #5a5a5a;
+    }
+  }
+
+  &::-webkit-scrollbar-track {
+    background-color: #2a2a2a;
+    border-radius: 4px;
+  }
+
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #4a4a4a #2a2a2a;
+
+`;
+
+const Option = styled.div`
+  padding: 0.75rem;
+  cursor: pointer;
+  color: #ffffff;
+
+  &:hover {
+    background-color: #3a3a3a;
+  }
+`;
+
+const CustomCategoryInput = styled.input`
+  width: 100%;
+  max-width: 95%;
+  padding: 0.75rem;
+  background-color: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 0.5rem;
+  color: #ffffff;
+  font-size: 1rem;
+  margin-top: 0.5rem;
+
+  &:focus {
+    outline: none;
+    border-color: #00ffff;
   }
 `;
 
@@ -68,21 +183,6 @@ const InfoItem = styled.div`
 
   svg {
     margin-right: 0.5rem;
-    color: #00ffff;
-  }
-`;
-
-const SocialLinks = styled.div`
-  display: flex;
-  gap: 1rem;
-  margin-top: 1.5rem;
-`;
-
-const SocialLink = styled.a`
-  color: #ffffff;
-  transition: color 0.3s ease;
-
-  &:hover {
     color: #00ffff;
   }
 `;
@@ -160,8 +260,9 @@ const StyledModal = styled(Modal)`
   max-width: 500px;
   width: 90%;
   margin: 2rem auto;
-  outline: none;
   color: #ffffff;
+   position: relative;
+  overflow-y: auto;
 `;
 
 const ModalHeader = styled.div`
@@ -171,6 +272,30 @@ const ModalHeader = styled.div`
   margin-bottom: 1.5rem;
 `;
 
+const ModelTypeCard = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem; /* Adds gap between the two halves */
+    margin-bottom: 1.5rem;
+`;
+
+const ModelType = styled.div`
+    flex-basis: 50%; /* Divides into two equal halves */
+    text-align: center;
+    padding: 3rem;
+    font-size: 1em;
+    border-radius: 1em;
+    border:2px solid;
+    border-color:grey;
+    background: linear-gradient(45deg, black, transparent);
+
+    transition: background-color 0.3s ease, transform 0.3s ease;
+
+    &:hover {
+        transform: scale(1.05); /* Adds a slight zoom effect on hover */
+    }
+`;
 const ModalTitle = styled.h2`
   font-size: 1.5rem;
   color: #00ffff;
@@ -185,6 +310,7 @@ const Form = styled.form`
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  overflow-y: auto;
   
 `;
 
@@ -238,22 +364,6 @@ const CancelButton = styled(DeleteButton)`
   background-color: #2a2a2a;
 `;
 
-const Select = styled.select`
-  width: 100%;
-  padding: 0.75rem;
-  background-color: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  border-radius: 0.5rem;
-  color: #ffffff;
-  font-size: 1rem;
-  margin-bottom: 1rem;
-
-  &:focus {
-    outline: none;
-    border-color: #00ffff;
-  }
-`;
-
 const Model = () => {
   const [modelsList, setModelsList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -266,15 +376,65 @@ const Model = () => {
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const orgName = localStorage.org_name || userDetails?.org_name || '';
   const labelStyle = { color: '#ffffff' };
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [categorySearch, setCategorySearch] = useState('');
+  const [customCategory, setCustomCategory] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [modelType, SetModelType] = useState('');
+  const [isBaselineDropdownOpen, setIsBaselineDropdownOpen] = useState(false);
+  const [selectedBaselineModel, setSelectedBaselineModel] = useState('');
 
   const [formData, setFormData] = useState({
     org_name: orgName,
     model_name: '',
     model_category: '',
     model_url: '',
-    model_desc: ''
+    model_desc: '',
+    documentation_url:'',
+    data_type:'images'
   });
 
+  const categories = [
+    "Faces Data",
+    "Image Processing",
+    "Natural Language Processing",
+    "Computer Vision",
+    "Machine Learning",
+    "Deep Learning",
+    "Data Analysis",
+    "Robotics",
+    "Other"
+  ];
+
+
+  const filteredCategories = categories.filter(category =>
+    category.toLowerCase().includes(categorySearch.toLowerCase())
+  );
+
+  const handleCategorySelect = (category) => {
+    setSelectedCategory(category);
+    if (category === 'Other') {
+      setFormData(prevState => ({
+        ...prevState,
+        model_category: customCategory || 'Other'
+      }));
+    } else {
+      setFormData(prevState => ({
+        ...prevState,
+        model_category: category
+      }));
+    }
+    setIsDropdownOpen(false);
+  };
+
+  const handleCustomCategoryChange = (e) => {
+    const value = e.target.value;
+    setCustomCategory(value);
+    setFormData(prevState => ({
+      ...prevState,
+      model_category: value
+    }));
+  };
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -287,7 +447,7 @@ const Model = () => {
       const userPhoneNumber = localStorage.userPhoneNumber;
       const response = await API_UTIL.get(`/fetchUserDetails/${userPhoneNumber}`);
       setUserDetails(response.data.data);
-      fetchModels(response.data.data.user_name);
+      fetchModels(response.data.data.org_name);
     } catch (error) {
       console.error('Error fetching user details:', error);
       setError('Failed to fetch user details');
@@ -296,9 +456,9 @@ const Model = () => {
     }
   };
 
-  const fetchModels = async (userName) => {
+  const fetchModels = async (orgName) => {
     try {
-      const response = await API_UTIL.get(`/getModels/${userName}`);
+      const response = await API_UTIL.get(`/getModels/${orgName}`);
       setModelsList(response.data);
     } catch (error) {
       console.error("Error fetching models:", error);
@@ -326,8 +486,10 @@ const Model = () => {
   
     const modelData = {
       ...formData,
-      org_name: orgName,  // Using the orgName from localStorage
-      is_audited: false,  // Setting is_audited to false for new models
+      org_name: orgName,  
+      is_audited: false,  
+      model_category: selectedCategory === 'Other' ? customCategory : selectedCategory,
+      model_type: modelType
     };
   
     try {
@@ -336,19 +498,21 @@ const Model = () => {
       if (response.status === 200) {
         toast.success("Model created successfully");
         setIsDetailModalOpen(false);
-        fetchModels(userDetails.user_name);
+        fetchModels(userDetails.org_name);
         setFormData({
           model_name: '',
           model_category: '',
           model_url: '',
           model_desc: ''
         });
+        setSelectedCategory('');
+        setCustomCategory('');
       } else {
         throw new Error('Failed to save the Model');
       }
     } catch (error) {
       console.error('Error saving form data to backend:', error);
-      toast.error('Failed to save the model. Please try again.');
+      toast.error('Failed to save the Model. Please try again.');
     }
   };
 
@@ -365,7 +529,7 @@ const Model = () => {
 
   const deleteModel = async () => {
     try {
-      setDeleteMessage("Deleting model...");
+      setDeleteMessage("Deleting Model...");
       await API_UTIL.delete(`/deleteModel/${modelToDelete.model_name}/${modelToDelete.org_name}`);
       setModelsList(modelsList.filter(model => model.model_name !== modelToDelete.model_name));
       setDeleteMessage('Model deleted successfully');
@@ -376,13 +540,13 @@ const Model = () => {
         setShowSuccessAnimation(false);
       }, 2000);
     } catch (error) {
-      console.error("Error deleting model:", error);
-      toast.error('Failed to delete the model. Please try again.');
+      console.error("Error deleting Model:", error);
+      toast.error('Failed to delete the Model. Please try again.');
     }
   };
 
   const handleModelClick = (model) => {
-    navigate(`/modelDetails/${userDetails.user_name}/${model.model_name}`);
+    navigate(`/modelDetails/${userDetails.org_name}/${model.model_name}`);
   };
 
   if (loading) return <LoadingSpinner />;
@@ -393,7 +557,7 @@ const Model = () => {
       <AppBar showCoins={true} />
       <ContentWrapper>
         <SidePanel>
-          <OrgTitle>{userDetails.org_name}</OrgTitle>
+          <OrgTitle onClick={()=>navigate('/orgProfile')}> {userDetails.org_name}</OrgTitle>
           <InfoItem>
             Technology, Information and Internet
           </InfoItem>
@@ -447,12 +611,29 @@ const Model = () => {
 
       <StyledModal
         isOpen={isDetailModalOpen}
-        onRequestClose={() => setIsDetailModalOpen(false)}
+        onRequestClose={() => {setIsDetailModalOpen(false); SetModelType('');}}
         contentLabel="Create Model"
       >
+      { !modelType ?(
+        <>
+        <ModalHeader>
+        <ModalTitle>What kind of model would you like to create?</ModalTitle>
+            <CloseButton onClick={() => { setIsDetailModalOpen(false); SetModelType(''); }} />
+        </ModalHeader>
+      <ModelTypeCard>
+        <ModelType onClick={()=>SetModelType('own')}>
+            Own model
+        </ModelType>
+        <ModelType onClick={()=>SetModelType('personalise')}>
+            Personalise Base Model
+        </ModelType>
+      </ModelTypeCard>
+      </>):
+      modelType === 'own' ?(
+      <>   
         <ModalHeader>
           <ModalTitle>Create New Model</ModalTitle>
-          <CloseButton onClick={() => setIsDetailModalOpen(false)} />
+          <CloseButton onClick={() => {setIsDetailModalOpen(false); SetModelType('');}} />
         </ModalHeader>
         <Form onSubmit={handleDetailFormSubmit}>
           <LabelAndInput
@@ -464,21 +645,49 @@ const Model = () => {
             isEditable={true}
             style={labelStyle}
           />
-          <div>
-            <label htmlFor="model_category">Model Category</label>
-            <Select
-              name="model_category"
-              value={formData.model_category}
-              onChange={handleInputChange}
-              required
+      <div>
+        <label htmlFor="model_category">Model Category</label>
+        <SelectWrapper>
+          <CustomSelect>
+            <SelectButton
+              type="button"
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             >
-              <option value="">Select a category</option>
-              <option value="Faces Data">Faces Data</option>
-              <option value="Image Processing">Image Processing</option>
-              <option value="Natural Language Processing">Natural Language Processing</option>
-              <option value="Computer Vision">Computer Vision</option>
-            </Select>
-          </div>
+              {selectedCategory || 'Select a category'}
+            </SelectButton>
+            {isDropdownOpen && (
+              <DropdownMenu>
+                <SearchInput
+                  type="text"
+                  placeholder="Search categories..."
+                  value={categorySearch}
+                  onChange={(e) => setCategorySearch(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <OptionsList>
+                  {filteredCategories.map((category) => (
+                    <Option
+                      key={category}
+                      onClick={() => handleCategorySelect(category)}
+                    >
+                      {category}
+                    </Option>
+                  ))}
+                </OptionsList>
+              </DropdownMenu>
+            )}
+          </CustomSelect>
+          {selectedCategory === 'Other' && (
+            <CustomCategoryInput
+              type="text"
+              placeholder="Enter custom category"
+              value={customCategory}
+              onChange={handleCustomCategoryChange}
+              required
+            />
+          )}
+        </SelectWrapper>
+      </div>
           <LabelAndInput
           label="Repository URL"
           name="model_url"
@@ -489,7 +698,16 @@ const Model = () => {
           style={labelStyle}
         />
         <LabelAndInput
-          label="Model Description"
+          label="Documentation URL"
+          name="model_url"
+          value={formData.documentation_url}
+          handleChange={handleInputChange}
+          isRequired={true}
+          isEditable={true}
+          style={labelStyle}
+        />
+        <LabelAndInput
+          label="Describe your Model"
           name="model_desc"
           value={formData.model_desc}
           handleChange={handleInputChange}
@@ -498,7 +716,100 @@ const Model = () => {
           style={labelStyle}
         />
         <SubmitButton type="submit">Create Model</SubmitButton>
-      </Form>
+        </Form>
+      </>
+      ) :(
+        <>
+        <ModalHeader>
+            <ModalTitle>Create Model</ModalTitle>
+            <CloseButton onClick={() => { setIsDetailModalOpen(false); SetModelType(''); }} />
+        </ModalHeader>
+        <Form onSubmit={handleDetailFormSubmit}>
+            <LabelAndInput
+                label="Model Name"
+                name="model_name"
+                value={formData.model_name}
+                handleChange={handleInputChange}
+                isRequired={true}
+                isEditable={true}
+                style={labelStyle}
+            />
+    
+            {/* Data Options Radio Buttons */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <label>Data type to Train the model:</label>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <div>
+                        <input
+                            type="radio"
+                            id="images"
+                            name="data_type"
+                            value="images"
+                            checked={formData.data_type === 'images'}
+                            onChange={handleInputChange}
+                        />
+                        <label htmlFor="images">Images</label>
+                    </div>
+
+                    <div>
+                        <input
+                            type="radio"
+                            id="videos"
+                            name="data_type"
+                            value="videos"
+                            checked={formData.data_type === 'videos'}
+                            onChange={handleInputChange}
+                            disabled={true}
+                        />
+                        <label htmlFor="videos">Videos</label>
+                    </div>
+                </div>
+            </div>
+
+    
+            {/* Baseline Model Dropdown */}
+            <div>
+                <label htmlFor="baseline_model">Select Baseline Model</label>
+                <SelectWrapper>
+                    <CustomSelect>
+                        <SelectButton
+                            type="button"
+                            onClick={() => setIsBaselineDropdownOpen(!isBaselineDropdownOpen)}
+                        >
+                            {selectedBaselineModel || 'Select a baseline model'}
+                        </SelectButton>
+                        {isBaselineDropdownOpen && (
+                            <DropdownMenu>
+                                <OptionsList>
+                                    {['Object Detection', 'Image Recognition', 'Emotion recognition', 'face recognition'].map((model) => (
+                                        <Option
+                                            key={model}
+                                            onClick={() => {setSelectedBaselineModel(model);setIsBaselineDropdownOpen(false)}}
+                                        >
+                                            {model}
+                                        </Option>
+                                    ))}
+                                </OptionsList>
+                            </DropdownMenu>
+                        )}
+                    </CustomSelect>
+                </SelectWrapper>
+            </div>
+
+            <LabelAndInput
+                label="Describe your Model"
+                name="model_desc"
+                value={formData.model_desc}
+                handleChange={handleInputChange}
+                isRequired={true}
+                isEditable={true}
+                style={labelStyle}
+            />
+            <SubmitButton type="submit">Create Model</SubmitButton>
+        </Form>
+    </>
+    
+      )}
     </StyledModal>
 
     <StyledModal
@@ -525,7 +836,7 @@ const Model = () => {
           </>
         ) : (
           <>
-            <p>Are you sure you want to delete this model?</p>
+            <p>Are you sure you want to delete this Model?</p>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem' }}>
               <DeleteButton onClick={deleteModel}>Confirm</DeleteButton>
               <CancelButton onClick={closeDeleteModal}>Cancel</CancelButton>
