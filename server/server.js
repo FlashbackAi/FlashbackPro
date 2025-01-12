@@ -3109,7 +3109,7 @@ app.post('/downloadImage', async (req, res) => {
       Bucket: bucket,
       Key: key
     }).promise();
-
+    logger.info(key)
     logger.info("Image downloaded from cloud: " + imageUrl);
     res.set('Content-Disposition', `attachment; filename="${fileName}"`);
     res.json(`data:image/jpeg;base64,${imageData.Body.toString('base64')}`);
@@ -15730,8 +15730,8 @@ app.post("/merge-users-in-phone", async (req, res) => {
 });
 
 
-// const mobileApp = require('./MobileApplication/app');
-// app.use('/api/mobile', mobileApp); // Prefix for mobile backend
+const mobileApp = require('./MobileApplication/app');
+app.use('/api/mobile', mobileApp); // Prefix for mobile backend
 
 
 })
