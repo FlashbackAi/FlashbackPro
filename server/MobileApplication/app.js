@@ -17,7 +17,7 @@ app.post('/createUser', userController.createUser);
 app.put('/updateUser', userController.updateUser);
 
 // Get user details by phone number
-app.get('/getUserDetails', userController.getUserDetails);
+app.get('/getUserDetails/:user_phone_number', userController.getUserDetails);
 
 // Verify user activation code
 app.post('/verifyUserActivation', userController.verifyUserActivation);

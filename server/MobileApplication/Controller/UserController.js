@@ -29,7 +29,7 @@ exports.updateUser = async (req, res) => {
 };
 
 exports.getUserDetails = async (req, res) => {
-  const { user_phone_number } = req.query;
+  const { user_phone_number } = req.params;
 
   // Validate request
   if (!user_phone_number) {
