@@ -19,6 +19,7 @@ exports.createUser = async (user_phone_number, rewardPoints) => {
       user_phone_number,
       reward_points: rewardPoints,
       created_date: new Date().toISOString(),
+      isUserActivated: false,
     },
   };
   await docClient.put(params).promise();
@@ -79,4 +80,20 @@ exports.updateUserActivationDate = async (user_phone_number) => {
 
   const result = await docClient.update(params).promise();
   return result.Attributes; // Return the updated record
+};
+
+
+exports.updateUserActivationStatus = async (user_phone_number) => {
+  const params = {
+    TableName: tableNames.userTableName,
+    Key: { user_phone_number },
+    UpdateExpression: 'SET isUserActivated = :isActivated',
+    ExpressionAttributeValues: {
+      ':isActivated': true
+    },
+    ReturnValues: 'UPDATED_NEW'
+  };
+
+  const result = await docClient.update(params).promise();
+  return result.Attributes;
 };
