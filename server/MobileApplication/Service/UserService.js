@@ -103,20 +103,23 @@ exports.uploadUserPortrait = async (fileBuffer, username) => {
 
   // Step 2: Call external API to generate user_id
   logger.info(`Calling external API to generate user_id for image URL: ${s3Url}`);
-  const externalApiUrl = 'http://127.0.0.1:8000/generate-user-Id-byUserImage/';
+  const externalApiUrl = 'https://52.66.187.182:5000/generate-user-Id-byUserImage/';
   let userId;
 
   try {
-    const response = await axios.post(externalApiUrl, { image_url: s3Url }, {
-      headers: {
-        accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-    },{
-      httpsAgent: httpsAgent, // Pass the custom HTTPS agent
-    });
-
+    const response = await axios.post(
+      externalApiUrl,
+      { image_url: s3Url },
+      {
+        headers: {
+          accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        httpsAgent: httpsAgent, // Pass the custom HTTPS agent here
+      }
+    );
     if (response.data && response.data.user_id) {
+      logger.info(response.data);
       userId = response.data.user_id;
       logger.info(`Generated user_id: ${userId} for sanitized username: ${sanitizedUsername}`);
     } else {
