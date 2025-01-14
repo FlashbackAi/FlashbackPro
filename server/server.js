@@ -13140,6 +13140,42 @@ app.get("/getUserTaggedFlashbacks/:user_phone_number", async (req, res) => {
   }
 });
 
+// app.get('/getUserFaceBubbles/:userId/:User', async (req, res) => {
+//   try {
+//     const userId = req.params.userId;
+//     const userType = req.params.User;
+
+//     let Recognitiontablename;
+//     if (userType === 'sender') {
+//       Recognitiontablename = 'machinevision_recognition_users_data';
+//     } else {
+//       Recognitiontablename = 'RekognitionUsersData';
+//     }
+//     const params = {
+//       TableName: Recognitiontablename,
+//       KeyConditionExpression: 'user_id = :userId',
+//       ExpressionAttributeValues: {
+//         ':userId': { S: userId }  // Need to specify the type as String
+//       }
+//     };
+
+//     const result = await dynamoDB.query(params).promise();
+    
+//     if (result.Items?.length > 0) {
+//       res.status(200).send({
+//         success: true,
+//         face_url: result.Items[0].face_url
+//       });
+//     } else {
+//       res.status(404).send({ message: 'User not found' });
+//     }
+//   } catch (error) {
+//     console.error('Error fetching user data:', error);
+//     res.status(500).send({ error: error.message });
+//   }
+// });
+
+
 app.get('/getUserFaceBubbles/:userId/:User', async (req, res) => {
   try {
     const userId = req.params.userId;
@@ -13151,34 +13187,30 @@ app.get('/getUserFaceBubbles/:userId/:User', async (req, res) => {
     } else {
       Recognitiontablename = 'RekognitionUsersData';
     }
-    
+
     const params = {
       TableName: Recognitiontablename,
       KeyConditionExpression: 'user_id = :userId',
       ExpressionAttributeValues: {
-        ':userId': { S: userId }
+        ':userId': { S: userId } // Specify the type as String
       }
     };
 
     const result = await dynamoDB.query(params).promise();
-    
+
     if (result.Items?.length > 0) {
-      // Safely access the face_url value from DynamoDB response
-      let faceUrl = result.Items[0].face_url?.S;
-      
-      // Transform the S3 URL format if it's from machinevision_recognition_users_data
-      if (Recognitiontablename === 'machinevision_recognition_users_data' && 
-          faceUrl && 
-          typeof faceUrl === 'string' && 
-          faceUrl.indexOf('s3://') === 0) {
-        const bucketAndKey = faceUrl.substring(5); // Remove 's3://'
+      let faceUrl = result.Items[0].face_url;
+
+      // Transform the S3 URL format if it starts with "s3://"
+      if (faceUrl && faceUrl.startsWith('s3://')) {
+        const bucketAndKey = faceUrl.replace('s3://', '');
         const [bucket, ...keyParts] = bucketAndKey.split('/');
         faceUrl = `https://${bucket}.s3.ap-south-1.amazonaws.com/${keyParts.join('/')}`;
       }
 
       res.status(200).send({
         success: true,
-        face_url: faceUrl
+        face_url: faceUrl,
       });
     } else {
       res.status(404).send({ message: 'User not found' });
@@ -13188,6 +13220,7 @@ app.get('/getUserFaceBubbles/:userId/:User', async (req, res) => {
     res.status(500).send({ error: error.message });
   }
 });
+
 
 app.post('/initializeChat', async (req, res) => {
   const { senderId, recipientId } = req.body;
