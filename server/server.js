@@ -13199,7 +13199,8 @@ app.get('/getUserFaceBubbles/:userId/:User', async (req, res) => {
     const result = await dynamoDB.query(params).promise();
 
     if (result.Items?.length > 0) {
-      let faceUrl = result.Items[0].face_url;
+      // Extract the face_url value from the DynamoDB response
+      let faceUrl = result.Items[0]?.face_url?.S;
 
       // Ensure faceUrl is a string before attempting string operations
       if (typeof faceUrl === 'string' && faceUrl.startsWith('s3://')) {
@@ -13220,6 +13221,7 @@ app.get('/getUserFaceBubbles/:userId/:User', async (req, res) => {
     res.status(500).send({ error: error.message });
   }
 });
+
 
 
 
