@@ -13166,7 +13166,7 @@ app.get('/getUserFaceBubbles/:userId/:User', async (req, res) => {
       let faceUrl = result.Items[0].face_url;
       
       // Transform the S3 URL format if it's from machinevision_recognition_users_data
-      if (Recognitiontablename === 'machinevision_recognition_users_data' && faceUrl && faceUrl.startsWith('s3://')) {
+      if (Recognitiontablename === 'machinevision_recognition_users_data' && faceUrl ) {
         const bucketAndKey = faceUrl.replace('s3://', '');
         const [bucket, ...keyParts] = bucketAndKey.split('/');
         faceUrl = `https://${bucket}.s3.ap-south-1.amazonaws.com/${keyParts.join('/')}`;
