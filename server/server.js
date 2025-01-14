@@ -11622,6 +11622,172 @@ app.delete('/deleteFlashbackImages/:flashbackId', async (req, res) => {
 //   }
 // });
 
+app.get('/get-relations/:userPhoneNumber', async (req, res) => {
+  const { userPhoneNumber } = req.params;
+
+  try {
+    const params = {
+      TableName: 'Relations',
+      KeyConditionExpression: 'user_phone_number = :phone',
+      ExpressionAttributeValues: {
+        ':phone': userPhoneNumber
+      }
+    };
+
+    const result = await docClient.query(params).promise();
+
+    res.json({
+      success: true,
+      relations: result.Items || []
+    });
+  } catch (error) {
+    logger.error('Error fetching relations:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch relations'
+    });
+  }
+});
+
+// Update or create a relation
+app.post('/update-relation', async (req, res) => {
+  const { 
+    user_phone_number, 
+    related_user_id,
+    name,
+    relation_type,
+    is_starred = false 
+  } = req.body;
+
+  if (!user_phone_number || !related_user_id) {
+    return res.status(400).json({
+      success: false,
+      error: 'Missing required fields'
+    });
+  }
+
+  try {
+    // First check if the relationship already exists
+    const getParams = {
+      TableName: 'Relations',
+      Key: {
+        user_phone_number,
+        related_user_id
+      }
+    };
+
+    const existingRelation = await docClient.get(getParams).promise();
+
+    // Prepare the new or updated relation item
+    const relationItem = {
+      user_phone_number,
+      related_user_id,
+      name: name || (existingRelation.Item?.name || null),
+      relation_type: relation_type || (existingRelation.Item?.relation_type || null),
+      is_starred: is_starred || (existingRelation.Item?.is_starred || false),
+      last_updated: new Date().toISOString()
+    };
+
+    // Save to DynamoDB
+    const putParams = {
+      TableName: 'Relations',
+      Item: relationItem
+    };
+
+    await docClient.put(putParams).promise();
+
+    // If successful, return the updated relation
+    res.json({
+      success: true,
+      relation: relationItem
+    });
+
+  } catch (error) {
+    logger.error('Error updating relation:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update relation'
+    });
+  }
+});
+
+// Toggle star status for a relation
+app.post('/toggle-star', async (req, res) => {
+  const { user_phone_number, related_user_id } = req.body;
+
+  if (!user_phone_number || !related_user_id) {
+    return res.status(400).json({
+      success: false,
+      error: 'Missing required fields'
+    });
+  }
+
+  try {
+    // Get existing relation first
+    const getParams = {
+      TableName: 'Relations',
+      Key: {
+        user_phone_number,
+        related_user_id
+      }
+    };
+
+    const existingRelation = await docClient.get(getParams).promise();
+    
+    if (!existingRelation.Item) {
+      // Create new relation if it doesn't exist
+      const newRelation = {
+        user_phone_number,
+        related_user_id,
+        is_starred: true,
+        last_updated: new Date().toISOString()
+      };
+
+      const putParams = {
+        TableName: 'Relations',
+        Item: newRelation
+      };
+
+      await docClient.put(putParams).promise();
+
+      return res.json({
+        success: true,
+        relation: newRelation
+      });
+    }
+
+    // Toggle existing relation's star status
+    const updateParams = {
+      TableName: 'Relations',
+      Key: {
+        user_phone_number,
+        related_user_id
+      },
+      UpdateExpression: 'SET is_starred = :star, last_updated = :updated',
+      ExpressionAttributeValues: {
+        ':star': !existingRelation.Item.is_starred,
+        ':updated': new Date().toISOString()
+      },
+      ReturnValues: 'ALL_NEW'
+    };
+
+    const result = await docClient.update(updateParams).promise();
+
+    res.json({
+      success: true,
+      relation: result.Attributes
+    });
+
+  } catch (error) {
+    logger.error('Error toggling star status:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to toggle star status'
+    });
+  }
+});
+
+
 
 app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
   const { userPhoneNumber, userId } = req.params;
@@ -11639,6 +11805,19 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
     const userResult = await docClient.query(userParams).promise();
     const userData = userResult.Items && userResult.Items.length > 0 ? userResult.Items[0] : null;
 
+    const relationsParams = {
+      TableName: 'Relations',
+      KeyConditionExpression: 'user_phone_number = :phone',
+      ExpressionAttributeValues: {
+        ':phone': userPhoneNumber
+      }
+    };
+
+    const relationsResult = await docClient.query(relationsParams).promise();
+    const relationsMap = new Map(
+      relationsResult.Items.map(item => [item.related_user_id, item])
+    );
+    
     // Query indexed data to get user IDs from the device
     const indexedDataParams = {
       TableName: 'machinevision_indexed_data',
@@ -11695,13 +11874,16 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
           faceUrl = `https://${bucket}.s3.ap-south-1.amazonaws.com/${keyParts.join('/')}`;
         }
 
+        const relationData = relationsMap.get(userId) || {};
+
         return {
           userId: userId,
           faceUrl: faceUrl,
-          name: recognitionData.name || recognitionData.user_name || 'Unknown',
-          relation: recognitionData.relation || null,
-          userPhoneNumber: userData ? userData.user_phone_number : null,
-          org_name: userData ? userData.org_name : null
+          name: relationData.name || userData?.org_name || userData?.user_name,
+          relationName: relationData.name || null,
+          relationshipType: relationData.relation_type || null,
+          isStarred: relationData.is_starred || false,
+          userPhoneNumber: userData ? userData.user_phone_number : null
         };
       } catch (error) {
         logger.error(`Error fetching user data for ${userId}:`, error);
@@ -11712,13 +11894,17 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
           const [bucket, ...keyParts] = bucketAndKey.split('/');
           faceUrl = `https://${bucket}.s3.ap-south-1.amazonaws.com/${keyParts.join('/')}`;
         }
+
+        const relationData = relationsMap.get(userId) || {};
+
         return {
           userId: userId,
           faceUrl: faceUrl,
-          name: recognitionData.name || recognitionData.user_name || 'Unknown',
-          relation: recognitionData.relation || null,
-          userPhoneNumber: null,
-          org_name: null
+          name: relationData.name || userData.org_name || userData?.user_name,
+          relationName: relationData.name || null,
+          relationshipType: relationData.relation_type || null,
+          isStarred: relationData.is_starred || false,
+          userPhoneNumber: null
         };
       }
     });
@@ -11745,45 +11931,6 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
     });
   }
 });
-
-// app.post('/updateRelation', async (req, res) => {
-//   const { userId, relation } = req.body;
-  
-//   try {
-//     if (!userId || !relation) {
-//       return res.status(400).json({
-//         success: false,
-//         error: 'Missing required fields: userId and relation'
-//       });
-//     }
-
-//     const updateParams = {
-//       TableName: 'machinevision_recognition_users_data',
-//       Key: {
-//         user_id: userId
-//       },
-//       UpdateExpression: 'set relation = :relation',
-//       ExpressionAttributeValues: {
-//         ':relation': relation
-//       },
-//       ReturnValues: 'ALL_NEW'
-//     };
-    
-//     const result = await docClient.update(updateParams).promise();
-    
-//     res.json({
-//       success: true,
-//       data: result.Attributes
-//     });
-    
-//   } catch (error) {
-//     logger.error('Error in updateRelation:', error);
-//     res.status(500).json({
-//       success: false,
-//       error: 'Failed to update relation'
-//     });
-//   }
-// });
 
 
 app.get('/userThumbnailsByFlashbackId/:flashbackId', async (req, res) => {
