@@ -119,6 +119,7 @@ exports.uploadUserPortrait = async (fileBuffer, username) => {
       }
     );
     if (response.data && response.data.user_id) {
+      logger.info(response.data);
       userId = response.data.user_id;
       logger.info(`Generated user_id: ${userId} for sanitized username: ${sanitizedUsername}`);
     } else {
