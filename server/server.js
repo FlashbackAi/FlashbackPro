@@ -13201,8 +13201,8 @@ app.get('/getUserFaceBubbles/:userId/:User', async (req, res) => {
     if (result.Items?.length > 0) {
       let faceUrl = result.Items[0].face_url;
 
-      // Transform the S3 URL format if it starts with "s3://"
-      if (faceUrl && faceUrl.startsWith('s3://')) {
+      // Ensure faceUrl is a string before attempting string operations
+      if (typeof faceUrl === 'string' && faceUrl.startsWith('s3://')) {
         const bucketAndKey = faceUrl.replace('s3://', '');
         const [bucket, ...keyParts] = bucketAndKey.split('/');
         faceUrl = `https://${bucket}.s3.ap-south-1.amazonaws.com/${keyParts.join('/')}`;
@@ -13220,6 +13220,7 @@ app.get('/getUserFaceBubbles/:userId/:User', async (req, res) => {
     res.status(500).send({ error: error.message });
   }
 });
+
 
 
 app.post('/initializeChat', async (req, res) => {
