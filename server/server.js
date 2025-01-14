@@ -13151,20 +13151,30 @@ app.get('/getUserFaceBubbles/:userId/:User', async (req, res) => {
     } else {
       Recognitiontablename = 'RekognitionUsersData';
     }
+    
     const params = {
       TableName: Recognitiontablename,
       KeyConditionExpression: 'user_id = :userId',
       ExpressionAttributeValues: {
-        ':userId': { S: userId }  // Need to specify the type as String
+        ':userId': { S: userId }
       }
     };
 
     const result = await dynamoDB.query(params).promise();
     
     if (result.Items?.length > 0) {
+      let faceUrl = result.Items[0].face_url;
+      
+      // Transform the S3 URL format if it's from machinevision_recognition_users_data
+      if (Recognitiontablename === 'machinevision_recognition_users_data' && faceUrl && faceUrl.startsWith('s3://')) {
+        const bucketAndKey = faceUrl.replace('s3://', '');
+        const [bucket, ...keyParts] = bucketAndKey.split('/');
+        faceUrl = `https://${bucket}.s3.ap-south-1.amazonaws.com/${keyParts.join('/')}`;
+      }
+
       res.status(200).send({
         success: true,
-        face_url: result.Items[0].face_url
+        face_url: faceUrl
       });
     } else {
       res.status(404).send({ message: 'User not found' });
