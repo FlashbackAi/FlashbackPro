@@ -2,6 +2,7 @@ const express = require('express');
 const userController = require('./Controller/UserController');
 const walletController = require('./Controller/WalletController');
 const datasetController = require('./Controller/DatasetController');
+const bubbleChatController = require('./Controller/BubbleChatController')
 const multer = require('multer'); // For handling file uploads
 const upload = multer(); // Memory storage for processing files
 const app = express();
@@ -24,6 +25,31 @@ app.post('/verifyUserActivation', userController.verifyUserActivation);
 
 // Upload user portrait
 app.post('/uploadUserPortrait', upload.single('image'), userController.uploadUserPortrait);
+
+// Send OTP
+app.post('/sendOTP', userController.sendOTP);
+
+// Verify OTP
+app.post('/verifyOTP', userController.verifyOTP);
+
+
+//APIs for BUbble chats
+//API to create bubble chat
+app.post('/createBubbleChat', bubbleChatController.createBubbleChat);
+//API to create Group bubble chat
+app.post('/createGroupBubbleChat', bubbleChatController.createGroupBubbleChat);
+//API to Add members to Group bubble chat
+app.post('/addGroupMembers', bubbleChatController.addGroupMembers);
+//API to Remove users from Group bubble chat
+app.post('/removeGroupMembers', bubbleChatController.removeGroupMembers);
+//API to delete Group bubble chat
+app.post('/deleteGroupChat', bubbleChatController.deleteGroupChat);
+//API to get chats by user
+app.get('/chats-by-user/:user_phone_number', bubbleChatController.getChatsByUser);
+//API to Add Admin to Group bubble chat
+app.post('/addAdmin', bubbleChatController.addAdminGroupMembers);
+//API to Remove Admin from Group bubble chat
+app.post('/removeAdmin', bubbleChatController.removeAdminGroupMembers);
 
 
 

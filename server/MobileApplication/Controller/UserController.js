@@ -1,4 +1,5 @@
 const userService = require('../Service/UserService');
+const OTPService = require('../Service/OTPService');
 const logger = require('../../logger'); // Assuming shared utilities for logging
 
 exports.createUser = async (req, res) => {
@@ -94,4 +95,33 @@ exports.uploadUserPortrait = async (req, res) => {
     res.status(500).json({ error: 'Failed to upload user portrait' });
   }
 };
+
+
+
+exports.sendOTP = async (req, res) => {
+  const { phoneNumber } = req.body;
+
+  try {
+    const message = await OTPService.generateAndSendOTP(phoneNumber);
+    res.status(200).json({ message });
+  } catch (error) {
+    res.status(500).json({ error: 'Error sending OTP', details: error.message });
+  }
+};
+
+exports.verifyOTP = async (req, res) => {
+  const { phoneNumber, otp, login_platform } = req.body;
+
+  try {
+    const isValid = await OTPService.verifyOTP(phoneNumber, otp, login_platform);
+    if (isValid) {
+      res.status(200).json({ message: 'OTP verified successfully' });
+    } else {
+      res.status(200).json({ success: false, error: 'Invalid OTP' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Error verifying OTP', details: error.message });
+  }
+};
+
 

@@ -1,6 +1,6 @@
 const { getConfig } = require('../../config');
 const tableNames = require('../tables'); // Import table names
-
+const logger = require('../../logger')
 const docClient = getConfig().docClient;
 
 exports.getUser = async (user_phone_number) => {
@@ -97,3 +97,28 @@ exports.updateUserActivationStatus = async (user_phone_number) => {
   const result = await docClient.update(params).promise();
   return result.Attributes;
 };
+
+exports.getUserObjectByUserId = async (userId)=>{
+  try{
+    logger.info("getting user info for userId : "+userId);
+    params = {
+      TableName: tableNames.userTableName,
+      FilterExpression: "user_id = :userId",
+      ExpressionAttributeValues: {
+        ":userId": userId
+      }
+    };
+    const result = await docClient.scan(params).promise();
+
+    if (result.Items.length === 0) {
+      logger.info("user details not found for userId: ",userId);
+      // throw new Error("userId not found");
+      return;
+    }
+    logger.info("user details fetched successfully");
+    return result.Items[0];
+  } catch (error) {
+    console.error("Error getting user object:", error);
+    throw error;
+  }
+}

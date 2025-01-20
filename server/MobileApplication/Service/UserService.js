@@ -103,6 +103,7 @@ exports.uploadUserPortrait = async (fileBuffer, username) => {
 
   // Step 2: Call external API to generate user_id
   logger.info(`Calling external API to generate user_id for image URL: ${s3Url}`);
+  //const externalApiUrl = 'https://127.0.0.1:8000/generate-user-Id-byUserImage/';
   const externalApiUrl = 'https://52.66.187.182:5000/generate-user-Id-byUserImage/';
   let userId;
 
