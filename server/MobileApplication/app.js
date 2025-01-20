@@ -3,6 +3,7 @@ const userController = require('./Controller/UserController');
 const walletController = require('./Controller/WalletController');
 const datasetController = require('./Controller/DatasetController');
 const bubbleChatController = require('./Controller/BubbleChatController')
+const relationsController = require('./Controller/RelationsController')
 const multer = require('multer'); // For handling file uploads
 const upload = multer(); // Memory storage for processing files
 const app = express();
@@ -53,6 +54,15 @@ app.post('/removeAdmin', bubbleChatController.removeAdminGroupMembers);
 
 
 
+//APIs for User Relations
+
+//API to create a relation request
+app.post('/createRelationRequest', relationsController.createRelationRequest);
+//API to update the relation request status
+app.post('/updateRelationRequest', relationsController.updateRelationRequestStatus);
+
+
+
 //APIs for wallet-----
 //create wallet
 app.post('/createWalet', walletController.createWallet);
@@ -72,8 +82,6 @@ app.post('/transfer-coins-by-number', walletController.transferCoinsByNumber);
 
 //transfer coins by wallet address
 app.post('/transfer-coins-by-wallet-address', walletController.transferCoinsByWalletAddress);
-
-
 
 //APIs for dataset
 
