@@ -203,10 +203,29 @@ function Login({ name, onLoginSuccess, showAppBar = true }) {
   let location = useLocation();
   const navigate = useNavigate();
 
+    
+  const mapUserToEvent = async (userPhoneNumber) => {
+   
+    try {
+      await API_UTIL.post('/mapUserToEvent', {
+        event_id: eventName,
+        user_phone_number: userPhoneNumber,
+        
+      });
+
+    } catch (error) {
+      console.error("Error mapping event to user:", error);
+    }
+  };
+
+
   // Check if user is already logged in
   useEffect(() => {
     const userPhoneNumber = localStorage.getItem("userPhoneNumber");
     if (userPhoneNumber && !location.state?.from?.pathname?.includes('/photos')) {
+      if(eventName){
+        mapUserToEvent(userPhoneNumber);
+      }
       const url = location.state?.from?.pathname 
       ? location.state.from.pathname 
       : (eventName ? `/photosv1/${eventName}/undefined` : "/dashboard");
@@ -342,7 +361,7 @@ function Login({ name, onLoginSuccess, showAppBar = true }) {
   };
 
   const handleNavigation = async (fullPhoneNumber) => {
-    if (typeof fromUrl === 'string' && fromUrl.includes("photos")) {
+    if (typeof fromUrl === 'string' && fromUrl.includes("photos") && !fromUrl.includes("undefined")) {
       try {
         const urlArray = fromUrl.split("/");
         const response = await API_UTIL.post(`/userIdPhoneNumberMapping`, {
@@ -380,23 +399,23 @@ function Login({ name, onLoginSuccess, showAppBar = true }) {
         });
         localStorage.setItem('userPhoneNumber', fullPhoneNumber);
         handleNavigation(fullPhoneNumber);
-        if (typeof fromUrl === 'string' && fromUrl.includes("photos")) {
-          try {
-            const urlArray = fromUrl.split("/");
-            const response = await API_UTIL.post(`/userIdPhoneNumberMapping`, {
-              phoneNumber: fullPhoneNumber,
-              eventName: urlArray[urlArray.length - 2],
-              userId: urlArray[urlArray.length - 1],
-            });
-            if (response.status === 200) {
-              navigate(fromUrl);
-            }
-          } catch (error) {
-            console.log("error in mapping the userId and phone number");
-          }
-        } else {
-          navigate(fromUrl);
-        }
+        // if (typeof fromUrl === 'string' && fromUrl.includes("photos")) {
+        //   try {
+        //     const urlArray = fromUrl.split("/");
+        //     const response = await API_UTIL.post(`/userIdPhoneNumberMapping`, {
+        //       phoneNumber: fullPhoneNumber,
+        //       eventName: urlArray[urlArray.length - 2],
+        //       userId: urlArray[urlArray.length - 1],
+        //     });
+        //     if (response.status === 200) {
+        //       navigate(fromUrl);
+        //     }
+        //   } catch (error) {
+        //     console.log("error in mapping the userId and phone number");
+        //   }
+        // } else {
+        //   navigate(fromUrl);
+        // }
       } catch (error) {
         console.error("Error uploading image:", error);
       }finally{
