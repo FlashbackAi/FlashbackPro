@@ -4,6 +4,7 @@ const walletController = require('./Controller/WalletController');
 const datasetController = require('./Controller/DatasetController');
 const bubbleChatController = require('./Controller/BubbleChatController')
 const relationsController = require('./Controller/RelationsController')
+const generativeAIController = require('./Controller/GenerativeAIController')
 const multer = require('multer'); // For handling file uploads
 const upload = multer(); // Memory storage for processing files
 const app = express();
@@ -93,3 +94,9 @@ app.get('/getDatasetDetails/:orgName/:datasetName', datasetController.getDataset
 app.post("/updateRequestStatus", datasetController.updateRequestStatus);
 //API to get the requests of the dataset
 app.get('/getDatasetRequests/:dataset', datasetController.getDatasetRequests);
+
+
+// APIs for calling generative AI models
+
+//API to generate image using comfyUI
+app.post("/process-images-progress", upload.fields([{ name: "image1" }, { name: "image2" }]), generativeAIController.processImagesProgress);
