@@ -1,0 +1,368 @@
+{
+  "108": {
+    "inputs": {
+      "vae_name": "fluxVaeSft_aeSft.sft"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE"
+    }
+  },
+  "113": {
+    "inputs": {
+      "width": 1024,
+      "height": 768,
+      "batch_size": 1
+    },
+    "class_type": "EmptySD3LatentImage",
+    "_meta": {
+      "title": "EmptySD3LatentImage"
+    }
+  },
+  "114": {
+    "inputs": {
+      "pulid_file": "pulid_flux_v0.9.1.safetensors"
+    },
+    "class_type": "PulidFluxModelLoader",
+    "_meta": {
+      "title": "Load PuLID Flux Model"
+    }
+  },
+  "119": {
+    "inputs": {},
+    "class_type": "PulidFluxEvaClipLoader",
+    "_meta": {
+      "title": "Load Eva Clip (PuLID Flux)"
+    }
+  },
+  "123": {
+    "inputs": {
+      "clip_name1": "t5xxl_fp8_e4m3fn.safetensors",
+      "clip_name2": "clip_l.safetensors",
+      "type": "flux",
+      "device": "default"
+    },
+    "class_type": "DualCLIPLoader",
+    "_meta": {
+      "title": "DualCLIPLoader"
+    }
+  },
+  "124": {
+    "inputs": {
+      "provider": "CUDA"
+    },
+    "class_type": "PulidFluxInsightFaceLoader",
+    "_meta": {
+      "title": "Load InsightFace (PuLID Flux)"
+    }
+  },
+  "169": {
+    "inputs": {
+      "model": [
+        "196",
+        0
+      ]
+    },
+    "class_type": "FluxForwardOverrider",
+    "_meta": {
+      "title": "FluxForwardOverrider"
+    }
+  },
+  "171": {
+    "inputs": {
+      "scheduler": "simple",
+      "steps": 40,
+      "denoise": 1,
+      "model": [
+        "177",
+        0
+      ]
+    },
+    "class_type": "BasicScheduler",
+    "_meta": {
+      "title": "BasicScheduler"
+    }
+  },
+  "177": {
+    "inputs": {
+      "rel_l1_thresh": 0.6900000000000001,
+      "model": [
+        "169",
+        0
+      ]
+    },
+    "class_type": "ApplyTeaCachePatch",
+    "_meta": {
+      "title": "ApplyTeaCachePatch"
+    }
+  },
+  "190": {
+    "inputs": {
+      "weight": 1,
+      "start_at": 0.1,
+      "end_at": 0.9500000000000001,
+      "model": [
+        "211",
+        0
+      ],
+      "pulid_flux": [
+        "114",
+        0
+      ],
+      "eva_clip": [
+        "119",
+        0
+      ],
+      "face_analysis": [
+        "124",
+        0
+      ],
+      "image": [
+        "206",
+        0
+      ],
+      "attn_mask": [
+        "193",
+        0
+      ]
+    },
+    "class_type": "ApplyPulidFlux",
+    "_meta": {
+      "title": "Apply PuLID Flux"
+    }
+  },
+  "191": {
+    "inputs": {
+      "text": "Two men dressed up in cowboy attire and riding on the horses. highly detailed 4K composition, realistic",
+      "clip": [
+        "123",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "192": {
+    "inputs": {
+      "value": 0,
+      "width": 1024,
+      "height": 768
+    },
+    "class_type": "SolidMask",
+    "_meta": {
+      "title": "SolidMask"
+    }
+  },
+  "193": {
+    "inputs": {
+      "x": 0,
+      "y": 0,
+      "operation": "add",
+      "destination": [
+        "192",
+        0
+      ],
+      "source": [
+        "194",
+        0
+      ]
+    },
+    "class_type": "MaskComposite",
+    "_meta": {
+      "title": "MaskComposite"
+    }
+  },
+  "194": {
+    "inputs": {
+      "value": 1,
+      "width": 512,
+      "height": 768
+    },
+    "class_type": "SolidMask",
+    "_meta": {
+      "title": "SolidMask"
+    }
+  },
+  "196": {
+    "inputs": {
+      "weight": 1,
+      "start_at": 0.1,
+      "end_at": 0.9500000000000001,
+      "model": [
+        "190",
+        0
+      ],
+      "pulid_flux": [
+        "114",
+        0
+      ],
+      "eva_clip": [
+        "119",
+        0
+      ],
+      "face_analysis": [
+        "124",
+        0
+      ],
+      "image": [
+        "207",
+        0
+      ],
+      "attn_mask": [
+        "197",
+        0
+      ]
+    },
+    "class_type": "ApplyPulidFlux",
+    "_meta": {
+      "title": "Apply PuLID Flux"
+    }
+  },
+  "197": {
+    "inputs": {
+      "mask": [
+        "193",
+        0
+      ]
+    },
+    "class_type": "InvertMask",
+    "_meta": {
+      "title": "InvertMask"
+    }
+  },
+  "203": {
+    "inputs": {
+      "noise": [
+        "212",
+        0
+      ],
+      "guider": [
+        "205",
+        0
+      ],
+      "sampler": [
+        "213",
+        0
+      ],
+      "sigmas": [
+        "171",
+        0
+      ],
+      "latent_image": [
+        "113",
+        0
+      ]
+    },
+    "class_type": "SamplerCustomAdvanced",
+    "_meta": {
+      "title": "SamplerCustomAdvanced"
+    }
+  },
+  "204": {
+    "inputs": {
+      "guidance": 3.5,
+      "conditioning": [
+        "191",
+        0
+      ]
+    },
+    "class_type": "FluxGuidance",
+    "_meta": {
+      "title": "FluxGuidance"
+    }
+  },
+  "205": {
+    "inputs": {
+      "model": [
+        "177",
+        0
+      ],
+      "conditioning": [
+        "204",
+        0
+      ]
+    },
+    "class_type": "BasicGuider",
+    "_meta": {
+      "title": "BasicGuider"
+    }
+  },
+  "206": {
+    "inputs": {
+      "image": "face4.jpg",
+      "upload": "image"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
+    }
+  },
+  "207": {
+    "inputs": {
+      "image": "WhatsApp Image 2024-12-30 at 16.42.42_469f675d.jpg",
+      "upload": "image"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
+    }
+  },
+  "208": {
+    "inputs": {
+      "samples": [
+        "203",
+        0
+      ],
+      "vae": [
+        "108",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "210": {
+    "inputs": {
+      "images": [
+        "208",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "211": {
+    "inputs": {
+      "unet_name": "FLUX1/flux1-dev-fp8.safetensors",
+      "weight_dtype": "fp8_e4m3fn"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Load Diffusion Model"
+    }
+  },
+  "212": {
+    "inputs": {
+      "noise_seed": 137452639790813
+    },
+    "class_type": "RandomNoise",
+    "_meta": {
+      "title": "RandomNoise"
+    }
+  },
+  "213": {
+    "inputs": {
+      "sampler_name": "euler"
+    },
+    "class_type": "KSamplerSelect",
+    "_meta": {
+      "title": "KSamplerSelect"
+    }
+  }
+}

@@ -184,7 +184,7 @@ exports.processImagesProgress = async (req, res) => {
         logger.info(`Uploaded images to ComfyUI: ${image1Path}, ${image2Path}`);
 
         // **4️⃣ Load & Modify Workflow JSON**
-        const workflow = JSON.parse(fs.readFileSync("C:\\Users\\AnirudhThadem\\FLASHBACK\\Generative Model\\API_Code\\PuLID_with_attn_mask.json", "utf8"));
+        const workflow = JSON.parse(fs.readFileSync("MobileApplication/ComfyWorkFlow/PuLID_with_attn_mask.json", "utf8"));
         workflow["191"]["inputs"]["text"] = prompt;
         workflow["206"]["inputs"]["image"] = image1Path;
         workflow["207"]["inputs"]["image"] = image2Path;
