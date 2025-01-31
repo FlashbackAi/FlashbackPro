@@ -14945,7 +14945,7 @@ async function encryptImage(buffer) {
 
 // Upload API: Encrypts Image Before Uploading to S3
 app.post("/uploadDeviceImages", upload.array("images"), async (req, res) => {
-  const { userPhoneNumber } = req.body;
+  const { userPhoneNumber,analysisId } = req.body;
   const files = req.files;
 
   try {
