@@ -14963,7 +14963,7 @@ app.post("/uploadDeviceImages", upload.array("images"), async (req, res) => {
           const s3Key = `${formattedPhoneNumber}/${file.originalname}`;
 
           await s3.putObject({
-              Bucket: 'tempbuckettestencryption',
+              Bucket: MachineVisionCollectionBucketName,
               Key: s3Key,
               Body: encryptedData,
               Metadata: {
@@ -14978,6 +14978,22 @@ app.post("/uploadDeviceImages", upload.array("images"), async (req, res) => {
               s3Key: s3Key
           });
       }
+      // Update analysis progress
+      const updateParams = {
+        TableName: 'DeviceAnalysis',
+        Key: AWS.DynamoDB.Converter.marshall({
+          userPhoneNumber: normalizedPhoneNumber,
+          analysisId: analysisId
+        }),
+        UpdateExpression: 'SET analyzedImages = analyzedImages + :inc, lastUpdated = :now',
+        ExpressionAttributeValues: AWS.DynamoDB.Converter.marshall({
+          ':inc': files.length,
+          ':now': Date.now()
+        })
+      };
+
+      await dynamoDB.updateItem(updateParams).promise();
+
 
       res.json({
           success: true,
