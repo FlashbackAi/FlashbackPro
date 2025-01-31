@@ -46,6 +46,7 @@ const e = require('express');
 initializeConfig()
   .then(() => {
 const config = getConfig();
+const { kms, KMS_KEY_ID } = getConfig();
 app.use(cors()); 
 app.use(express.json({ limit: '15mb' })); 
 
@@ -14847,7 +14848,7 @@ app.put('/updateAnalysisStatus/:userPhoneNumber/:analysisId', async (req, res) =
   }
 });
 
-app.post('/uploadDeviceImages', upload.array('images'), async (req, res) => {
+app.post('/uploadDeviceImages-old', upload.array('images'), async (req, res) => {
   const { userPhoneNumber, analysisId } = req.body;
   const files = req.files;
 
@@ -14920,7 +14921,132 @@ app.post('/uploadDeviceImages', upload.array('images'), async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+// Generate a Data Encryption Key (DEK) using AWS KMS
+async function generateKmsKey() {
+  const response = await kms.generateDataKey({
+      KeyId: KMS_KEY_ID,
+      KeySpec: "AES_256",
+  }).promise();
 
+  return { encryptedKey: response.CiphertextBlob, plainKey: response.Plaintext };
+}
+
+// Encrypt Image Using AES-256-CBC
+async function encryptImage(buffer) {
+  const { encryptedKey, plainKey } = await generateKmsKey();
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv("aes-256-cbc", plainKey, iv);
+
+  let encrypted = cipher.update(buffer);
+  encrypted = Buffer.concat([encrypted, cipher.final()]);
+
+  return { encryptedData: encrypted, iv, encryptedKey };
+}
+
+// Upload API: Encrypts Image Before Uploading to S3
+app.post("/uploadDeviceImages", upload.array("images"), async (req, res) => {
+  const { userPhoneNumber } = req.body;
+  const files = req.files;
+
+  try {
+      // Format phone numbers
+      const normalizedPhoneNumber = userPhoneNumber.startsWith("+")
+          ? userPhoneNumber
+          : `+${userPhoneNumber}`;
+      const formattedPhoneNumber = normalizedPhoneNumber.replace("+", "");
+
+      const uploadResults = [];
+
+      // Encrypt & Upload images to S3
+      for (const file of files) {
+          const { encryptedData, iv, encryptedKey } = await encryptImage(file.buffer);
+          const s3Key = `${formattedPhoneNumber}/${file.originalname}`;
+
+          await s3.putObject({
+              Bucket: 'tempbuckettestencryption',
+              Key: s3Key,
+              Body: encryptedData,
+              Metadata: {
+                  iv: iv.toString("base64"),
+                  encryptedKey: encryptedKey.toString("base64"),
+                  encryption: "AES-256-CBC"
+              }
+          }).promise();
+
+          uploadResults.push({
+              originalName: file.originalname,
+              s3Key: s3Key
+          });
+      }
+
+      res.json({
+          success: true,
+          uploadedFiles: uploadResults,
+      });
+  } catch (error) {
+      console.error("Error uploading images:", error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// Function to extract bucket and key from an S3 URL
+function extractS3Details(imageUrl) {
+  const urlParts = new URL(imageUrl);
+  const bucketName = urlParts.hostname.split(".")[0]; // Extract bucket name
+  const key = decodeURIComponent(urlParts.pathname.substring(1)); // Extract key
+  return { bucketName, key };
+}
+
+// Decrypt Image Function
+async function decryptImage(encryptedBuffer, ivBase64, encryptedKeyBase64) {
+  const decryptedKeyResponse = await kms.decrypt({
+      CiphertextBlob: Buffer.from(encryptedKeyBase64, "base64"),
+  }).promise();
+
+  const decryptedKey = decryptedKeyResponse.Plaintext;
+  const iv = Buffer.from(ivBase64, "base64");
+
+  const decipher = crypto.createDecipheriv("aes-256-cbc", decryptedKey, iv);
+  let decrypted = decipher.update(encryptedBuffer);
+  decrypted = Buffer.concat([decrypted, decipher.final()]);
+
+  return decrypted;
+}
+
+// API to Download & Decrypt Image using Image URL
+app.post("/downloadImageEnc", async (req, res) => {
+  const { imageUrl } = req.body; // Example: "https://your-bucket.s3.amazonaws.com/user123/image.enc"
+
+  try {
+      const { bucketName, key } = extractS3Details(imageUrl);
+
+      console.log(`Extracted Bucket: ${bucketName}, Key: ${key}`);
+
+      // Fetch encrypted image from S3
+      const response = await s3.getObject({
+          Bucket: bucketName,
+          Key: key,
+      }).promise();
+
+      const encryptedImage = response.Body;
+      const iv = response.Metadata.iv;
+      const encryptedKey = response.Metadata.encryptedkey;
+
+      if (!iv || !encryptedKey) {
+          return res.status(400).json({ error: "Missing encryption metadata" });
+      }
+
+      // Decrypt the image
+      const decryptedImage = await decryptImage(encryptedImage, iv, encryptedKey);
+
+      // Set response headers and serve the decrypted image
+      res.setHeader("Content-Type", "image/jpeg");
+      res.send(decryptedImage);
+  } catch (error) {
+      console.error("Error fetching/decrypting image:", error);
+      res.status(500).json({ error: "Failed to retrieve image" });
+  }
+});
 
 // Add this to your backend API endpoints
 app.get('/getAnalysisProgress/:userPhoneNumber', async (req, res) => {

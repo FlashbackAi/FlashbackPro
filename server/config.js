@@ -79,6 +79,25 @@ async function fetchAWSSecrets() {
     throw error;
   }
 }
+async function fetchKMSSecrets() {
+  const secretName = "flashback-prod-kms-secrets";
+  try {
+    const response = await secretsClient.send(
+      new GetSecretValueCommand({
+        SecretId: secretName,
+        VersionStage: "AWSCURRENT",
+      })
+    );
+
+    const secrets = JSON.parse(response.SecretString);
+    return {
+      KMS_KEY_ID: secrets.AWS_KMS_ACCESS_KEY_ID , // Fetching the KMS Key ID
+    };
+  } catch (error) {
+    console.error("Error retrieving AWS KMS secrets:", error);
+    throw error;
+  }
+}
 
 // Function to initialize the app with secrets and AWS SDK configuration
 async function initializeConfig() {
@@ -87,6 +106,7 @@ async function initializeConfig() {
     const aptosConfig = await fetchAptosSecrets();
     const whatsappConfig = await fetchWhatsappSecrets();
     const awsCredentials = await fetchAWSSecrets();
+    const kmsConfig = await fetchKMSSecrets();
 
     // Configure AWS SDK with credentials and region
     AWS.config.update({
@@ -102,8 +122,9 @@ async function initializeConfig() {
 
      // Initialize S3 Client
      const s3 = new AWS.S3({
-      region: 'ap-south-1', // Update with your AWS region
+      region: 'ap-south-1',
     });
+    const kms = new AWS.KMS({ region: "ap-south-1" });
 
 
     // Populate the configuration object
@@ -112,8 +133,10 @@ async function initializeConfig() {
       awsCredentials,
       whatsapp: whatsappConfig,
       aptosConfig,
-      docClient, // Include initialized DocumentClient
-      s3,        // Include initialized S3 Client
+      docClient,
+      s3,
+      kms,
+      KMS_KEY_ID: kmsConfig.KMS_KEY_ID
     };
 
     console.log('Configuration initialized successfully.');
