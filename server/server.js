@@ -15455,7 +15455,7 @@ app.get('/user-images/folder', async (req, res) => {
   }
 
   try {
-      let s3Urls = [];
+      let records = [];
       let lastEvaluatedKey = null;
 
       do {
@@ -15465,8 +15465,8 @@ app.get('/user-images/folder', async (req, res) => {
               IndexName: 'user_id-folder_name-index', // Replace with your GSI name
               KeyConditionExpression: 'folder_name = :folder_name AND user_id = :user_id',
               ExpressionAttributeValues: {
-                  ':folder_name': {S:folder_name},
-                  ':user_id': {S:user_id}
+                  ':folder_name': folder_name,
+                  ':user_id': user_id
               },
               ExclusiveStartKey: lastEvaluatedKey // Continue from the last evaluated key
           };
@@ -15474,12 +15474,12 @@ app.get('/user-images/folder', async (req, res) => {
           logger.info(`Querying DynamoDB with params: ${JSON.stringify(params)}`);
 
           // Query DynamoDB
-          const result = await dynamoDB.query(params).promise();
+          const result = await docClient.query(params).promise();
 
-          logger.info(`Fetched ${result.Items.length} images for this page`);
+          logger.info(`Fetched ${result.Items.length} records for this page`);
 
-          // Extract s3_url values and append them to the s3Urls array
-          s3Urls = s3Urls.concat(result.Items.map(item => item.s3_url.S));
+          // Append the complete records to the array
+          records = records.concat(result.Items);
 
           // Update LastEvaluatedKey
           lastEvaluatedKey = result.LastEvaluatedKey;
@@ -15489,10 +15489,10 @@ app.get('/user-images/folder', async (req, res) => {
           }
       } while (lastEvaluatedKey); // Continue querying until LastEvaluatedKey is null
 
-      logger.info(`Fetched a total of ${s3Urls.length} s3 URLs for user_id: ${user_id} in folder: ${folder_name}`);
+      logger.info(`Fetched a total of ${records.length} records for user_id: ${user_id} in folder: ${folder_name}`);
 
-      // Respond with the s3_url collection
-      res.status(200).json({ s3_urls: s3Urls });
+      // Respond with the complete records
+      res.status(200).json({ records });
   } catch (err) {
       logger.error(`Error fetching images for user_id ${user_id} in folder ${folder_name}: ${err.message}`, { error: err });
       res.status(500).json({ message: "Error fetching images", error: err.message });
