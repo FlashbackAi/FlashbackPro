@@ -169,7 +169,7 @@ exports.uploadUserPortrait = async (fileBuffer, username) => {
   }
 
   // Step 3: Update user details in the database
-  await userModel.updateUser(sanitizedUsername, {
+  await userModel.updateUser(username, {
     user_id: userId,
     potrait_s3_url: s3Url,
   });
