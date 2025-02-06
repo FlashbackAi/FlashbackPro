@@ -4,6 +4,8 @@ const { getConfig } = require('../../config');
 const https = require('https');
 const axios = require('axios');
 
+const crypto = require('crypto');
+const { kms, KMS_KEY_ID } = getConfig();
 // Create an HTTPS agent with rejectUnauthorized set to false
 const httpsAgent = new https.Agent({
   rejectUnauthorized: false, // Ignore self-signed certificate issues
@@ -81,6 +83,17 @@ exports.verifyUserActivation = async (user_phone_number, activation_code) => {
   logger.warn(`Invalid activation code for user_phone_number: ${user_phone_number}`);
   return { status: false, message: 'Invalid activation code' };
 };
+
+// Generate a Data Encryption Key (DEK) using AWS KMS
+async function generateKmsKey() {
+  const response = await kms.generateDataKey({
+      KeyId: KMS_KEY_ID,
+      KeySpec: "AES_256",
+  }).promise();
+
+  return { encryptedKey: response.CiphertextBlob, plainKey: response.Plaintext };
+}
+
 
 // Encrypt Image Using AES-256-CBC
 async function encryptImage(buffer) {
