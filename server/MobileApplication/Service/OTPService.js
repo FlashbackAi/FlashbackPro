@@ -19,6 +19,7 @@ exports.generateAndSendOTP = async (phoneNumber) => {
     try {
       // Send OTP via WhatsApp
       await whatsappSender.sendOTP(phoneNumber, otp);
+      logger.info("OTP generated successfully")
       return 'OTP sent successfully via WhatsApp';
     } catch (whatsappError) {
       logger.error('Error sending OTP via WhatsApp:', whatsappError);

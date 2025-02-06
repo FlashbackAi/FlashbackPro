@@ -11855,7 +11855,7 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
       
       // Then get user details from users table
       const usersParams = {
-        TableName: 'users',
+        TableName: 'flashback_mobile_users',
         IndexName: 'user_id-index',
         KeyConditionExpression: 'user_id = :userId',
         ExpressionAttributeValues: {

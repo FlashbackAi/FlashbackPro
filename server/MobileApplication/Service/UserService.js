@@ -87,12 +87,17 @@ exports.uploadUserPortrait = async (fileBuffer, username) => {
   const bucketName = 'flashbackmobileappuserthumbnails';
   const sanitizedUsername = username.startsWith('+') ? username.slice(1) : username;
   const fileName = `${sanitizedUsername}.jpg`;
-
+  const { encryptedData, iv, encryptedKey } = await encryptImage(fileBuffer);
   // Step 1: Upload image to S3
   const uploadParams = {
     Bucket: bucketName,
     Key: fileName,
-    Body: fileBuffer,
+    Body: encryptedData,
+    Metadata: {
+      iv: iv.toString("base64"),
+      encryptedKey: encryptedKey.toString("base64"),
+      encryption: "AES-256-CBC"
+    },
     ContentType: 'image/jpeg',
   };
 
