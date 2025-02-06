@@ -11824,34 +11824,47 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
       TableName: 'machinevision_indexed_data',
       IndexName: 'folder_name-index',
       KeyConditionExpression: 'folder_name = :folderName',
-      ProjectionExpression: 'user_id',
+      ProjectionExpression: 'user_id,face_id',
       ExpressionAttributeValues: {
         ':folderName': userPhoneNumber
       }
     };
     
     const indexedDataResult = await docClient.query(indexedDataParams).promise();
-    const uniqueUserIds = [...new Set(indexedDataResult.Items.map(item => item.user_id))];
-    
+    const items = indexedDataResult.Items || [];
+
+    // Map (or object) to hold a single face_id per user
+    const userFaceMap = new Map();
+
+    for (const item of items) {
+      // If we haven't already stored a face_id for this user_id, store it
+      if (!userFaceMap.has(item.user_id)) {
+        userFaceMap.set(item.user_id, item.face_id);
+      }
+    }
+
+  `    // Convert the keys of the map (unique user_ids) to an array
+      const uniqueUserIds = [...userFaceMap.keys()];`
     // Filter out the main user's ID from the list
+    const uniqueUserIds = [...userFaceMap.keys()];
     const filteredUserIds = uniqueUserIds.filter(id => id !== userId);
-    
+    logger.info(userFaceMap)
     const peoplePromises = filteredUserIds.map(async userId => {
       // First get user data from recognition table
-      const recognitionParams = {
-        TableName: 'machinevision_recognition_users_data',
-        KeyConditionExpression: 'user_id = :userId',
-        ExpressionAttributeValues: {
-          ':userId': userId
-        }
-      };
+      // const recognitionParams = {
+      //   TableName: 'machinevision_recognition_users_data',
+      //   KeyConditionExpression: 'user_id = :userId',
+      //   ExpressionAttributeValues: {
+      //     ':userId': userId
+      //   }
+      // };
       
-      const recognitionResult = await docClient.query(recognitionParams).promise();
-      if (!recognitionResult.Items || recognitionResult.Items.length === 0) {
-        return null;
-      }
+      // const recognitionResult = await docClient.query(recognitionParams).promise();
+      // if (!recognitionResult.Items || recognitionResult.Items.length === 0) {
+      //   return null;
+      // }
 
-      const recognitionData = recognitionResult.Items[0];
+      // const recognitionData = recognitionResult.Items[0];
       
       // Then get user details from users table
       const usersParams = {
@@ -11866,14 +11879,8 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
       try {
         const userResult = await docClient.query(usersParams).promise();
         const userData = userResult.Items && userResult.Items.length > 0 ? userResult.Items[0] : null;
-
-        // Transform the S3 URL format
-        let faceUrl = recognitionData.face_url;
-        if (faceUrl && faceUrl.startsWith('s3://')) {
-          const bucketAndKey = faceUrl.replace('s3://', '');
-          const [bucket, ...keyParts] = bucketAndKey.split('/');
-          faceUrl = `https://${bucket}.s3.ap-south-1.amazonaws.com/${keyParts.join('/')}`;
-        }
+        const faceId = userFaceMap.get(userId);
+        const faceUrl = `https://machinevisionuserscroppedfaces.s3.ap-south-1.amazonaws.com/user_data/${userId}/${faceId}_cropped.jpg`;
 
         const relationData = relationsMap.get(userId) || {};
 
@@ -11889,12 +11896,8 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
       } catch (error) {
         logger.error(`Error fetching user data for ${userId}:`, error);
         // Return the recognition data without user details if users table query fails
-        let faceUrl = recognitionData.face_url;
-        if (faceUrl && faceUrl.startsWith('s3://')) {
-          const bucketAndKey = faceUrl.replace('s3://', '');
-          const [bucket, ...keyParts] = bucketAndKey.split('/');
-          faceUrl = `https://${bucket}.s3.ap-south-1.amazonaws.com/${keyParts.join('/')}`;
-        }
+        const faceId = userFaceMap.get(userId);
+        const faceUrl = `https://machinevisionuserscroppedfaces.s3.ap-south-1.amazonaws.com/user_data/${userId}/${faceId}_cropped.jpg`;
 
         const relationData = relationsMap.get(userId) || {};
 
