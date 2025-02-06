@@ -82,6 +82,18 @@ exports.verifyUserActivation = async (user_phone_number, activation_code) => {
   return { status: false, message: 'Invalid activation code' };
 };
 
+// Encrypt Image Using AES-256-CBC
+async function encryptImage(buffer) {
+  const { encryptedKey, plainKey } = await generateKmsKey();
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv("aes-256-cbc", plainKey, iv);
+
+  let encrypted = cipher.update(buffer);
+  encrypted = Buffer.concat([encrypted, cipher.final()]);
+
+  return { encryptedData: encrypted, iv, encryptedKey };
+}
+
 
 exports.uploadUserPortrait = async (fileBuffer, username) => {
   const bucketName = 'flashbackmobileappuserthumbnails';
