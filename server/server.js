@@ -11914,13 +11914,15 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
     });
     
     const people = (await Promise.all(peoplePromises)).filter(Boolean);
-    
+    const faceId = userFaceMap.get(userId)
+    const faceUrl = `https://machinevisionuserscroppedfaces.s3.ap-south-1.amazonaws.com/user_data/${userId}/${faceId}_cropped.jpg`;
+
     res.json({
       success: true,
       data: {
         mainUser: userData ? {
           userId: userData.user_id,
-          faceUrl: userData.face_url,
+          faceUrl: faceUrl,
           name: 'You'
         } : null,
         relations: people
