@@ -46,6 +46,7 @@ const e = require('express');
 initializeConfig()
   .then(() => {
 const config = getConfig();
+const { kms, KMS_KEY_ID } = getConfig();
 app.use(cors()); 
 app.use(express.json({ limit: '15mb' })); 
 
@@ -11823,38 +11824,51 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
       TableName: 'machinevision_indexed_data',
       IndexName: 'folder_name-index',
       KeyConditionExpression: 'folder_name = :folderName',
-      ProjectionExpression: 'user_id',
+      ProjectionExpression: 'user_id,face_id',
       ExpressionAttributeValues: {
         ':folderName': userPhoneNumber
       }
     };
     
     const indexedDataResult = await docClient.query(indexedDataParams).promise();
-    const uniqueUserIds = [...new Set(indexedDataResult.Items.map(item => item.user_id))];
-    
+    const items = indexedDataResult.Items || [];
+
+    // Map (or object) to hold a single face_id per user
+    const userFaceMap = new Map();
+
+    for (const item of items) {
+      // If we haven't already stored a face_id for this user_id, store it
+      if (!userFaceMap.has(item.user_id)) {
+        userFaceMap.set(item.user_id, item.face_id);
+      }
+    }
+
+  `    // Convert the keys of the map (unique user_ids) to an array
+      const uniqueUserIds = [...userFaceMap.keys()];`
     // Filter out the main user's ID from the list
+    const uniqueUserIds = [...userFaceMap.keys()];
     const filteredUserIds = uniqueUserIds.filter(id => id !== userId);
-    
+    logger.info(userFaceMap)
     const peoplePromises = filteredUserIds.map(async userId => {
       // First get user data from recognition table
-      const recognitionParams = {
-        TableName: 'machinevision_recognition_users_data',
-        KeyConditionExpression: 'user_id = :userId',
-        ExpressionAttributeValues: {
-          ':userId': userId
-        }
-      };
+      // const recognitionParams = {
+      //   TableName: 'machinevision_recognition_users_data',
+      //   KeyConditionExpression: 'user_id = :userId',
+      //   ExpressionAttributeValues: {
+      //     ':userId': userId
+      //   }
+      // };
       
-      const recognitionResult = await docClient.query(recognitionParams).promise();
-      if (!recognitionResult.Items || recognitionResult.Items.length === 0) {
-        return null;
-      }
+      // const recognitionResult = await docClient.query(recognitionParams).promise();
+      // if (!recognitionResult.Items || recognitionResult.Items.length === 0) {
+      //   return null;
+      // }
 
-      const recognitionData = recognitionResult.Items[0];
+      // const recognitionData = recognitionResult.Items[0];
       
       // Then get user details from users table
       const usersParams = {
-        TableName: 'users',
+        TableName: 'flashback_mobile_users',
         IndexName: 'user_id-index',
         KeyConditionExpression: 'user_id = :userId',
         ExpressionAttributeValues: {
@@ -11865,14 +11879,8 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
       try {
         const userResult = await docClient.query(usersParams).promise();
         const userData = userResult.Items && userResult.Items.length > 0 ? userResult.Items[0] : null;
-
-        // Transform the S3 URL format
-        let faceUrl = recognitionData.face_url;
-        if (faceUrl && faceUrl.startsWith('s3://')) {
-          const bucketAndKey = faceUrl.replace('s3://', '');
-          const [bucket, ...keyParts] = bucketAndKey.split('/');
-          faceUrl = `https://${bucket}.s3.ap-south-1.amazonaws.com/${keyParts.join('/')}`;
-        }
+        const faceId = userFaceMap.get(userId);
+        const faceUrl = `https://machinevisionuserscroppedfaces.s3.ap-south-1.amazonaws.com/user_data/${userId}/${faceId}_cropped.jpg`;
 
         const relationData = relationsMap.get(userId) || {};
 
@@ -11888,12 +11896,8 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
       } catch (error) {
         logger.error(`Error fetching user data for ${userId}:`, error);
         // Return the recognition data without user details if users table query fails
-        let faceUrl = recognitionData.face_url;
-        if (faceUrl && faceUrl.startsWith('s3://')) {
-          const bucketAndKey = faceUrl.replace('s3://', '');
-          const [bucket, ...keyParts] = bucketAndKey.split('/');
-          faceUrl = `https://${bucket}.s3.ap-south-1.amazonaws.com/${keyParts.join('/')}`;
-        }
+        const faceId = userFaceMap.get(userId);
+        const faceUrl = `https://machinevisionuserscroppedfaces.s3.ap-south-1.amazonaws.com/user_data/${userId}/${faceId}_cropped.jpg`;
 
         const relationData = relationsMap.get(userId) || {};
 
@@ -11910,13 +11914,15 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
     });
     
     const people = (await Promise.all(peoplePromises)).filter(Boolean);
-    
+    const faceId = userFaceMap.get(userId)
+    const faceUrl = `https://machinevisionuserscroppedfaces.s3.ap-south-1.amazonaws.com/user_data/${userId}/${faceId}_cropped.jpg`;
+
     res.json({
       success: true,
       data: {
         mainUser: userData ? {
           userId: userData.user_id,
-          faceUrl: userData.face_url,
+          faceUrl: faceUrl,
           name: 'You'
         } : null,
         relations: people
@@ -14847,7 +14853,7 @@ app.put('/updateAnalysisStatus/:userPhoneNumber/:analysisId', async (req, res) =
   }
 });
 
-app.post('/uploadDeviceImages', upload.array('images'), async (req, res) => {
+app.post('/uploadDeviceImages-old', upload.array('images'), async (req, res) => {
   const { userPhoneNumber, analysisId } = req.body;
   const files = req.files;
 
@@ -14920,7 +14926,148 @@ app.post('/uploadDeviceImages', upload.array('images'), async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+// Generate a Data Encryption Key (DEK) using AWS KMS
+async function generateKmsKey() {
+  const response = await kms.generateDataKey({
+      KeyId: KMS_KEY_ID,
+      KeySpec: "AES_256",
+  }).promise();
 
+  return { encryptedKey: response.CiphertextBlob, plainKey: response.Plaintext };
+}
+
+// Encrypt Image Using AES-256-CBC
+async function encryptImage(buffer) {
+  const { encryptedKey, plainKey } = await generateKmsKey();
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv("aes-256-cbc", plainKey, iv);
+
+  let encrypted = cipher.update(buffer);
+  encrypted = Buffer.concat([encrypted, cipher.final()]);
+
+  return { encryptedData: encrypted, iv, encryptedKey };
+}
+
+// Upload API: Encrypts Image Before Uploading to S3
+app.post("/uploadDeviceImages", upload.array("images"), async (req, res) => {
+  const { userPhoneNumber,analysisId } = req.body;
+  const files = req.files;
+
+  try {
+      // Format phone numbers
+      const normalizedPhoneNumber = userPhoneNumber.startsWith("+")
+          ? userPhoneNumber
+          : `+${userPhoneNumber}`;
+      const formattedPhoneNumber = normalizedPhoneNumber.replace("+", "");
+
+      const uploadResults = [];
+
+      // Encrypt & Upload images to S3
+      for (const file of files) {
+          const { encryptedData, iv, encryptedKey } = await encryptImage(file.buffer);
+          const s3Key = `${formattedPhoneNumber}/${file.originalname}`;
+
+          await s3.putObject({
+              Bucket: MachineVisionCollectionBucketName,
+              Key: s3Key,
+              Body: encryptedData,
+              Metadata: {
+                  iv: iv.toString("base64"),
+                  encryptedKey: encryptedKey.toString("base64"),
+                  encryption: "AES-256-CBC"
+              }
+          }).promise();
+
+          uploadResults.push({
+              originalName: file.originalname,
+              s3Key: s3Key
+          });
+      }
+      // Update analysis progress
+      const updateParams = {
+        TableName: 'DeviceAnalysis',
+        Key: AWS.DynamoDB.Converter.marshall({
+          userPhoneNumber: normalizedPhoneNumber,
+          analysisId: analysisId
+        }),
+        UpdateExpression: 'SET analyzedImages = analyzedImages + :inc, lastUpdated = :now',
+        ExpressionAttributeValues: AWS.DynamoDB.Converter.marshall({
+          ':inc': files.length,
+          ':now': Date.now()
+        })
+      };
+
+      await dynamoDB.updateItem(updateParams).promise();
+
+
+      res.json({
+          success: true,
+          uploadedFiles: uploadResults,
+      });
+  } catch (error) {
+      console.error("Error uploading images:", error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// Function to extract bucket and key from an S3 URL
+function extractS3Details(imageUrl) {
+  const urlParts = new URL(imageUrl);
+  const bucketName = urlParts.hostname.split(".")[0]; // Extract bucket name
+  const key = decodeURIComponent(urlParts.pathname.substring(1)); // Extract key
+  return { bucketName, key };
+}
+
+// Decrypt Image Function
+async function decryptImage(encryptedBuffer, ivBase64, encryptedKeyBase64) {
+  const decryptedKeyResponse = await kms.decrypt({
+      CiphertextBlob: Buffer.from(encryptedKeyBase64, "base64"),
+  }).promise();
+
+  const decryptedKey = decryptedKeyResponse.Plaintext;
+  const iv = Buffer.from(ivBase64, "base64");
+
+  const decipher = crypto.createDecipheriv("aes-256-cbc", decryptedKey, iv);
+  let decrypted = decipher.update(encryptedBuffer);
+  decrypted = Buffer.concat([decrypted, decipher.final()]);
+
+  return decrypted;
+}
+
+// API to Download & Decrypt Image using Image URL
+app.post("/downloadImageEnc", async (req, res) => {
+  const { imageUrl } = req.body; // Example: "https://your-bucket.s3.amazonaws.com/user123/image.enc"
+
+  try {
+      const { bucketName, key } = extractS3Details(imageUrl);
+
+      console.log(`Extracted Bucket: ${bucketName}, Key: ${key}`);
+
+      // Fetch encrypted image from S3
+      const response = await s3.getObject({
+          Bucket: bucketName,
+          Key: key,
+      }).promise();
+
+      const encryptedImage = response.Body;
+      const iv = response.Metadata.iv;
+      const encryptedKey = response.Metadata.encryptedkey;
+
+      if (!iv || !encryptedKey) {
+          return res.status(400).json({ error: "Missing encryption metadata" });
+      }
+
+      // Decrypt the image
+      const decryptedImage = await decryptImage(encryptedImage, iv, encryptedKey);
+
+      // Set response headers and serve the decrypted image
+      res.setHeader("Content-Type", "image/jpeg");
+      res.send(decryptedImage);
+  } catch (error) {
+      console.error("Error fetching/decrypting image:", error);
+      res.status(500).json({ error: "Failed to retrieve image" });
+  }
+});
 
 // Add this to your backend API endpoints
 app.get('/getAnalysisProgress/:userPhoneNumber', async (req, res) => {
@@ -15313,7 +15460,7 @@ app.get('/user-images/folder', async (req, res) => {
   }
 
   try {
-      let s3Urls = [];
+      let records = [];
       let lastEvaluatedKey = null;
 
       do {
@@ -15323,8 +15470,8 @@ app.get('/user-images/folder', async (req, res) => {
               IndexName: 'user_id-folder_name-index', // Replace with your GSI name
               KeyConditionExpression: 'folder_name = :folder_name AND user_id = :user_id',
               ExpressionAttributeValues: {
-                  ':folder_name': {S:folder_name},
-                  ':user_id': {S:user_id}
+                  ':folder_name': folder_name,
+                  ':user_id': user_id
               },
               ExclusiveStartKey: lastEvaluatedKey // Continue from the last evaluated key
           };
@@ -15332,12 +15479,12 @@ app.get('/user-images/folder', async (req, res) => {
           logger.info(`Querying DynamoDB with params: ${JSON.stringify(params)}`);
 
           // Query DynamoDB
-          const result = await dynamoDB.query(params).promise();
+          const result = await docClient.query(params).promise();
 
-          logger.info(`Fetched ${result.Items.length} images for this page`);
+          logger.info(`Fetched ${result.Items.length} records for this page`);
 
-          // Extract s3_url values and append them to the s3Urls array
-          s3Urls = s3Urls.concat(result.Items.map(item => item.s3_url.S));
+          // Append the complete records to the array
+          records = records.concat(result.Items);
 
           // Update LastEvaluatedKey
           lastEvaluatedKey = result.LastEvaluatedKey;
@@ -15347,10 +15494,10 @@ app.get('/user-images/folder', async (req, res) => {
           }
       } while (lastEvaluatedKey); // Continue querying until LastEvaluatedKey is null
 
-      logger.info(`Fetched a total of ${s3Urls.length} s3 URLs for user_id: ${user_id} in folder: ${folder_name}`);
+      logger.info(`Fetched a total of ${records.length} records for user_id: ${user_id} in folder: ${folder_name}`);
 
-      // Respond with the s3_url collection
-      res.status(200).json({ s3_urls: s3Urls });
+      // Respond with the complete records
+      res.status(200).json({ records });
   } catch (err) {
       logger.error(`Error fetching images for user_id ${user_id} in folder ${folder_name}: ${err.message}`, { error: err });
       res.status(500).json({ message: "Error fetching images", error: err.message });

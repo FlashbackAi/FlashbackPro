@@ -4,6 +4,8 @@ const { getConfig } = require('../../config');
 const https = require('https');
 const axios = require('axios');
 
+const crypto = require('crypto');
+const { kms, KMS_KEY_ID } = getConfig();
 // Create an HTTPS agent with rejectUnauthorized set to false
 const httpsAgent = new https.Agent({
   rejectUnauthorized: false, // Ignore self-signed certificate issues
@@ -82,17 +84,45 @@ exports.verifyUserActivation = async (user_phone_number, activation_code) => {
   return { status: false, message: 'Invalid activation code' };
 };
 
+// Generate a Data Encryption Key (DEK) using AWS KMS
+async function generateKmsKey() {
+  const response = await kms.generateDataKey({
+      KeyId: KMS_KEY_ID,
+      KeySpec: "AES_256",
+  }).promise();
+
+  return { encryptedKey: response.CiphertextBlob, plainKey: response.Plaintext };
+}
+
+
+// Encrypt Image Using AES-256-CBC
+async function encryptImage(buffer) {
+  const { encryptedKey, plainKey } = await generateKmsKey();
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv("aes-256-cbc", plainKey, iv);
+
+  let encrypted = cipher.update(buffer);
+  encrypted = Buffer.concat([encrypted, cipher.final()]);
+
+  return { encryptedData: encrypted, iv, encryptedKey };
+}
+
 
 exports.uploadUserPortrait = async (fileBuffer, username) => {
   const bucketName = 'flashbackmobileappuserthumbnails';
   const sanitizedUsername = username.startsWith('+') ? username.slice(1) : username;
   const fileName = `${sanitizedUsername}.jpg`;
-
+  const { encryptedData, iv, encryptedKey } = await encryptImage(fileBuffer);
   // Step 1: Upload image to S3
   const uploadParams = {
     Bucket: bucketName,
     Key: fileName,
-    Body: fileBuffer,
+    Body: encryptedData,
+    Metadata: {
+      iv: iv.toString("base64"),
+      encryptedKey: encryptedKey.toString("base64"),
+      encryption: "AES-256-CBC"
+    },
     ContentType: 'image/jpeg',
   };
 
@@ -139,7 +169,7 @@ exports.uploadUserPortrait = async (fileBuffer, username) => {
   }
 
   // Step 3: Update user details in the database
-  await userModel.updateUser(sanitizedUsername, {
+  await userModel.updateUser(username, {
     user_id: userId,
     potrait_s3_url: s3Url,
   });
