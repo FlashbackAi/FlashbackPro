@@ -10,7 +10,8 @@ const generativeImageModel = require("../Model/GenerativeImageModel");
 // Get AWS SDK & S3 Instance
 const s3 = getConfig().s3;
 const docClient = getConfig().docClient;
-const SERVER_ADDRESS = "http://13.234.246.123:8188";
+// const SERVER_ADDRESS = "http://13.234.246.123:8188"; This was AWS GPU IP
+const SERVER_ADDRESS = "http://198.145.126.6:8188"; // This is IO.net Node IP
 const CLIENT_ID = require("crypto").randomUUID();
 const POLL_INTERVAL = 3000; // Poll every 3 seconds
 const S3_BUCKET = "flashbackgenai";  // Change to your actual S3 bucket
