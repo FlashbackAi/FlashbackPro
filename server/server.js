@@ -42,6 +42,7 @@ const httpsAgent = new https.Agent({
 
 const logger = require('./logger');
 const e = require('express');
+const { userTableName } = require('./MobileApplication/tables');
 
 initializeConfig()
   .then(() => {
@@ -15645,6 +15646,31 @@ app.get('/fetch/user-transfer-images', async (req, res) => {
 });
 
 
+async function getUserObjectByUserIdMobile(userId){
+  try{
+    logger.info("getting user info for userId : "+userId);
+    params = {
+      TableName: userTableName,
+      FilterExpression: "user_id = :userId",
+      ExpressionAttributeValues: {
+        ":userId": userId
+      }
+    };
+    const result = await docClient.scan(params).promise();
+
+    if (result.Items.length === 0) {
+      logger.info("user details not found for userId: ",userId);
+      // throw new Error("userId not found");
+      return;
+    }
+    logger.info("user details fetched successfully");
+    return result.Items[0];
+  } catch (error) {
+    console.error("Error getting user object:", error);
+    throw error;
+  }
+}
+
 //API for merging Users
 app.post("/merge-users", async (req, res) => {
   const { user_id_1, user_id_2 } = req.body;
@@ -15956,8 +15982,8 @@ app.post("/merge-users-in-phone", async (req, res) => {
     await docClient.put(mergeStatusInit).promise();
 
     // Fetch user details
-    const user1Details = await getUserObjectByUserId(user_id_1);
-    const user2Details = await getUserObjectByUserId(user_id_2);
+    const user1Details = await getUserObjectByUserIdMobile(user_id_1);
+    const user2Details = await getUserObjectByUserIdMobile(user_id_2);
 
     let merging_user_id;
     let target_user_id;
