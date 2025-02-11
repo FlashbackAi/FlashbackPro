@@ -5,10 +5,12 @@ const FormData = require("form-data");
 const { getConfig } = require("../../config");
 const sharp = require("sharp");
 const generativeImageModel = require("../Model/GenerativeImageModel");
+const crypto = require('crypto');
 
 // AWS SDK & S3 Instance
 const s3 = getConfig().s3;
 const docClient = getConfig().docClient;
+const { kms } = getConfig();
 // const SERVER_ADDRESS = "http://13.234.246.123:8188"; This was AWS GPU IP
 const SERVER_ADDRESS = "http://198.145.126.6:8188"; // This is IO.NET IP
 const CLIENT_ID = require("crypto").randomUUID();
@@ -33,6 +35,22 @@ async function uploadToS3(imageBuffer, filename, requestId) {
     }
 }
 
+// Decrypt Image Function
+async function decryptImage(encryptedBuffer, ivBase64, encryptedKeyBase64) {
+  const decryptedKeyResponse = await kms.decrypt({
+      CiphertextBlob: Buffer.from(encryptedKeyBase64, "base64"),
+  }).promise();
+
+  const decryptedKey = decryptedKeyResponse.Plaintext;
+  const iv = Buffer.from(ivBase64, "base64");
+
+  const decipher = crypto.createDecipheriv("aes-256-cbc", decryptedKey, iv);
+  let decrypted = decipher.update(encryptedBuffer);
+  decrypted = Buffer.concat([decrypted, decipher.final()]);
+
+  return decrypted;
+}
+
 // ✅ Download & Resize Image from S3
 async function downloadAndResizeImage(imageUrl) {
     try {
@@ -42,16 +60,35 @@ async function downloadAndResizeImage(imageUrl) {
 
         logger.info(`Downloading image from S3: Bucket=${bucketName}, Key=${key}`);
         const s3Response = await s3.getObject({ Bucket: bucketName, Key: key }).promise();
-        let imageBuffer = s3Response.Body;
-
-        if (imageBuffer.length > 1024 * 1024) {
-            imageBuffer = await sharp(imageBuffer)
-                .resize({ width: 1024 })
-                .jpeg({ quality: 85 })
-                .toBuffer();
-            logger.info(`Image resized.`);
+        
+        const iv = s3Response.Metadata.iv;
+        const encryptedKey = s3Response.Metadata.encryptedkey;
+        if (!iv || !encryptedKey) {
+            logger.info("image Url : ", imageUrl, "Normal image");
+            const imageBuffer = s3Response.Body;
+            if (imageBuffer.length > 1024 * 1024) {
+                imageBuffer = await sharp(imageBuffer)
+                    .resize({ width: 1024 })
+                    .jpeg({ quality: 85 })
+                    .toBuffer();
+                logger.info(`Image resized.`);
+            }
+            return imageBuffer;
+        }else{
+            // Decrypt the image
+            logger.info("image Url : ", imageUrl, "Encrypted image");
+            const encryptedImage = s3Response.Body;
+            const imageBuffer = await decryptImage(encryptedImage, iv, encryptedKey);
+            if (imageBuffer.length > 1024 * 1024) {
+                imageBuffer = await sharp(imageBuffer)
+                    .resize({ width: 1024 })
+                    .jpeg({ quality: 85 })
+                    .toBuffer();
+                logger.info(`Image resized.`);
+            }
+            return imageBuffer;
         }
-        return imageBuffer;
+        
     } catch (error) {
         logger.error(`Error processing image from S3: ${error.message}`);
         throw new Error(`Error processing image: ${error.message}`);
