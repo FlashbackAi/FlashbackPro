@@ -65,7 +65,7 @@ async function downloadAndResizeImage(imageUrl) {
         const encryptedKey = s3Response.Metadata.encryptedkey;
         if (!iv || !encryptedKey) {
             logger.info("image Url : ", imageUrl, "Normal image");
-            const imageBuffer = s3Response.Body;
+            let imageBuffer = s3Response.Body;
             if (imageBuffer.length > 1024 * 1024) {
                 imageBuffer = await sharp(imageBuffer)
                     .resize({ width: 1024 })
@@ -78,7 +78,7 @@ async function downloadAndResizeImage(imageUrl) {
             // Decrypt the image
             logger.info("image Url : ", imageUrl, "Encrypted image");
             const encryptedImage = s3Response.Body;
-            const imageBuffer = await decryptImage(encryptedImage, iv, encryptedKey);
+            let imageBuffer = await decryptImage(encryptedImage, iv, encryptedKey);
             if (imageBuffer.length > 1024 * 1024) {
                 imageBuffer = await sharp(imageBuffer)
                     .resize({ width: 1024 })
