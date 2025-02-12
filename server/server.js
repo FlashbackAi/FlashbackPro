@@ -15850,7 +15850,7 @@ const updateDataAfterMerge = async (merge_req_id, merging_user_id, target_user_i
       await docClient.delete(deleteParams).promise();
 
       // Re-insert the record with the new `user_id`
-      const updatedRecord = { ...record,user_id_original: merging_user_id, user_id: target_user_id };
+      const updatedRecord = { ...record,user_id_original: record.user_id_original || merging_user_id, user_id: target_user_id };
       const putParams = {
         TableName: "machinevision_indexed_data",
         Item: updatedRecord,
