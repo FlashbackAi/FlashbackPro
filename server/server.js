@@ -11840,7 +11840,7 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
     for (const item of items) {
       // If we haven't already stored a face_id for this user_id, store it
       // if (!userFaceMap.has(item.user_id)) {
-        userFaceMap.set(item.user_id, item.face_id);
+        userFaceMap.set(item.user_id_original || item.user_id, item.face_id);
       
     }
 
