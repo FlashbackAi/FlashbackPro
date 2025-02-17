@@ -11912,7 +11912,7 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
     });
     
     const people = (await Promise.all(peoplePromises)).filter(Boolean);
-    let faceUrl = userData.face_url;
+    let faceUrl = userData?.face_url;
     if (faceUrl && faceUrl.startsWith('s3://')) {
       const bucketAndKey = faceUrl.replace('s3://', '');
       const [bucket, ...keyParts] = bucketAndKey.split('/');
