@@ -12500,16 +12500,42 @@ app.get('/getDeviceMemories/:userPhoneNumber', async (req, res) => {
 
     const result = await docClient.query(params).promise();
 
-    // Process and format the results
-    const memories = result.Items.map(item => ({
-      image_id: item.image_id,
-      user_id: item.user_id,
-      bounding_box: item.bounding_box,
-      confidence: item.confidence,
-      faces_in_image: item.faces_in_image,
-      face_id: item.face_id,
-      image_name: item.image_name,
-      indexed_date: item.indexed_date
+    // Group memories by image_name to identify other users
+    const memoryMap = new Map();
+    result.Items.forEach(item => {
+      const imageName = item.image_name;
+      if (!memoryMap.has(imageName)) {
+        memoryMap.set(imageName, {
+          image_id: item.image_id,
+          user_id: item.user_id, // Primary user_id
+          bounding_box: item.bounding_box,
+          confidence: item.confidence,
+          faces_in_image: item.faces_in_image,
+          face_id: item.face_id,
+          image_name: imageName,
+          indexed_date: item.indexed_date,
+          otherUsers: [] // Initialize otherUsers array
+        });
+      } else {
+        // Add additional user_ids to otherUsers
+        const existingMemory = memoryMap.get(imageName);
+        if (item.user_id !== existingMemory.user_id) {
+          existingMemory.otherUsers.push(item.user_id);
+        }
+      }
+    });
+
+    // Convert Map to array of memories
+    const memories = Array.from(memoryMap.values()).map(memory => ({
+      image_id: memory.image_id,
+      user_id: memory.user_id,
+      bounding_box: memory.bounding_box,
+      confidence: memory.confidence,
+      faces_in_image: memory.faces_in_image,
+      face_id: memory.face_id,
+      image_name: memory.image_name,
+      indexed_date: memory.indexed_date,
+      otherUsers: memory.otherUsers // Include otherUsers
     }));
 
     // Return success response
