@@ -197,200 +197,6 @@ const generateRandomId = (length) => {
   return result;
 };
 
-// app.post('/signup', async function(req, res) {
-//   try {
-//     const username = req.body.username.toLowerCase();
-//     const Flash = 'Flash';
-//     // This will create a unique userId with format "Flash" as Prefix _"Username"_"randoom number" Eg: Flash_srialla_098
-//     const referralId = `${Flash}_${username}_${Math.floor(Math.random() * 1000)}`; 
-//     const created_date = new Date().toISOString(); // Created date of the user registration
-//     const checkUserParams = {
-//       TableName: userDataTableName,
-//       Key: {
-//         user_name: username,
-//       },
-//     };
-
-//     // Check if the username already exists in DynamoDB
-//     const existingUser = await docClient.get(checkUserParams).promise();
-
-//     if (existingUser.Item) {
-//       return res.status(409).json({ message: 'Username already exists.' });
-//     }
-//     // DynamoDB params for user_data table
-//     const userDataParams = {
-//       TableName: userDataTableName,
-//       Item: {
-//         user_name: username,
-//         referral_id: referralId,
-//         email: req.body.email,
-//         password: req.body.password,
-//         phoneNumber: req.body.phoneNumber,
-//         created_date: created_date,
-//         referrer_Code: req.body.referrerCode,
-//       },
-//     };
-    
-//     await docClient.put(userDataParams).promise();
-//   var userPool = new CognitoUserPool(poolData);
-//   logger.info(req.body)
-//   const emailAttribute = new CognitoUserAttribute({
-//     Name: "email",
-//     Value: req.body.email
-// });
-
-// const phoneNumberAttribute = new CognitoUserAttribute({
-//     Name: "phone_number",
-//     Value: req.body.phoneNumber // Make sure this follows the E.164 format, e.g., '+12345678900'
-// });
-
-//   var attributeList = [];
-//   attributeList.push(emailAttribute);
-//   attributeList.push(phoneNumberAttribute);
-
-//   userPool.signUp(req.body.username, req.body.password, attributeList, null, function(err, result){
-//       if (err) {
-//           res.status(500).send(err.message);
-//           logger.info(err.message)
-//           return;
-//       }
-//       const data={
-//         status:'Success',
-//         message:'User registered successfully'
-//       }
-//       res.send(data);
-//   });
-// } catch (err) {
-//   logger.error(`Error creating user:`, err);
-//   res.status(500).send(err.message);
-// }
-// });
-
-//const cognitoidentityserviceprovider = new AWS.CognitoIdentityServiceProvider();
-
-// app.post('/resend-verification', (req, res) => {  
-//   const params = {
-//     Username: req.body.username,
-//     ClientId: ClientId
-//   };
-//  // const params = poolData.add(username)
-
-//   cognitoidentityserviceprovider.resendConfirmationCode(params, function(err, data) {
-//     if (err) {
-//       console.error(err);
-//       res.status(500).send(err.message);
-//     } else {
-//       res.send({ message: 'Verification code resent successfully' });
-//     }
-//   });
-// });
-
-
-// app.post('/confirmUser', function(req, res) {
-  
-//   const  username = req.body.username;
-//   const confirmationCode = req.body.verificationCode;
-//   const userData = {
-//       Username: username,
-//       Pool: userPool
-//   };
-//   const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
-//   cognitoUser.confirmRegistration(confirmationCode, true, function(err, result) {
-//     if (err) {
-//         res.status(500).send(err.message);
-//     }
-//     else{
-//     const data={
-//       status:'Success',
-//       message:'User confirmed successfully',
-//       data:result
-//     }
-//     res.send(data);
-//   }
-// });
-// });
-
-// app.post('/request-otp', (req, res) => {
-//   const phoneNumber = req.body.phoneNumber;
-//   const password = generateRandomPassword(12); // Ensure this function exists and generates a secure password
-
-//   const params = {
-//       ClientId: ClientId,
-//       Username: phoneNumber,
-//       Password: password, // Password should meet the user pool policy
-//       UserAttributes: [
-//           {
-//               Name: 'phone_number',
-//               Value: phoneNumber
-//           },
-//       ]
-//   };
-
-//   // Sign up the user
-//   cognito.signUp(params, (err, data) => {
-//       if (err) {
-//           console.log(err);
-//           // Check if the error is because the user already exists
-//           if (err.code === 'UsernameExistsException') {
-//               // The user already exists, initiate the resend of the OTP
-//               const resendParams = {
-//                   ClientId: ClientId,
-//                   Username: phoneNumber,
-//               };
-//               cognito.resendConfirmationCode(resendParams, (err, data) => {
-//                   if (err) {
-//                       // Handle the error if the OTP resend fails
-//                       res.status(500).send('Error resending confirmation code: ' + err.message);
-//                   } else {
-//                       // OTP resend succeeded
-//                       console.log(data);
-//                       res.status(200);
-//                       res.json({ message: 'OTP sent successfully.' });
-//                   }
-//               });
-//           } else {
-//               // Handle other errors
-//               res.status(500).send('Error signing up: ' + err.message);
-//           }
-//       } else {
-//           // User signed up successfully, OTP is automatically sent by Cognito
-//           res.json({ message: 'OTP sent successfully.' });
-//       }
-//   });
-// });
-
-
-// function generateRandomPassword(length = 8) {
-//   const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+<>?";
-//   let password = "";
-//   for (let i = 0; i < length; i++) {
-//     const randomIndex = Math.floor(Math.random() * charset.length);
-//     password += charset[randomIndex];
-//   }
-//   return password;
-// }
-
-// app.post('/verify-otp', (req, res) => {
-//   const phoneNumber = req.body.phoneNumber;
-//   const otpCode = req.body.otpCode;
-
-//   const params = {
-//       ClientId: ClientId,
-//       ConfirmationCode: otpCode,
-//       Username: phoneNumber,
-//   };
-
-//   // Confirm the user's sign-up with the OTP code they received
-//   cognito.confirmSignUp(params, (err, data) => {
-//       if (err) {
-//           console.log(err);
-//           res.status(500).send('Error verifying OTP: ' + err.message);
-//       } else {
-//           res.json({ message: 'User confirmed successfully.' });
-//       }
-//   });
-// });
-
 app.post('/getPeopleThumbnails', async (req, res) => {
   try {
     const { eventName } = req.body;
@@ -12323,12 +12129,6 @@ app.get('/getUserMemoriesFeed/:userPhoneNumber', async (req, res) => {
       });
     }
 
-    // console.log('Starting Feed Request:', {
-    //   userPhoneNumber,
-    //   limit,
-    //   lastEvaluatedKey
-    // });
-
     // 1. Get user's flashbacks
     const flashbackParams = {
       TableName: 'user_flashbacks',
@@ -12340,8 +12140,6 @@ app.get('/getUserMemoriesFeed/:userPhoneNumber', async (req, res) => {
       Limit: limit,
       ExclusiveStartKey: lastEvaluatedKey
     };
-
-    // console.log('Querying flashbacks with params:', flashbackParams);
 
     const flashbacksResult = await docClient.query(flashbackParams).promise();
     const flashbackIds = flashbacksResult.Items.map(item => item.flashback_id);
@@ -13184,52 +12982,73 @@ app.get("/getUserTaggedFlashbacks/:user_phone_number", async (req, res) => {
 // });
 
 
-app.get('/getUserFaceBubbles/:userId/:User', async (req, res) => {
+app.get('/getUserFaceBubbles/:userId', async (req, res) => {
   try {
     const userId = req.params.userId;
-    const userType = req.params.User;
 
-    let Recognitiontablename;
-    if (userType === 'sender') {
-      Recognitiontablename = 'machinevision_recognition_users_data';
-    } else {
-      Recognitiontablename = 'RekognitionUsersData';
-    }
-
-    const params = {
-      TableName: Recognitiontablename,
+    // Step 1: Query flashback_mobile_users
+    const userParams = {
+      TableName: 'flashback_mobile_users',
+      IndexName: 'user_id-index', // Using GSI
       KeyConditionExpression: 'user_id = :userId',
       ExpressionAttributeValues: {
-        ':userId': { S: userId } // Specify the type as String
+        ':userId': userId
       }
     };
 
-    const result = await dynamoDB.query(params).promise();
+    const userResult = await docClient.query(userParams).promise();
 
-    if (result.Items?.length > 0) {
-      // Extract the face_url value from the DynamoDB response
-      let faceUrl = result.Items[0]?.face_url?.S;
-
-      // Ensure faceUrl is a string before attempting string operations
-      if (typeof faceUrl === 'string' && faceUrl.startsWith('s3://')) {
-        const bucketAndKey = faceUrl.replace('s3://', '');
-        const [bucket, ...keyParts] = bucketAndKey.split('/');
-        faceUrl = `https://${bucket}.s3.ap-south-1.amazonaws.com/${keyParts.join('/')}`;
-      }
-
-      res.status(200).send({
-        success: true,
-        face_url: faceUrl,
-      });
+    if (userResult.Items.length > 0) {
+      // User is registered, return the first result
+      res.status(200).json({ success: true, user: userResult.Items });
     } else {
-      res.status(404).send({ message: 'User not found' });
+      // Step 2: No registered user found, query machinevision_recognition_users_data
+      const faceParams = {
+        TableName: 'machinevision_recognition_users_data',
+        KeyConditionExpression: 'user_id = :userId',
+        ExpressionAttributeValues: {
+          ':userId': userId
+        }
+      };
+
+      const faceResult = await docClient.query(faceParams).promise();
+
+      if (faceResult.Items?.length > 0) {
+        let faceUrl = faceResult.Items[0]?.face_url?.S;
+        if (typeof faceUrl === 'string' && faceUrl.startsWith('s3://')) {
+          const bucketAndKey = faceUrl.replace('s3://', '');
+          const [bucket, ...keyParts] = bucketAndKey.split('/');
+          faceUrl = `https://${bucket}.s3.ap-south-1.amazonaws.com/${keyParts.join('/')}`;
+        }
+
+        // Return a mock user object with face_url for unregistered users
+        res.status(200).json({
+          success: true,
+          user: [{
+            user_id: userId,
+            user_name: 'unregistered',
+            user_phone_number: 'unregistered',
+            displaypictureurl: faceUrl || null, // Use face_url if available
+          }]
+        });
+      } else {
+        // No data in either table
+        res.status(200).json({
+          success: true,
+          user: [{
+            user_id: userId,
+            user_name: 'unregistered',
+            user_phone_number: 'unregistered',
+            displaypictureurl: null
+          }]
+        });
+      }
     }
   } catch (error) {
-    console.error('Error fetching user data:', error);
-    res.status(500).send({ error: error.message });
+    console.error('Error:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
-
 
 
 
@@ -13895,53 +13714,175 @@ async function sendWebSocketMessage(connectionId, message) {
 }
 
 
-app.post('/shareMemory', async (req, res) => {
-  const { senderId, recipientId, memoryUrl, flashbackId, senderName, senderPhone } = req.body;
+// app.post('/shareMemory', async (req, res) => {
+//   const { senderId, recipientId, memoryUrl, senderName, senderPhone, receiverName, receiverPhone } = req.body;
   
-  console.log('received sharememory request for the details', senderId, recipientId, memoryUrl, flashbackId);
+//   console.log('received sharememory request for the details', senderId, recipientId, memoryUrl, flashbackId);
+//   try {
+//     // Input validation
+//     if (!senderId || !recipientId || !memoryUrl) {
+//       return res.status(400).send({ success: false, error: 'Missing required fields' });
+//     }
+
+//     const timestamp = new Date().toISOString();
+//     const messageId = require('crypto').randomBytes(16).toString('hex');
+//     const participants = [senderId, recipientId].sort().join('#');
+
+//     // Check for existing chat
+//     const existingChatResponse = await dynamoDB.query({
+//       TableName: 'Chats',
+//       IndexName: 'ParticipantsIndex',
+//       KeyConditionExpression: 'participants = :participants',
+//       ExpressionAttributeValues: {
+//         ':participants': { S: participants }
+//       }
+//     }).promise();
+
+//     let chatId;
+//     if (existingChatResponse.Items && existingChatResponse.Items.length > 0) {
+//       chatId = existingChatResponse.Items[0].chatId.S;
+      
+//       // Update existing chat
+//       await dynamoDB.updateItem({
+//         TableName: 'Chats',
+//         Key: {
+//           chatId: { S: chatId }
+//         },
+//         UpdateExpression: 'SET lastMessageAt = :timestamp, lastMessageId = :messageId',
+//         ExpressionAttributeValues: {
+//           ':timestamp': { S: timestamp },
+//           ':messageId': { S: messageId }
+//         }
+//       }).promise();
+//     } else {
+//       // Create new chat
+//       chatId = require('crypto').randomBytes(16).toString('hex');
+      
+//       const chatItem = {
+//         chatId: { S: chatId },
+//         participants: { S: participants },
+//         isGroup: { BOOL: false },
+//         createdAt: { S: timestamp },
+//         lastMessageAt: { S: timestamp },
+//         lastMessageId: { S: messageId },
+//         senderPhone: { S: senderPhone },
+//         senderName: { S: senderName },
+//       };
+
+//       await dynamoDB.putItem({
+//         TableName: 'Chats',
+//         Item: chatItem
+//       }).promise();
+//     }
+
+//     // Create message
+//     const messageItem = {
+//       messageId: { S: messageId },
+//       chatId: { S: chatId },
+//       senderId: { S: senderId },
+//       recipientId: { S: recipientId },
+//       messageType: { S: 'memory' },
+//       content: { S: memoryUrl },
+//       flashbackId: { S: flashbackId },
+//       timestamp: { S: timestamp },
+//       status: { S: 'sent' },
+//       senderPhone: { S: senderPhone },
+//       senderName: { S: senderName },
+//     };
+
+//     await dynamoDB.putItem({
+//       TableName: 'Messages',
+//       Item: messageItem
+//     }).promise();
+
+
+
+//     // await sns.publish({
+//     //   TopicArn: MemoryCarrierARN,
+//     //   Message: JSON.stringify({
+//     //     type: 'memory_share',
+//     //     senderId,
+//     //     recipientId,
+//     //     chatId,
+//     //     messageId,
+//     //     memoryUrl
+//     //   }),
+//     //   MessageGroupId: chatId, // Using chatId as the group ID to maintain order per chat
+//     //   MessageDeduplicationId: messageId,
+//     //   MessageAttributes: {
+//     //     'type': {
+//     //       DataType: 'String',
+//     //       StringValue: 'memory_share'
+//     //     }
+//     //   }
+//     // }).promise();
+
+
+//     await sendPushNotification(recipientId, senderName, {
+//       title: 'New Memory Incoming',
+//       body: `${senderName} shared a memory with you`,
+//       data: {
+//         type: 'memory_share',
+//         chatId,
+//         messageId,
+//         senderId,
+//         memoryUrl
+//       }
+//     });
+
+//     res.status(200).send({
+//       success: true,
+//       data: {
+//         chatId,
+//         messageId
+//       }
+//     });
+
+//   } catch (error) {
+//     console.error('Error sharing memory:', error);
+//     res.status(500).send({
+//       success: false,
+//       error: error.message
+//     });
+//   }
+// });
+
+
+app.post('/shareMemory', async (req, res) => {
+  const { senderId, recipientId, memoryUrl, senderName, senderPhone, receiverName, receiverPhone, faceUrl } = req.body;
+
+  console.log('Received shareMemory request:', { senderId, recipientId, memoryUrl });
+
   try {
-    // Input validation
-    if (!senderId || !recipientId || !memoryUrl || !flashbackId) {
-      return res.status(400).send({
-        success: false,
-        error: 'Missing required fields'
-      });
+    if (!senderId || !recipientId || !memoryUrl) {
+      return res.status(400).send({ success: false, error: 'Missing required fields' });
     }
 
     const timestamp = new Date().toISOString();
     const messageId = require('crypto').randomBytes(16).toString('hex');
     const participants = [senderId, recipientId].sort().join('#');
 
-    // Check for existing chat
-    const existingChatResponse = await dynamoDB.query({
+    const existingChatResponse = await docClient.query({
       TableName: 'Chats',
       IndexName: 'ParticipantsIndex',
       KeyConditionExpression: 'participants = :participants',
-      ExpressionAttributeValues: {
-        ':participants': { S: participants }
-      }
+      ExpressionAttributeValues: { ':participants': participants },
     }).promise();
 
     let chatId;
-    if (existingChatResponse.Items && existingChatResponse.Items.length > 0) {
+    if (existingChatResponse.Items?.length > 0) {
       chatId = existingChatResponse.Items[0].chatId.S;
-      
-      // Update existing chat
-      await dynamoDB.updateItem({
+      await docClient.update({
         TableName: 'Chats',
-        Key: {
-          chatId: { S: chatId }
-        },
+        Key: { chatId: { S: chatId } },
         UpdateExpression: 'SET lastMessageAt = :timestamp, lastMessageId = :messageId',
         ExpressionAttributeValues: {
           ':timestamp': { S: timestamp },
-          ':messageId': { S: messageId }
-        }
+          ':messageId': { S: messageId },
+        },
       }).promise();
     } else {
-      // Create new chat
       chatId = require('crypto').randomBytes(16).toString('hex');
-      
       const chatItem = {
         chatId: { S: chatId },
         participants: { S: participants },
@@ -13952,14 +13893,9 @@ app.post('/shareMemory', async (req, res) => {
         senderPhone: { S: senderPhone },
         senderName: { S: senderName },
       };
-
-      await dynamoDB.putItem({
-        TableName: 'Chats',
-        Item: chatItem
-      }).promise();
+      await docClient.put({ TableName: 'Chats', Item: chatItem }).promise();
     }
 
-    // Create message
     const messageItem = {
       messageId: { S: messageId },
       chatId: { S: chatId },
@@ -13967,70 +13903,24 @@ app.post('/shareMemory', async (req, res) => {
       recipientId: { S: recipientId },
       messageType: { S: 'memory' },
       content: { S: memoryUrl },
-      flashbackId: { S: flashbackId },
+      flashbackId: { S: req.body.flashbackId || '' },
       timestamp: { S: timestamp },
       status: { S: 'sent' },
       senderPhone: { S: senderPhone },
       senderName: { S: senderName },
+      receiverName: { S: receiverName },
+      receiverPhone: { S: receiverPhone },
+      faceUrl: faceUrl ? { S: faceUrl } : null,
     };
 
-    await dynamoDB.putItem({
-      TableName: 'Messages',
-      Item: messageItem
-    }).promise();
+    await docClient.put({ TableName: 'Messages', Item: messageItem }).promise();
 
-
-
-    // await sns.publish({
-    //   TopicArn: MemoryCarrierARN,
-    //   Message: JSON.stringify({
-    //     type: 'memory_share',
-    //     senderId,
-    //     recipientId,
-    //     chatId,
-    //     messageId,
-    //     memoryUrl
-    //   }),
-    //   MessageGroupId: chatId, // Using chatId as the group ID to maintain order per chat
-    //   MessageDeduplicationId: messageId,
-    //   MessageAttributes: {
-    //     'type': {
-    //       DataType: 'String',
-    //       StringValue: 'memory_share'
-    //     }
-    //   }
-    // }).promise();
-
-
-    await sendPushNotification(recipientId, senderName, {
-      title: 'New Memory Incoming',
-      body: `${senderName} shared a memory with you`,
-      data: {
-        type: 'memory_share',
-        chatId,
-        messageId,
-        senderId,
-        memoryUrl
-      }
-    });
-
-    res.status(200).send({
-      success: true,
-      data: {
-        chatId,
-        messageId
-      }
-    });
-
+    res.status(200).send({ success: true, data: { chatId, messageId } });
   } catch (error) {
     console.error('Error sharing memory:', error);
-    res.status(500).send({
-      success: false,
-      error: error.message
-    });
+    res.status(500).send({ success: false, error: error.message });
   }
 });
-
 
 app.post('/shareMemoryToGroup', async (req, res) => {
   const { senderId, memberIds, memoryUrl, flashbackId, senderName, senderPhone } = req.body;
@@ -14949,6 +14839,48 @@ async function encryptImage(buffer) {
 
   return { encryptedData: encrypted, iv, encryptedKey };
 }
+
+app.post('/uploadmemoriesToS3', async (req, res) => {
+  try {
+    const { image, filename, userPhoneNumber } = req.body;
+
+    if (!image || !filename || !userPhoneNumber) {
+      return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
+
+    // Remove '+' from userPhoneNumber
+    const cleanPhoneNumber = userPhoneNumber.replace('+', '');
+
+    // Decode base64 image
+    const imageBuffer = Buffer.from(image, 'base64');
+
+    // Construct the S3 key with userPhoneNumber folder
+    const s3Key = `${cleanPhoneNumber}/${filename}`;
+
+    // S3 upload parameters
+    const params = {
+      Bucket: 'sharedmemories',
+      Key: s3Key,
+      Body: imageBuffer,
+      ContentType: 'image/jpeg', // Adjust based on actual image type if needed
+      ACL: 'public-read', // Adjust permissions as needed
+    };
+
+    // Upload to S3
+    const uploadResult = await s3.upload(params).promise();
+
+    res.status(200).json({
+      success: true,
+      url: uploadResult.Location, // The URL of the uploaded file
+    });
+  } catch (error) {
+    console.error('Error uploading to S3:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to upload image to S3',
+    });
+  }
+});
 
 // Upload API: Encrypts Image Before Uploading to S3
 app.post("/uploadDeviceImages", upload.array("images"), async (req, res) => {
