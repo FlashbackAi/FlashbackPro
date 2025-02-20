@@ -13897,10 +13897,10 @@ app.post('/shareMemory', async (req, res) => {
 
     let chatId;
     if (existingChatResponse.Items?.length > 0) {
-      chatId = existingChatResponse.Items[0].chatId.S;
+      chatId = existingChatResponse.Items[0].chatId.S; // Extract string from query result
       await docClient.update({
         TableName: 'Chats',
-        Key: { chatId: { S: chatId } },
+        Key: { chatId: chatId }, // Use raw string value, not { S: chatId }
         UpdateExpression: 'SET lastMessageAt = :timestamp, lastMessageId = :messageId',
         ExpressionAttributeValues: {
           ':timestamp': { S: timestamp },
