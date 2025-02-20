@@ -14869,7 +14869,7 @@ async function encryptImage(buffer) {
 app.post('/uploadmemoriesToS3', async (req, res) => {
   try {
     const { image, filename, userPhoneNumber } = req.body;
-    console.log(`Memory Share: Uploading image ${filename} for user ${userPhoneNumber}`);
+    logger.info(`Memory Share: Uploading image ${filename} for user ${userPhoneNumber}`);
 
     if (!image || !filename || !userPhoneNumber) {
       return res.status(400).json({ success: false, error: 'Missing required fields' });
