@@ -13874,33 +13874,119 @@ async function sendWebSocketMessage(connectionId, message) {
 // });
 
 
+// app.post('/shareMemory', async (req, res) => {
+//   const { senderId, recipientId, memoryUrl, senderName, senderPhone, receiverName, receiverPhone, faceUrl } = req.body;
+
+//   console.log('Received shareMemory request:', { senderId, recipientId, memoryUrl });
+
+//   try {
+//     if (!senderId || !recipientId || !memoryUrl) {
+//       return res.status(400).send({ success: false, error: 'Missing required fields' });
+//     }
+
+//     const timestamp = new Date().toISOString();
+//     const messageId = require('crypto').randomBytes(16).toString('hex');
+//     const participants = [senderId, recipientId].sort().join('#');
+
+//     const existingChatResponse = await docClient.query({
+//       TableName: 'Chats',
+//       IndexName: 'ParticipantsIndex',
+//       KeyConditionExpression: 'participants = :participants',
+//       ExpressionAttributeValues: { ':participants': participants },
+//     }).promise();
+
+//     let chatId;
+//     if (existingChatResponse.Items?.length > 0) {
+//       chatId = existingChatResponse.Items[0].chatId.S; // Extract string from query result
+//       await docClient.update({
+//         TableName: 'Chats',
+//         Key: { chatId: chatId }, // Use raw string value, not { S: chatId }
+//         UpdateExpression: 'SET lastMessageAt = :timestamp, lastMessageId = :messageId',
+//         ExpressionAttributeValues: {
+//           ':timestamp': { S: timestamp },
+//           ':messageId': { S: messageId },
+//         },
+//       }).promise();
+//     } else {
+//       chatId = require('crypto').randomBytes(16).toString('hex');
+//       const chatItem = {
+//         chatId: { S: chatId },
+//         participants: { S: participants },
+//         isGroup: { BOOL: false },
+//         createdAt: { S: timestamp },
+//         lastMessageAt: { S: timestamp },
+//         lastMessageId: { S: messageId },
+//         senderPhone: { S: senderPhone },
+//         senderName: { S: senderName },
+//       };
+//       await docClient.put({ TableName: 'Chats', Item: chatItem }).promise();
+//     }
+
+//     const messageItem = {
+//       messageId: { S: messageId },
+//       chatId: { S: chatId },
+//       senderId: { S: senderId },
+//       recipientId: { S: recipientId },
+//       messageType: { S: 'memory' },
+//       content: { S: memoryUrl },
+//       flashbackId: { S: req.body.flashbackId || '' },
+//       timestamp: { S: timestamp },
+//       status: { S: 'sent' },
+//       senderPhone: { S: senderPhone },
+//       senderName: { S: senderName },
+//       receiverName: { S: receiverName },
+//       receiverPhone: { S: receiverPhone },
+//       faceUrl: faceUrl ? { S: faceUrl } : null,
+//     };
+
+//     await docClient.put({ TableName: 'Messages', Item: messageItem }).promise();
+
+//     res.status(200).send({ success: true, data: { chatId, messageId } });
+//   } catch (error) {
+//     console.error('Error sharing memory:', error);
+//     res.status(500).send({ success: false, error: error.message });
+//   }
+// });
+
+
 app.post('/shareMemory', async (req, res) => {
   const { senderId, recipientId, memoryUrl, senderName, senderPhone, receiverName, receiverPhone, faceUrl } = req.body;
 
   console.log('Received shareMemory request:', { senderId, recipientId, memoryUrl });
 
   try {
+    // Validate required fields
     if (!senderId || !recipientId || !memoryUrl) {
       return res.status(400).send({ success: false, error: 'Missing required fields' });
     }
 
     const timestamp = new Date().toISOString();
     const messageId = require('crypto').randomBytes(16).toString('hex');
-    const participants = [senderId, recipientId].sort().join('#');
 
-    const existingChatResponse = await docClient.query({
-      TableName: 'Chats',
-      IndexName: 'ParticipantsIndex',
+    // Use phone numbers if available, otherwise fall back to IDs
+    const senderIdentifier = senderPhone || senderId;
+    const recipientIdentifier = receiverPhone || recipientId;
+    const participants = [senderIdentifier, recipientIdentifier].sort().join('#');
+
+    // Query existing chat by participants
+    const existingChatResponse = await dynamoDB.query({
+      TableName: 'bubbleChats',
+      IndexName: 'participants-index', // Ensure this GSI exists
       KeyConditionExpression: 'participants = :participants',
-      ExpressionAttributeValues: { ':participants': participants },
+      ExpressionAttributeValues: {
+        ':participants': { S: participants },
+      },
     }).promise();
 
     let chatId;
     if (existingChatResponse.Items?.length > 0) {
-      chatId = existingChatResponse.Items[0].chatId.S; // Extract string from query result
-      await docClient.update({
-        TableName: 'Chats',
-        Key: { chatId: chatId }, // Use raw string value, not { S: chatId }
+      // Existing chat found
+      chatId = existingChatResponse.Items[0].chat_id.S;
+      
+      // Update lastMessageAt and lastMessageId
+      await dynamoDB.update({
+        TableName: 'bubbleChats',
+        Key: { chat_id: chatId }, // Raw string value
         UpdateExpression: 'SET lastMessageAt = :timestamp, lastMessageId = :messageId',
         ExpressionAttributeValues: {
           ':timestamp': { S: timestamp },
@@ -13908,20 +13994,32 @@ app.post('/shareMemory', async (req, res) => {
         },
       }).promise();
     } else {
+      // Create new chat
       chatId = require('crypto').randomBytes(16).toString('hex');
       const chatItem = {
-        chatId: { S: chatId },
+        chat_id: { S: chatId },
         participants: { S: participants },
-        isGroup: { BOOL: false },
+        isGroup: { BOOL: false }, // One-on-one chat
         createdAt: { S: timestamp },
         lastMessageAt: { S: timestamp },
         lastMessageId: { S: messageId },
-        senderPhone: { S: senderPhone },
-        senderName: { S: senderName },
+        groupMembers: {
+          L: [
+            { S: senderIdentifier },
+            { S: recipientIdentifier },
+          ],
+        },
+        senderName: senderName ? { S: senderName } : { S: senderIdentifier },
+        senderPhone: senderPhone ? { S: senderPhone } : { S: senderIdentifier},
       };
-      await docClient.put({ TableName: 'Chats', Item: chatItem }).promise();
+
+      await dynamoDB.put({
+        TableName: 'bubbleChats',
+        Item: chatItem,
+      }).promise();
     }
 
+    // Store message in Messages table
     const messageItem = {
       messageId: { S: messageId },
       chatId: { S: chatId },
@@ -13932,14 +14030,17 @@ app.post('/shareMemory', async (req, res) => {
       flashbackId: { S: req.body.flashbackId || '' },
       timestamp: { S: timestamp },
       status: { S: 'sent' },
-      senderPhone: { S: senderPhone },
-      senderName: { S: senderName },
-      receiverName: { S: receiverName },
-      receiverPhone: { S: receiverPhone },
+      senderPhone: senderPhone ? { S: senderPhone } : null,
+      senderName: senderName ? { S: senderName } : { S: 'Unknown' },
+      receiverName: receiverName ? { S: receiverName } : { S: 'Unknown' },
+      receiverPhone: receiverPhone ? { S: receiverPhone } : null,
       faceUrl: faceUrl ? { S: faceUrl } : null,
     };
 
-    await docClient.put({ TableName: 'Messages', Item: messageItem }).promise();
+    await dynamoDB.put({
+      TableName: 'Messages',
+      Item: messageItem,
+    }).promise();
 
     res.status(200).send({ success: true, data: { chatId, messageId } });
   } catch (error) {
