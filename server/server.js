@@ -13986,7 +13986,7 @@ app.post('/shareMemory', async (req, res) => {
       // Update lastMessageAt and lastMessageId
       await dynamoDB.updateItem({
         TableName: 'bubbleChats',
-        Key: { chat_id: chatId }, // Raw string value
+        Key: { chat_id: { S: chatId } },
         UpdateExpression: 'SET lastMessageAt = :timestamp, lastMessageId = :messageId',
         ExpressionAttributeValues: {
           ':timestamp': { S: timestamp },
