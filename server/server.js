@@ -14885,7 +14885,7 @@ app.post('/uploadmemoriesToS3', async (req, res) => {
 
     // S3 upload parameters
     const params = {
-      Bucket: 'sharedmemories',
+      Bucket: 'flashbacksharedmemories',
       Key: s3Key,
       Body: imageBuffer,
       ContentType: 'image/jpeg', // Adjust based on actual image type if needed
