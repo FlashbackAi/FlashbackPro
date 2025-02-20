@@ -13984,7 +13984,7 @@ app.post('/shareMemory', async (req, res) => {
       chatId = existingChatResponse.Items[0].chat_id.S;
       
       // Update lastMessageAt and lastMessageId
-      await dynamoDB.update({
+      await dynamoDB.updateItem({
         TableName: 'bubbleChats',
         Key: { chat_id: chatId }, // Raw string value
         UpdateExpression: 'SET lastMessageAt = :timestamp, lastMessageId = :messageId',
@@ -14013,7 +14013,7 @@ app.post('/shareMemory', async (req, res) => {
         senderPhone: senderPhone ? { S: senderPhone } : { S: senderIdentifier},
       };
 
-      await dynamoDB.put({
+      await dynamoDB.putItem({
         TableName: 'bubbleChats',
         Item: chatItem,
       }).promise();
@@ -14037,7 +14037,7 @@ app.post('/shareMemory', async (req, res) => {
       faceUrl: faceUrl ? { S: faceUrl } : null,
     };
 
-    await dynamoDB.put({
+    await dynamoDB.putItem({
       TableName: 'Messages',
       Item: messageItem,
     }).promise();
