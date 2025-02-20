@@ -14890,7 +14890,6 @@ app.post('/uploadmemoriesToS3', async (req, res) => {
       Key: s3Key,
       Body: imageBuffer,
       ContentType: 'image/jpeg', // Adjust based on actual image type if needed
-      ACL: 'public-read', // Adjust permissions as needed
     };
 
     // Upload to S3
