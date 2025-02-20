@@ -13965,7 +13965,7 @@ app.post('/shareMemory', async (req, res) => {
 
     // Use phone numbers if available, otherwise fall back to IDs
     const senderIdentifier = senderPhone || senderId;
-    const recipientIdentifier = receiverPhone || recipientId;
+    const recipientIdentifier = receiverPhone && receiverPhone !== 'unregistered' ? receiverPhone : recipientId;
     const participants = [senderIdentifier, recipientIdentifier].sort().join('#');
 
     // Query existing chat by participants
@@ -14003,12 +14003,6 @@ app.post('/shareMemory', async (req, res) => {
         createdAt: { S: timestamp },
         lastMessageAt: { S: timestamp },
         lastMessageId: { S: messageId },
-        groupMembers: {
-          L: [
-            { S: senderIdentifier },
-            { S: recipientIdentifier },
-          ],
-        },
         senderName: senderName ? { S: senderName } : { S: senderIdentifier },
         senderPhone: senderPhone ? { S: senderPhone } : { S: senderIdentifier},
       };
@@ -14027,7 +14021,6 @@ app.post('/shareMemory', async (req, res) => {
       recipientId: { S: recipientId },
       messageType: { S: 'memory' },
       content: { S: memoryUrl },
-      flashbackId: { S: req.body.flashbackId || '' },
       timestamp: { S: timestamp },
       status: { S: 'sent' },
       senderPhone: senderPhone ? { S: senderPhone } : null,
