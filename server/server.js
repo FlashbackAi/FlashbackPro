@@ -14852,6 +14852,49 @@ async function encryptImage(buffer) {
   return { encryptedData: encrypted, iv, encryptedKey };
 }
 
+app.post('/uploadGenMemoryRefImageToS3', async (req, res) => {
+  try {
+    const { image, filename, userPhoneNumber } = req.body;
+    logger.info(`Memory Share: Uploading image ${filename} for user ${userPhoneNumber}`);
+
+    if (!image || !filename || !userPhoneNumber) {
+      return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
+
+    // Remove '+' from userPhoneNumber
+    const cleanPhoneNumber = userPhoneNumber.replace('+', '');
+
+    // Decode base64 image
+    const imageBuffer = Buffer.from(image, 'base64');
+
+    // Construct the S3 key with userPhoneNumber folder
+    const s3Key = `${cleanPhoneNumber}/${filename}`;
+
+    // S3 upload parameters
+    const params = {
+      Bucket: 'flashbackgenai',
+      Key: s3Key,
+      Body: imageBuffer,
+      ContentType: 'image/jpeg', // Adjust based on actual image type if needed
+    };
+
+    // Upload to S3
+    const uploadResult = await s3.upload(params).promise();
+
+    res.status(200).json({
+      success: true,
+      url: uploadResult.Location, // The URL of the uploaded file
+    });
+  } catch (error) {
+    console.error('Error uploading to S3:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to upload image to S3',
+    });
+  }
+});
+
+
 app.post('/uploadmemoriesToS3', async (req, res) => {
   try {
     const { image, filename, userPhoneNumber } = req.body;
