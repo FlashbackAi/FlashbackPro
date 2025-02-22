@@ -1,0 +1,35 @@
+// models/machineVisionImageRecognitionModel.js
+
+const { getConfig } = require('../../config');
+const docClient = getConfig().docClient; // docClient is the Dynamo DocumentClient
+const TABLE_NAME = 'machinevision_recognition_image_properties';
+
+/**
+ * Retrieve a single image record by image_id
+ */
+exports.getImageRecord = async (image_id) => {
+  const params = {
+    TableName: TABLE_NAME,
+    Key: { image_id }
+  };
+
+  const result = await docClient.get(params).promise();
+  return result.Item; // returns the object or undefined if not found
+};
+
+/**
+ * Update the user_ids attribute in the record
+ */
+exports.updateImageRecordUserIds = async (image_id, user_ids) => {
+  const params = {
+    TableName: TABLE_NAME,
+    Key: { image_id },
+    UpdateExpression: 'SET user_ids = :user_ids',
+    ExpressionAttributeValues: {
+      ':user_ids': user_ids
+    },
+    ReturnValues: 'UPDATED_NEW'
+  };
+
+  return docClient.update(params).promise();
+};

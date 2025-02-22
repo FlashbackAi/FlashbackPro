@@ -5,6 +5,7 @@ const datasetController = require('./Controller/DatasetController');
 const bubbleChatController = require('./Controller/BubbleChatController')
 const relationsController = require('./Controller/RelationsController')
 const generativeAIController = require('./Controller/GenerativeAIController')
+const machineVisionController = require('./Controller/MachineVisionController')
 const multer = require('multer'); // For handling file uploads
 const upload = multer(); // Memory storage for processing files
 const app = express();
@@ -100,3 +101,8 @@ app.get('/getDatasetRequests/:dataset', datasetController.getDatasetRequests);
 
 //API to generate image using comfyUI
 app.post("/process-images-progress", upload.fields([{ name: "image1" }, { name: "image2" }]), generativeAIController.processImagesProgress);
+
+
+//APIs related to Machine Vision Service 
+//transfer coins by wallet address
+app.post('/unMergeUserFace', machineVisionController.unMergeUser);

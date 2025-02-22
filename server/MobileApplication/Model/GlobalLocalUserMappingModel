@@ -1,0 +1,29 @@
+// models/globalLocalMappingModel.js
+const { getConfig } = require('../../config');
+const docClient = getConfig().docClient;
+const GLOBAL_TO_LOCAL_MAPPING_TABLE = 'global_to_local_user_mapping';
+
+/**
+ * Stores an item in the global_to_local_user_mapping DynamoDB table.
+ * @param {Object} itemToStore The record to be inserted, containing fields like
+ *  - globalUserId
+ *  - localUserId
+ *  - faceId
+ *  - phoneNumber
+ *  - createdAt
+ *  - collectionName
+ * @returns {Promise<Object>} The item stored (or any relevant result from Dynamo)
+ */
+async function storeGlobalToLocalMapping(itemToStore) {
+  const params = {
+    TableName: GLOBAL_TO_LOCAL_MAPPING_TABLE,
+    Item: itemToStore,
+  };
+
+  await docClient.put(params).promise();
+  return itemToStore; // Optionally return the stored item or any relevant info
+}
+
+module.exports = {
+  storeGlobalToLocalMapping
+};
