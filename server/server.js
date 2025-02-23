@@ -15030,7 +15030,7 @@ app.post("/downloadImageEnc", async (req, res) => {
   try {
       const { bucketName, key } = extractS3Details(imageUrl);
 
-      console.log(`Extracted Bucket: ${bucketName}, Key: ${key}`);
+      logger.info(`Extracted Bucket: ${bucketName}, Key: ${key}`);
 
       // Fetch encrypted image from S3
       const response = await s3.getObject({
@@ -15048,7 +15048,7 @@ app.post("/downloadImageEnc", async (req, res) => {
 
       // Decrypt the image
       const decryptedImage = await decryptImage(encryptedImage, iv, encryptedKey);
-
+       logger.info(`Extracted Image for S3Url: `,imageUrl);
       // Set response headers and serve the decrypted image
       res.setHeader("Content-Type", "image/jpeg");
       res.send(decryptedImage);
