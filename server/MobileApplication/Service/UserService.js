@@ -1,4 +1,5 @@
 const userModel = require('../Model/UserModel');
+const globalToLocalUsermappingModel = require('../Model/GlobalToLocalUsermappingModel')
 const logger = require('../../logger'); // Shared logger utility
 const { getConfig } = require('../../config');
 const https = require('https');
@@ -44,12 +45,37 @@ exports.updateUser = async (user_phone_number, fieldsToUpdate) => {
 
 exports.getUserDetails = async (user_phone_number) => {
   logger.info(`Fetching user details for user_phone_number: ${user_phone_number}`);
+  
+  // 1) Convert the phone number into a 'collectionName' (e.g., removing '+' character)
+  const collectionName = user_phone_number.replace('+', '');
 
-  // Fetch user details from the database
+  // 2) Fetch user details from your DB
   const userDetails = await userModel.getUser(user_phone_number);
+  if (!userDetails) {
+    // If there's no user at all, return null or handle the situation
+    return null;
+  }
 
-  return userDetails; // Return the fetched user details
+  // 3) Check if a global_to_local_user_mapping record exists for (userDetails.user_id, collectionName)
+  let userMapping = await globalToLocalUsermappingModel.getMappingByGlobalUserAndCollection(
+    userDetails.user_id,
+    collectionName
+  );
+
+  // 4) If a mapping exists, overwrite userDetails.user_id with the mapping's global_user_id
+  if (userMapping) {
+    logger.info(`Mapping found: Overwriting user_id with global_user_id = ${userMapping.global_user_id}`);
+    const globalUserId = userDetails.user_id
+    userDetails.user_id = userMapping.local_user_id;
+    userDetails.global_user_id = globalUserId;
+  } else {
+    logger.info('No mapping found; returning userDetails as-is.');
+  }
+
+  // 5) Return the final userDetails object (modified if a mapping was found)
+  return userDetails;
 };
+
 
 exports.verifyUserActivation = async (user_phone_number, activation_code) => {
   logger.info(`Verifying activation code for user_phone_number: ${user_phone_number}`);

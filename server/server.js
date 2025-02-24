@@ -11696,6 +11696,124 @@ async function mapGlobalToLocalUser( user_id, face_id, collection_name ) {
   }
 }
 
+async function getAllRegisteredUsers() {
+  let allUsers = [];
+  let lastEvaluatedKey = null;
+
+  do {
+    const params = {
+      TableName: 'flashback_mobile_users',
+      // If you only want certain attributes, specify ProjectionExpression
+      ExclusiveStartKey: lastEvaluatedKey
+    };
+
+    const result = await docClient.scan(params).promise();
+    allUsers.push(...(result.Items || []));
+    lastEvaluatedKey = result.LastEvaluatedKey;
+  } while (lastEvaluatedKey);
+
+  return allUsers;
+}
+
+async function getMappingByGlobalUserAndCollection(user_id, collection_name) {
+  const params = {
+    TableName: 'global_to_local_user_mapping',
+    Key: {
+      global_user_id: user_id,
+      folder_name: collection_name
+    }
+  };
+  const result = await docClient.get(params).promise();
+  return result.Item; // undefined if not found
+}
+
+async function mapAllRegisteredUsersToGlobal(collection_name) {
+  try {
+    // 1) Fetch all users
+    const registeredUsers = await getAllRegisteredUsers();
+    logger.info(`Found ${registeredUsers.length} users in flashback_users`);
+
+    // We'll store local->global mapping in an object or Map
+    const userMap = {};
+
+    // 2) Loop over each user
+    for (const user of registeredUsers) {
+      const user_id = user.user_id;
+      if (!user_id) {
+        // Skip entries without a user_id
+        continue;
+      }
+
+      // 2a) Check if (user_id, collection_name) mapping already exists
+      const existingMapping = await getMappingByGlobalUserAndCollection(user_id, collection_name);
+      if (existingMapping) {
+        logger.info(`Mapping already exists for user_id=${user_id}, collection_name=${collection_name}`);
+        userMap[existingMapping.local_user_id] = existingMapping;
+        continue;
+      }
+
+      // 3) If no existing mapping, call external API
+      //    (Adjust the endpoint & payload as needed.)
+      const response = await axios.post("https://52.66.187.182:5000/merge-users/", {
+        user_id:user_id,
+        // If the external API needs a face_id, you must retrieve it or adapt accordingly.
+        // For now, we demonstrate only passing user_id + collection_name.
+        collection_name: "User"+collection_name
+      },
+      {
+        httpsAgent: httpsAgent, // Pass the custom HTTPS agent
+      });
+
+      const { matched_user_id } = response.data;
+      if (!matched_user_id) {
+        logger.info(`No matched_user_id returned for user_id=${user_id}. Skipping save.`);
+        continue;
+      }
+
+      const usersParams = {
+        TableName: 'flashback_mobile_users',
+        IndexName: 'user_id-index',
+        KeyConditionExpression: 'user_id = :userId',
+        ExpressionAttributeValues: {
+          ':userId': user_id
+        }
+      };
+      const userResult = await docClient.query(usersParams).promise();
+      const userData = userResult.Items && userResult.Items.length > 0 ? userResult.Items[0] : null;
+
+      logger.info(`matched_user_id = ${matched_user_id} for user_id = ${user_id}`);
+
+      // 4) Save the mapping
+      const now = new Date().toISOString();
+      const itemToStore = {
+        local_user_id: matched_user_id,
+        folder_name: collection_name,
+        global_user_id: user_id,
+        created_at: now,
+        user_phone_number:userData ? userData.user_phone_number : null
+      };
+
+      // If the external API needs user details, you could fetch them from your local DB:
+      // e.g., const userDetails = await getUserDetailsByUserId(user_id);
+
+      const putParams = {
+        TableName: 'global_to_local_user_mapping',
+        Item: itemToStore
+      };
+      await docClient.put(putParams).promise();
+
+      logger.info(`Stored mapping for global_user_id=${user_id}, local_user_id=${matched_user_id}`);
+      userMap[matched_user_id] = itemToStore;
+    }
+
+    // 5) Return a map of local -> global user IDs
+    return userMap;
+  } catch (error) {
+    logger.error('Error in mapAllRegisteredUsersToGlobal:', error);
+    throw error;
+  }
+}
+
 app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
   const { userPhoneNumber, userId } = req.params;
   
@@ -11767,7 +11885,7 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
     
     // Filter out the main user's ID
     const filteredUserIds = uniqueUserIds.filter((id) => id !== userId);
-
+    const globalUserMap = await mapAllRegisteredUsersToGlobal(userPhoneNumber)
     
     const peoplePromises = filteredUserIds.map(async userId => {
       // First get user data from recognition table
@@ -11785,22 +11903,9 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
       }
 
       const recognitionData = recognitionResult.Items[0];
-      
-      // Then get user details from users table
-      const usersParams = {
-        TableName: 'flashback_mobile_users',
-        IndexName: 'user_id-index',
-        KeyConditionExpression: 'user_id = :userId',
-        ExpressionAttributeValues: {
-          ':userId': userId
-        }
-      };
-
+      const userMappingData = globalUserMap[userId]
       try {
-        const userResult = await docClient.query(usersParams).promise();
-        const userData = userResult.Items && userResult.Items.length > 0 ? userResult.Items[0] : null;
 
-        // Transform the S3 URL format
         let faceUrl = recognitionData.face_url;
         if (faceUrl && faceUrl.startsWith('s3://')) {
           const bucketAndKey = faceUrl.replace('s3://', '');
@@ -11810,6 +11915,9 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
 
         const relationData = relationsMap.get(userId) || {};
 
+        if(userMappingData){
+        // Transform the S3 URL format
+       
         return {
           userId: userId,
           faceUrl: faceUrl,
@@ -11817,8 +11925,19 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
           relationName: relationData.name || null,
           relationshipType: relationData.relation_type || null,
           isStarred: relationData.is_starred || false,
-          userPhoneNumber: userData ? userData.user_phone_number : null
+          userPhoneNumber: userMappingData ? userMappingData.user_phone_number : null
         };
+      }else{
+        return {
+          userId: userId,
+          faceUrl: faceUrl,
+          name: relationData.name || userData?.org_name || userData?.user_name,
+          relationName: relationData.name || null,
+          relationshipType: relationData.relation_type || null,
+          isStarred: relationData.is_starred || false,
+          userPhoneNumber: null
+        };
+      }
       } catch (error) {
         logger.error(`Error fetching user data for ${userId}:`, error);
         // Return the recognition data without user details if users table query fails
