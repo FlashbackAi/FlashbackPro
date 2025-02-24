@@ -11596,6 +11596,105 @@ app.post('/toggle-star', async (req, res) => {
 });
 
 
+async function getUserDetailsByUserId(userId) {
+  const params = {
+    TableName: 'flashback_mobile_users',
+    IndexName: 'user_id-index',
+    KeyConditionExpression: 'user_id = :userId',
+    ExpressionAttributeValues: {
+      ':userId':userId
+    }
+  };
+  const result = await docClient.query(params).promise();
+  return result.Items?.[0];
+}
+const GLOBAL_TO_LOCAL_MAPPING_TABLE = 'global_to_local_user_mapping';
+
+async function getMappingByUserAndCollection(localUserId) {
+  // If localUserId is the partition key and collectionName is the sort key:
+  const params = {
+    TableName: GLOBAL_TO_LOCAL_MAPPING_TABLE,
+    IndexName:'local_user_id-index',
+    KeyConditionExpression: 'local_user_id = :u',
+    ExpressionAttributeValues: {
+      ':u': localUserId
+    },
+    Limit: 1
+  };
+
+  const result = await docClient.query(params).promise();
+  if(result.Items.length>0){
+    logger.info("Found and existing user")
+  }
+  
+  // If any Items returned, we have a match
+  return result.Items && result.Items.length > 0 ? result.Items[0] : null;
+}
+
+async function mapGlobalToLocalUser( user_id, face_id, collection_name ) {
+  try {
+    // 0. Check if (user_id, collection_name) already exists
+    const existingMapping = await getMappingByUserAndCollection(user_id, collection_name);
+    if (existingMapping) {
+      logger.info(`Mapping already exists for user_id=${user_id}, collection_name=${collection_name}`);
+      return {
+        success: false,
+        message: 'This user_id and collection_name combination is already mapped.'
+      };
+    }
+
+    // 1. Make the external API call
+    const response = await axios.post('http://localhost:8000/compare_with_global', {
+      user_id,
+      face_id,
+      collection_name:'test_prod'
+      //collection_name: "User"+collection_name,
+    });
+
+    // 2. Check for 'matched_user_id' in the response
+    const { matched_user_id } = response.data;
+    if (!matched_user_id) {
+      logger.info('No matched_user_id in external API response...');
+      return ;
+    }
+    logger.info('matched_user_id found in external API response. Exiting...');
+    // 3. We have matched_user_id, so let's get more user details from local method
+    const userDetails = await getUserDetailsByUserId(user_id);
+    if (!userDetails) {
+      logger.warn(`No user details found for user_id: ${user_id}`);
+    }
+
+    const userPhoneNumber = userDetails?.user_phone_number ; // or however you structure user details
+
+    // 4. Store the mapping details in 'global_to_local_user_mapping' table
+    const now = new Date().toISOString();
+    const itemToStore = {
+      local_user_id: user_id,             // your internal user ID
+      folder_name: collection_name,  // used as the sort key
+      global_user_id: matched_user_id,    // the ID from external
+      face_id: face_id,
+      user_phone_number: userPhoneNumber,
+      created_at: now
+    };
+
+    // Put the record
+    const params = {
+      TableName: GLOBAL_TO_LOCAL_MAPPING_TABLE,
+      Item: itemToStore
+    };
+    await docClient.put(params).promise();
+
+    logger.info('Successfully stored mapping in global_to_local_user_mapping');
+
+    return {
+      success: true,
+      data: itemToStore
+    };
+  } catch (error) {
+    logger.error('Error in mapGlobalToLocalUser:', error);
+    throw error;
+  }
+}
 
 app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
   const { userPhoneNumber, userId } = req.params;
@@ -11626,22 +11725,49 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
       relationsResult.Items.map(item => [item.related_user_id, item])
     );
     
-    // Query indexed data to get user IDs from the device
+    // -----------------------------------
+    // 3) Query indexed data (with pagination)
+    // -----------------------------------
     const indexedDataParams = {
       TableName: 'machinevision_indexed_data',
       IndexName: 'folder_name-index',
       KeyConditionExpression: 'folder_name = :folderName',
-      ProjectionExpression: 'user_id',
+      ProjectionExpression: 'user_id, face_id',
       ExpressionAttributeValues: {
         ':folderName': userPhoneNumber
       }
     };
+    let allItems = [];
+    let lastEvaluatedKey = null;
+
+    do {
+      if (lastEvaluatedKey) {
+        indexedDataParams.ExclusiveStartKey = lastEvaluatedKey;
+      }
+
+      const indexedDataResult = await docClient.query(indexedDataParams).promise();
+      const items = indexedDataResult.Items || [];
+
+      allItems.push(...items);
+      lastEvaluatedKey = indexedDataResult.LastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    // -----------------------------------
+    // 4) Build a map of user_id -> face_id
+    // -----------------------------------
+    const userFaceMap = new Map();
+    for (const item of allItems) {
+      // Example condition: only store a face_id if the item doesn't have user_id_original
+      if (!item.user_id_original) {
+        userFaceMap.set(item.user_id, item.face_id);
+      }
+    }
+
+    const uniqueUserIds = [...userFaceMap.keys()];
     
-    const indexedDataResult = await docClient.query(indexedDataParams).promise();
-    const uniqueUserIds = [...new Set(indexedDataResult.Items.map(item => item.user_id))];
-    
-    // Filter out the main user's ID from the list
-    const filteredUserIds = uniqueUserIds.filter(id => id !== userId);
+    // Filter out the main user's ID
+    const filteredUserIds = uniqueUserIds.filter((id) => id !== userId);
+
     
     const peoplePromises = filteredUserIds.map(async userId => {
       // First get user data from recognition table
@@ -13378,7 +13504,7 @@ async function getUserDetails(userId) {
       ':userId': { S: userId }
     }
   };
-  const result = await dynamoDB.query(params).promise();
+  const result = await docClient.query(params).promise();
   return result.Items?.[0];
 }
 
@@ -13393,6 +13519,8 @@ async function getUserDetailsByPhone(phoneNumber) {
   const result = await dynamoDB.query(params).promise();
   return result.Items?.[0];
 }
+
+
 
 async function getFaceDetails(userId) {
   const params = {
