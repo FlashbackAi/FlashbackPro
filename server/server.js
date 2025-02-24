@@ -16305,6 +16305,7 @@ app.post("/merge-users-in-phone", async (req, res) => {
       const updateResponse = await axios.post("https://52.66.187.182:3000/update-user-ids/", {
         face_ids: faceIds,
         target_user_id: target_user_id,
+        collection_name:collectionName
       },{
         httpsAgent: httpsAgent, // Pass the custom HTTPS agent
       });
