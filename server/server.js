@@ -11885,7 +11885,11 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
     
     // Filter out the main user's ID
     const filteredUserIds = uniqueUserIds.filter((id) => id !== userId);
-    const globalUserMap = await mapAllRegisteredUsersToGlobal(userPhoneNumber)
+    let globalUserMap;
+    if(filteredUserIds.length>0){
+      globalUserMap = await mapAllRegisteredUsersToGlobal(userPhoneNumber)
+    }
+    
     
     const peoplePromises = filteredUserIds.map(async userId => {
       // First get user data from recognition table
