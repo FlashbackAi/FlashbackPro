@@ -11754,7 +11754,7 @@ async function mapAllRegisteredUsersToGlobal(collection_name) {
 
       // 3) If no existing mapping, call external API
       //    (Adjust the endpoint & payload as needed.)
-      const response = await axios.post("https://52.66.187.182:5000/compare_with_local/", {
+      const response = await axios.post("https://52.66.187.182:3000/compare_with_local/", {
         user_id:user_id,
         // If the external API needs a face_id, you must retrieve it or adapt accordingly.
         // For now, we demonstrate only passing user_id + collection_name.
@@ -15977,7 +15977,7 @@ app.post("/merge-users", async (req, res) => {
     logger.info(`Merging user_id: ${merging_user_id} into target user_id: ${target_user_id}`);
 
     //External API for `/merge-users` endpoint
-    const response = await axios.post("https://52.66.187.182:5000/merge-users/", {
+    const response = await axios.post("https://52.66.187.182:3000/merge-users/", {
       merging_user_id,
       target_user_id,
     },
@@ -16206,13 +16206,15 @@ app.post("/merge-users-in-phone", async (req, res) => {
   try {
     // Initialize merge request status
     logger.info("Initializing merge request status...");
+    const collection = phone_number.replace('+',"");
+    const collectionName = "User"+collection;
     const mergeStatusInit = {
       TableName: merge_status_table,
       Item: {
         merge_req_id,
         merging_user_id: null, // Placeholder for now
         target_user_id: null,  // Placeholder for now
-        phone_number,
+        user_phone_number:phone_number,
         merge_status: "IN_PROGRESS",
         failed_step: null,
         timestamp: new Date().toISOString(),
@@ -16249,9 +16251,10 @@ app.post("/merge-users-in-phone", async (req, res) => {
       logger.info("Phone number is mapped to one of the users. Proceeding with user merge.");
 
      //External API for merge-users API
-      const response = await axios.post("https://52.66.187.182:5000/merge-users/", {
+      const response = await axios.post("https://52.66.187.182:3000/merge-users/", {
         merging_user_id,
         target_user_id,
+        collection_name:collectionName
       },
       {
         httpsAgent: httpsAgent, // Pass the custom HTTPS agent
@@ -16299,7 +16302,7 @@ app.post("/merge-users-in-phone", async (req, res) => {
       logger.info(`Collected ${faceIds.length} face_ids for user_id: ${user_id_1} and phone_number: ${phone_number}`);
 
       //External API for to update user_id for face_ids
-      const updateResponse = await axios.post("https://52.66.187.182:5000/update-user-ids/", {
+      const updateResponse = await axios.post("https://52.66.187.182:3000/update-user-ids/", {
         face_ids: faceIds,
         target_user_id: target_user_id,
       },{
