@@ -11754,7 +11754,7 @@ async function mapAllRegisteredUsersToGlobal(collection_name) {
 
       // 3) If no existing mapping, call external API
       //    (Adjust the endpoint & payload as needed.)
-      const response = await axios.post("https://52.66.187.182:5000/merge-users/", {
+      const response = await axios.post("https://52.66.187.182:5000/compare_with_local/", {
         user_id:user_id,
         // If the external API needs a face_id, you must retrieve it or adapt accordingly.
         // For now, we demonstrate only passing user_id + collection_name.
