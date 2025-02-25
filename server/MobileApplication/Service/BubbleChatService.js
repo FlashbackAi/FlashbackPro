@@ -1,4 +1,5 @@
 const bubbleChatModel = require('../Model/BubbleChatModel');
+const globalToLocalUsermappingModel = require('../Model/GlobalToLocalUsermappingModel');
 const userModel = require('../Model/UserModel')
 const logger = require('../../logger');
 
@@ -9,14 +10,19 @@ exports.createBubbleChat = async ({ senderId, recipientId, memoryUrl, senderName
 
   const timestamp = new Date().toISOString();
   const messageId = require('crypto').randomBytes(16).toString('hex');
-  const recipientUserDetails = await userModel.getUserObjectByUserId(recipientId);
+
+  const globalRecepientMapping =  await globalToLocalUsermappingModel.getMappingByLocalUserAndCollection(
+    recipientId
+    );
+  
   let recipientUsers;
   let participants;
-  if(!recipientUserDetails){
+  if(!globalRecepientMapping){
     participants = [senderPhone, recipientId].sort().join('#');
   }else{
-    participants = [senderPhone, recipientUserDetails.user_phone_number].sort().join('#');
-    recipientUsers = [recipientUserDetails.user_phone_number];
+    //const recipientUserDetails = await userModel.getUserObjectByUserId(GlobalRecepientMapping.global_user_id);
+    participants = [senderPhone, globalRecepientMapping.user_phone_number].sort().join('#');
+    recipientUsers = [globalRecepientMapping.user_phone_number];
   }
   // Check for existing chat
   let chatId = await bubbleChatModel.getExistingChat(participants);

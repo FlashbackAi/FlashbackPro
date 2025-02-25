@@ -26,3 +26,24 @@ exports.getMappingByGlobalUserAndCollection = async (globalUserId, collectionNam
     throw error;
   }
 };
+
+exports.getMappingByLocalUserAndCollection = async (localUserId) => {
+  try {
+    logger.info(`Fetching mapping for global_user_id=${localUserId}`);
+
+    const params = {
+      TableName: GLOBAL_TO_LOCAL_MAPPING_TABLE,
+      IndexName: 'local_user_id-index',
+      KeyConditionExpression: 'local_user_id = :localUserId',
+      ExpressionAttributeValues: {
+        ':localUserId': localUserId
+      }
+    };
+
+    const result = await docClient.query(params).promise();
+    return (result.Items && result.Items.length > 0) ? result.Items[0] : undefined; // undefined if not found
+  } catch (error) {
+    logger.error('Error in getMappingByGlobalUserAndCollection:', error);
+    throw error;
+  }
+};
