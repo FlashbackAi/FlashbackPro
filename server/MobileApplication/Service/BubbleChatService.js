@@ -395,7 +395,7 @@ exports.getChatsByUser = async (userPhoneNumber) => {
       // 3. Fetch user details for these other phone numbers
       const otherUserDetails = await Promise.all(
         otherPhoneNumbers.map(async (phone) => {
-          logger.info("fetching user details for ", phone)
+          logger.info("fetching user details for user number :", phone)
           return userModel.getUser(phone);  // hypothetical function
         })
       );
