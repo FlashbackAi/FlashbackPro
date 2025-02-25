@@ -49,6 +49,12 @@ app.post('/removeGroupMembers', bubbleChatController.removeGroupMembers);
 app.post('/deleteGroupChat', bubbleChatController.deleteGroupChat);
 //API to get chats by user
 app.get('/chats-by-user/:user_phone_number', bubbleChatController.getChatsByUser);
+//API to get chat messages
+app.get('/getChatMessages/:chatId', bubbleChatController.getChatMessages);
+//API to send message
+app.post('/sendMessage', bubbleChatController.sendMessage);
+//API to mark message as Read
+app.post('/markAsRead', bubbleChatController.markAsRead);
 //API to Add Admin to Group bubble chat
 app.post('/addAdmin', bubbleChatController.addAdminGroupMembers);
 //API to Remove Admin from Group bubble chat

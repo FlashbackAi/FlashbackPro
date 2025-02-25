@@ -23,6 +23,24 @@ exports.getExistingChat = async (participants) => {
   return null;
 };
 
+
+exports.markMessageAsRead = async (params) => {
+  return await docClient.update(params).promise();
+};
+
+exports.storeMessage = async (params) => {
+  return await docClient.put(params).promise();
+};
+
+exports.updateChatLastMessage = async (params) => {
+  return await docClient.update(params).promise();
+};
+
+
+exports.getMessagesByChatId = async (params) => {
+  return await docClient.query(params).promise();
+};
+
 exports.updateChat = async (chatId, timestamp, messageId) => {
   const params = {
     TableName: chatsTable,

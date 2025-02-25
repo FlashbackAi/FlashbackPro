@@ -27,6 +27,74 @@ exports.createBubbleChat = async (req, res) => {
   };
 
 
+  exports.getChatMessages = async (req, res) => {
+    const { chatId } = req.params;
+    const { lastMessageId } = req.query;
+  
+    if (!chatId) {
+      return res.status(400).json({ error: 'chatId is required' });
+    }
+  
+    try {
+      const messages = await bubbleChatService.getChatMessages(chatId, lastMessageId);
+      return res.status(200).json({
+        success: true,
+        data: messages,
+      });
+    } catch (error) {
+      logger.error(`Error fetching messages for chat: ${chatId}`, error);
+      return res.status(500).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  };
+
+
+  exports.sendMessage = async (req, res) => {
+    const { chatId, senderId, content, type, timestamp, status, replyTo } = req.body;
+  
+    if (!chatId || !senderId || !content || !type || !timestamp) {
+      return res.status(400).json({ error: 'chatId, senderId, content, type, and timestamp are required' });
+    }
+  
+    try {
+      const messageData = await bubbleChatService.sendMessage(chatId, senderId, content, type, timestamp, status, replyTo);
+      return res.status(200).json({
+        success: true,
+        data: messageData,
+      });
+    } catch (error) {
+      logger.error(`Error sending message for chat: ${chatId}`, error);
+      return res.status(500).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  };
+
+  exports.markAsRead = async (req, res) => {
+    const { chatId, userId, messageId } = req.body;
+  
+    if (!chatId || !userId || !messageId) {
+      return res.status(400).json({ error: 'chatId, userId, and messageId are required' });
+    }
+  
+    try {
+      const readData = await bubbleChatService.markAsRead(chatId, userId, messageId);
+      return res.status(200).json({
+        success: true,
+        data: readData,
+      });
+    } catch (error) {
+      logger.error(`Error marking message as read for chat: ${chatId}`, error);
+      return res.status(500).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  };
+
 exports.createGroupBubbleChat = async (req, res) => {
   const { senderId, memberIds, memoryUrl, senderName, senderPhone } = req.body;
 
