@@ -15550,8 +15550,32 @@ app.get('/identify-folders', async (req, res) => {
   }
 });
 
+async function getRequestByOwnerAndRequestor(owner_number, requester_number) {
+  try {
+    const params = {
+      TableName: 'user_flashback_image_requests',
+      IndexName: 'owner_number-requester_number-index',
+      KeyConditionExpression: 'owner_number = :owner AND requester_number = :requester',
+      ExpressionAttributeValues: {
+        ':owner': owner_number,
+        ':requester': requester_number
+      }
+    };
+
+    const result = await docClient.query(params).promise();
+    
+    // If at least one item is found, return the first; otherwise, return null.
+    return (result.Items && result.Items.length > 0) ? result.Items[0] : null;
+
+  } catch (err) {
+    // Log the error and rethrow or handle as needed
+    logger.error(`Error retrieving request for owner_number: ${owner_number}, requester_number: ${requester_number}`, err);
+    throw err; 
+  }
+}
+
 app.post('/user-images/request', async (req, res) => {
-    const { requester_id, requester_number, owner_id, owner_number, status, request_id } = req.body;
+    const { request_id, requester_number, owner_number, status } = req.body;
 
     // Determine if it's a create or update operation
     if (!status && !request_id) {
@@ -15565,6 +15589,11 @@ app.post('/user-images/request', async (req, res) => {
         }
 
         try {
+            existingRequest = await getRequestByOwnerAndRequestor(owner_number,requester_number)
+            console.log(existingRequest)
+            if(existingRequest && existingRequest.status === 'pending'){
+              return res.status(200).json({ message: "Request existing", request_id: existingRequest.request_id });
+            }
             // Generate a shorter request ID
             const requestId = crypto.randomBytes(4).toString('hex'); // Generates an 8-character ID
 
@@ -15574,9 +15603,7 @@ app.post('/user-images/request', async (req, res) => {
                 Item: {
                     request_id: requestId,
                     requester_number: requester_number,
-                    requester_id: requester_id,
                     owner_number: owner_number,
-                    owner_id: owner_id,
                     status: 'pending',
                     created_at: new Date().toISOString()
                 }

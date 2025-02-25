@@ -61,7 +61,7 @@ exports.createChat = async (chatId, participants, timestamp, messageId, senderNa
   logger.info("Chat created Successfully")
 };
 
-exports.createMessage = async ({ messageId, chatId, senderId, recipientId, memoryUrl, flashbackId, timestamp, senderName, senderPhone, recipientUsers }) => {
+exports.createMessage = async ({ messageId, chatId, senderId, recipientId, memoryUrl, timestamp, senderName, senderPhone, recipientUsers }) => {
   const messageItem = {
     messageId,
     chatId,
@@ -69,7 +69,6 @@ exports.createMessage = async ({ messageId, chatId, senderId, recipientId, memor
     recipientId,
     messageType: 'memory' ,
     content:  memoryUrl,
-    flashbackId,
     timestamp,
     status: 'sent',
     senderPhone,
@@ -193,14 +192,13 @@ exports.getExistingGroupChatByParticipants = async (participants) => {
     await docClient.put(params).promise();
   };
   
-  exports.createGroupMessage = async ({ messageId, chatId, senderId, memoryUrl, flashbackId, timestamp, senderName, senderPhone, recipientUsers}) => {
+  exports.createGroupMessage = async ({ messageId, chatId, senderId, memoryUrl, timestamp, senderName, senderPhone, recipientUsers}) => {
     const messageItem = {
       messageId,
       chatId,
       senderId,
       messageType: 'memory',
       content: memoryUrl,
-      flashbackId,
       timestamp,
       status: 'sent',
       senderPhone,

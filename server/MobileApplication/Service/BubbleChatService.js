@@ -2,8 +2,8 @@ const bubbleChatModel = require('../Model/BubbleChatModel');
 const userModel = require('../Model/UserModel')
 const logger = require('../../logger');
 
-exports.createBubbleChat = async ({ senderId, recipientId, memoryUrl, flashbackId, senderName, senderPhone }) => {
-  if (!senderId || !recipientId || !memoryUrl || !flashbackId) {
+exports.createBubbleChat = async ({ senderId, recipientId, memoryUrl, senderName, senderPhone }) => {
+  if (!senderId || !recipientId || !memoryUrl) {
     throw new Error('Missing required fields');
   }
 
@@ -40,7 +40,6 @@ exports.createBubbleChat = async ({ senderId, recipientId, memoryUrl, flashbackI
     senderPhone,
     recipientUsers,
     memoryUrl,
-    flashbackId,
     timestamp,
     senderName,
   });
@@ -62,8 +61,8 @@ exports.createBubbleChat = async ({ senderId, recipientId, memoryUrl, flashbackI
   return { chatId, messageId };
 };
 
-exports.createGroupBubbleChat = async ({ senderId, memberIds, memoryUrl, flashbackId, senderName, senderPhone }) => {
-    if (!senderId || !memberIds || !Array.isArray(memberIds) || !memoryUrl || !flashbackId) {
+exports.createGroupBubbleChat = async ({ senderId, memberIds, memoryUrl, senderName, senderPhone }) => {
+    if (!senderId || !memberIds || !Array.isArray(memberIds) || !memoryUrl) {
       throw new Error('Missing required fields');
     }
   
@@ -98,7 +97,6 @@ exports.createGroupBubbleChat = async ({ senderId, memberIds, memoryUrl, flashba
       chatId,
       senderId,
       memoryUrl,
-      flashbackId,
       timestamp,
       senderName,
       senderPhone,

@@ -2,14 +2,13 @@ const bubbleChatService = require('../Service/BubbleChatService');
 const logger = require('../../logger');
 
 exports.createBubbleChat = async (req, res) => {
-    const { senderId, recipientId, memoryUrl, flashbackId, senderName, senderPhone } = req.body;
+    const { senderId, recipientId, memoryUrl, senderName, senderPhone } = req.body;
   
     try {
       const result = await bubbleChatService.createBubbleChat({
         senderId,
         recipientId,
         memoryUrl,
-        flashbackId,
         senderName,
         senderPhone,
       });
@@ -29,14 +28,13 @@ exports.createBubbleChat = async (req, res) => {
 
 
 exports.createGroupBubbleChat = async (req, res) => {
-  const { senderId, memberIds, memoryUrl, flashbackId, senderName, senderPhone } = req.body;
+  const { senderId, memberIds, memoryUrl, senderName, senderPhone } = req.body;
 
   try {
     const result = await bubbleChatService.createGroupBubbleChat({
       senderId,
       memberIds,
       memoryUrl,
-      flashbackId,
       senderName,
       senderPhone,
     });
