@@ -119,6 +119,7 @@ async function initializeConfig() {
 
     // Initialize DynamoDB DocumentClient
     const docClient = new AWS.DynamoDB.DocumentClient();
+    const dynamoDB = new AWS.DynamoDB({ region: 'ap-south-1' });
 
      // Initialize S3 Client
      const s3 = new AWS.S3({
@@ -134,6 +135,7 @@ async function initializeConfig() {
       whatsapp: whatsappConfig,
       aptosConfig,
       docClient,
+      dynamoDB,
       s3,
       kms,
       KMS_KEY_ID: kmsConfig.KMS_KEY_ID

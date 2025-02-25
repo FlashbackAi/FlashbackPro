@@ -2,6 +2,7 @@ const { getConfig } = require('../../config');
 const logger = require('../../logger');
 
 const docClient = getConfig().docClient;
+const dynamoDB = getConfig().dynamoDB;
 
 const chatsTable = 'bubbleChats';
 const messagesTable = 'Messages';
@@ -25,20 +26,27 @@ exports.getExistingChat = async (participants) => {
 
 
 exports.markMessageAsRead = async (params) => {
-  return await docClient.update(params).promise();
+  return await dynamoDB.updateItem(params).promise();
 };
 
 exports.storeMessage = async (params) => {
-  return await docClient.put(params).promise();
+  return await dynamoDB.putItem(params).promise();
 };
 
 exports.updateChatLastMessage = async (params) => {
-  return await docClient.update(params).promise();
+  return await dynamoDB.updateItem(params).promise();
 };
 
-
 exports.getMessagesByChatId = async (params) => {
-  return await docClient.query(params).promise();
+  try {
+    logger.info(`Executing DynamoDB query with params:`, params);
+    const result = await dynamoDB.query(params).promise();
+    logger.info(`DynamoDB query result for chatId: ${params.ExpressionAttributeValues[':chatId'].S}:`, result);
+    return result;
+  } catch (error) {
+    logger.error(`Error executing DynamoDB query for chatId: ${params.ExpressionAttributeValues[':chatId'].S}:`, error);
+    throw error;
+  }
 };
 
 exports.updateChat = async (chatId, timestamp, messageId) => {

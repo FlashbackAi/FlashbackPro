@@ -171,7 +171,6 @@ exports.sendMessage = async (chatId, senderId, content, type, timestamp, status,
   }
 };
 
-
 exports.getChatMessages = async (chatId, lastMessageId) => {
   try {
     let params = {
@@ -179,20 +178,22 @@ exports.getChatMessages = async (chatId, lastMessageId) => {
       IndexName: 'chatId-index',
       KeyConditionExpression: 'chatId = :chatId',
       ExpressionAttributeValues: {
-        ':chatId': chatId,
+        ':chatId': { S: String(chatId) } // Ensure chatId is a string
       },
-      ScanIndexForward: false, // Sort in descending order (newest first)
-      Limit: 50,
+      ScanIndexForward: false,
+      Limit: 50
     };
 
     if (lastMessageId) {
       params.ExclusiveStartKey = { 
-        messageId: lastMessageId,
-        chatId: chatId
+        messageId: { S: String(lastMessageId) }, // Ensure lastMessageId is a string
+        chatId: { S: String(chatId) }
       };
     }
 
+    logger.info(`Fetching messages for chatId: ${chatId} with params:`, params);
     const result = await bubbleChatModel.getMessagesByChatId(params);
+
     // Transform DynamoDB items to regular objects
     const messages = result.Items.map(item => ({
       messageId: item.messageId?.S,
@@ -200,25 +201,28 @@ exports.getChatMessages = async (chatId, lastMessageId) => {
       senderId: item.senderId?.S,
       senderName: item.senderName?.S,
       senderPhone: item.senderPhone?.S,
-      recipientId: item.recipientId?.S, // Include if exists
-      type: item.messageType?.S,
+      ...(item.recipientId && { recipientId: item.recipientId.S }),
+      type: item.messageType?.S || 'text',
       content: item.content?.S,
       timestamp: item.timestamp?.S,
       status: item.status?.S || 'sent',
+      flashbackId: item.flashbackId?.S,
       reactions: item.reactions?.M || {},
-      replyTo: item.replyTo?.M && {
-        messageId: item.replyTo.M.messageId?.S,
-        content: item.replyTo.M.content?.S,
-        type: item.replyTo.M.type?.S
-      }
+      ...(item.replyTo?.M && {
+        replyTo: {
+          messageId: item.replyTo.M.messageId?.S,
+          content: item.replyTo.M.content?.S,
+          type: item.replyTo.M.type?.S
+        }
+      })
     }))
-    .filter(message => message.messageId && message.content) // Filter malformed messages
-    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Ensure sorted by timestamp
+    .filter(message => message.messageId && message.content)
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-    logger.info(`Fetched ${messages.length} messages for chat: ${chatId}`);
+    logger.info(`Fetched ${messages.length} messages for chat: ${chatId} with data:`, messages);
     return messages;
   } catch (error) {
-    logger.error('Error fetching chat messages:', error);
+    logger.error(`Error fetching messages for chatId: ${chatId}:`, error);
     throw error;
   }
 };
