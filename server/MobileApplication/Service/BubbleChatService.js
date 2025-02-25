@@ -223,6 +223,30 @@ exports.getChatsByUser = async (userPhoneNumber) => {
     } while (lastEvaluatedKey);
 
     logger.info(`Fetched ${chats.length} chats for user: ${userPhoneNumber}`);
+    for (const chat of chats) {
+      // Create a set of all possible phone numbers in this chat
+      const allPhoneNumbers = new Set([
+        ...(chat.recipientUsers || []),
+        ...(chat.senderPhone ? [chat.senderPhone] : [])
+      ]);
+
+      // Remove the current user's phone number (if present)
+      allPhoneNumbers.delete(userPhoneNumber);
+
+      // Convert the Set back to an array
+      const otherPhoneNumbers = Array.from(allPhoneNumbers);
+
+      // 3. Fetch user details for these other phone numbers
+      const otherUserDetails = await Promise.all(
+        otherPhoneNumbers.map(async (phone) => {
+          logger.info("fetching user details for ", phone)
+          return userModel.getUser(phone);  // hypothetical function
+        })
+      );
+
+      // 4. Attach user details to the chat object
+      chat.chatUserDetails = otherUserDetails;
+    }
     return chats;
   } catch (error) {
     logger.error('Error fetching chats by user:', error);
