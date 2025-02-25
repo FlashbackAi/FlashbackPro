@@ -67,6 +67,162 @@ exports.createBubbleChat = async ({ senderId, recipientId, memoryUrl, senderName
   return { chatId, messageId };
 };
 
+exports.markAsRead = async (chatId, userId, messageId) => {
+  try {
+    const params = {
+      TableName: 'Messages',
+      Key: {
+        messageId: messageId,
+        chatId: chatId
+      },
+      UpdateExpression: 'SET #status = :status',
+      ExpressionAttributeNames: {
+        '#status': 'status'
+      },
+      ExpressionAttributeValues: {
+        ':status': { S: 'read' }
+      },
+      ReturnValues: 'UPDATED_NEW'
+    };
+
+    const result = await bubbleChatModel.markMessageAsRead(params);
+
+    logger.info(`Marked message ${messageId} as read for chat: ${chatId}`);
+    return {
+      messageId,
+      chatId,
+      userId,
+      status: 'read'
+    };
+  } catch (error) {
+    logger.error('Error marking message as read:', error);
+    throw error;
+  }
+};
+
+exports.sendMessage = async (chatId, senderId, content, type, timestamp, status, replyTo) => {
+  try {
+    // Generate a unique message ID
+    const messageId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+
+    // Store the message in the Messages table
+    const messageParams = {
+      TableName: 'Messages',
+      Item: {
+        messageId: { S: messageId },
+        chatId: { S: chatId },
+        senderId: { S: senderId },
+        senderName: { S: 'Sender Name' }, // Fetch or provide sender name dynamically
+        senderPhone: { S: 'Sender Phone' }, // Fetch or provide sender phone dynamically
+        type: { S: type },
+        content: { S: content },
+        timestamp: { S: timestamp },
+        status: { S: status || 'sent' },
+        ...(replyTo && {
+          replyTo: {
+            M: {
+              messageId: { S: replyTo.messageId },
+              content: { S: replyTo.content },
+              type: { S: replyTo.type }
+            }
+          }
+        })
+      }
+    };
+
+    await bubbleChatModel.storeMessage(messageParams);
+
+    // Update the bubbleChats table with the new last message
+    const chatUpdateParams = {
+      TableName: 'bubbleChats',
+      Key: {
+        chat_id: { S: chatId }
+      },
+      UpdateExpression: 'SET #lastMessageId = :lastMessageId, #lastMessageAt = :lastMessageAt, #senderName = :senderName, #senderPhone = :senderPhone',
+      ExpressionAttributeNames: {
+        '#lastMessageId': 'lastMessageId',
+        '#lastMessageAt': 'lastMessageAt',
+        '#senderName': 'senderName',
+        '#senderPhone': 'senderPhone'
+      },
+      ExpressionAttributeValues: {
+        ':lastMessageId': { S: messageId },
+        ':lastMessageAt': { S: timestamp },
+        ':senderName': { S: 'Sender Name' }, // Fetch or provide dynamically
+        ':senderPhone': { S: 'Sender Phone' } // Fetch or provide dynamically
+      },
+      ReturnValues: 'UPDATED_NEW'
+    };
+
+    await bubbleChatModel.updateChatLastMessage(chatUpdateParams);
+
+    logger.info(`Sent message with ID ${messageId} for chat: ${chatId}`);
+    return {
+      messageId,
+      chatId,
+      senderId,
+      content,
+      timestamp,
+      status
+    };
+  } catch (error) {
+    logger.error('Error sending message:', error);
+    throw error;
+  }
+};
+
+
+exports.getChatMessages = async (chatId, lastMessageId) => {
+  try {
+    let params = {
+      TableName: 'Messages',
+      IndexName: 'chatId-index',
+      KeyConditionExpression: 'chatId = :chatId',
+      ExpressionAttributeValues: {
+        ':chatId': chatId,
+      },
+      ScanIndexForward: false, // Sort in descending order (newest first)
+      Limit: 50,
+    };
+
+    if (lastMessageId) {
+      params.ExclusiveStartKey = { 
+        messageId: lastMessageId,
+        chatId: chatId
+      };
+    }
+
+    const result = await bubbleChatModel.getMessagesByChatId(params);
+    // Transform DynamoDB items to regular objects
+    const messages = result.Items.map(item => ({
+      messageId: item.messageId?.S,
+      chatId: item.chatId?.S,
+      senderId: item.senderId?.S,
+      senderName: item.senderName?.S,
+      senderPhone: item.senderPhone?.S,
+      recipientId: item.recipientId?.S, // Include if exists
+      type: item.messageType?.S,
+      content: item.content?.S,
+      timestamp: item.timestamp?.S,
+      status: item.status?.S || 'sent',
+      reactions: item.reactions?.M || {},
+      replyTo: item.replyTo?.M && {
+        messageId: item.replyTo.M.messageId?.S,
+        content: item.replyTo.M.content?.S,
+        type: item.replyTo.M.type?.S
+      }
+    }))
+    .filter(message => message.messageId && message.content) // Filter malformed messages
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Ensure sorted by timestamp
+
+    logger.info(`Fetched ${messages.length} messages for chat: ${chatId}`);
+    return messages;
+  } catch (error) {
+    logger.error('Error fetching chat messages:', error);
+    throw error;
+  }
+};
+
 exports.createGroupBubbleChat = async ({ senderId, memberIds, memoryUrl, senderName, senderPhone }) => {
     if (!senderId || !memberIds || !Array.isArray(memberIds) || !memoryUrl) {
       throw new Error('Missing required fields');
