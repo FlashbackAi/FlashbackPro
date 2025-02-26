@@ -116,7 +116,7 @@ exports.sendMessage = async (chatId, senderId, content, senderName, senderPhone,
         senderPhone: { S: senderPhone }, // Fetch or provide sender phone dynamically
         messageType: { S: messageType },
         recipientId: {S: recipientId},
-        recepientUsers: {S: recipientUsers},
+        recipientUsers: {L: recipientUsers.map(user => ({S: user}))},
         content: { S: content },
         timestamp: { S: timestamp },
         status: { S: status || 'sent' },
