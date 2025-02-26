@@ -140,18 +140,14 @@ exports.sendMessage = async (chatId, senderId, content, senderName, senderPhone,
       Key: {
         chat_id: { S: chatId }
       },
-      UpdateExpression: 'SET #lastMessageId = :lastMessageId, #lastMessageAt = :lastMessageAt, #senderName = :senderName, #senderPhone = :senderPhone',
+      UpdateExpression: 'SET #lastMessageId = :lastMessageId, #lastMessageAt = :lastMessageAt',
       ExpressionAttributeNames: {
         '#lastMessageId': 'lastMessageId',
-        '#lastMessageAt': 'lastMessageAt',
-        '#senderName': 'senderName',
-        '#senderPhone': 'senderPhone'
+        '#lastMessageAt': 'lastMessageAt'
       },
       ExpressionAttributeValues: {
         ':lastMessageId': { S: messageId },
-        ':lastMessageAt': { S: timestamp },
-        ':senderName': { S: 'Sender Name' }, // Fetch or provide dynamically
-        ':senderPhone': { S: 'Sender Phone' } // Fetch or provide dynamically
+        ':lastMessageAt': { S: timestamp }
       },
       ReturnValues: 'UPDATED_NEW'
     };
