@@ -52,14 +52,14 @@ exports.createBubbleChat = async (req, res) => {
 
 
   exports.sendMessage = async (req, res) => {
-    const { chatId, senderId, content, type, timestamp, status, replyTo } = req.body;
+    const { chatId, senderId, content, senderName, senderPhone, recipientUsers, recipientId, messageType, timestamp, status, replyTo } = req.body;
   
-    if (!chatId || !senderId || !content || !type || !timestamp) {
+    if (!chatId || !senderId || !content || !messageType || !timestamp) {
       return res.status(400).json({ error: 'chatId, senderId, content, type, and timestamp are required' });
     }
   
     try {
-      const messageData = await bubbleChatService.sendMessage(chatId, senderId, content, type, timestamp, status, replyTo);
+      const messageData = await bubbleChatService.sendMessage(chatId, senderId, content, senderName, senderPhone, recipientUsers, recipientId, messageType, timestamp, status, replyTo);
       return res.status(200).json({
         success: true,
         data: messageData,

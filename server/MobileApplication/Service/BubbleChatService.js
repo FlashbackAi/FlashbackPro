@@ -100,7 +100,7 @@ exports.markAsRead = async (chatId, userId, messageId) => {
   }
 };
 
-exports.sendMessage = async (chatId, senderId, content, type, timestamp, status, replyTo) => {
+exports.sendMessage = async (chatId, senderId, content, senderName, senderPhone, recipientUsers, recipientId, messageType, timestamp, status, replyTo) => {
   try {
     // Generate a unique message ID
     const messageId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
@@ -112,9 +112,11 @@ exports.sendMessage = async (chatId, senderId, content, type, timestamp, status,
         messageId: { S: messageId },
         chatId: { S: chatId },
         senderId: { S: senderId },
-        senderName: { S: 'Sender Name' }, // Fetch or provide sender name dynamically
-        senderPhone: { S: 'Sender Phone' }, // Fetch or provide sender phone dynamically
-        type: { S: type },
+        senderName: { S: senderName }, // Fetch or provide sender name dynamically
+        senderPhone: { S: senderPhone }, // Fetch or provide sender phone dynamically
+        messageType: { S: messageType },
+        recipientId: {S: recipientId},
+        recepientUsers: {S: recipientUsers},
         content: { S: content },
         timestamp: { S: timestamp },
         status: { S: status || 'sent' },
