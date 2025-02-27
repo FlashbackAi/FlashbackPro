@@ -111,7 +111,7 @@ exports.updateChat = async (chatId, timestamp, messageId) => {
   await docClient.update(params).promise();
 };
 
-exports.createChat = async (chatId, participants, timestamp, messageId, senderName, senderPhone, recipientUsers) => {
+exports.createChat = async (chatId, participants, timestamp, messageId, senderName, senderPhone, recipientUsers,recipientUserIds) => {
   const chatItem = {
     chat_id:chatId,
     participants,
@@ -122,6 +122,7 @@ exports.createChat = async (chatId, participants, timestamp, messageId, senderNa
     senderPhone,
     senderName,
     recipientUsers:recipientUsers,
+    recipientUserIds:recipientUserIds
   };
 
   const params = {
