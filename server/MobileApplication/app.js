@@ -57,6 +57,8 @@ app.post('/sendMessage', bubbleChatController.sendMessage);
 app.post('/markAsRead', bubbleChatController.markAsRead);
 //API to Add Admin to Group bubble chat
 app.post('/addAdmin', bubbleChatController.addAdminGroupMembers);
+//API to get user specific memories
+app.get('/getInChatMemories', bubbleChatController.getInChatMemories);
 //API to Remove Admin from Group bubble chat
 app.post('/removeAdmin', bubbleChatController.removeAdminGroupMembers);
 

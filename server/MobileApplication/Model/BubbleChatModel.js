@@ -6,6 +6,8 @@ const dynamoDB = getConfig().dynamoDB;
 
 const chatsTable = 'bubbleChats';
 const messagesTable = 'Messages';
+const indexedDataTable = 'machinevision_indexed_data';
+const globalToLocalUserMappingTable = 'global_to_local_user_mapping';
 
 exports.getExistingChat = async (participants) => {
   const params = {
@@ -22,6 +24,50 @@ exports.getExistingChat = async (participants) => {
     return result.Items[0].chat_id;
   }
   return null;
+};
+
+exports.getSenderMapping = async (globalUserId, folderName) => {
+  try {
+    const params = {
+      TableName: globalToLocalUserMappingTable,
+      Key: {
+        global_user_id: globalUserId,
+        folder_name: folderName,
+      },
+    };
+
+    logger.info(`Querying sender mapping for global_user_id: ${globalUserId}, folder_name: ${folderName}`);
+    const result = await docClient.get(params).promise();
+    return result.Item;
+  } catch (error) {
+    logger.error('Error querying sender mapping:', error);
+    throw error;
+  }
+};
+
+exports.getMemoriesByUserFolder = async (userId, folderName) => {
+  try {
+    const params = {
+      TableName: indexedDataTable,
+      IndexName: 'user_id-folder_name-index',
+      KeyConditionExpression: '#user_id = :user_id AND #folder_name = :folder_name',
+      ExpressionAttributeNames: {
+        '#user_id': 'user_id',
+        '#folder_name': 'folder_name',
+      },
+      ExpressionAttributeValues: {
+        ':user_id': userId,
+        ':folder_name': folderName,
+      },
+    };
+
+    logger.info(`Querying memories for user_id: ${userId}, folder_name: ${folderName}`);
+    const result = await docClient.query(params).promise();
+    return result.Items || [];
+  } catch (error) {
+    logger.error('Error querying memories:', error);
+    throw error;
+  }
 };
 
 

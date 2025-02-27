@@ -27,6 +27,29 @@ exports.createBubbleChat = async (req, res) => {
   };
 
 
+  exports.getInChatMemories = async (req, res) => {
+    const { userPhoneNumber, recipientId } = req.query;
+  
+    if (!userPhoneNumber || !recipientId) {
+      return res.status(400).json({ success: false, error: 'userPhoneNumber and recipientId are required' });
+    }
+  
+    try {
+      const memories = await bubbleChatService.getInChatMemories(userPhoneNumber, recipientId);
+      return res.status(200).json({
+        success: true,
+        data: memories,
+      });
+    } catch (error) {
+      logger.error('Error fetching in-chat memories:', error);
+      return res.status(500).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  };
+
+
   exports.getChatMessages = async (req, res) => {
     const { chatId } = req.params;
     const { lastMessageId } = req.query;

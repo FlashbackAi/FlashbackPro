@@ -67,6 +67,27 @@ exports.createBubbleChat = async ({ senderId, recipientId, memoryUrl, senderName
   return { chatId, messageId };
 };
 
+
+exports.getInChatMemories = async (userPhoneNumber, recipientId) => {
+  try {
+    const memories = await bubbleChatModel.getMemoriesByUserFolder(recipientId, userPhoneNumber);
+
+    const memoryData = memories.map(memory => ({
+      s3_url: memory.s3_url,
+      image_name: memory.image_name,
+      bounding_box: memory.bounding_box,
+      faces_in_image: memory.faces_in_image,
+      indexed_date: memory.indexed_date,
+    }));
+
+    logger.info(`Fetched ${memoryData.length} memories for user ${userPhoneNumber} and recipient ${recipientId}`);
+    return memoryData;
+  } catch (error) {
+    logger.error('Error in getInChatMemories service:', error);
+    throw error;
+  }
+};
+
 exports.markAsRead = async (chatId, userId, messageId) => {
   try {
     const params = {
