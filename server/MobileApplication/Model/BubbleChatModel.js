@@ -57,8 +57,8 @@ exports.updateChat = async (chatId, timestamp, messageId) => {
     },
     UpdateExpression: 'SET lastMessageAt = :timestamp, lastMessageId = :messageId',
     ExpressionAttributeValues: {
-      ':timestamp': { S: timestamp },
-      ':messageId': { S: messageId },
+      ':timestamp': timestamp,
+      ':messageId': messageId,
     },
   };
 
