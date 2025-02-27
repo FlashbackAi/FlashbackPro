@@ -24,6 +24,7 @@ exports.createBubbleChat = async ({ senderId, recipientId, memoryUrl, senderName
     participants = [senderPhone, globalRecepientMapping.user_phone_number].sort().join('#');
     recipientUsers = [globalRecepientMapping.user_phone_number];
   }
+  const recipientUserIds = [recipientId]
   // Check for existing chat
   let chatId = await bubbleChatModel.getExistingChat(participants);
 
@@ -34,7 +35,7 @@ exports.createBubbleChat = async ({ senderId, recipientId, memoryUrl, senderName
     // Create new chat
     chatId = require('crypto').randomBytes(16).toString('hex');
     
-    await bubbleChatModel.createChat(chatId, participants, timestamp, messageId, senderName, senderPhone, recipientUsers);
+    await bubbleChatModel.createChat(chatId, participants, timestamp, messageId, senderName, senderPhone, recipientUsers,recipientUserIds);
   }
 
   // Create message
