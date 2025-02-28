@@ -14371,7 +14371,7 @@ const updateUserProfile = async (userPhoneNumber, updates) => {
 
   if (updates.coverpictureurl) {
     updateParts.push('#cp = :url');
-    params.ExpressionAttributeNames['#dp'] = 'coverpictureurl';
+    params.ExpressionAttributeNames['#cp'] = 'coverpictureurl';
     params.ExpressionAttributeValues[':url'] = updates.coverpictureurl;
   }
 
