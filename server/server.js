@@ -14446,8 +14446,8 @@ app.post('/updateCoverPicture/:userPhoneNumber', upload.single('image'), async (
         'original-width': metadata.width.toString(),
         'original-height': metadata.height.toString(),
         'compressed-size': compressedImageBuffer.length.toString(),
-        'final-width': TARGET_SIZE.toString(),
-        'final-height': TARGET_SIZE.toString()
+        'final-width': COVER_TARGET_WIDTH.toString(),
+        'final-height': COVER_TARGET_HEIGHT.toString()
       }
     }).promise();
 
