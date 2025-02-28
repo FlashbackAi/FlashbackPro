@@ -6,13 +6,14 @@ class RequestModel {
     /**
      * Create a new request entry in DynamoDB.
      */
-    static async createRequest(request_id, user_phone_number,input_images) {
+    static async createRequest(request_id, user_phone_number, prompt, input_images) {
         const params = {
             TableName: TABLE_NAME,
             Item: {
                 generation_id :request_id,          
                 user_phone_number,   
-                input_images,        
+                prompt,
+                input_images,
                 generation_status: "processing",
                 created_at: new Date().toISOString(),
             }
@@ -38,6 +39,26 @@ class RequestModel {
         };
         return await docClient.update(params).promise();
     }
+
+    static async queryByPhoneNumber(phoneNumber) {
+      try {
+          const params = {
+              TableName: TABLE_NAME,
+              IndexName: 'user_phone_number-index',
+              KeyConditionExpression: 'user_phone_number = :phoneNumber',
+              ExpressionAttributeValues: {
+                  ':phoneNumber': phoneNumber
+              }
+          };
+          
+          const result = await docClient.query(params).promise();
+          
+          return result.Items || [];
+      } catch (error) {
+          throw error;
+      }
+  }
 }
+  
 
 module.exports = RequestModel;

@@ -179,7 +179,7 @@ exports.processImagesProgress = async (user_phone_number, prompt, s3_url_image1,
         const requestId = require("crypto").randomUUID();
 
         // 1️⃣ Store Request in DynamoDB
-        await generativeImageModel.createRequest(requestId, user_phone_number, [s3_url_image1, s3_url_image2]);
+        await generativeImageModel.createRequest(requestId, user_phone_number, prompt [s3_url_image1, s3_url_image2]);
         logger.info(`Stored requestId: ${requestId}`);
 
         // 2️⃣ Download & Resize Images
@@ -229,3 +229,25 @@ exports.processImagesProgress = async (user_phone_number, prompt, s3_url_image1,
         res.end();
     }
 };
+
+
+exports.getGeneratedImagesByPhoneNumber = async (phoneNumber) => {
+    try {
+      
+      // Get generated images from model using the static method
+      const generatedImages = await generativeImageModel.queryByPhoneNumber(phoneNumber);
+      
+      // Process results if needed (e.g., sort by date, filter by status)
+      const processedResults = generatedImages
+        // Only include completed generations
+        .filter(image => image.generation_status === 'completed')
+        // Sort by created_at in descending order (newest first)
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      
+      return processedResults;
+    } catch (error) {
+      throw error;
+    }
+  };
+  
+  

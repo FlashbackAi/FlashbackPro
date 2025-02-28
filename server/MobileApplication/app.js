@@ -109,6 +109,8 @@ app.get('/getDatasetRequests/:dataset', datasetController.getDatasetRequests);
 
 //API to generate image using comfyUI
 app.post("/process-images-progress", upload.fields([{ name: "image1" }, { name: "image2" }]), generativeAIController.processImagesProgress);
+//API to get the generated Images
+app.get("/getGeneratedImages", generativeAIController.getGeneratedImages);
 
 
 //APIs related to Machine Vision Service 

@@ -24,3 +24,36 @@ exports.processImagesProgress = async (req, res) => {
         res.end();
     }
 };
+
+exports.getGeneratedImages = async (req, res) => {
+    const { userPhoneNumber } = req.query;
+    // Validate required parameters
+    if (!userPhoneNumber) {
+      logger.error('Missing required parameter: userPhoneNumber');
+      return res.status(400).json({
+        success: false,
+        error: 'userPhoneNumber is required'
+      });
+    }
+  
+    try {
+      let formattedPhoneNumber = userPhoneNumber.trim().replace(/\s+/g, '');
+      formattedPhoneNumber = formattedPhoneNumber.startsWith('+') 
+        ? formattedPhoneNumber 
+        : `+${formattedPhoneNumber}`;
+
+      // Get generated images from service
+      const generatedImages = await generativeAIService.getGeneratedImagesByPhoneNumber(formattedPhoneNumber);
+      
+      return res.status(200).json({
+        success: true,
+        data: generatedImages
+      });
+      
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to fetch generated images'
+      });
+    }
+  };
