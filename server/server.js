@@ -14463,7 +14463,7 @@ app.post('/updateCoverPicture/:userPhoneNumber', upload.single('image'), async (
         originalSize: req.file.size,
         originalDimensions: `${metadata.width}x${metadata.height}`,
         compressedSize: compressedImageBuffer.length,
-        finalDimensions: `${TARGET_SIZE}x${TARGET_SIZE}`,
+        finalDimensions: `${COVER_TARGET_WIDTH}x${COVER_TARGET_HEIGHT}`,
         compressionRatio: ((1 - (compressedImageBuffer.length / req.file.size)) * 100).toFixed(2) + '%'
       }
     });
