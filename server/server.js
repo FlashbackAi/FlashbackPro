@@ -14430,7 +14430,7 @@ app.post('/updateCoverPicture/:userPhoneNumber', upload.single('image'), async (
       
       
     const key = `${userPhoneNumber}_cover.jpg`;
-    const formattedkey = encodeURIComponent(userPhoneNumber) + '.jpg';
+    const formattedkey = encodeURIComponent(userPhoneNumber) + '_cover.jpg';
     
     // Upload to S3 with optimized settings
     await s3.putObject({
