@@ -14344,7 +14344,7 @@ app.get('/getChatMemories/:chatId', async (req, res) => {
 const updateUserProfile = async (userPhoneNumber, updates) => {
 
   const params = {
-    TableName: 'users',
+    TableName: 'flashback_mobile_users',
     Key: {
       user_phone_number: userPhoneNumber
     },
@@ -14359,7 +14359,7 @@ const updateUserProfile = async (userPhoneNumber, updates) => {
   
   if (updates.displayName) {
     updateParts.push('#on = :name');
-    params.ExpressionAttributeNames['#on'] = 'org_name';
+    params.ExpressionAttributeNames['#on'] = 'user_name';
     params.ExpressionAttributeValues[':name'] = updates.displayName;
   }
 
@@ -14367,6 +14367,12 @@ const updateUserProfile = async (userPhoneNumber, updates) => {
     updateParts.push('#dp = :url');
     params.ExpressionAttributeNames['#dp'] = 'displaypictureurl';
     params.ExpressionAttributeValues[':url'] = updates.displaypictureurl;
+  }
+
+  if (updates.coverpictureurl) {
+    updateParts.push('#cp = :url');
+    params.ExpressionAttributeNames['#dp'] = 'coverpictureurl';
+    params.ExpressionAttributeValues[':url'] = updates.coverpictureurl;
   }
 
   if (updateParts.length === 0) {
@@ -14384,6 +14390,86 @@ const updateUserProfile = async (userPhoneNumber, updates) => {
     throw new Error('Failed to update user profile');
   }
 };
+
+
+app.post('/updateCoverPicture/:userPhoneNumber', upload.single('image'), async (req, res) => {
+  const { userPhoneNumber } = req.params;
+  
+  if (!req.file) {
+    return res.status(400).json({ error: 'No image provided' });
+  }
+
+  const MAX_SIZE = 15 * 1024 * 1024; // 15MB
+  const TARGET_SIZE = 200; // 200x200px is a good size for profile pictures
+  
+  if (req.file.size > MAX_SIZE) {
+    return res.status(400).json({ error: 'Image too large. Maximum size is 15MB' });
+  }
+  
+  try {
+    // Get original metadata
+    const metadata = await sharp(req.file.buffer).metadata();
+
+    // Process image
+    const compressedImageBuffer = await sharp(req.file.buffer)
+      // Resize while maintaining aspect ratio
+      .resize({
+        width: TARGET_SIZE,
+        height: TARGET_SIZE,
+        fit: 'cover',
+        position: 'centre'
+      })
+      // Optimize for profile pictures
+      .jpeg({ 
+        quality: 85,            // Good balance between quality and size
+        progressive: true,      // Better loading experience
+        chromaSubsampling: '4:4:4',  // Better quality for faces
+        force: false           // Preserve original format if it's better
+      })
+      .toBuffer();
+      
+      
+    const key = `${userPhoneNumber}_cover.jpg`;
+    const formattedkey = encodeURIComponent(userPhoneNumber) + '.jpg';
+    
+    // Upload to S3 with optimized settings
+    await s3.putObject({
+      Bucket: 'flashbackuserdisplaypicture',
+      Key: key,
+      Body: compressedImageBuffer,
+      ContentType: 'image/jpeg',
+      CacheControl: 'public, max-age=31536000', // Cache for 1 year
+      Metadata: {
+        'original-size': req.file.size.toString(),
+        'original-width': metadata.width.toString(),
+        'original-height': metadata.height.toString(),
+        'compressed-size': compressedImageBuffer.length.toString(),
+        'final-width': TARGET_SIZE.toString(),
+        'final-height': TARGET_SIZE.toString()
+      }
+    }).promise();
+
+    const s3Url = `https://flashbackuserdisplaypicture.s3.ap-south-1.amazonaws.com/${formattedkey}`;
+    const updatedUser = await updateUserProfile(userPhoneNumber, {
+      coverpictureurl: s3Url
+    });
+
+    res.status(200).json({
+      message: 'Cover picture updated successfully',
+      user: updatedUser,
+      imageStats: {
+        originalSize: req.file.size,
+        originalDimensions: `${metadata.width}x${metadata.height}`,
+        compressedSize: compressedImageBuffer.length,
+        finalDimensions: `${TARGET_SIZE}x${TARGET_SIZE}`,
+        compressionRatio: ((1 - (compressedImageBuffer.length / req.file.size)) * 100).toFixed(2) + '%'
+      }
+    });
+  } catch (error) {
+    logger.error('Error updating cover picture:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 app.post('/updateProfilePicture/:userPhoneNumber', upload.single('image'), async (req, res) => {
   const { userPhoneNumber } = req.params;
@@ -14503,7 +14589,7 @@ app.get('/getUserProfile/:userPhoneNumber', async (req, res) => {
   const { userPhoneNumber } = req.params;
 
   const params = {
-    TableName: 'users',
+    TableName: 'flashback_mobile_users',
     Key: {
       user_phone_number: userPhoneNumber
     }
