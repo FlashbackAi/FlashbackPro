@@ -14400,7 +14400,9 @@ app.post('/updateCoverPicture/:userPhoneNumber', upload.single('image'), async (
   }
 
   const MAX_SIZE = 15 * 1024 * 1024; // 15MB
-  const TARGET_SIZE = 200; // 200x200px is a good size for profile pictures
+  const COVER_TARGET_WIDTH = 800;
+  const COVER_TARGET_HEIGHT = 300;
+
   
   if (req.file.size > MAX_SIZE) {
     return res.status(400).json({ error: 'Image too large. Maximum size is 15MB' });
@@ -14414,8 +14416,8 @@ app.post('/updateCoverPicture/:userPhoneNumber', upload.single('image'), async (
     const compressedImageBuffer = await sharp(req.file.buffer)
       // Resize while maintaining aspect ratio
       .resize({
-        width: TARGET_SIZE,
-        height: TARGET_SIZE,
+        width: COVER_TARGET_WIDTH,
+        height: COVER_TARGET_HEIGHT,
         fit: 'cover',
         position: 'centre'
       })
