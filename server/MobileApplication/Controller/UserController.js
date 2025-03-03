@@ -31,6 +31,7 @@ exports.updateUser = async (req, res) => {
 
 exports.getUserDetails = async (req, res) => {
   const { user_phone_number } = req.params;
+  logger.info(`successfully fetched user details for flashback mobile user: ${user_phone_number}`);
 
   // Validate request
   if (!user_phone_number) {
