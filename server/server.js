@@ -11366,70 +11366,6 @@ app.delete('/deleteFlashbackImages/:flashbackId', async (req, res) => {
   }
 });
 
-
-// app.get('/getPeopleFromDevice/:userPhoneNumber', async (req, res) => {
-//   const { userPhoneNumber } = req.params;
-  
-//   try {
-//     // Query indexed data to get user IDs from the device
-//     const indexedDataParams = {
-//       TableName: 'machinevision_indexed_data',
-//       IndexName: 'folder_name-index',
-//       KeyConditionExpression: 'folder_name = :folderName',
-//       ProjectionExpression: 'user_id',
-//       ExpressionAttributeValues: {
-//         ':folderName': userPhoneNumber
-//       }
-//     };
-    
-//     const indexedDataResult = await docClient.query(indexedDataParams).promise();
-//     const uniqueUserIds = [...new Set(indexedDataResult.Items.map(item => item.user_id))];
-    
-//     const faceUrlsPromises = uniqueUserIds.map(async userId => {
-//       const params = {
-//         TableName: 'machinevision_recognition_users_data',
-//         KeyConditionExpression: 'user_id = :userId',
-//         ExpressionAttributeValues: {
-//           ':userId': userId
-//         }
-//       };
-      
-//       const result = await docClient.query(params).promise();
-//       if (result.Items && result.Items.length > 0) {
-//         // Transform the S3 URL format
-//         let faceUrl = result.Items[0].face_url;
-//         if (faceUrl && faceUrl.startsWith('s3://')) {
-//           const bucketAndKey = faceUrl.replace('s3://', '');
-//           const [bucket, ...keyParts] = bucketAndKey.split('/');
-//           faceUrl = `https://${bucket}.s3.ap-south-1.amazonaws.com/${keyParts.join('/')}`;
-//         }
-
-//         return {
-//           userId: userId,
-//           faceUrl: faceUrl,
-//           name: result.Items[0].name || result.Items[0].user_name || 'Unknown',
-//           relation: result.Items[0].relation || null
-//         };
-//       }
-//       return null;
-//     });
-    
-//     const people = (await Promise.all(faceUrlsPromises)).filter(Boolean);
-    
-//     res.json({
-//       success: true,
-//       data: people
-//     });
-    
-//   } catch (error) {
-//     logger.error('Error in getPeopleFromDevice:', error);
-//     res.status(500).json({
-//       success: false,
-//       error: 'Failed to fetch people from device'
-//     });
-//   }
-// });
-
 app.get('/get-relations/:userPhoneNumber', async (req, res) => {
   const { userPhoneNumber } = req.params;
 
@@ -13289,7 +13225,7 @@ app.get('/getUserFaceBubbles/:userId', async (req, res) => {
       const faceResult = await docClient.query(faceParams).promise();
 
       if (faceResult.Items?.length > 0) {
-        let faceUrl = faceResult.Items[0]?.face_url?.S;
+        let faceUrl = faceResult.Items[0]?.face_url;
         if (typeof faceUrl === 'string' && faceUrl.startsWith('s3://')) {
           const bucketAndKey = faceUrl.replace('s3://', '');
           const [bucket, ...keyParts] = bucketAndKey.split('/');
