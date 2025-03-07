@@ -12,6 +12,35 @@ exports.getUser = async (user_phone_number) => {
   return result.Item;
 };
 
+
+exports.getSecondaryDisplayPicture = async (userId) => {
+  const faceParams = {
+    TableName: tableNames.flashbackMobileRecognitionUserDataTableName,
+    KeyConditionExpression: 'user_id = :userId',
+    ExpressionAttributeValues: {
+      ':userId': userId,
+    },
+  };
+
+  try {
+    const faceResult = await docClient.query(faceParams).promise();
+    if (faceResult.Items?.length > 0) {
+      let faceUrl = faceResult.Items[0]?.face_url;
+      if (typeof faceUrl === 'string' && faceUrl.startsWith('s3://')) {
+        const bucketAndKey = faceUrl.replace('s3://', '');
+        const [bucket, ...keyParts] = bucketAndKey.split('/');
+        faceUrl = `https://${bucket}.s3.ap-south-1.amazonaws.com/${keyParts.join('/')}`;
+        return faceUrl;
+      }
+      return faceUrl; // Return raw URL if not an S3 URL
+    }
+    return null; // No secondary picture found
+  } catch (error) {
+    logger.error(`Error fetching secondary display picture for user_id: ${userId}`, error);
+    return null; // Return null on error to avoid breaking the flow
+  }
+};
+
 exports.createUser = async (user_phone_number, rewardPoints) => {
   const params = {
     TableName: tableNames.userTableName, // Replace with your actual table name

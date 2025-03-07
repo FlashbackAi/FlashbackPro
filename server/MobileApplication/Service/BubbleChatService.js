@@ -424,8 +424,26 @@ exports.getChatsByUser = async (userPhoneNumber) => {
         })
       );
 
-      // 4. Attach user details to the chat object
-      chat.chatUserDetails = otherUserDetails;
+    // Fetch secondary display picture for the recipientUserId (assuming 1-to-1 chat)
+    const recipientUserId = chat.recipientUserIds?.[0]; // Get the first (and only) UUID
+    let secondaryDisplayPictureUrl = null;
+    if (recipientUserId) {
+      secondaryDisplayPictureUrl = await userModel.getSecondaryDisplayPicture(recipientUserId);
+    }
+
+    // 4. Attach user details to the chat object
+    if (otherUserDetails.length > 0) {
+      // If there are registered user details, add secondarydisplaypictureurl to them
+      chat.chatUserDetails = otherUserDetails.map((userDetail) => ({
+        ...userDetail, // Spread existing user details
+        secondarydisplaypictureurl: secondaryDisplayPictureUrl || null, // Add secondary picture
+      }));
+    } else {
+      // If no registered user details, create a minimal object with secondarydisplaypictureurl
+      chat.chatUserDetails = [{
+        secondarydisplaypictureurl: secondaryDisplayPictureUrl || null,
+      }];
+    }
     }
     return chats;
   } catch (error) {
