@@ -27,6 +27,30 @@ exports.createBubbleChat = async (req, res) => {
   };
 
 
+  exports.updateChatCustomName = async (req, res) => {
+    try {
+      const { chatId, customName, userIdentifier } = req.body;
+      if (!chatId || !customName || !userIdentifier) {
+        return res.status(400).json({
+          success: false,
+          error: 'chatId, customName, and userIdentifier are required',
+        });
+      }
+  
+      const result = await bubbleChatService.updateChatCustomName(chatId, userIdentifier, customName);
+      return res.status(200).json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      logger.error('Error in updateChatCustomName:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Internal server error',
+      });
+    }
+  };
+
   exports.getInChatMemories = async (req, res) => {
     const { userPhoneNumber, recipientId } = req.query;
   

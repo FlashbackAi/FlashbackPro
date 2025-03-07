@@ -61,6 +61,8 @@ app.post('/addAdmin', bubbleChatController.addAdminGroupMembers);
 app.get('/getInChatMemories', bubbleChatController.getInChatMemories);
 //API to Remove Admin from Group bubble chat
 app.post('/removeAdmin', bubbleChatController.removeAdminGroupMembers);
+//API to update the chat name to custom name
+app.post('/updateChatCustomName', bubbleChatController.updateChatCustomName);
 
 
 

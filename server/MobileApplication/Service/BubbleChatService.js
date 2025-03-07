@@ -69,6 +69,18 @@ exports.createBubbleChat = async ({ senderId, recipientId, memoryUrl, senderName
 };
 
 
+exports.updateChatCustomName = async (chatId, userIdentifier, customName) => {
+  // Validate inputs
+  if (!chatId || !userIdentifier || !customName) {
+    throw new Error('chatId, userIdentifier, and customName are required');
+  }
+
+  // Update the custom name
+  const updatedChat = await bubbleChatModel.updateChatCustomName(chatId, userIdentifier, customName);
+  return updatedChat;
+};
+
+
 exports.getInChatMemories = async (userPhoneNumber, recipientId) => {
   try {
     const memories = await bubbleChatModel.getMemoriesByUserFolder(recipientId, userPhoneNumber);
@@ -437,11 +449,13 @@ exports.getChatsByUser = async (userPhoneNumber) => {
       chat.chatUserDetails = otherUserDetails.map((userDetail) => ({
         ...userDetail, // Spread existing user details
         secondarydisplaypictureurl: secondaryDisplayPictureUrl || null, // Add secondary picture
+        customName: chat.customNames?.[userPhoneNumber] || null, //user-specific customName
       }));
     } else {
       // If no registered user details, create a minimal object with secondarydisplaypictureurl
       chat.chatUserDetails = [{
         secondarydisplaypictureurl: secondaryDisplayPictureUrl || null,
+        customName: chat.customNames?.[userPhoneNumber] || null, // User-specific customName
       }];
     }
     }

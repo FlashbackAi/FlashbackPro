@@ -26,6 +26,50 @@ exports.getExistingChat = async (participants) => {
   return null;
 };
 
+exports.updateChatCustomName = async (chatId, userIdentifier, customName) => {
+  try {
+    // Step 1: Try to initialize customNames if it doesn't exist
+    const initParams = {
+      TableName: chatsTable,
+      Key: { chat_id: chatId },
+      UpdateExpression: 'SET customNames = :value',
+      ExpressionAttributeValues: {
+        ':value': { [userIdentifier]: customName.trim() }, 
+      },
+      ConditionExpression: 'attribute_not_exists(customNames)',
+      ReturnValues: 'UPDATED_NEW',
+    };
+
+    try {
+      const result = await docClient.update(initParams).promise();
+      logger.info(`Initialized customNames for chat ${chatId}, user ${userIdentifier} to ${customName}`);
+      return result.Attributes;
+    } catch (error) {
+      if (error.code === 'ConditionalCheckFailedException') {
+        // Step 2: customNames exists, update the specific user's entry
+        const updateParams = {
+          TableName: chatsTable,
+          Key: { chat_id: chatId },
+          UpdateExpression: 'SET customNames.#user = :customName',
+          ExpressionAttributeNames: {
+            '#user': userIdentifier,
+          },
+          ExpressionAttributeValues: {
+            ':customName': customName.trim(),
+          },
+          ReturnValues: 'UPDATED_NEW',
+        };
+        const result = await docClient.update(updateParams).promise();
+        return result.Attributes;
+      }
+      throw error; // Rethrow other errors
+    }
+  } catch (error) {
+    logger.error(`Error updating customName for chat ${chatId}:`, error);
+    throw error;
+  }
+};
+
 exports.getSenderMapping = async (globalUserId, folderName) => {
   try {
     const params = {
