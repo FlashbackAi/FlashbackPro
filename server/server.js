@@ -16273,9 +16273,11 @@ app.post("/merge-users-in-phone", async (req, res) => {
     };
     await docClient.put(mergeStatusInit).promise();
 
+    const user1Mapping = await getMappingByLocalUserAndCollection(user_id_1);
+    const user2Mapping = await getMappingByLocalUserAndCollection(user_id_2);
     // Fetch user details
-    const user1Details = await getUserObjectByUserIdMobile(user_id_1);
-    const user2Details = await getUserObjectByUserIdMobile(user_id_2);
+    const user1Details = await getUserObjectByUserIdMobile(user1Mapping?.global_user_id ?? user_id_1);
+    const user2Details = await getUserObjectByUserIdMobile(user2Mapping?.global_user_id ?? user_id_2);
 
     let merging_user_id;
     let target_user_id;
@@ -16392,7 +16394,26 @@ app.post("/merge-users-in-phone", async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
+const getMappingByLocalUserAndCollection = async (localUserId) => {
+  try {
+    logger.info(`Fetching mapping for global_user_id=${localUserId}`);
 
+    const params = {
+      TableName: GLOBAL_TO_LOCAL_MAPPING_TABLE,
+      IndexName: 'local_user_id-index',
+      KeyConditionExpression: 'local_user_id = :localUserId',
+      ExpressionAttributeValues: {
+        ':localUserId': localUserId
+      }
+    };
+
+    const result = await docClient.query(params).promise();
+    return (result.Items && result.Items.length > 0) ? result.Items[0] : undefined; // undefined if not found
+  } catch (error) {
+    logger.error('Error in getMappingByGlobalUserAndCollection:', error);
+    throw error;
+  }
+};
 
 const mobileApp = require('./MobileApplication/app');
 app.use('/api/mobile', mobileApp); // Prefix for mobile backend
