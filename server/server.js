@@ -7723,32 +7723,33 @@ app.post("/saveModelDetails", async (req, res) => {
       
   });
 
-app.get("/getDatasetRequests/:dataset", async (req, res) => {
-  const { dataset } = req.params;
-  logger.info("Fetching dataset requests for dataset:",dataset)
-  const params = {
-    TableName: modelToDatsetReqTable,
-    FilterExpression: "#datasetKey = :datasetValue",
-    ExpressionAttributeNames: {
-      "#datasetKey": "dataset"
-    },
-    ExpressionAttributeValues: {
-      ":datasetValue": dataset
+  app.get("/getDatasetRequests/:dataset", async (req, res) => {
+    const { dataset } = req.params;
+    logger.info("Fetching dataset requests for dataset:", dataset);
+    const params = {
+      TableName: modelToDatsetReqTable,
+      FilterExpression: "#datasetKey = :datasetValue",
+      ExpressionAttributeNames: {
+        "#datasetKey": "dataset"
+      },
+      ExpressionAttributeValues: {
+        ":datasetValue": dataset
+      }
+    };
+  
+    try {
+      const data = await docClient.scan(params).promise();
+      if (data.Items && data.Items.length > 0) {
+        res.json(data.Items);
+      } else {
+        res.json([]); // Return empty array instead of throwing error
+        logger.info('No requests found for the specified dataset:', dataset);
+      }
+    } catch (error) {
+      logger.error('Error retrieving dataset requests:', error.message);
+      res.status(500).send('Error retrieving dataset requests.');
     }
-  };
-
-  try {
-    const data = await docClient.scan(params).promise();
-    if (data.Items.length >= 0) {
-      res.json(data.Items);
-    } else {
-     throw new Error('No requests found for the specified dataset.');
-    }
-  } catch (error) {
-    logger.error(error.message);
-    res.status(500).send('Error retrieving dataset requests.');
-  }
-});
+  });
 
 app.get("/getDatasetRequestsbyModel/:model", async (req, res) => {
   const { model } = req.params;
@@ -7781,9 +7782,8 @@ app.get("/getDatasetRequestsbyModel/:model", async (req, res) => {
 
 
 app.post("/updateRequestStatus", async (req, res) => {
-  const { model_name, model_org_name, dataset_name, dataset_org_name, status } = req.body;
+  const { model_name, model_org_name, dataset_name, dataset_org_name, status, dataset_size } = req.body;
 
-  // Composite keys for identifying the item to update
   const key = {
     'model': model_name + '-' + model_org_name,
     'dataset': dataset_name + '-' + dataset_org_name
@@ -7792,22 +7792,22 @@ app.post("/updateRequestStatus", async (req, res) => {
   const params = {
     TableName: modelToDatsetReqTable,
     Key: key,
-    UpdateExpression: "set #status = :status , #updated_date = :updated_date",
+    UpdateExpression: "set #status = :status, #updated_date = :updated_date",
     ExpressionAttributeNames: {
       "#status": "status",
-       "#updated_date": "updated_date"
+      "#updated_date": "updated_date"
     },
     ExpressionAttributeValues: {
       ":status": status,
       ":updated_date": new Date().toISOString()
     },
-    ReturnValues: "UPDATED_NEW"
+    ReturnValues: "ALL_NEW" // Return the entire updated item, not just updated attributes
   };
 
   try {
     const data = await docClient.update(params).promise();
     logger.info(`Successfully updated status for model: ${model_name}, dataset: ${dataset_name}`);
-    res.send(data.Attributes);
+    res.json(data.Attributes); // Send the full updated item as JSON
   } catch (error) {
     logger.error(`Failed to update status for model: ${model_name}, dataset: ${dataset_name}, Error: ${error.message}`);
     res.status(500).send(error.message);
