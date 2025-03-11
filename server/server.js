@@ -11826,6 +11826,27 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
       globalUserMap = await mapAllRegisteredUsersToGlobal(userPhoneNumber)
     }
     
+    // NEW: Get hidden users for this phone number
+    let hiddenUserIds = [];
+    try {
+      const hiddenUsersParams = {
+        TableName: 'hidden_users',
+        KeyConditionExpression: 'user_phone_number = :phone',
+        ExpressionAttributeValues: {
+          ':phone': userPhoneNumber
+        }
+      };
+      
+      const hiddenUsersResult = await docClient.query(hiddenUsersParams).promise();
+      hiddenUserIds = hiddenUsersResult.Items.map(item => item.hidden_user_id);
+      
+      // Log for debugging
+      logger.info(`Found ${hiddenUserIds.length} hidden users for ${userPhoneNumber}`);
+    } catch (error) {
+      logger.error('Error fetching hidden users:', error);
+      // Continue execution even if this fails
+      // This ensures the main functionality still works
+    }
     
     const peoplePromises = filteredUserIds.map(async userId => {
       // First get user data from recognition table
@@ -11856,28 +11877,28 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
         const relationData = relationsMap.get(userId) || {};
 
         if(userMappingData){
-        // Transform the S3 URL format
-       
-        return {
-          userId: userId,
-          faceUrl: faceUrl,
-          name: relationData.name || userData?.org_name || userData?.user_name,
-          relationName: relationData.name || null,
-          relationshipType: relationData.relation_type || null,
-          isStarred: relationData.is_starred || false,
-          userPhoneNumber: userMappingData ? userMappingData.user_phone_number : null
-        };
-      }else{
-        return {
-          userId: userId,
-          faceUrl: faceUrl,
-          name: relationData.name || userData?.org_name || userData?.user_name,
-          relationName: relationData.name || null,
-          relationshipType: relationData.relation_type || null,
-          isStarred: relationData.is_starred || false,
-          userPhoneNumber: null
-        };
-      }
+          return {
+            userId: userId,
+            faceUrl: faceUrl,
+            name: relationData.name || userData?.org_name || userData?.user_name,
+            relationName: relationData.name || null,
+            relationshipType: relationData.relation_type || null,
+            isStarred: relationData.is_starred || false,
+            userPhoneNumber: userMappingData ? userMappingData.user_phone_number : null,
+            isHidden: hiddenUserIds.includes(userId) // Add hidden status
+          };
+        } else {
+          return {
+            userId: userId,
+            faceUrl: faceUrl,
+            name: relationData.name || userData?.org_name || userData?.user_name,
+            relationName: relationData.name || null,
+            relationshipType: relationData.relation_type || null,
+            isStarred: relationData.is_starred || false,
+            userPhoneNumber: null,
+            isHidden: hiddenUserIds.includes(userId) // Add hidden status
+          };
+        }
       } catch (error) {
         logger.error(`Error fetching user data for ${userId}:`, error);
         // Return the recognition data without user details if users table query fails
@@ -11897,7 +11918,8 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
           relationName: relationData.name || null,
           relationshipType: relationData.relation_type || null,
           isStarred: relationData.is_starred || false,
-          userPhoneNumber: null
+          userPhoneNumber: null,
+          isHidden: hiddenUserIds.includes(userId) // Add hidden status
         };
       }
     });
@@ -11930,6 +11952,97 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
     });
   }
 });
+
+
+app.post('/hide-users', async (req, res) => {
+  const { user_phone_number, user_ids_to_hide } = req.body;
+  
+  if (!user_phone_number || !user_ids_to_hide || !Array.isArray(user_ids_to_hide) || user_ids_to_hide.length === 0) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid request parameters'
+    });
+  }
+  
+  try {
+    // Create a batch of PutRequest items for the hidden_users table
+    const timestamp = new Date().toISOString();
+    const putRequests = user_ids_to_hide.map(userId => ({
+      PutRequest: {
+        Item: {
+          user_phone_number: user_phone_number,
+          hidden_user_id: userId,
+          hidden_at: timestamp
+        }
+      }
+    }));
+    
+    // Use BatchWriteItem for efficiency
+    const params = {
+      RequestItems: {
+        'hidden_users': putRequests
+      }
+    };
+    
+    await docClient.batchWrite(params).promise();
+    
+    res.json({
+      success: true,
+      message: 'Users hidden successfully'
+    });
+  } catch (error) {
+    logger.error('Error hiding users:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to hide users'
+    });
+  }
+});
+
+// 2. Endpoint to unhide users
+app.post('/unhide-users', async (req, res) => {
+  const { user_phone_number, user_ids_to_unhide } = req.body;
+  
+  if (!user_phone_number || !user_ids_to_unhide || !Array.isArray(user_ids_to_unhide) || user_ids_to_unhide.length === 0) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid request parameters'
+    });
+  }
+  
+  try {
+    // Create a batch of DeleteRequest items for the hidden_users table
+    const deleteRequests = user_ids_to_unhide.map(userId => ({
+      DeleteRequest: {
+        Key: {
+          user_phone_number: user_phone_number,
+          hidden_user_id: userId
+        }
+      }
+    }));
+    
+    // Use BatchWriteItem for efficiency
+    const params = {
+      RequestItems: {
+        'hidden_users': deleteRequests
+      }
+    };
+    
+    await docClient.batchWrite(params).promise();
+    
+    res.json({
+      success: true,
+      message: 'Users unhidden successfully'
+    });
+  } catch (error) {
+    logger.error('Error unhiding users:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to unhide users'
+    });
+  }
+});
+
 
 
 app.get('/userThumbnailsByFlashbackId/:flashbackId', async (req, res) => {
