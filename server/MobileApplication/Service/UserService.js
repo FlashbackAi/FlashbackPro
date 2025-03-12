@@ -134,6 +134,32 @@ async function encryptImage(buffer) {
 }
 
 
+exports.getUserProfileStats = async (userPhoneNumber) => {
+  logger.info(`Processing profile stats for user: ${userPhoneNumber}`);
+  
+  // Remove "+" from phone number for querying
+  const folderName = userPhoneNumber.replace('+', '');
+  
+  try {
+    // Get counts in parallel for better performance
+    const [friendsCount, photosCount, facesCount] = await Promise.all([
+      userModel.countFriendsByUserPhone(userPhoneNumber),
+      userModel.countPhotosByFolderName(folderName),
+      userModel.countFacesByFolderName(folderName)
+    ]);
+    
+    return {
+      friendsCount,
+      photosCount,
+      facesCount
+    };
+  } catch (error) {
+    logger.error(`Error in getUserProfileStats: ${error.message}`);
+    throw error;
+  }
+};
+
+
 exports.uploadUserPortrait = async (fileBuffer, username) => {
   const bucketName = 'flashbackmobileappuserthumbnails';
   const sanitizedUsername = username.startsWith('+') ? username.slice(1) : username;

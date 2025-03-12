@@ -151,3 +151,63 @@ exports.getUserObjectByUserId = async (userId)=>{
     throw error;
   }
 }
+
+
+exports.countFriendsByUserPhone = async (userPhoneNumber) => {
+  const params = {
+    TableName: tableNames.relationsTableName,
+    KeyConditionExpression: 'user_phone_number = :phone',
+    ExpressionAttributeValues: {
+      ':phone': userPhoneNumber
+    }
+  };
+  
+  try {
+    const result = await docClient.query(params).promise();
+    return result.Items.length;
+  } catch (error) {
+    logger.error(`Error counting friends: ${error.message}`);
+    return 0; // Return 0 on error instead of throwing to avoid breaking the entire request
+  }
+};
+
+
+exports.countPhotosByFolderName = async (folderName) => {
+  const params = {
+    TableName: tableNames.machineVisionRecognitionTableName,
+    IndexName: 'folder_name-index',
+    KeyConditionExpression: 'folder_name = :folder',
+    ExpressionAttributeValues: {
+      ':folder': folderName
+    }
+  };
+  
+  try {
+    const result = await docClient.query(params).promise();
+    return result.Items.length;
+  } catch (error) {
+    logger.error(`Error counting photos: ${error.message}`);
+    return 0;
+  }
+};
+
+
+
+exports.countFacesByFolderName = async (folderName) => {
+  const params = {
+    TableName: tableNames.machineVisionIndexedDataTableName,
+    IndexName: 'folder_name-index',
+    KeyConditionExpression: 'folder_name = :folder',
+    ExpressionAttributeValues: {
+      ':folder': folderName
+    }
+  };
+  
+  try {
+    const result = await docClient.query(params).promise();
+    return result.Items.length;
+  } catch (error) {
+    logger.error(`Error counting faces: ${error.message}`);
+    return 0;
+  }
+};

@@ -126,3 +126,26 @@ exports.verifyOTP = async (req, res) => {
 };
 
 
+exports.getUserProfileStats = async (req, res) => {
+  const { userPhoneNumber } = req.params;
+  logger.info(`Fetching profile stats for user: ${userPhoneNumber}`);
+
+  // Validate request
+  if (!userPhoneNumber) {
+    return res.status(400).json({ error: 'userPhoneNumber is required' });
+  }
+
+  try {
+    const profileStats = await userService.getUserProfileStats(userPhoneNumber);
+    return res.status(200).json({ 
+      success: true, 
+      message: 'Profile stats retrieved successfully', 
+      data: profileStats 
+    });
+  } catch (error) {
+    logger.error(`Error fetching profile stats: ${error.message}`);
+    res.status(500).json({ success: false, error: 'Failed to fetch profile stats' });
+  }
+};
+
+

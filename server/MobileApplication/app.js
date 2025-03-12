@@ -35,6 +35,9 @@ app.post('/sendOTP', userController.sendOTP);
 // Verify OTP
 app.post('/verifyOTP', userController.verifyOTP);
 
+//API for getting the profile stats of a user
+app.get('/getUserProfileStats/:userPhoneNumber', userController.getUserProfileStats);
+
 
 //APIs for BUbble chats
 //API to create bubble chat
@@ -63,6 +66,7 @@ app.get('/getInChatMemories', bubbleChatController.getInChatMemories);
 app.post('/removeAdmin', bubbleChatController.removeAdminGroupMembers);
 //API to update the chat name to custom name
 app.post('/updateChatCustomName', bubbleChatController.updateChatCustomName);
+
 
 
 
