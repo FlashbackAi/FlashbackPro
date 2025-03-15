@@ -1,6 +1,8 @@
 const datasetModel = require('../Model/DatasetModel');
 const datasetRequestModel = require('../Model/DatasetRequestModel')
 const logger = require('../../logger');
+const { ethers } = require("ethers");
+const bSCWalletModel = require("../Model/BSCWallet")
 
 exports.saveDatasetDetails = async (item) => {
   try {
@@ -46,3 +48,4 @@ exports.getDatasetDetails = async (orgName, datasetName) => {
       throw new Error(`Failed to fetch dataset requests: ${error.message}`);
     }
   };
+

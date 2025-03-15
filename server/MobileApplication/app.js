@@ -6,6 +6,7 @@ const bubbleChatController = require('./Controller/BubbleChatController')
 const relationsController = require('./Controller/RelationsController')
 const generativeAIController = require('./Controller/GenerativeAIController')
 const machineVisionController = require('./Controller/MachineVisionController')
+const bSCWalletController = require('./Controller/BSCWalletController')
 const multer = require('multer'); // For handling file uploads
 const upload = multer(); // Memory storage for processing files
 const app = express();
@@ -79,7 +80,7 @@ app.post('/updateRelationRequest', relationsController.updateRelationRequestStat
 
 
 
-//APIs for wallet-----
+//APIs for Aptos wallet-----
 //create wallet
 app.post('/createWalet', walletController.createWallet);
 
@@ -91,7 +92,20 @@ app.get('/wallet-balance/:phoneNumber', walletController.getWalletBalance);
 
 //get wallet transactions of the user
 app.get('/transactionsByUserPhoneNumber/:userPhoneNumber', walletController.getTransactionsByUserPhoneNumber);
-module.exports = app;
+
+
+
+//APIs for BSC wallet-----
+//create wallet
+app.post('/createBSCWallet', bSCWalletController.createWallet);
+
+//get wallet
+app.get('/getBSCWaletDetails/:mobileNumber', bSCWalletController.getWalletDetails);
+
+//API to savePermissionsOnChain
+app.post('/savePermissionsOnChain', bSCWalletController.savePermissionsOnChain);
+
+
 
 //transfer coins
 app.post('/transfer-coins-by-number', walletController.transferCoinsByNumber);
@@ -111,6 +125,8 @@ app.post("/updateRequestStatus", datasetController.updateRequestStatus);
 app.get('/getDatasetRequests/:dataset', datasetController.getDatasetRequests);
 
 
+
+
 // APIs for calling generative AI models
 
 //API to generate image using comfyUI
@@ -122,3 +138,6 @@ app.get("/getGeneratedImages", generativeAIController.getGeneratedImages);
 //APIs related to Machine Vision Service 
 //transfer coins by wallet address
 app.post('/unMergeUserFace', machineVisionController.unMergeUser);
+
+
+module.exports = app;
