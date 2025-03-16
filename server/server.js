@@ -15050,46 +15050,52 @@ app.post('/startDeviceAnalysis', async (req, res) => {
   const { userPhoneNumber, totalImages = 0 } = req.body;
 
   try {
-    const normalizedPhoneNumber = userPhoneNumber.startsWith('+') ? 
-      userPhoneNumber : `+${userPhoneNumber}`;
+    const normalizedPhoneNumber = userPhoneNumber.startsWith('+') ? userPhoneNumber : `+${userPhoneNumber}`;
     const formattedPhoneNumber = normalizedPhoneNumber.replace('+', '');
 
-    // Check for existing analysis in progress
+    // Check for any existing analysis (not just analyzing)
     const queryParams = {
       TableName: 'DeviceAnalysis',
       KeyConditionExpression: 'userPhoneNumber = :phone',
-      FilterExpression: '#status = :analyzing',
-      ExpressionAttributeNames: {
-        '#status': 'status'
-      },
       ExpressionAttributeValues: AWS.DynamoDB.Converter.marshall({
-        ':phone': normalizedPhoneNumber,
-        ':analyzing': 'analyzing'
+        ':phone': normalizedPhoneNumber
       }),
       ScanIndexForward: false,
       Limit: 1
     };
 
     const existingAnalysis = await dynamoDB.query(queryParams).promise();
-    
+    let analysisId;
+
     if (existingAnalysis.Items && existingAnalysis.Items.length > 0) {
       const analysis = AWS.DynamoDB.Converter.unmarshall(existingAnalysis.Items[0]);
-      return res.json({ 
-        success: true, 
-        analysisId: analysis.analysisId,
-        resumed: true 
-      });
+      analysisId = analysis.analysisId;
+
+      // Update existing record
+      const updateParams = {
+        TableName: 'DeviceAnalysis',
+        Key: AWS.DynamoDB.Converter.marshall({
+          userPhoneNumber: normalizedPhoneNumber,
+          analysisId: analysisId
+        }),
+        UpdateExpression: 'SET #status = :status, totalImages = :total, analyzedImages = :analyzed, lastUpdated = :timestamp',
+        ExpressionAttributeNames: {
+          '#status': 'status'
+        },
+        ExpressionAttributeValues: AWS.DynamoDB.Converter.marshall({
+          ':status': 'analyzing',
+          ':total': totalImages,
+          ':analyzed': 0,
+          ':timestamp': Date.now()
+        })
+      };
+
+      await dynamoDB.updateItem(updateParams).promise();
+      return res.json({ success: true, analysisId, resumed: true });
     }
 
     // Create new analysis if none exists
-    // const folderKey = `${formattedPhoneNumber}/`;
-    // await s3.putObject({
-    //   Bucket: MachineVisionCollectionBucketName,
-    //   Key: folderKey,
-    //   Body: ''
-    // }).promise();
-
-    const analysisId = Date.now().toString();
+    analysisId = Date.now().toString();
     const params = {
       TableName: 'DeviceAnalysis',
       Item: AWS.DynamoDB.Converter.marshall({
@@ -15116,6 +15122,10 @@ app.put('/updateAnalysisStatus/:userPhoneNumber/:analysisId', async (req, res) =
   const { status, totalImages, analyzedImages } = req.body;
 
   try {
+    if (!analysisId || analysisId === 'undefined') {
+      return res.status(400).json({ error: 'Invalid analysisId' });
+    }
+
     const params = {
       TableName: 'DeviceAnalysis',
       Key: AWS.DynamoDB.Converter.marshall({
@@ -15134,7 +15144,6 @@ app.put('/updateAnalysisStatus/:userPhoneNumber/:analysisId', async (req, res) =
       })
     };
 
-    // Only include totalImages if it's provided
     if (totalImages !== undefined) {
       params.UpdateExpression += ', totalImages = :total';
       params.ExpressionAttributeValues = AWS.DynamoDB.Converter.marshall({
