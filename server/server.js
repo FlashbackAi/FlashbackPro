@@ -47,6 +47,7 @@ const logger = require('./logger');
 const e = require('express');
 const { userTableName } = require('./MobileApplication/tables');
 
+
 initializeConfig()
   .then(() => {
 const config = getConfig();
@@ -5702,10 +5703,19 @@ app.get('/imagesForFederated/:userPhoneNumber', async (req, res) => {
   }
 });
 
-
+const { savePermissionsOnChain } = require('./MobileApplication/Controller/BSCWalletController');
 async function updateEnableSharingForUserPhoneNumber(userPhoneNumber) {
   let lastEvaluatedKey = null;
   logger.info("Updating Enable sharing for userPhoneNumber: " + userPhoneNumber);
+
+  const getParams = {
+    TableName: "smart_contract_hash_details", // Ensure this is the correct table name
+    Key: { "user_phone_number": userPhoneNumber}
+  };
+  const scResult = await docClient.get(getParams).promise();
+  if(!scResult.Item){
+      await savePermissionsOnChain(userPhoneNumber)
+  }
 
   do {
     // Step 1: Fetch records in batches

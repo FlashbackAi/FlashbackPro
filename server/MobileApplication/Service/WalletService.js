@@ -4,7 +4,6 @@ const walletTransactionsModel = require('../Model/WalletTransactionsModel')
 const logger = require('../../logger');
 const { Account,AptosConfig, Aptos, AptosClient,Network, TxnBuilderTypes, BCS,Ed25519PrivateKey,AccountAddress } = require( '@aptos-labs/ts-sdk');
 const {getConfig} = require('../../config');
-const {updateUser} =  require('../Service/UserService');
 const aptconfig = new AptosConfig({ network: Network.MAINNET});
 const aptosClient = new Aptos(aptconfig);
 const CHEWY_AMOUNT = 100
@@ -40,7 +39,7 @@ const handleWalletCreation = async (mobileNumber) => {
         await walletModel.storeWalletInDynamoDB(mobileNumber, walletDetails);
         await registerCoinStore(aptosAccount);
         await transferCoins(walletDetails.walletAddress, CHEWY_AMOUNT, config.aptosConfig.senderMobileNumber, mobileNumber);
-        await updateUser(mobileNumber, { reward_points: CHEWY_AMOUNT });
+        await userModel.updateUser(mobileNumber, { reward_points: CHEWY_AMOUNT });
 
         return {
             message: 'Aptos Wallet created and coins transferred successfully',

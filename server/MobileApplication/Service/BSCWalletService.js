@@ -6,7 +6,7 @@ const { ethers } = require('ethers');
 const BSC_RPC = "https://bsc-dataseed.binance.org/";
 const provider = new ethers.JsonRpcProvider(BSC_RPC);
 const SMART_CONTRACT_ADDRESS ="0xd51E20AF0946793032d4F06eAf4C29605CD9aB46";
-
+const scPermissionModel = require("../Model/SCTransactiondetailsModel")
 
 async function transferBSCToUser(userAddress, amountInBNB) {
 
@@ -153,13 +153,24 @@ const handleBSCWalletCreation = async(mobileNumber) => {
       );
   
       // 7. Call setUserData(userAddress, jsonString)
-      console.log(`Storing JSON data for user: ${walletDetails.wallet_address}`);
+      logger.info(`Storing JSON data for user: ${walletDetails.wallet_address}`);
       const tx = await storePermissionsContract.setUserData(walletDetails.wallet_address, jsonString);
-      console.log("Transaction hash:", tx.hash);
+      logger.info("Transaction hash:", tx.hash);
   
       // 8. Wait for confirmation
       await tx.wait();
-      console.log("User JSON data stored successfully!");
+      logger.info("User JSON data stored successfully!");
+
+      const permissionEntry = {
+        user_phone_number: userPhoneNumber,
+        wallet_address: walletDetails.wallet_address,
+        permission_status: "Enabled",
+        tx_hash: tx.hash,
+        timestamp: new Date()
+    };
+
+    await scPermissionModel.storePermissionsInDB(permissionEntry);
+    logger.info("Permission details stored in database.");
       return {"transaction":tx}
   
     } catch (error) {

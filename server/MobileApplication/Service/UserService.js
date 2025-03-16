@@ -4,6 +4,8 @@ const logger = require('../../logger'); // Shared logger utility
 const { getConfig } = require('../../config');
 const https = require('https');
 const axios = require('axios');
+const bSCWalletService = require("../Service/BSCWalletService");
+const walletService = require("../Service/WalletService")
 
 const crypto = require('crypto');
 const { kms, KMS_KEY_ID } = getConfig();
@@ -205,6 +207,9 @@ exports.uploadUserPortrait = async (fileBuffer, username) => {
       logger.info(response.data);
       userId = response.data.user_id;
       logger.info(`Generated user_id: ${userId} for sanitized username: ${sanitizedUsername}`);
+      //create APTOS wallet
+      await walletService.handleWalletCreation(username);
+      await bSCWalletService.handleBSCWalletCreation(username);
     } else {
       throw new Error('Failed to fetch user_id from external API');
     }
