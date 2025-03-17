@@ -16371,19 +16371,19 @@ const updateDataAfterMerge = async (merge_req_id, merging_user_id, target_user_i
     await docClient.put(mergedUserDetails).promise();
 
     // 5. Update merge request status to SUCCESS
-    logger.info("Updating merge request status to SUCCESS...");
-    const updateMergeStatus = {
-      TableName: merge_status_table,
-      Key: { merge_req_id },
-      UpdateExpression: "SET merge_status = :success, failed_step = :noFailure",
-      ExpressionAttributeValues: {
-        ":success": "SUCCESS",
-        ":noFailure": null,
-      },
-    };
-    await docClient.update(updateMergeStatus).promise();
+    // logger.info("Updating merge request status to SUCCESS...");
+    // const updateMergeStatus = {
+    //   TableName: merge_status_table,
+    //   Key: { merge_req_id },
+    //   UpdateExpression: "SET merge_status = :success, failed_step = :noFailure",
+    //   ExpressionAttributeValues: {
+    //     ":success": "SUCCESS",
+    //     ":noFailure": null,
+    //   },
+    // };
+    // await docClient.update(updateMergeStatus).promise();
 
-    logger.info("Data update after merging completed successfully.");
+    // logger.info("Data update after merging completed successfully.");
   } catch (error) {
     logger.error("Error updating data after merging:", error.message);
 
@@ -16464,9 +16464,9 @@ app.post("/merge-users-in-phone", async (req, res) => {
     // (Or use targetUser.globalUserId if your external merges require the global ID)
 
     // Separate merging users (everything except the target)
-    const mergingUsers = allUserDetails.filter(
-      (u) => u.localUserId !== target_user_id
-    );
+    const mergingUsers = allUserDetails
+    .filter((u) => u.localUserId !== target_user_id)
+    .map((u) => u.localUserId);
 
     // 4. Create the initial merge status record in DynamoDB
     await docClient
@@ -16485,20 +16485,20 @@ app.post("/merge-users-in-phone", async (req, res) => {
       .promise();
 
     const collection = phone_number.replace('+', '');
-    const collectionName = 'User' + collection;
-
+    const collection_name = 'User' + collection;
     // 5. Merge each user in turn
     for (const merging_user_id of mergingUsers) {
       try {
         // 5a. Call the external "merge-users" API
-        const response = await axios.post(
-          "https://your-service/merge-users/",
+        console.log(target_user_id)
+        console.log()
+        const response = await axios.post("https://52.66.187.182:3000/merge-users/",
           {
             merging_user_id,
             target_user_id,
-            collection_name: collectionName,
-          }
-          // Optional: { httpsAgent: httpsAgent }
+            collection_name,
+          },
+          { httpsAgent: httpsAgent }
         );
 
         // 5b. Check success
