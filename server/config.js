@@ -99,6 +99,40 @@ async function fetchKMSSecrets() {
   }
 }
 
+
+async function fetchFirebaseSecrets() {
+  const secretName = 'flashback-prod-firebase-secrets';
+  try {
+    const response = await secretsClient.send(
+      new GetSecretValueCommand({
+        SecretId: secretName,
+        VersionStage: 'AWSCURRENT',
+      })
+    );
+
+    const secrets = JSON.parse(response.SecretString);
+
+    // Check if the secret is the service account JSON directly
+    if (secrets.type === 'service_account') {
+      return {
+        firebaseServiceAccount: JSON.stringify(secrets),
+      };
+    }
+
+    // Otherwise, expect the FIREBASE_SERVICE_ACCOUNT key
+    if (!secrets.FIREBASE_SERVICE_ACCOUNT) {
+      throw new Error('FIREBASE_SERVICE_ACCOUNT not found in secrets');
+    }
+
+    return {
+      firebaseServiceAccount: secrets.FIREBASE_SERVICE_ACCOUNT,
+    };
+  } catch (error) {
+    console.error('Error retrieving Firebase secrets:', error);
+    throw error;
+  }
+}
+
 // Function to initialize the app with secrets and AWS SDK configuration
 async function initializeConfig() {
   try {
@@ -107,6 +141,7 @@ async function initializeConfig() {
     const whatsappConfig = await fetchWhatsappSecrets();
     const awsCredentials = await fetchAWSSecrets();
     const kmsConfig = await fetchKMSSecrets();
+    const firebaseConfig = await fetchFirebaseSecrets();
 
     // Configure AWS SDK with credentials and region
     AWS.config.update({
@@ -138,10 +173,9 @@ async function initializeConfig() {
       dynamoDB,
       s3,
       kms,
-      KMS_KEY_ID: kmsConfig.KMS_KEY_ID
+      KMS_KEY_ID: kmsConfig.KMS_KEY_ID,
+      firebaseServiceAccount: firebaseConfig.firebaseServiceAccount
     };
-
-    console.log('Configuration initialized successfully.');
     return config;
   } catch (error) {
     console.error('Failed to initialize configuration:', error);

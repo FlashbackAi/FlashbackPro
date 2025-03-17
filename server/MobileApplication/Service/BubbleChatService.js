@@ -2,6 +2,7 @@ const bubbleChatModel = require('../Model/BubbleChatModel');
 const globalToLocalUsermappingModel = require('../Model/GlobalToLocalUsermappingModel');
 const userModel = require('../Model/UserModel')
 const logger = require('../../logger');
+const FCMService = require('./FCMService');
 
 exports.createBubbleChat = async ({ senderId, recipientId, memoryUrl, senderName, senderPhone }) => {
   if (!senderId || !recipientId || !memoryUrl) {
@@ -19,6 +20,7 @@ exports.createBubbleChat = async ({ senderId, recipientId, memoryUrl, senderName
   let participants;
   if(!globalRecepientMapping){
     participants = [senderPhone, recipientId].sort().join('#');
+    recipientUsers = [];
   }else{
     //const recipientUserDetails = await userModel.getUserObjectByUserId(GlobalRecepientMapping.global_user_id);
     participants = [senderPhone, globalRecepientMapping.user_phone_number].sort().join('#');
@@ -50,20 +52,7 @@ exports.createBubbleChat = async ({ senderId, recipientId, memoryUrl, senderName
     timestamp,
     senderName,
   });
-
-  // Send push notification
-  // await sendPushNotification(recipientId, senderName, {
-  //   title: 'New Memory Incoming',
-  //   body: `${senderName} shared a memory with you`,
-  //   data: {
-  //     type: 'memory_share',
-  //     chatId,
-  //     messageId,
-  //     senderId,
-  //     memoryUrl,
-  //   },
-  // });
-
+  await FCMService.sendNotification(chatId, senderName, 'shared a flashback', recipientUsers);
   logger.info('Memory successfully shared');
   return { chatId, messageId };
 };
@@ -187,6 +176,8 @@ exports.sendMessage = async (chatId, senderId, content, senderName, senderPhone,
     };
 
     await bubbleChatModel.updateChatLastMessage(chatUpdateParams);
+
+    await FCMService.sendNotification(chatId, senderName, content, recipientUsers);
 
     logger.info(`Sent message with ID ${messageId} for chat: ${chatId}`);
     return {
