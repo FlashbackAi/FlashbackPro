@@ -18,7 +18,7 @@ if (!admin.apps.length) {
 
 const messaging = getMessaging();
 class FCMService {
-  static async sendNotification(chatId, senderName, content, recipientUsers) {
+  static async sendNotification(chatId, senderName, senderPhone, content, recipientUsers) {
     try {
       if (!recipientUsers || recipientUsers.length === 0) {
         logger.info('No registered recipientUsers found; skipping notification');
@@ -27,6 +27,10 @@ class FCMService {
 
       // Truncate content for notification body
       const notificationBody = content.length > 50 ? `${content.substring(0, 47)}...` : content;
+
+      // Use senderPhone as fallback if senderName is null, undefined, or empty
+      const displayName = senderName ? senderName.trim() : '';
+      const notificationTitle = displayName || senderPhone;
 
       // Fetch FCM tokens for all recipientUsers
       const fcmTokens = [];
@@ -49,7 +53,7 @@ class FCMService {
       // Prepare multicast message
       const message = {
         notification: {
-          title: `${senderName} sent a message`,
+          title: notificationTitle,
           body: notificationBody,
         },
         data: { chatId }, // Custom data for navigation

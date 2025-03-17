@@ -52,7 +52,7 @@ exports.createBubbleChat = async ({ senderId, recipientId, memoryUrl, senderName
     timestamp,
     senderName,
   });
-  await FCMService.sendNotification(chatId, senderName, 'shared a flashback', recipientUsers);
+  await FCMService.sendNotification(chatId, senderName, senderPhone, 'shared a flashback', recipientUsers);
   logger.info('Memory successfully shared');
   return { chatId, messageId };
 };
@@ -177,7 +177,7 @@ exports.sendMessage = async (chatId, senderId, content, senderName, senderPhone,
 
     await bubbleChatModel.updateChatLastMessage(chatUpdateParams);
 
-    await FCMService.sendNotification(chatId, senderName, content, recipientUsers);
+    await FCMService.sendNotification(chatId, senderName, senderPhone, content, recipientUsers);
 
     logger.info(`Sent message with ID ${messageId} for chat: ${chatId}`);
     return {
