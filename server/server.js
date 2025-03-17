@@ -11768,9 +11768,9 @@ async function mapAllRegisteredUsersToGlobal(collection_name) {
 
 app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
   const { userPhoneNumber, userId } = req.params;
-  
+
   try {
-    // First, get the main user's data
+    // --- 1) Get the main user's data ---
     const userParams = {
       TableName: 'machinevision_recognition_users_data',
       KeyConditionExpression: 'user_id = :userId',
@@ -11778,15 +11778,17 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
         ':userId': userId
       }
     };
-    
+
     const userResult = await docClient.query(userParams).promise();
     const userData = userResult.Items && userResult.Items.length > 0 ? userResult.Items[0] : null;
 
+    // --- 2) Get relation info (e.g., isStarred, name, etc.) ---
+    const fullPhoneNumber = '+'+userPhoneNumber
     const relationsParams = {
       TableName: 'Relations',
       KeyConditionExpression: 'user_phone_number = :phone',
       ExpressionAttributeValues: {
-        ':phone': userPhoneNumber
+        ':phone': fullPhoneNumber
       }
     };
 
@@ -11794,19 +11796,18 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
     const relationsMap = new Map(
       relationsResult.Items.map(item => [item.related_user_id, item])
     );
-    
-    // -----------------------------------
-    // 3) Query indexed data (with pagination)
-    // -----------------------------------
+
+    // --- 3) Query indexed data (with pagination) ---
     const indexedDataParams = {
       TableName: 'machinevision_indexed_data',
       IndexName: 'folder_name-index',
       KeyConditionExpression: 'folder_name = :folderName',
-      ProjectionExpression: 'user_id, face_id',
+      ProjectionExpression: 'user_id, face_id, user_id_original',
       ExpressionAttributeValues: {
         ':folderName': userPhoneNumber
       }
     };
+
     let allItems = [];
     let lastEvaluatedKey = null;
 
@@ -11822,27 +11823,27 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
       lastEvaluatedKey = indexedDataResult.LastEvaluatedKey;
     } while (lastEvaluatedKey);
 
-    // -----------------------------------
-    // 4) Build a map of user_id -> face_id
-    // -----------------------------------
-    const userFaceMap = new Map();
+    // --- 4) Build a map of user_id -> number of photos ---
+    const userPhotoCountMap = new Map();
+
     for (const item of allItems) {
-      // Example condition: only store a face_id if the item doesn't have user_id_original
+      // Only count items if user_id_original is NOT present
       if (!item.user_id_original) {
-        userFaceMap.set(item.user_id, item.face_id);
+        const currentCount = userPhotoCountMap.get(item.user_id) || 0;
+        userPhotoCountMap.set(item.user_id, currentCount + 1);
       }
     }
 
-    const uniqueUserIds = [...userFaceMap.keys()];
-    
-    // Filter out the main user's ID
-    const filteredUserIds = uniqueUserIds.filter((id) => id !== userId);
-    let globalUserMap;
-    if(filteredUserIds.length>0){
-      globalUserMap = await mapAllRegisteredUsersToGlobal(userPhoneNumber)
+    // --- 5) Create an array of other user IDs, excluding the main user's ID ---
+    const uniqueUserIds = [...userPhotoCountMap.keys()].filter((id) => id !== userId);
+
+    // --- 6) If needed, map all registered users to get userPhoneNumber, etc. ---
+    let globalUserMap = {};
+    if (uniqueUserIds.length > 0) {
+      globalUserMap = await mapAllRegisteredUsersToGlobal(userPhoneNumber);
     }
-    
-    // NEW: Get hidden users for this phone number
+
+    // --- 7) Get hidden users for this phone number ---
     let hiddenUserIds = [];
     try {
       const hiddenUsersParams = {
@@ -11852,37 +11853,36 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
           ':phone': userPhoneNumber
         }
       };
-      
+
       const hiddenUsersResult = await docClient.query(hiddenUsersParams).promise();
       hiddenUserIds = hiddenUsersResult.Items.map(item => item.hidden_user_id);
-      
-      // Log for debugging
+
       logger.info(`Found ${hiddenUserIds.length} hidden users for ${userPhoneNumber}`);
     } catch (error) {
       logger.error('Error fetching hidden users:', error);
       // Continue execution even if this fails
-      // This ensures the main functionality still works
     }
-    
-    const peoplePromises = filteredUserIds.map(async userId => {
-      // First get user data from recognition table
+
+    // --- 8) Build the 'people' array ---
+    const peoplePromises = uniqueUserIds.map(async otherUserId => {
+      // Get user data from recognition table
       const recognitionParams = {
         TableName: 'machinevision_recognition_users_data',
         KeyConditionExpression: 'user_id = :userId',
         ExpressionAttributeValues: {
-          ':userId': userId
+          ':userId': otherUserId
         }
       };
-      
+
       const recognitionResult = await docClient.query(recognitionParams).promise();
       if (!recognitionResult.Items || recognitionResult.Items.length === 0) {
         return null;
       }
 
       const recognitionData = recognitionResult.Items[0];
-      const userMappingData = globalUserMap[userId]
+      const userMappingData = globalUserMap[otherUserId] || null;
+
       try {
-
         let faceUrl = recognitionData.face_url;
         if (faceUrl && faceUrl.startsWith('s3://')) {
           const bucketAndKey = faceUrl.replace('s3://', '');
@@ -11890,76 +11890,98 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
           faceUrl = `https://${bucket}.s3.ap-south-1.amazonaws.com/${keyParts.join('/')}`;
         }
 
-        const relationData = relationsMap.get(userId) || {};
-
-        if(userMappingData){
-          return {
-            userId: userId,
-            faceUrl: faceUrl,
-            name: relationData.name || userData?.org_name || userData?.user_name,
-            relationName: relationData.name || null,
-            relationshipType: relationData.relation_type || null,
-            isStarred: relationData.is_starred || false,
-            userPhoneNumber: userMappingData ? userMappingData.user_phone_number : null,
-            isHidden: hiddenUserIds.includes(userId) // Add hidden status
-          };
-        } else {
-          return {
-            userId: userId,
-            faceUrl: faceUrl,
-            name: relationData.name || userData?.org_name || userData?.user_name,
-            relationName: relationData.name || null,
-            relationshipType: relationData.relation_type || null,
-            isStarred: relationData.is_starred || false,
-            userPhoneNumber: null,
-            isHidden: hiddenUserIds.includes(userId) // Add hidden status
-          };
-        }
-      } catch (error) {
-        logger.error(`Error fetching user data for ${userId}:`, error);
-        // Return the recognition data without user details if users table query fails
-        let faceUrl = recognitionData.face_url;
-        if (faceUrl && faceUrl.startsWith('s3://')) {
-          const bucketAndKey = faceUrl.replace('s3://', '');
-          const [bucket, ...keyParts] = bucketAndKey.split('/');
-          faceUrl = `https://${bucket}.s3.ap-south-1.amazonaws.com/${keyParts.join('/')}`;
-        }
-
-        const relationData = relationsMap.get(userId) || {};
+        const relationData = relationsMap.get(otherUserId) || {};
+        const photoCount = userPhotoCountMap.get(otherUserId) || 0;
 
         return {
-          userId: userId,
-          faceUrl: faceUrl,
-          name: relationData.name || userData.org_name || userData?.user_name,
+          userId: otherUserId,
+          faceUrl,
+          name: relationData.name || userData?.org_name || userData?.user_name,
+          relationName: relationData.name || null,
+          relationshipType: relationData.relation_type || null,
+          isStarred: relationData.is_starred || false,
+          userPhoneNumber: userMappingData?.user_phone_number || null,
+          isHidden: hiddenUserIds.includes(otherUserId),
+          photoCount
+        };
+      } catch (error) {
+        logger.error(`Error fetching user data for ${otherUserId}:`, error);
+
+        // Return minimal data if something fails
+        let faceUrl = recognitionData.face_url;
+        if (faceUrl && faceUrl.startsWith('s3://')) {
+          const bucketAndKey = faceUrl.replace('s3://', '');
+          const [bucket, ...keyParts] = bucketAndKey.split('/');
+          faceUrl = `https://${bucket}.s3.ap-south-1.amazonaws.com/${keyParts.join('/')}`;
+        }
+
+        const relationData = relationsMap.get(otherUserId) || {};
+        const photoCount = userPhotoCountMap.get(otherUserId) || 0;
+
+        return {
+          userId: otherUserId,
+          faceUrl,
+          name: relationData.name || userData?.org_name || userData?.user_name,
           relationName: relationData.name || null,
           relationshipType: relationData.relation_type || null,
           isStarred: relationData.is_starred || false,
           userPhoneNumber: null,
-          isHidden: hiddenUserIds.includes(userId) // Add hidden status
+          isHidden: hiddenUserIds.includes(otherUserId),
+          photoCount
         };
       }
     });
-    
-    const people = (await Promise.all(peoplePromises)).filter(Boolean);
+
+    // Resolve all promises in parallel
+    let people = (await Promise.all(peoplePromises)).filter(Boolean);
+
+    // --- 9) Sort by Fav > Reg > Others > Hidden, then by photoCount desc ---
+    // If isHidden, that user goes to the Hidden category.
+    const getCategory = (person) => {
+      if (person.isHidden) return 3;         // Hidden
+      if (person.isStarred) return 0;        // Favourites
+      if (person.userPhoneNumber) return 1;  // Registered
+      return 2;                              // Others
+    };
+
+    people.sort((a, b) => {
+      // Compare categories
+      const catA = getCategory(a);
+      const catB = getCategory(b);
+      if (catA !== catB) {
+        return catA - catB;
+      }
+      // If same category, sort by photoCount descending
+      return b.photoCount - a.photoCount;
+    });
+
+    // --- 10) Determine mainUser's photoCount (if any) ---
+    // We *did* filter out mainUser from uniqueUserIds, but mainUser might still appear in userPhotoCountMap
+    const mainUserCount = userPhotoCountMap.get(userId) || 0;
+
+    // --- 11) Prepare mainUser's response with a proper faceUrl ---
     let faceUrl = userData?.face_url;
     if (faceUrl && faceUrl.startsWith('s3://')) {
       const bucketAndKey = faceUrl.replace('s3://', '');
       const [bucket, ...keyParts] = bucketAndKey.split('/');
       faceUrl = `https://${bucket}.s3.ap-south-1.amazonaws.com/${keyParts.join('/')}`;
     }
-    
+
+    // --- 12) Return the final response ---
     res.json({
       success: true,
       data: {
-        mainUser: userData ? {
-          userId: userData.user_id,
-          faceUrl: faceUrl,
-          name: 'You'
-        } : null,
-        relations: people
+        mainUser: userData
+          ? {
+              userId: userData.user_id,
+              faceUrl: faceUrl,
+              name: 'You',
+              photoCount: mainUserCount // pass the main user's photo count too
+            }
+          : null,
+        relations: people // each person already has photoCount
       }
     });
-    
   } catch (error) {
     logger.error('Error in getPeopleFromDevice:', error);
     res.status(500).json({
@@ -16382,156 +16404,196 @@ const updateDataAfterMerge = async (merge_req_id, merging_user_id, target_user_i
 };
 
 app.post("/merge-users-in-phone", async (req, res) => {
-  const { user_id_1, user_id_2, phone_number } = req.body;
-
-  // Validate input
-  if (!user_id_1 || !user_id_2 || !phone_number) {
-    return res.status(400).json({ error: "user_id_1, user_id_2, and phone_number are required." });
-  }
-
-  const merge_req_id = crypto.randomBytes(4).toString("hex"); // Unique ID for this merge operation
   const merge_status_table = "flashback_user_merge_data";
-
+  
   try {
-    // Initialize merge request status
-    logger.info("Initializing merge request status...");
-    const collection = phone_number.replace('+',"");
-    const collectionName = "User"+collection;
-    const mergeStatusInit = {
-      TableName: merge_status_table,
-      Item: {
-        merge_req_id,
-        merging_user_id: null, // Placeholder for now
-        target_user_id: null,  // Placeholder for now
-        user_phone_number:phone_number,
-        merge_status: "IN_PROGRESS",
-        failed_step: null,
-        timestamp: new Date().toISOString(),
-      },
-    };
-    await docClient.put(mergeStatusInit).promise();
+    const { user_ids,phone_number  } = req.body;
+    
+    // 1. Basic validation
+    if (!Array.isArray(user_ids) || user_ids.length < 2) {
+      return res
+        .status(400)
+        .json({ error: "Provide an array of at least 2 user IDs." });
+    }
+    if (user_ids.length > 10) {
+      return res
+        .status(400)
+        .json({ error: "Merging more than 10 users is not allowed." });
+    }
 
-    const user1Mapping = await getMappingByLocalUserAndCollection(user_id_1);
-    const user2Mapping = await getMappingByLocalUserAndCollection(user_id_2);
-    // Fetch user details
-    const user1Details = await getUserObjectByUserIdMobile(user1Mapping?.global_user_id ?? user_id_1);
-    const user2Details = await getUserObjectByUserIdMobile(user2Mapping?.global_user_id ?? user_id_2);
+    // 2. Generate a unique ID for this merge request
+    const merge_req_id = crypto.randomBytes(4).toString("hex");
+    
+     // 3. Fetch mappings & user details for all user_ids
+    //    This helps figure out which ones have userDetails (non-null).
+    let allUserDetails = [];
+    for (let localUserId of user_ids) {
+      const userMapping = await getMappingByLocalUserAndCollection(localUserId);
+      const userDetails = await getUserObjectByUserIdMobile(
+        userMapping?.global_user_id ?? localUserId
+      );
+      allUserDetails.push({
+        localUserId,
+        globalUserId: userMapping?.global_user_id,
+        details: userDetails, // if null => not recognized
+      });
+    }
 
-    let merging_user_id;
-    let target_user_id;
+    // 4. Determine which user will be the target.
+    //    - If exactly one user has non-null userDetails => that user is target
+    //    - If more than one user has userDetails => disallow (or handle differently)
+    //    - If none => pick the first user in the list as the target
+    const recognizedUsers = allUserDetails.filter((u) => u.details != null);
 
-    // Determine merging and target user IDs
-    if (user1Details && user2Details) {
-      logger.info("Both users have phone numbers mapped, cannot merge.");
+    if (recognizedUsers.length > 1) {
       return res.status(400).json({
-        error: "Cannot merge users as both user_id_1 and user_id_2 have mapped phone numbers.",
+        error: "Cannot merge: multiple users already have userDetails (mapped).",
       });
-    } else if (user1Details && !user2Details) {
-      target_user_id = user_id_1;
-      merging_user_id = user_id_2;
-    } else if (user2Details && !user1Details) {
-      target_user_id = user_id_2;
-      merging_user_id = user_id_1;
-    } else {
-      target_user_id = user_id_1;
-      merging_user_id = user_id_2;
     }
 
-    // Determine merging and target user IDs
-    if (user1Details?.phone_number === phone_number || user2Details?.phone_number === phone_number) {
-      logger.info("Phone number is mapped to one of the users. Proceeding with user merge.");
+    let targetUser;
+    if (recognizedUsers.length === 1) {
+      // Exactly one recognized user => target
+      targetUser = recognizedUsers[0];
+    } else {
+      // recognizedUsers is empty => pick first in the array as target
+      targetUser = allUserDetails[0];
+    }
 
-     //External API for merge-users API
-      const response = await axios.post("https://52.66.187.182:3000/merge-users/", {
-        merging_user_id,
-        target_user_id,
-        collection_name:collectionName
-      },
-      {
-        httpsAgent: httpsAgent, // Pass the custom HTTPS agent
-      });
+    const target_user_id = targetUser.localUserId;
+    // (Or use targetUser.globalUserId if your external merges require the global ID)
 
-      if (response.status === 200) {
-        logger.info("Merge successful using the phone number-based logic.");
+    // Separate merging users (everything except the target)
+    const mergingUsers = allUserDetails.filter(
+      (u) => u.localUserId !== target_user_id
+    );
+
+    // 4. Create the initial merge status record in DynamoDB
+    await docClient
+      .put({
+        TableName: merge_status_table,
+        Item: {
+          merge_req_id,
+          target_user_id,
+          user_phone_number:phone_number,
+          merged_user_ids: [],       // we'll append merging IDs as we go
+          merge_status: "IN_PROGRESS",
+          failed_step: null,
+          timestamp: new Date().toISOString(),
+        },
+      })
+      .promise();
+
+    const collection = phone_number.replace('+', '');
+    const collectionName = 'User' + collection;
+
+    // 5. Merge each user in turn
+    for (const merging_user_id of mergingUsers) {
+      try {
+        // 5a. Call the external "merge-users" API
+        const response = await axios.post(
+          "https://your-service/merge-users/",
+          {
+            merging_user_id,
+            target_user_id,
+            collection_name: collectionName,
+          }
+          // Optional: { httpsAgent: httpsAgent }
+        );
+
+        // 5b. Check success
+        if (response.status !== 200) {
+          throw new Error(
+            `Merging user ${merging_user_id} -> target ${target_user_id} failed with status ${response.status}.`
+          );
+        }
+
+        // 5c. Update local data if needed
         await updateDataAfterMerge(merge_req_id, merging_user_id, target_user_id);
-        return res.status(200).json(response.data);
-      }
-    } else {
-      logger.info("Phone number is not mapped. Fetching face_ids for the merging_user_id...");
-      const folder_name = phone_number ? phone_number.replace(/^\+/, "") : null;
-      
-      // Fetch face_ids from the indexed_data table where folder_name matches phone_number
-      const faceIds = [];
-      let lastEvaluatedKey = null;
 
-      do {
-        const indexedDataQuery = {
-          TableName: "machinevision_indexed_data",
-          IndexName: "user_id-folder_name-index", // Use the secondary index
-          KeyConditionExpression: "user_id = :mergingUserId AND folder_name = :folderName",
-          ExpressionAttributeValues: {
-            ":mergingUserId": merging_user_id,
-            ":folderName": folder_name,
-          },
-          ExclusiveStartKey: lastEvaluatedKey,
-        };
+        // 5d. Append this merging_user_id to the merged_user_ids list in DynamoDB
+        await docClient
+          .update({
+            TableName: merge_status_table,
+            Key: { merge_req_id },
+            UpdateExpression:
+              "SET merged_user_ids = list_append( if_not_exists(merged_user_ids, :emptyList), :newId )",
+            ExpressionAttributeValues: {
+              ":emptyList": [],
+              ":newId": [merging_user_id], // must be wrapped in an array
+            },
+          })
+          .promise();
+      } catch (userMergeError) {
+        // If merging one user fails, we mark entire operation as FAILED
+        console.error("Error merging user:", userMergeError.message);
 
-        const indexedDataResult = await docClient.query(indexedDataQuery).promise();
-        faceIds.push(...indexedDataResult.Items.map(item => item.face_id));
-        lastEvaluatedKey = indexedDataResult.LastEvaluatedKey;
+        await docClient
+          .update({
+            TableName: merge_status_table,
+            Key: { merge_req_id },
+            UpdateExpression: "SET merge_status = :failed, failed_step = :step",
+            ExpressionAttributeValues: {
+              ":failed": "FAILED",
+              ":step": userMergeError.message,
+            },
+          })
+          .promise();
 
-        logger.info(
-          `Fetched ${indexedDataResult.Items.length} records from indexed_data. LastEvaluatedKey: ${lastEvaluatedKey}`
-        );
-      } while (lastEvaluatedKey);
-
-      if (faceIds.length === 0) {
-        logger.warn("No face_ids found for the provided phone number and merging_user_id.");
-        return res.status(404).json({ error: "No face_ids found for the provided phone number." });
-      }
-
-      logger.info(`Collected ${faceIds.length} face_ids for user_id: ${user_id_1} and phone_number: ${phone_number}`);
-
-      //External API for to update user_id for face_ids
-      const updateResponse = await axios.post("https://52.66.187.182:3000/update-user-ids/", {
-        face_ids: faceIds,
-        target_user_id: target_user_id,
-        collection_name:collectionName
-      },{
-        httpsAgent: httpsAgent, // Pass the custom HTTPS agent
-      });
-
-      if (updateResponse.status === 200) {
-        logger.info(
-          `Successfully updated user_id for ${faceIds.length} face_ids. Proceeding with data updates in DynamoDB.`
-        );
-
-        // Proceed with updating DynamoDB for the fetched face_ids
-        await updateDataAfterMerge(merge_req_id, merging_user_id, target_user_id,folder_name);
-        return res.status(200).json(updateResponse.data);
-      } else {
-        logger.error("Error updating user_id for face_ids.");
-        return res.status(500).json({ error: "Error updating user_id for face_ids." });
+        return res
+          .status(500)
+          .json({ error: "Failed merging a user.", details: userMergeError.message });
       }
     }
+
+    // 6. If we got here, all merges succeeded
+    // Mark the entire request as SUCCESS
+    await docClient
+      .update({
+        TableName: merge_status_table,
+        Key: { merge_req_id },
+        UpdateExpression: "SET merge_status = :success, failed_step = :none",
+        ExpressionAttributeValues: {
+          ":success": "SUCCESS",
+          ":none": null,
+        },
+      })
+      .promise();
+
+    return res.status(200).json({
+      message: "All merges completed successfully.",
+      merge_req_id,
+      target_user_id,
+    });
   } catch (error) {
-    logger.error("Error during merge process with phone number:", error.message);
+    console.error("Error in merge-multiple-users:", error.message);
 
-    // Update merge request status to FAILED
-    const updateMergeStatus = {
-      TableName: merge_status_table,
-      Key: { merge_req_id },
-      UpdateExpression: "SET merge_status = :failed, failed_step = :failedStep",
-      ExpressionAttributeValues: {
-        ":failed": "FAILED",
-        ":failedStep": error.message,
-      },
-    };
-    await docClient.update(updateMergeStatus).promise();
+    // If we fail before the merge_req_id was created or something else
+    // For safety, handle the scenario where 'merge_req_id' might be undefined
+    // But in practice, it should exist after "2. Generate a unique ID..."
 
-    return res.status(500).json({ error: "Internal Server Error" });
+    // Mark the merge request as FAILED
+    await docClient
+      .update({
+        TableName: merge_status_table,
+        Key: { merge_req_id },
+        UpdateExpression: "SET merge_status = :failed, failed_step = :step",
+        ExpressionAttributeValues: {
+          ":failed": "FAILED",
+          ":step": error.message,
+        },
+      })
+      .promise()
+      .catch((err) => {
+        console.error("Error updating merge status to FAILED:", err.message);
+      });
+
+    return res
+      .status(500)
+      .json({ error: "Internal Server Error", details: error.message });
   }
 });
+
 const getMappingByLocalUserAndCollection = async (localUserId) => {
   try {
     logger.info(`Fetching mapping for global_user_id=${localUserId}`);
