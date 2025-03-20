@@ -16358,38 +16358,66 @@ const updateDataAfterMerge = async (merge_req_id, merging_user_id, target_user_i
 
     // 4. Store merge details in `merged_user_details`
     logger.info("Storing merge details...");
-    const mergedUserDetails = {
+    // First update: create merged_details if it doesn't exist
+    const initMapParams = {
       TableName: "flashback_user_merge_data",
-      Item: {
-        merge_req_id,
-        merged_user_id: merging_user_id,
-        target_user_id: target_user_id,
-        merged_face_ids: faceIds,
-        affected_image_ids: imageIds,
+      Key: { merge_req_id },
+      UpdateExpression: "SET #md = if_not_exists(#md, :emptyMap)",
+      ExpressionAttributeNames: {
+        "#md": "merged_details"
       },
+      ExpressionAttributeValues: {
+        ":emptyMap": {}
+      }
     };
-    await docClient.put(mergedUserDetails).promise();
+    await docClient.update(initMapParams).promise();
 
-    // 5. Update merge request status to SUCCESS
-    // logger.info("Updating merge request status to SUCCESS...");
-    // const updateMergeStatus = {
-    //   TableName: merge_status_table,
-    //   Key: { merge_req_id },
-    //   UpdateExpression: "SET merge_status = :success, failed_step = :noFailure",
-    //   ExpressionAttributeValues: {
-    //     ":success": "SUCCESS",
-    //     ":noFailure": null,
-    //   },
-    // };
-    // await docClient.update(updateMergeStatus).promise();
+    // Second update: now that merged_details is guaranteed to exist,
+    // we can create or modify merged_details.#mId safely
+    const initSubMapParams = {
+      TableName: "flashback_user_merge_data",
+      Key: { merge_req_id },
+      UpdateExpression: `
+        SET #md.#mId = if_not_exists(#md.#mId, :initObj)
+      `,
+      ExpressionAttributeNames: {
+        "#md": "merged_details",
+        "#mId": merging_user_id
+      },
+      ExpressionAttributeValues: {
+        ":initObj": { face_ids: [], image_ids: [] }
+      }
+    };
+    await docClient.update(initSubMapParams).promise();
 
-    // logger.info("Data update after merging completed successfully.");
+  
+    const appendParams = {
+      TableName: "flashback_user_merge_data",
+      Key: { merge_req_id },
+      UpdateExpression: `
+        SET
+          #md.#mId.face_ids  = list_append(#md.#mId.face_ids, :newFaces),
+          #md.#mId.image_ids = list_append(#md.#mId.image_ids, :newImages)
+      `,
+      ExpressionAttributeNames: {
+        "#md": "merged_details",
+        "#mId": merging_user_id
+      },
+      ExpressionAttributeValues: {
+        ":newFaces": faceIds || [],
+        ":newImages": imageIds || []
+      }
+    };
+    await docClient.update(appendParams).promise();
+  
+    logger.info(`Updated merged_details map in flashback_user_merge_data for ${merging_user_id}.`);
+
   } catch (error) {
     logger.error("Error updating data after merging:", error.message);
 
     // Update merge request status to FAILED
     const updateMergeStatus = {
-      TableName: merge_status_table,
+      TableName: 'flashback_user_merge_data',
       Key: { merge_req_id },
       UpdateExpression: "SET merge_status = :failed, failed_step = :failedStep",
       ExpressionAttributeValues: {
