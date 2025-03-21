@@ -121,14 +121,14 @@ exports.createBubbleChat = async (req, res) => {
   };
 
   exports.markAsRead = async (req, res) => {
-    const { chatId, userId, messageId } = req.body;
+    const { chatId, messageId } = req.body;
   
-    if (!chatId || !userId || !messageId) {
-      return res.status(400).json({ error: 'chatId, userId, and messageId are required' });
+    if (!chatId || !messageId) {
+      return res.status(400).json({ error: 'chatId, and messageId are required' });
     }
   
     try {
-      const readData = await bubbleChatService.markAsRead(chatId, userId, messageId);
+      const readData = await bubbleChatService.markAsRead(chatId, messageId);
       return res.status(200).json({
         success: true,
         data: readData,
