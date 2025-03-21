@@ -5,7 +5,7 @@ const logger = require('../../logger');
 const FCMService = require('./FCMService');
 
 exports.createBubbleChat = async ({ senderId, recipientId, memoryUrl, senderName, senderPhone }) => {
-  if (!senderId || !recipientId || !memoryUrl) {
+  if (!senderId || !recipientId ) {
     throw new Error('Missing required fields');
   }
 
@@ -30,16 +30,23 @@ exports.createBubbleChat = async ({ senderId, recipientId, memoryUrl, senderName
   // Check for existing chat
   let chatId = await bubbleChatModel.getExistingChat(participants);
 
+  let isNewChat = false;
+
   if (chatId) {
     // Update existing chat
+    if (memoryUrl !== null) {
     await bubbleChatModel.updateChat(chatId, timestamp, messageId);
+    }
   } else {
     // Create new chat
+    isNewChat = true;
     chatId = require('crypto').randomBytes(16).toString('hex');
     
     await bubbleChatModel.createChat(chatId, participants, timestamp, messageId, senderName, senderPhone, recipientUsers,recipientUserIds);
   }
 
+
+  if (memoryUrl !== null) {
   // Create message
   await bubbleChatModel.createMessage({
     messageId,
@@ -54,7 +61,10 @@ exports.createBubbleChat = async ({ senderId, recipientId, memoryUrl, senderName
   });
   await FCMService.sendNotification(chatId, senderName, senderPhone, 'shared a flashback', recipientUsers);
   logger.info('Memory successfully shared');
-  return { chatId, messageId };
+} else {
+  logger.info('Chat successfully created or retrieved without sending a message');
+}
+  return { chatId, messageId, isNewChat };
 };
 
 
