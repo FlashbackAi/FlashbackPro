@@ -105,8 +105,7 @@ exports.markAsRead = async (chatId, messageId) => {
     const params = {
       TableName: 'Messages',
       Key: {
-        messageId: { S: messageId },
-        chatId: { S: chatId },
+        messageId: { S: messageId }
       },
       UpdateExpression: 'SET #status = :status',
       ExpressionAttributeNames: {
