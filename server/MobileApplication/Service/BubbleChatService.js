@@ -100,7 +100,7 @@ exports.getInChatMemories = async (userPhoneNumber, recipientId) => {
   }
 };
 
-exports.markAsRead = async (chatId, userId, messageId) => {
+exports.markAsRead = async (chatId, messageId) => {
   try {
     const params = {
       TableName: 'Messages',
@@ -124,7 +124,6 @@ exports.markAsRead = async (chatId, userId, messageId) => {
     return {
       messageId,
       chatId,
-      userId,
       status: 'read'
     };
   } catch (error) {
