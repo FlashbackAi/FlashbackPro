@@ -6,7 +6,7 @@ exports.processImagesProgress = async (req, res) => {
 
     try {
         // Validate Required Properties
-        const { user_phone_number, prompt, s3_url_image1, s3_url_image2 } = req.body;
+        const { user_phone_number, prompt, s3_url_image1, s3_url_image2, related_user_id, related_user_phone } = req.body;
         if (!user_phone_number || !prompt || !s3_url_image1 || !s3_url_image2) {
             return res.status(400).json({ error: "Missing required fields: user_phone_number, prompt, s3_url_image1, s3_url_image2" });
         }
@@ -17,7 +17,7 @@ exports.processImagesProgress = async (req, res) => {
         res.setHeader("Connection", "keep-alive");
 
         // Call Service Layer
-        await generativeAIService.processImagesProgress(user_phone_number, prompt, s3_url_image1, s3_url_image2, res);
+        await generativeAIService.processImagesProgress(user_phone_number, prompt, s3_url_image1, s3_url_image2, related_user_id, related_user_phone, res);
     } catch (error) {
         logger.error(`Error in Controller: ${error.message}`);
         res.write(`event: error\ndata: ${JSON.stringify({ message: error.message })}\n\n`);
