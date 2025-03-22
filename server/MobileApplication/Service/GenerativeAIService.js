@@ -179,7 +179,7 @@ exports.processImagesProgress = async (user_phone_number, prompt, s3_url_image1,
         const requestId = require("crypto").randomUUID();
 
         // 1️⃣ Store Request in DynamoDB
-        await generativeImageModel.createRequest(requestId, user_phone_number, prompt [s3_url_image1, s3_url_image2], related_user_id, related_user_phone);
+        await generativeImageModel.createRequest(requestId, user_phone_number, prompt, [s3_url_image1, s3_url_image2], related_user_id, related_user_phone);
         logger.info(`Stored requestId: ${requestId}`);
 
         // 2️⃣ Download & Resize Images
