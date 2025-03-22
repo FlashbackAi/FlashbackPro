@@ -11416,7 +11416,9 @@ app.post('/update-relation', async (req, res) => {
     related_user_id,
     name,
     relation_type,
-    is_starred = false 
+    is_starred = false,
+    gender = null,
+    related_user_phone = null
   } = req.body;
 
   if (!user_phone_number || !related_user_id) {
@@ -11445,9 +11447,16 @@ app.post('/update-relation', async (req, res) => {
       name: name || (existingRelation.Item?.name || null),
       relation_type: relation_type || (existingRelation.Item?.relation_type || null),
       is_starred: is_starred || (existingRelation.Item?.is_starred || false),
+      gender: gender || (existingRelation.Item?.gender || null),
       last_updated: new Date().toISOString()
     };
 
+    if (related_user_phone) {
+      relationItem.related_user_phone = related_user_phone;
+    } else if (existingRelation.Item?.related_user_phone) {
+      // Keep existing related_user_phone if it exists
+      relationItem.related_user_phone = existingRelation.Item.related_user_phone;
+    }
     // Save to DynamoDB
     const putParams = {
       TableName: 'Relations',
@@ -11899,6 +11908,7 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
           name: relationData.name || userData?.org_name || userData?.user_name,
           relationName: relationData.name || null,
           relationshipType: relationData.relation_type || null,
+          gender: relationData.gender || null,
           isStarred: relationData.is_starred || false,
           userPhoneNumber: userMappingData?.user_phone_number || null,
           isHidden: hiddenUserIds.includes(otherUserId),
@@ -11924,6 +11934,7 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
           name: relationData.name || userData?.org_name || userData?.user_name,
           relationName: relationData.name || null,
           relationshipType: relationData.relation_type || null,
+          gender: relationData.gender || null,
           isStarred: relationData.is_starred || false,
           userPhoneNumber: null,
           isHidden: hiddenUserIds.includes(otherUserId),
