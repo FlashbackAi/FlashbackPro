@@ -1,23 +1,25 @@
 const { getConfig } = require('../../config');
 const docClient = getConfig().docClient;
 const tableNames = require('../tables');
+const logger = require('../../logger');
 
 
 
 class StreakModel {
-    static async updateStreak(user_phone_number, related_user_id, interactionType) {
-      const today = new Date().toISOString().split('T')[0]; // e.g., "2025-03-22"
+  static async updateStreak(user_phone_number, related_user_id, interactionType) {
+    try {
+      const today = new Date().toISOString().split('T')[0];
       const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-  
+
       const { Item } = await docClient.get({
         TableName: tableNames.userRelationshipsTableName,
         Key: { user_phone_number, related_user_id }
       }).promise();
-  
+
       const lastDate = Item?.lastInteractionDate || null;
       const newStreak = lastDate === today ? Item.currentStreak :
                        lastDate === yesterday ? (Item.currentStreak || 0) + 1 : 1;
-  
+
       const params = {
         TableName: tableNames.userRelationshipsTableName,
         Key: { user_phone_number, related_user_id },
@@ -41,18 +43,28 @@ class StreakModel {
           ':memShared': interactionType === 'memory_shared' ? 1 : 0
         }
       };
-  
+
       await docClient.update(params).promise();
-      return { currentStreak: newStreak, lastInteractionDate: today };
+      logger.info(`Streak updated: ${user_phone_number} -> ${related_user_id}, type: ${interactionType}, streak: ${newStreak}`);
+      return { currentStreak: newStreak };
+    } catch (error) {
+      logger.error(`Error updating streak: ${error.message}`);
+      throw error;
     }
-  
-    static async getStreak(user_phone_number, related_user_id) {
+  }
+
+  static async getStreak(user_phone_number, related_user_id) {
+    try {
       const { Item } = await docClient.get({
         TableName: TABLE_NAME,
         Key: { user_phone_number, related_user_id }
       }).promise();
       return Item || {};
+    } catch (error) {
+      logger.error(`Error fetching streak: ${error.message}`);
+      throw error;
     }
   }
-  
-  module.exports = StreakModel;
+}
+
+module.exports = StreakModel;
