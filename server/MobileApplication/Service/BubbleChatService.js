@@ -188,7 +188,8 @@ exports.sendMessage = async (chatId, senderId, content, senderName, senderPhone,
     await bubbleChatModel.updateChatLastMessage(chatUpdateParams);
 
     await FCMService.sendNotification(chatId, senderName, senderPhone, content, recipientUsers);
-    await StreakModel.updateStreak(senderPhone, recipientId, 'message');
+    const interactionType = messageType === 'memory' ? 'memory_shared' : 'message';
+    await StreakModel.updateStreak(senderPhone, recipientId, interactionType);
     logger.info(`Sent message with ID ${messageId} for chat: ${chatId}`);
     return {
       messageId,
