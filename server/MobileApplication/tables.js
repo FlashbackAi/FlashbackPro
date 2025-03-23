@@ -6,7 +6,7 @@ const tableNames = {
     relationsTableName: 'Relations',
     machineVisionRecognitionTableName: 'machinevision_recognition_image_properties',
     machineVisionIndexedDataTableName: 'machinevision_indexed_data',
-    userRelationshipsTableName: 'UserRelationShips'
+    userRelationshipsTableName: 'UserRelationships'
     // Add more table names as needed
   };
   
