@@ -6,6 +6,7 @@ const { getConfig } = require("../../config");
 const sharp = require("sharp");
 const generativeImageModel = require("../Model/GenerativeImageModel");
 const crypto = require('crypto');
+const StreakModel = require("../Model/StreakModel");
 
 // AWS SDK & S3 Instance
 const s3 = getConfig().s3;
@@ -181,6 +182,8 @@ exports.processImagesProgress = async (user_phone_number, prompt, s3_url_image1,
         // 1️⃣ Store Request in DynamoDB
         await generativeImageModel.createRequest(requestId, user_phone_number, prompt, [s3_url_image1, s3_url_image2], related_user_id, related_user_phone);
         logger.info(`Stored requestId: ${requestId}`);
+
+        await StreakModel.updateStreak(user_phone_number, related_user_id, 'memory_generated');
 
         // 2️⃣ Download & Resize Images
         const image1Buffer = await downloadAndResizeImage(s3_url_image1);

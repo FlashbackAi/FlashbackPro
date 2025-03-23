@@ -3,6 +3,7 @@ const globalToLocalUsermappingModel = require('../Model/GlobalToLocalUsermapping
 const userModel = require('../Model/UserModel')
 const logger = require('../../logger');
 const FCMService = require('./FCMService');
+const StreakModel = require('../Model/StreakModel');
 
 exports.createBubbleChat = async ({ senderId, recipientId, memoryUrl, senderName, senderPhone }) => {
   if (!senderId || !recipientId ) {
@@ -60,6 +61,7 @@ exports.createBubbleChat = async ({ senderId, recipientId, memoryUrl, senderName
     senderName,
   });
   await FCMService.sendNotification(chatId, senderName, senderPhone, 'shared a flashback', recipientUsers);
+  await StreakModel.updateStreak(senderPhone, recipientId, 'memory_shared');
   logger.info('Memory successfully shared');
 } else {
   logger.info('Chat successfully created or retrieved without sending a message');
@@ -186,7 +188,7 @@ exports.sendMessage = async (chatId, senderId, content, senderName, senderPhone,
     await bubbleChatModel.updateChatLastMessage(chatUpdateParams);
 
     await FCMService.sendNotification(chatId, senderName, senderPhone, content, recipientUsers);
-
+    await StreakModel.updateStreak(senderPhone, recipientId, 'message');
     logger.info(`Sent message with ID ${messageId} for chat: ${chatId}`);
     return {
       messageId,
