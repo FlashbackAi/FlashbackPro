@@ -82,10 +82,10 @@ app.post('/updateRelationRequest', relationsController.updateRelationRequestStat
 
 //APIs for Aptos wallet-----
 //create wallet
-app.post('/createWalet', walletController.createWallet);
+app.post('/createWallet', walletController.createWallet);
 
 //get wallet
-app.get('/getWaletDetails/:mobileNumber', walletController.getWalletDetails);
+app.get('/getWalletDetails/:mobileNumber', walletController.getWalletDetails);
 
 //get user balance
 app.get('/wallet-balance/:phoneNumber', walletController.getWalletBalance);
