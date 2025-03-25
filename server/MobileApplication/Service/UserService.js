@@ -45,6 +45,18 @@ exports.updateUser = async (user_phone_number, fieldsToUpdate) => {
   return updatedUser;
 };
 
+
+exports.getUserLoginDetails = async (user_phone_number) => {
+  const userDetails = await userModel.getUser(user_phone_number);
+  if (!userDetails) {
+    // If there's no user at all, return null or handle the situation
+    return null;
+  } else {
+  return userDetails;
+  }
+};
+
+
 exports.getUserDetails = async (user_phone_number) => {
   logger.info(`Fetching user details for user_phone_number: ${user_phone_number}`);
   

@@ -24,6 +24,8 @@ app.put('/updateUser', userController.updateUser);
 // Get user details by phone number
 app.get('/getUserDetails/:user_phone_number', userController.getUserDetails);
 
+app.get('/getUserLoginDetails/:user_phone_number', userController.getUserLoginDetails);
+
 // Verify user activation code
 app.post('/verifyUserActivation', userController.verifyUserActivation);
 
