@@ -12945,6 +12945,76 @@ app.get('/getDeviceMemories/:userPhoneNumber', async (req, res) => {
   }
 });
 
+app.get('/getGeneratedMemories/:userPhoneNumber', async (req, res) => {
+  try {
+    const { userPhoneNumber } = req.params;
+    const { pageToken, limit = 20 } = req.query; // Default limit to 20 items per page
+
+    // Input validation
+    if (!userPhoneNumber) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required parameter: userPhoneNumber',
+      });
+    }
+
+    // Query params for image_generations table
+    const params = {
+      TableName: 'image_generations',
+      IndexName: 'user_phone_number-index',
+      KeyConditionExpression: 'user_phone_number = :phoneNumber',
+      FilterExpression: 'generation_status = :status',
+      ExpressionAttributeValues: {
+        ':phoneNumber': userPhoneNumber,
+        ':status': 'completed',
+      },
+      ProjectionExpression: 'generation_id, created_at, generated_images, prompt, prompt_id, related_user_id, related_user_phone',
+      ScanIndexForward: false, // Sort by the index's sort key (if applicable)
+      Limit: parseInt(limit), // Number of items per page
+    };
+
+    // If pageToken is provided, use it as the ExclusiveStartKey to fetch the next page
+    if (pageToken) {
+      params.ExclusiveStartKey = JSON.parse(Buffer.from(pageToken, 'base64').toString('utf8'));
+    }
+
+    const result = await docClient.query(params).promise();
+
+    // Format and sort the response by created_at (latest to oldest)
+    const generatedMemories = result.Items.map(item => ({
+      generation_id: item.generation_id,
+      created_at: item.created_at,
+      generated_images: item.generated_images,
+      prompt: item.prompt || null,
+      prompt_id: item.prompt_id,
+      related_user_id: item.related_user_id || null,
+      related_user_phone: item.related_user_phone || null,
+      isGenerated: true,
+    })).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    // Generate the next page token if there are more items
+    let nextPageToken = null;
+    if (result.LastEvaluatedKey) {
+      nextPageToken = Buffer.from(JSON.stringify(result.LastEvaluatedKey)).toString('base64');
+    }
+
+    // Return success response with pagination metadata
+    res.json({
+      success: true,
+      count: generatedMemories.length,
+      totalCount: result.ScannedCount, // Total items scanned (optional, for reference)
+      generatedMemories,
+      nextPageToken, // Null if there are no more pages
+    });
+  } catch (error) {
+    console.error('Error fetching generated memories:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch generated memories',
+    });
+  }
+});
+
 app.post('/hideMemory', async (req, res) => {
   try {
     const { flashbackId, userId, userPhoneNumber, imageName } = req.body;
