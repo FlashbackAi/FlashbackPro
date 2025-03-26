@@ -6,7 +6,7 @@ class RequestModel {
     /**
      * Create a new request entry in DynamoDB.
      */
-    static async createRequest(request_id, user_phone_number, prompt, input_images) {
+    static async createRequest(request_id, user_phone_number, prompt, input_images, related_user_id, related_user_phone) {
         const params = {
             TableName: TABLE_NAME,
             Item: {
@@ -14,10 +14,14 @@ class RequestModel {
                 user_phone_number,   
                 prompt,
                 input_images,
+                related_user_id,
                 generation_status: "processing",
                 created_at: new Date().toISOString(),
             }
         };
+        if (related_user_phone) {
+            params.Item.related_user_phone = related_user_phone;
+        }
         await docClient.put(params).promise();
         return params.Item;
     }

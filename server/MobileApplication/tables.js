@@ -5,7 +5,8 @@ const tableNames = {
     flashbackMobileRecognitionUserDataTableName: 'machinevision_recognition_users_data',
     relationsTableName: 'Relations',
     machineVisionRecognitionTableName: 'machinevision_recognition_image_properties',
-    machineVisionIndexedDataTableName: 'machinevision_indexed_data'
+    machineVisionIndexedDataTableName: 'machinevision_indexed_data',
+    userRelationshipsTableName: 'UserRelationships'
     // Add more table names as needed
   };
   

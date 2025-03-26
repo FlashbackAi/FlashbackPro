@@ -11416,7 +11416,9 @@ app.post('/update-relation', async (req, res) => {
     related_user_id,
     name,
     relation_type,
-    is_starred = false 
+    is_starred = false,
+    gender = null,
+    related_user_phone = null
   } = req.body;
 
   if (!user_phone_number || !related_user_id) {
@@ -11445,9 +11447,16 @@ app.post('/update-relation', async (req, res) => {
       name: name || (existingRelation.Item?.name || null),
       relation_type: relation_type || (existingRelation.Item?.relation_type || null),
       is_starred: is_starred || (existingRelation.Item?.is_starred || false),
+      gender: gender || (existingRelation.Item?.gender || null),
       last_updated: new Date().toISOString()
     };
 
+    if (related_user_phone) {
+      relationItem.related_user_phone = related_user_phone;
+    } else if (existingRelation.Item?.related_user_phone) {
+      // Keep existing related_user_phone if it exists
+      relationItem.related_user_phone = existingRelation.Item.related_user_phone;
+    }
     // Save to DynamoDB
     const putParams = {
       TableName: 'Relations',
@@ -11863,7 +11872,31 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
       // Continue execution even if this fails
     }
 
-    // --- 8) Build the 'people' array ---
+    // --- 8) Fetch streak data from UserRelationships ---
+    let streakMap = new Map();
+    if (uniqueUserIds.length > 0) {
+      const streakParams = {
+        TableName: 'UserRelationships',
+        KeyConditionExpression: 'user_phone_number = :phone',
+        ExpressionAttributeValues: { ':phone': fullPhoneNumber }
+      };
+      const streakResult = await docClient.query(streakParams).promise();
+      streakMap = new Map(
+        streakResult.Items.map(item => [
+          item.related_user_id,
+          {
+            streak: item.currentStreak,
+            highestStreak: item.highestStreak,
+            lastInteractionDate: item.lastInteractionDate,
+            totalDaysInteracted: item.totalDaysInteracted,
+            totalMemoriesCreated: item.totalMemoriesCreated,
+            totalMemoriesShared: item.totalMemoriesShared
+          }
+        ])
+      );
+    }
+
+    // --- 9) Build the 'people' array ---
     const peoplePromises = uniqueUserIds.map(async otherUserId => {
       // Get user data from recognition table
       const recognitionParams = {
@@ -11881,6 +11914,14 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
 
       const recognitionData = recognitionResult.Items[0];
       const userMappingData = globalUserMap[otherUserId] || null;
+      const streakData = streakMap.get(otherUserId) || {
+        streak: null,
+        highestStreak: null,
+        lastInteractionDate: null,
+        totalDaysInteracted: null,
+        totalMemoriesCreated: null,
+        totalMemoriesShared: null
+      };
 
       try {
         let faceUrl = recognitionData.face_url;
@@ -11899,10 +11940,17 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
           name: relationData.name || userData?.org_name || userData?.user_name,
           relationName: relationData.name || null,
           relationshipType: relationData.relation_type || null,
+          gender: relationData.gender || null,
           isStarred: relationData.is_starred || false,
           userPhoneNumber: userMappingData?.user_phone_number || null,
           isHidden: hiddenUserIds.includes(otherUserId),
-          photoCount
+          photoCount,
+          streak: streakData.streak,
+          highestStreak: streakData.highestStreak,
+          lastInteractionDate: streakData.lastInteractionDate,
+          totalDaysInteracted: streakData.totalDaysInteracted,
+          totalMemoriesCreated: streakData.totalMemoriesCreated,
+          totalMemoriesShared: streakData.totalMemoriesShared
         };
       } catch (error) {
         logger.error(`Error fetching user data for ${otherUserId}:`, error);
@@ -11924,10 +11972,17 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
           name: relationData.name || userData?.org_name || userData?.user_name,
           relationName: relationData.name || null,
           relationshipType: relationData.relation_type || null,
+          gender: relationData.gender || null,
           isStarred: relationData.is_starred || false,
           userPhoneNumber: null,
           isHidden: hiddenUserIds.includes(otherUserId),
-          photoCount
+          photoCount,
+          streak: streakData.streak,
+          highestStreak: streakData.highestStreak,
+          lastInteractionDate: streakData.lastInteractionDate,
+          totalDaysInteracted: streakData.totalDaysInteracted,
+          totalMemoriesCreated: streakData.totalMemoriesCreated,
+          totalMemoriesShared: streakData.totalMemoriesShared
         };
       }
     });
@@ -11935,7 +11990,7 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
     // Resolve all promises in parallel
     let people = (await Promise.all(peoplePromises)).filter(Boolean);
 
-    // --- 9) Sort by Fav > Reg > Others > Hidden, then by photoCount desc ---
+    // --- 10) Sort by Fav > Reg > Others > Hidden, then by photoCount desc ---
     // If isHidden, that user goes to the Hidden category.
     const getCategory = (person) => {
       if (person.isHidden) return 3;         // Hidden
@@ -11955,11 +12010,11 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
       return b.photoCount - a.photoCount;
     });
 
-    // --- 10) Determine mainUser's photoCount (if any) ---
+    // --- 11) Determine mainUser's photoCount (if any) ---
     // We *did* filter out mainUser from uniqueUserIds, but mainUser might still appear in userPhotoCountMap
     const mainUserCount = userPhotoCountMap.get(userId) || 0;
 
-    // --- 11) Prepare mainUser's response with a proper faceUrl ---
+    // --- 12) Prepare mainUser's response with a proper faceUrl ---
     let faceUrl = userData?.face_url;
     if (faceUrl && faceUrl.startsWith('s3://')) {
       const bucketAndKey = faceUrl.replace('s3://', '');
@@ -11967,7 +12022,7 @@ app.get('/getPeopleFromDevice/:userPhoneNumber/:userId', async (req, res) => {
       faceUrl = `https://${bucket}.s3.ap-south-1.amazonaws.com/${keyParts.join('/')}`;
     }
 
-    // --- 12) Return the final response ---
+    // --- 13) Return the final response ---
     res.json({
       success: true,
       data: {

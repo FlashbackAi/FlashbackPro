@@ -24,6 +24,8 @@ app.put('/updateUser', userController.updateUser);
 // Get user details by phone number
 app.get('/getUserDetails/:user_phone_number', userController.getUserDetails);
 
+app.get('/getUserLoginDetails/:user_phone_number', userController.getUserLoginDetails);
+
 // Verify user activation code
 app.post('/verifyUserActivation', userController.verifyUserActivation);
 
@@ -82,10 +84,10 @@ app.post('/updateRelationRequest', relationsController.updateRelationRequestStat
 
 //APIs for Aptos wallet-----
 //create wallet
-app.post('/createWalet', walletController.createWallet);
+app.post('/createWallet', walletController.createWallet);
 
 //get wallet
-app.get('/getWaletDetails/:mobileNumber', walletController.getWalletDetails);
+app.get('/getWalletDetails/:mobileNumber', walletController.getWalletDetails);
 
 //get user balance
 app.get('/wallet-balance/:phoneNumber', walletController.getWalletBalance);

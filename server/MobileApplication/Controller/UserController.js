@@ -29,6 +29,28 @@ exports.updateUser = async (req, res) => {
   }
 };
 
+exports.getUserLoginDetails = async (req, res) => {
+  const { user_phone_number } = req.params;
+
+  // Validate request
+  if (!user_phone_number) {
+    return res.status(400).json({ error: 'user_phone_number is required' });
+  }
+
+  try {
+    const userDetails = await userService.getUserLoginDetails(user_phone_number);
+
+    if (userDetails) {
+      return res.status(200).json({ message: 'User details retrieved successfully', data: userDetails });
+    } else {
+      return res.status(404).json({ error: 'User not found' });
+    }
+  } catch (error) {
+    logger.error(`Error fetching user details: ${error.message}`);
+    res.status(500).json({ error: 'Failed to fetch user details' });
+  }
+};
+
 exports.getUserDetails = async (req, res) => {
   const { user_phone_number } = req.params;
   logger.info(`successfully fetched user details for flashback mobile user: ${user_phone_number}`);

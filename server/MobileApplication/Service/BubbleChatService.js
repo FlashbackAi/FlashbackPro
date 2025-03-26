@@ -3,9 +3,10 @@ const globalToLocalUsermappingModel = require('../Model/GlobalToLocalUsermapping
 const userModel = require('../Model/UserModel')
 const logger = require('../../logger');
 const FCMService = require('./FCMService');
+const StreakModel = require('../Model/StreakModel');
 
 exports.createBubbleChat = async ({ senderId, recipientId, memoryUrl, senderName, senderPhone }) => {
-  if (!senderId || !recipientId || !memoryUrl) {
+  if (!senderId || !recipientId ) {
     throw new Error('Missing required fields');
   }
 
@@ -30,16 +31,23 @@ exports.createBubbleChat = async ({ senderId, recipientId, memoryUrl, senderName
   // Check for existing chat
   let chatId = await bubbleChatModel.getExistingChat(participants);
 
+  let isNewChat = false;
+
   if (chatId) {
     // Update existing chat
+    if (memoryUrl !== null) {
     await bubbleChatModel.updateChat(chatId, timestamp, messageId);
+    }
   } else {
     // Create new chat
+    isNewChat = true;
     chatId = require('crypto').randomBytes(16).toString('hex');
     
     await bubbleChatModel.createChat(chatId, participants, timestamp, messageId, senderName, senderPhone, recipientUsers,recipientUserIds);
   }
 
+
+  if (memoryUrl !== null) {
   // Create message
   await bubbleChatModel.createMessage({
     messageId,
@@ -53,8 +61,12 @@ exports.createBubbleChat = async ({ senderId, recipientId, memoryUrl, senderName
     senderName,
   });
   await FCMService.sendNotification(chatId, senderName, senderPhone, 'shared a flashback', recipientUsers);
+  await StreakModel.updateStreak(senderPhone, recipientId, 'memory_shared');
   logger.info('Memory successfully shared');
-  return { chatId, messageId };
+} else {
+  logger.info('Chat successfully created or retrieved without sending a message');
+}
+  return { chatId, messageId, isNewChat };
 };
 
 
@@ -90,13 +102,12 @@ exports.getInChatMemories = async (userPhoneNumber, recipientId) => {
   }
 };
 
-exports.markAsRead = async (chatId, userId, messageId) => {
+exports.markAsRead = async (chatId, messageId) => {
   try {
     const params = {
       TableName: 'Messages',
       Key: {
-        messageId: messageId,
-        chatId: chatId
+        messageId: { S: messageId }
       },
       UpdateExpression: 'SET #status = :status',
       ExpressionAttributeNames: {
@@ -114,7 +125,6 @@ exports.markAsRead = async (chatId, userId, messageId) => {
     return {
       messageId,
       chatId,
-      userId,
       status: 'read'
     };
   } catch (error) {
@@ -178,7 +188,8 @@ exports.sendMessage = async (chatId, senderId, content, senderName, senderPhone,
     await bubbleChatModel.updateChatLastMessage(chatUpdateParams);
 
     await FCMService.sendNotification(chatId, senderName, senderPhone, content, recipientUsers);
-
+    const interactionType = messageType === 'memory' ? 'memory_shared' : 'message';
+    await StreakModel.updateStreak(senderPhone, recipientId, interactionType);
     logger.info(`Sent message with ID ${messageId} for chat: ${chatId}`);
     return {
       messageId,
