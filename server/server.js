@@ -16741,8 +16741,9 @@ app.delete('/delete-by-folder/:folderName', async (req, res) => {
 
         await docClient.delete(deleteImageDataParams).promise();
         itemsDeleted++;
+        
       }
-
+      logger.info(`deleted items from machinevision_recognition_image_properties : ${itemsDeleted}`)
       // Update LastEvaluatedKey for next iteration
       lastEvaluatedKey = queryResult.LastEvaluatedKey;
 
@@ -16805,7 +16806,7 @@ app.delete('/delete-by-folder-images/:folderName', async (req, res) => {
         await docClient.delete(deleteImageDataParams).promise();
         itemsDeleted++;
       }
-
+      logger.info(`deleted items from machinevision_recognition_image_properties : ${itemsDeleted}`)
       // Update LastEvaluatedKey for next iteration
       lastEvaluatedKey = queryResult.LastEvaluatedKey;
 
