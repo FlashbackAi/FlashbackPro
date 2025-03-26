@@ -16643,6 +16643,133 @@ const getMappingByLocalUserAndCollection = async (localUserId) => {
   }
 };
 
+app.delete('/delete-by-folder/:folderName', async (req, res) => {
+  try {
+    const folderName = req.params.folderName;
+    
+    let itemsDeleted = 0;
+    let lastEvaluatedKey = null;
+
+    // Query parameters for the index
+    const queryParams = {
+      TableName: 'machinevision_indexed_data', // Replace with your table name
+      IndexName: 'folder_name-index',
+      KeyConditionExpression: 'folder_name = :folder',
+      ExpressionAttributeValues: {
+        ':folder': folderName
+      }
+    };
+    do {
+      // If we have a LastEvaluatedKey from previous iteration, add it to params
+      if (lastEvaluatedKey) {
+        queryParams.ExclusiveStartKey = lastEvaluatedKey;
+      }
+
+      // Query items using the index
+      const queryResult = await docClient.query(queryParams).promise();
+      
+      // If no items found in this batch, break the loop
+      if (!queryResult.Items || queryResult.Items.length === 0) {
+        break;
+      }
+
+      logger.info(queryParams)
+      // Delete each item found in the batch
+      for (const item of queryResult.Items) {
+        const deleteImageDataParams = {
+          TableName: 'machinevision_indexed_data', // Replace with your table name
+          Key: {
+            image_id: item.image_id,
+            user_id:item.user_id
+          }
+        };
+
+        await docClient.delete(deleteImageDataParams).promise();
+        itemsDeleted++;
+      }
+
+      // Update LastEvaluatedKey for next iteration
+      lastEvaluatedKey = queryResult.LastEvaluatedKey;
+
+    } while (lastEvaluatedKey);
+
+    res.status(200).json({
+      message: 'Deletion completed successfully',
+      totalItemsDeleted: itemsDeleted
+    });
+
+  } catch (error) {
+    console.error('Error deleting items:', error);
+    res.status(500).json({
+      message: 'Error deleting items',
+      error: error.message
+    });
+  }
+});
+
+app.delete('/delete-by-folder-images/:folderName', async (req, res) => {
+  try {
+    const folderName = req.params.folderName;
+    
+    let itemsDeleted = 0;
+    let lastEvaluatedKey = null;
+
+    // Query parameters for the index
+    const queryParams = {
+      TableName: 'machinevision_recognition_image_properties', // Replace with your table name
+      IndexName: 'folder_name-index',
+      KeyConditionExpression: 'folder_name = :folder',
+      ExpressionAttributeValues: {
+        ':folder': folderName
+      }
+    };
+    do {
+      // If we have a LastEvaluatedKey from previous iteration, add it to params
+      if (lastEvaluatedKey) {
+        queryParams.ExclusiveStartKey = lastEvaluatedKey;
+      }
+
+      // Query items using the index
+      const queryResult = await docClient.query(queryParams).promise();
+      
+      // If no items found in this batch, break the loop
+      if (!queryResult.Items || queryResult.Items.length === 0) {
+        break;
+      }
+
+      logger.info(queryParams)
+      // Delete each item found in the batch
+      for (const item of queryResult.Items) {
+        const deleteImageDataParams = {
+          TableName: 'machinevision_recognition_image_properties', // Replace with your table name
+          Key: {
+            image_id: item.image_id
+          }
+        };
+
+        await docClient.delete(deleteImageDataParams).promise();
+        itemsDeleted++;
+      }
+
+      // Update LastEvaluatedKey for next iteration
+      lastEvaluatedKey = queryResult.LastEvaluatedKey;
+
+    } while (lastEvaluatedKey);
+
+    res.status(200).json({
+      message: 'Deletion completed successfully',
+      totalItemsDeleted: itemsDeleted
+    });
+
+  } catch (error) {
+    console.error('Error deleting items:', error);
+    res.status(500).json({
+      message: 'Error deleting items',
+      error: error.message
+    });
+  }
+});
+
 const mobileApp = require('./MobileApplication/app');
 app.use('/api/mobile', mobileApp); // Prefix for mobile backend
 
