@@ -6,7 +6,7 @@ class RequestModel {
     /**
      * Create a new request entry in DynamoDB.
      */
-    static async createRequest(request_id, user_phone_number, prompt, input_images, related_user_id, related_user_phone) {
+    static async createRequest(request_id, user_phone_number, prompt, input_images, related_user_id, related_user_phone, generation_type = "requested") {
         const params = {
             TableName: TABLE_NAME,
             Item: {
@@ -17,6 +17,7 @@ class RequestModel {
                 related_user_id,
                 generation_status: "processing",
                 created_at: new Date().toISOString(),
+                generation_type:generation_type
             }
         };
         if (related_user_phone) {

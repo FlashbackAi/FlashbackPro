@@ -34,6 +34,7 @@ const axios = require("axios");
 const oldEvents = ["Aarthi_Vinay_19122021","Convocation_PrathimaCollege","KSL_25042024","Jahnavi_Vaishnavi_SC_28042024","KSL_22052024","KSL_16052024","V20_BootCamp_2024","Neha_ShivaTeja_18042024"];
 const CHEWY_AMOUNT =500;
 const https = require('https');
+const { Worker } = require('worker_threads');
 // const { ethers } = require('ethers');
 // const BSC_RPC = "https://data-seed-prebsc-1-s1.binance.org:8545/";
 // const provider = new ethers.JsonRpcProvider(BSC_RPC);
@@ -11410,6 +11411,8 @@ app.get('/get-relations/:userPhoneNumber', async (req, res) => {
 });
 
 // Update or create a relation
+const genAIservice = require("./MobileApplication/Service/GenerativeAIService")
+
 app.post('/update-relation', async (req, res) => {
   const { 
     user_phone_number, 
@@ -11454,9 +11457,9 @@ app.post('/update-relation', async (req, res) => {
     if (related_user_phone) {
       relationItem.related_user_phone = related_user_phone;
     } else if (existingRelation.Item?.related_user_phone) {
-      // Keep existing related_user_phone if it exists
       relationItem.related_user_phone = existingRelation.Item.related_user_phone;
     }
+
     // Save to DynamoDB
     const putParams = {
       TableName: 'Relations',
@@ -11464,6 +11467,44 @@ app.post('/update-relation', async (req, res) => {
     };
 
     await docClient.put(putParams).promise();
+
+    // Determine if we should trigger memory generation
+    const shouldTriggerMemories =
+      // Case 1: New relation (no existing record)
+      !existingRelation.Item ||
+      // Case 2: Relation type changed
+      (relation_type && existingRelation.Item?.relation_type !== relation_type) ||
+      // Case 3: Gender changed (including null to non-null or vice versa)
+      (gender !== existingRelation.Item?.gender); // Strict comparison to handle null/undefined
+
+    if (shouldTriggerMemories) {
+      logger.info('Triggering memory generation', {
+        user_phone_number,
+        related_user_id,
+        reason: !existingRelation.Item ? 'new relation' : 'relation_type or gender updated'
+      });
+
+      // Trigger auto-generate memories in the background
+      genAIservice.triggerGeneratedMemories(
+        user_phone_number,
+        related_user_id,
+        related_user_phone,
+        relationItem.relation_type,
+        relationItem.gender
+      ).catch(err => {
+        logger.error('Background memory generation failed:', {
+          error: err.message,
+          user_phone_number,
+          related_user_id
+        });
+      });
+    } else {
+      logger.info('No memory generation triggered', {
+        user_phone_number,
+        related_user_id,
+        reason: 'no significant change'
+      });
+    }
 
     // If successful, return the updated relation
     res.json({

@@ -7,6 +7,9 @@ const sharp = require("sharp");
 const generativeImageModel = require("../Model/GenerativeImageModel");
 const crypto = require('crypto');
 const StreakModel = require("../Model/StreakModel");
+const userService = require("../Service/UserService")
+const promptModel = require("../Model/PromptModel")
+const machineVisionIndexedDataModel = require("../Model/MachineVisionIndexedDataModel")
 
 // AWS SDK & S3 Instance
 const s3 = getConfig().s3;
@@ -19,9 +22,9 @@ const POLL_INTERVAL = 3000;
 const S3_BUCKET = "flashbackgenai";
 
 // ✅ Upload Image to S3
-async function uploadToS3(imageBuffer, filename, requestId) {
+async function uploadToS3(imageBuffer,folderName,related_user_id, filename, requestId) {
     try {
-        const key = `${requestId}/${filename}`;
+        const key = `${folderName}/${related_user_id}/${requestId}-${filename}`;
         const params = {
             Bucket: S3_BUCKET,
             Key: key,
@@ -211,11 +214,12 @@ exports.processImagesProgress = async (user_phone_number, prompt, s3_url_image1,
 
         // 7️⃣ Upload Generated Images to S3
         let generatedImages = [];
+        const folderName = user_phone_number.replace('+','')
         for (const nodeId in history.outputs) {
             if (history.outputs[nodeId].images) {
                 for (const image of history.outputs[nodeId].images) {
-                    const imageData = await getImage(image.filename, image.subfolder, image.type);
-                    const s3Url = await uploadToS3(imageData, image.filename, promptId);
+                    const imageData = await getImage(image.filename, image.subfolder, image.type);                    
+                    const s3Url = await uploadToS3(imageData,folderName,related_user_id, image.filename, promptId);
                     generatedImages.push(s3Url);
                 }
             }
@@ -252,5 +256,218 @@ exports.getGeneratedImagesByPhoneNumber = async (phoneNumber) => {
       throw error;
     }
   };
+
+  const generateImages = async (
+    user_phone_number,
+    prompt,
+    s3_url_image1,
+    s3_url_image2,
+    related_user_id,
+    related_user_phone
+  ) => {
+    try {
+      // 1️⃣ Store Request in DynamoDB
+      const requestId =require("crypto").randomUUID();
+      await generativeImageModel.createRequest(
+        requestId,
+        user_phone_number,
+        prompt,
+        [s3_url_image1, s3_url_image2],
+        related_user_id,
+        related_user_phone,
+        "auto_trigger"
+      );
+      logger.info(`Stored requestId: ${requestId}`);
+  
+      // Optionally track user streak
+      //await updateStreak(user_phone_number, related_user_id, "memory_generated");
+  
+      // 2️⃣ Download & Resize Images
+      const image1Buffer = await downloadAndResizeImage(s3_url_image1);
+      const image2Buffer = await downloadAndResizeImage(s3_url_image2);
+  
+      // 3️⃣ Upload to ComfyUI
+      const image1Path = await uploadToComfyUI(image1Buffer, "image1.jpg");
+      const image2Path = await uploadToComfyUI(image2Buffer, "image2.jpg");
+      logger.info(`Uploaded to ComfyUI: ${image1Path}, ${image2Path}`);
+  
+      // 4️⃣ Load Workflow JSON
+      const workflowRaw = fs.readFileSync("MobileApplication/ComfyWorkFlow/PuLID_with_attn_mask.json", "utf8");
+      const workflow = JSON.parse(workflowRaw);
+  
+      // Inject the prompt and image paths into the workflow
+      workflow["191"]["inputs"]["text"] = prompt;
+      workflow["206"]["inputs"]["image"] = image1Path;
+      workflow["207"]["inputs"]["image"] = image2Path;
+  
+      // 5️⃣ Submit Workflow
+      const promptResponse = await queuePrompt(workflow);
+      const promptId = promptResponse.prompt_id;
+      logger.info(`Workflow submitted: ${promptId}`);
+  
+      // 6️⃣ Poll for Progress (no SSE, just wait until done)
+      //    pollForProgress might return the final "history" or "outputs"
+      //    after it detects the workflow is finished
+      const history = await pollForProgress(promptId);
+      logger.info(`Workflow completed for Prompt ID: ${promptId}`);
+  
+      // 7️⃣ Upload Generated Images to S3
+      const generatedImages = [];
+      const folderName = user_phone_number.replace('+','')
+      for (const nodeId in history.outputs) {
+        const nodeOutput = history.outputs[nodeId];
+        if (nodeOutput.images) {
+          for (const image of nodeOutput.images) {
+            const imageData = await getImage(image.filename, image.subfolder, image.type);
+            const s3Url = await uploadToS3(imageData, folderName, related_user_id, image.filename, promptId);
+            generatedImages.push(s3Url);
+          }
+        }
+      }
+  
+      // 8️⃣ Update Request in DynamoDB
+      await generativeImageModel.updateRequest(requestId, promptId, generatedImages);
+  
+      // 9️⃣ Return the result instead of streaming via SSE
+      return {
+        success: true,
+        requestId,
+        promptId,
+        generatedImages
+      };
+    } catch (error) {
+      logger.error(`Error in processImagesNoRes: ${error.message}`);
+    }
+  };
+
+  exports.triggerGeneratedMemories = async(user_phone_number, related_user_id, related_user_phone, relation, gender) => {
+    try {
+
+        // 2. Fetch prompts based on relationship
+        const relationPrompts = await promptModel.getRelationPrompts(relation, gender);
+        // 1. Fetch face thumbnail URLs for both users
+        if(!relationPrompts){
+            logger.info("No prompts exists for this combination of relation and gender")
+        }
+        const userDetails = await userService.getUserDetails(user_phone_number);
+        const folderName = user_phone_number.replace('+', '');
+        const userFaceUrl = await getBestFaceThumbnail(userDetails.user_id,folderName);
+        logger.info(userFaceUrl)
+        const relatedUserFaceUrl = await getBestFaceThumbnail(related_user_id,folderName);
+        logger.info(relatedUserFaceUrl)
+
+        
+
+        // Array to store generated image results
+        const generatedImages = [];
+
+        // Generate images for each prompt
+        for (const prompt of relationPrompts) {
+            const imageResult = await generateImages(user_phone_number, prompt, userFaceUrl, relatedUserFaceUrl, related_user_id, related_user_phone, '');
+            generatedImages.push(imageResult);
+        }
+
+        return {
+            status: 'success',
+            phone_number: user_phone_number,
+            generated_images: generatedImages,
+            timestamp: new Date().toISOString()
+        };
+
+    } catch (error) {
+        logger.error('Error in triggerGeneratedMemories:', error);
+        return {
+            status: 'error',
+            phone_number: user_phone_number,
+            error: error.message,
+            timestamp: new Date().toISOString()
+        };
+    }
+}
+
+const getNumericValue = (obj) => {
+    if (obj && obj.N) return parseFloat(obj.N);
+    return null;
+};
+
+// Helper function to extract string value from DynamoDB-style object
+const getStringValue = (obj) => {
+    if (obj && obj.S) return obj.S;
+    return null;
+};
+
+// Helper function to extract boolean value from DynamoDB-style object
+const getBooleanValue = (obj) => {
+    if (obj && obj.BOOL !== undefined) return obj.BOOL;
+    return null;
+};
+
+const getBestFaceThumbnail = async (user_id, folderName) => {
+    try {
+        // Fetch all images from the folder
+        const images = await machineVisionIndexedDataModel.getUserImagesFromFolder(user_id, folderName);
+
+        if (!images || images.length === 0) {
+            throw new Error(`No images found for user ${user_id} in folder ${folderName}`);
+        }
+
+        // Function to calculate a quality score for each image
+        const calculateImageScore = (image) => {
+            const brightness = getNumericValue(image.brightness) || 0;
+            const roll = getNumericValue(image.face_alignment) || 0;
+            const pitch = getNumericValue(image.pitch) || 0;
+            const yaw = getNumericValue(image.yaw) || 0;
+            const sharpness = getNumericValue(image.sharpness) || 0;
+            const occlusion = getBooleanValue(image.occlusion_flag);
+
+            // Scoring criteria for straight-facing face:
+            // 1. No occlusion (must be false)
+            // 2. Low pitch, roll, and yaw values (closer to 0 is better)
+            // 3. High brightness (better visibility)
+            // 4. High sharpness
+            // 5. High confidence
+            // 6. Preferably single face in image
+            // 7. Low face alignment value (indicates better alignment)
+
+            if (occlusion) return -Infinity; // Disqualify occluded images
+
+            // Normalize values and apply weights
+            const pitchScore = (90 - Math.abs(pitch)) / 90; // 0 to 1 scale
+            const rollScore = (90 - Math.abs(roll)) / 90;
+            const yawScore = (90 - Math.abs(yaw)) / 90;
+            const brightnessScore = brightness / 255; // Assuming 255 max
+            const sharpnessScore = sharpness / 100; // Assuming 100 max
+
+            // Weighted average
+            return (
+                (yawScore * 0.3) +      // Most important for straight face
+                (pitchScore * 0.2) +     // Important for straight face
+                (rollScore * 0.2) +      // Important for straight face
+                (brightnessScore * 0.1) +
+                (sharpnessScore * 0.1) 
+            );
+        };
+
+        // Find the best image
+        const bestImage = images.reduce((best, current) => {
+            
+            const currentScore = calculateImageScore(current);
+            const bestScore = best ? calculateImageScore(best) : -Infinity;
+            
+            return currentScore > bestScore ? current : best;
+        }, null);
+
+        if (!bestImage) {
+            throw new Error('No suitable image found after scoring');
+        }
+
+        // Return the S3 URL of the best image
+        return `https://machinevisionuserscroppedfaces.s3.ap-south-1.amazonaws.com/${folderName}/${bestImage.user_id}/${bestImage.face_id}_cropped.jpg`
+
+    } catch (error) {
+        console.error('Error in getBestFaceThumbnail:', error);
+        throw new Error(`Failed to get best face thumbnail: ${error.message}`);
+    }
+};
   
   

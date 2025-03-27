@@ -4,6 +4,8 @@ const { getConfig } = require('../../config');
 const docClient = getConfig().docClient;
 const TABLE_NAME = 'machinevision_indexed_data';
 
+const logger = require("../../logger");
+
 /**
  * Retrieve a single record by face_id + user_id.
  * 
@@ -75,4 +77,52 @@ exports.updateIndexedRecordUserId = async ({image_id, face_id, oldUserId, newUse
   await docClient.delete(deleteParams).promise();
 
   return true;
+};
+
+
+exports.getUserImagesFromFolder = async ( user_id, folder_name) => {
+
+  logger.info(`Received request to fetch images for user_id: ${user_id} in folder: ${folder_name}`);
+
+  try {
+      let records = [];
+      let lastEvaluatedKey = null;
+
+      do {
+          // Define query parameters
+          const params = {
+              TableName: TABLE_NAME, // Replace with your DynamoDB table name
+              IndexName: 'user_id-folder_name-index', // Replace with your GSI name
+              KeyConditionExpression: 'folder_name = :folder_name AND user_id = :user_id',
+              ExpressionAttributeValues: {
+                  ':folder_name': folder_name,
+                  ':user_id': user_id
+              },
+              ExclusiveStartKey: lastEvaluatedKey // Continue from the last evaluated key
+          };
+
+          // Query DynamoDB
+          const result = await docClient.query(params).promise();
+
+          logger.info(`Fetched ${result.Items.length} records for this page`);
+
+          // Append the complete records to the array
+          records = records.concat(result.Items);
+
+          // Update LastEvaluatedKey
+          lastEvaluatedKey = result.LastEvaluatedKey;
+
+          if (lastEvaluatedKey) {
+              logger.info(`LastEvaluatedKey found, continuing to the next page: ${JSON.stringify(lastEvaluatedKey)}`);
+          }
+      } while (lastEvaluatedKey); // Continue querying until LastEvaluatedKey is null
+
+      logger.info(`Fetched a total of ${records.length} records for user_id: ${user_id} in folder: ${folder_name}`);
+
+      // Respond with the complete records
+      return records;
+  } catch (err) {
+      logger.error(`Error fetching images for user_id ${user_id} in folder ${folder_name}: ${err.message}`, { error: err });
+      throw err;
+  }
 };
