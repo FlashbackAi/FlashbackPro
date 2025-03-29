@@ -34,6 +34,7 @@ const axios = require("axios");
 const oldEvents = ["Aarthi_Vinay_19122021","Convocation_PrathimaCollege","KSL_25042024","Jahnavi_Vaishnavi_SC_28042024","KSL_22052024","KSL_16052024","V20_BootCamp_2024","Neha_ShivaTeja_18042024"];
 const CHEWY_AMOUNT =500;
 const https = require('https');
+const HOST = '0.0.0.0';
 // const { ethers } = require('ethers');
 // const BSC_RPC = "https://data-seed-prebsc-1-s1.binance.org:8545/";
 // const provider = new ethers.JsonRpcProvider(BSC_RPC);
@@ -75,6 +76,14 @@ if (ENV === 'production') {
     server = http.createServer(app);
   }
   
+  //***** - Uncomment for hitting your machineIPv4:5000 from your emulator physical device ************* */
+  // server.listen(PORT, HOST, () => {
+  //   logger.info(`Server is running in ${ENV} mode on ${ENV === 'production' ? 'https' : 'http'}://${HOST}:${PORT}`);
+  //   server.keepAliveTimeout = 60000;
+  //   server.headersTimeout = 65000;
+  // });
+
+
   server.listen(PORT, () => {
     logger.info(`Server is running in ${ENV} mode on ${ENV === 'production' ? 'https' : 'http'}://localhost:${PORT}`);
     server.keepAliveTimeout = 60000;
@@ -12863,11 +12872,10 @@ app.get('/getDeviceMemoryReaction/:imageId/:imageName/:userPhoneNumber', async (
   }
 });
 
-
-
 app.get('/getDeviceMemories/:userPhoneNumber', async (req, res) => {
   try {
     const { userPhoneNumber } = req.params;
+    // console.time('getDeviceMemoriesTotal'); // Start timing the entire operation
 
     // Input validation
     if (!userPhoneNumber) {
@@ -12877,78 +12885,269 @@ app.get('/getDeviceMemories/:userPhoneNumber', async (req, res) => {
       });
     }
 
-    // Query params for machinevision_indexed_data table
-    const params = {
+    // Standardize phone number format (remove + if present)
+    const cleanPhoneNumber = userPhoneNumber.replace('+', '');
+    
+    // Validation counters
+    let totalIndexedDataCount = 0;
+    let totalHiddenUsers = 0;
+    let totalRelations = 0;
+    let finalMemoriesCount = 0;
+    
+    // console.time('hiddenUsersQuery');
+    // 1. Get all hidden users for this user
+    const hiddenUsersParams = {
+      TableName: 'hidden_users',
+      KeyConditionExpression: 'user_phone_number = :phone',
+      ExpressionAttributeValues: {
+        ':phone': cleanPhoneNumber
+      }
+    };
+
+    const hiddenUsersResult = await docClient.query(hiddenUsersParams).promise();
+    // Create a Set of hidden user IDs for efficient lookup
+    const hiddenUserIds = new Set(hiddenUsersResult.Items.map(item => item.hidden_user_id));
+    totalHiddenUsers = hiddenUserIds.size;
+    // console.log(`Found ${totalHiddenUsers} hidden users for phone ${cleanPhoneNumber}`);
+    // console.timeEnd('hiddenUsersQuery');
+
+    // console.time('relationsQuery');
+    // 2. Get all relations for this user
+    const relationsParams = {
+      TableName: 'Relations',
+      KeyConditionExpression: 'user_phone_number = :phone',
+      ExpressionAttributeValues: {
+        ':phone': `+${cleanPhoneNumber}`
+      }
+    };
+
+    const relationsResult = await docClient.query(relationsParams).promise();
+    totalRelations = relationsResult.Items.length;
+    // console.log(`Found ${totalRelations} relations for phone +${cleanPhoneNumber}`);
+    
+    // Create a Map of relation details by user ID for efficient lookup
+    const relationsMap = new Map();
+    relationsResult.Items.forEach(relation => {
+      relationsMap.set(relation.related_user_id, {
+        gender: relation.gender || null,
+        is_starred: relation.is_starred || false,
+        name: relation.name || null,
+        related_user_phone: relation.related_user_phone || null,
+        relation_type: relation.relation_type || null
+      });
+    });
+    // console.timeEnd('relationsQuery');
+
+    // console.time('faceUrlsInitialization');
+    // Function to convert S3 URL to HTTPS URL
+    const convertS3UrlToHttps = (s3Url) => {
+      if (s3Url && s3Url.startsWith('s3://')) {
+        const bucketAndKey = s3Url.replace('s3://', '');
+        const [bucket, ...keyParts] = bucketAndKey.split('/');
+        return `https://${bucket}.s3.ap-south-1.amazonaws.com/${keyParts.join('/')}`;
+      }
+      return s3Url;
+    };
+
+    // Create a Map to store face URLs by user ID
+    const faceUrlsMap = new Map();
+    const allUserIds = new Set();
+    // console.timeEnd('faceUrlsInitialization');
+
+    // console.time('indexedDataQuery');
+    // 3. Query all indexed data for this user
+    // Using folder_name-index since folder_name contains the user's phone number
+    const indexedDataParams = {
       TableName: 'machinevision_indexed_data',
       IndexName: 'folder_name-index',
       KeyConditionExpression: 'folder_name = :phoneNumber',
       ExpressionAttributeValues: {
         ':phoneNumber': userPhoneNumber
       },
-      ProjectionExpression: 'image_id, user_id, bounding_box, confidence, faces_in_image, face_id, image_name, indexed_date',
-      ScanIndexForward: false // Most recent first
+      ProjectionExpression: 'image_id, user_id, bounding_box, confidence, faces_in_image, face_id, image_name, indexed_date'
     };
 
-    const result = await docClient.query(params).promise();
+    // Query the machinevision_indexed_data table with pagination to get all items
+    const allIndexedData = [];
+    let lastEvaluatedKey = null;
+    let paginationCount = 0;
+    
+    do {
+      if (lastEvaluatedKey) {
+        indexedDataParams.ExclusiveStartKey = lastEvaluatedKey;
+      }
+      
+      const result = await docClient.query(indexedDataParams).promise();
+      allIndexedData.push(...result.Items);
+      lastEvaluatedKey = result.LastEvaluatedKey;
+      paginationCount++;
+      
+      console.log(`Pagination ${paginationCount}: Retrieved ${result.Items.length} items. Has more: ${!!lastEvaluatedKey}`);
+      
+    } while (lastEvaluatedKey);
+    
+    totalIndexedDataCount = allIndexedData.length;
+    // console.log(`Total indexed data retrieved: ${totalIndexedDataCount} items across ${paginationCount} pages`);
+    // console.timeEnd('indexedDataQuery');
 
-    // Group memories by image_name to identify other users
+    // Collect all unique user IDs from the indexed data
+    allIndexedData.forEach(item => {
+      if (!hiddenUserIds.has(item.user_id)) {
+        allUserIds.add(item.user_id);
+      }
+    });
+
+    // console.log(`Found ${allUserIds.size} unique user IDs to query for face URLs`);
+
+    // console.time('faceUrlsBatchGet');
+    // Batch get face URLs in chunks to avoid DynamoDB limits
+    const batchSize = 100; // DynamoDB allows up to 100 items in a BatchGetItem
+    const userIdArray = Array.from(allUserIds);
+    let processedUsers = 0;
+
+    for (let i = 0; i < userIdArray.length; i += batchSize) {
+      const batch = userIdArray.slice(i, i + batchSize);
+      
+      const batchParams = {
+        RequestItems: {
+          'machinevision_recognition_users_data': {
+            Keys: batch.map(userId => ({ 'user_id': userId }))
+          }
+        }
+      };
+      
+      try {
+        const batchResult = await docClient.batchGet(batchParams).promise();
+        
+        if (batchResult.Responses && batchResult.Responses.machinevision_recognition_users_data) {
+          batchResult.Responses.machinevision_recognition_users_data.forEach(item => {
+            if (item.user_id && item.face_url) {
+              faceUrlsMap.set(item.user_id, convertS3UrlToHttps(item.face_url));
+            }
+          });
+        }
+        
+        processedUsers += batch.length;
+        // console.log(`Fetched face URLs batch: ${processedUsers}/${userIdArray.length}`);
+        
+      } catch (error) {
+        console.error('Error fetching face URLs batch:', error);
+      }
+    }
+    // console.log(`Face URLs found: ${faceUrlsMap.size} out of ${allUserIds.size} users`);
+    // console.timeEnd('faceUrlsBatchGet');
+
+    // console.time('memoryProcessing');
+    // 4. Process the indexed data to create memories
     const memoryMap = new Map();
-    result.Items.forEach(item => {
+    let hiddenUsersFiltered = 0;
+    
+    // Filter out memories associated with hidden users and process the rest
+    allIndexedData.forEach(item => {
+      // Skip if this item belongs to a hidden user
+      if (hiddenUserIds.has(item.user_id)) {
+        hiddenUsersFiltered++;
+        return;
+      }
+
       const imageName = item.image_name;
+      
       if (!memoryMap.has(imageName)) {
+        // Create a new memory entry
+        const relationInfo = relationsMap.get(item.user_id) || {
+          gender: null,
+          is_starred: false,
+          name: null,
+          related_user_phone: null,
+          relation_type: null
+        };
+        
         memoryMap.set(imageName, {
           image_id: item.image_id,
-          user_id: item.user_id, // Primary user_id
+          user_id: item.user_id,
           bounding_box: item.bounding_box,
           confidence: item.confidence,
           faces_in_image: item.faces_in_image,
           face_id: item.face_id,
           image_name: imageName,
           indexed_date: item.indexed_date,
-          otherUsers: [] // Initialize otherUsers array
+          face_url: faceUrlsMap.get(item.user_id) || null, // Add face_url if available
+          otherUsers: [], // Initialize otherUsers array
+          // Add relation information
+          relation: relationInfo
         });
       } else {
-        // Add additional user_ids to otherUsers
+        // Add to existing memory's otherUsers if different user_id
         const existingMemory = memoryMap.get(imageName);
         if (item.user_id !== existingMemory.user_id) {
-          existingMemory.otherUsers.push(item.user_id);
+          // Check if this otherUser has relation data
+          const otherUserRelation = relationsMap.get(item.user_id) || {
+            gender: null,
+            is_starred: false,
+            name: null,
+            related_user_phone: null,
+            relation_type: null
+          };
+          
+          // Add user_id and their relation info to otherUsers if not already present
+          const userIdExists = existingMemory.otherUsers.some(
+            user => typeof user === 'object' ? user.user_id === item.user_id : user === item.user_id
+          );
+          
+          if (!userIdExists) {
+            existingMemory.otherUsers.push({
+              user_id: item.user_id,
+              face_url: faceUrlsMap.get(item.user_id) || null, // Add face_url if available
+              relation: otherUserRelation
+            });
+          }
         }
       }
     });
 
     // Convert Map to array of memories
-    const memories = Array.from(memoryMap.values()).map(memory => ({
-      image_id: memory.image_id,
-      user_id: memory.user_id,
-      bounding_box: memory.bounding_box,
-      confidence: memory.confidence,
-      faces_in_image: memory.faces_in_image,
-      face_id: memory.face_id,
-      image_name: memory.image_name,
-      indexed_date: memory.indexed_date,
-      otherUsers: memory.otherUsers // Include otherUsers
-    }));
+    const memories = Array.from(memoryMap.values());
+    finalMemoriesCount = memories.length;
+    // console.timeEnd('memoryProcessing');
+    
+    // Log counts for validation
+    // console.log('=== Validation Counts ===');
+    // console.log(`Total indexed data items: ${totalIndexedDataCount}`);
+    // console.log(`Hidden users: ${totalHiddenUsers}`);
+    // console.log(`Hidden users filtered out: ${hiddenUsersFiltered}`);
+    // console.log(`Relations: ${totalRelations}`);
+    // console.log(`Final memories count: ${finalMemoriesCount}`);
+    // console.log(`Processing ratio: ${(totalIndexedDataCount / finalMemoriesCount).toFixed(2)} indexed items per memory`);
+    // console.timeEnd('getDeviceMemoriesTotal');
 
     // Return success response
     res.json({
       success: true,
       count: memories.length,
-      memories
+      memories,
+      validation: {
+        totalIndexedData: totalIndexedDataCount,
+        hiddenUsers: totalHiddenUsers,
+        hiddenUsersFiltered,
+        relations: totalRelations,
+        finalMemories: finalMemoriesCount
+      }
     });
 
   } catch (error) {
     console.error('Error fetching device memories:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to fetch device memories'
+      error: 'Failed to fetch device memories',
+      details: error.message
     });
   }
 });
 
+
 app.get('/getGeneratedMemories/:userPhoneNumber', async (req, res) => {
   try {
     const { userPhoneNumber } = req.params;
-    const { pageToken, limit = 20 } = req.query; // Default limit to 20 items per page
 
     // Input validation
     if (!userPhoneNumber) {
@@ -12969,19 +13168,28 @@ app.get('/getGeneratedMemories/:userPhoneNumber', async (req, res) => {
         ':status': 'completed',
       },
       ProjectionExpression: 'generation_id, created_at, generated_images, prompt, prompt_id, related_user_id, related_user_phone',
-      ScanIndexForward: false, // Sort by the index's sort key (if applicable)
-      Limit: parseInt(limit), // Number of items per page
+      ScanIndexForward: false, // Sort by the index's sort key (latest first)
     };
 
-    // If pageToken is provided, use it as the ExclusiveStartKey to fetch the next page
-    if (pageToken) {
-      params.ExclusiveStartKey = JSON.parse(Buffer.from(pageToken, 'base64').toString('utf8'));
-    }
+    // Query all generated memories with pagination (similar to getDeviceMemories)
+    const allGeneratedMemories = [];
+    let lastEvaluatedKey = null;
+    let paginationCount = 0;
+    
+    do {
+      if (lastEvaluatedKey) {
+        params.ExclusiveStartKey = lastEvaluatedKey;
+      }
+      
+      const result = await docClient.query(params).promise();
+      allGeneratedMemories.push(...result.Items);
+      lastEvaluatedKey = result.LastEvaluatedKey;
+      paginationCount++;
+      
+    } while (lastEvaluatedKey);
 
-    const result = await docClient.query(params).promise();
-
-    // Format and sort the response by created_at (latest to oldest)
-    const generatedMemories = result.Items.map(item => ({
+    // Process the data to add the isGenerated flag and sort by created_at (latest to oldest)
+    const generatedMemories = allGeneratedMemories.map(item => ({
       generation_id: item.generation_id,
       created_at: item.created_at,
       generated_images: item.generated_images,
@@ -12992,25 +13200,17 @@ app.get('/getGeneratedMemories/:userPhoneNumber', async (req, res) => {
       isGenerated: true,
     })).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-    // Generate the next page token if there are more items
-    let nextPageToken = null;
-    if (result.LastEvaluatedKey) {
-      nextPageToken = Buffer.from(JSON.stringify(result.LastEvaluatedKey)).toString('base64');
-    }
-
-    // Return success response with pagination metadata
     res.json({
       success: true,
       count: generatedMemories.length,
-      totalCount: result.ScannedCount, // Total items scanned (optional, for reference)
       generatedMemories,
-      nextPageToken, // Null if there are no more pages
     });
   } catch (error) {
     console.error('Error fetching generated memories:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch generated memories',
+      details: error.message
     });
   }
 });
